@@ -243,6 +243,13 @@ func _can_pause() -> bool:
 	if _ended or _gate != null or _root == null: return false
 	return _root.touch_profile() in [PROFILE_RUNNER, PROFILE_FOOT] and StateMachine.is_playing() and not get_tree().paused
 
+## A scripted chamber beat has no touch profile, so `_can_pause()` is false and the foot
+## layout's PAUSE button is gone. This is the narrower permission for the overlay's one
+## mini PAUSE pad: only the `pause` action uses it, so Esc still leaves a scripted beat.
+func _can_pause_scripted() -> bool:
+	if _ended or _gate != null or _root == null: return false
+	return _root.is_scripted_beat() and StateMachine.is_playing() and not get_tree().paused
+
 ## The menu / ?ep2=1 route enters Episode 2 through SceneRouter, which leaves the StateMachine in TRANSITIONING, and nothing on
 ## this side ever set PLAYING - so the touch layer (which needs PLAYING) stayed hidden for the whole run. The Stage 3 story
 ## hand-off gets PLAYING from TransitionDirector at its reveal: while the director is still busy it owns the change. Called
@@ -339,6 +346,7 @@ func _process(delta: float) -> void:
 				if a.has_method("get_carts_alive"):
 					extra = " lane=%d carts=%s gold=%d v=%d" % [a.get_lane(), str(a.get_carts_alive()), a.get_gold(), int(a.get_speed())]
 				print("[EP2] d=%d hp=%d%s" % [d, a.get_health(), extra])
+	_sync_mini_pause()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _gate != null:
@@ -350,7 +358,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if (event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel")) and not event.is_echo():
 		if _ended: _go_home()
 		elif _pause_open: _close_pause()
-		elif _can_pause(): _open_pause()
+		elif _can_pause() or (event.is_action_pressed("pause") and _can_pause_scripted()): _open_pause()
 		elif event.is_action_pressed("ui_cancel"): _go_home() # retain the existing exit during films/scripted contexts
 		get_viewport().set_input_as_handled()
 		return
@@ -614,10 +622,11 @@ func is_pause_open() -> bool:
 	return _pause_open
 
 ## The PAUSE button: freeze the sim (StateMachine PAUSED - the controls underneath go dim and inert) and raise the card.
-## Only while the runner / on-foot controls are the ones up: a film keeps playing through a tree pause (it runs ALWAYS), and
-## the armory, a transition or the portrait cue already own the pause.
+## Allowed for the runner / on-foot controls, and (through `_can_pause_scripted`) for the overlay's mini
+## pad during a scripted beat, when no touch layout is up. Films keep their own skip; the armory, a
+## transition or the portrait cue already own the pause.
 func _open_pause() -> void:
-	if _pause_open or not _can_pause(): return
+	if _pause_open or not (_can_pause() or _can_pause_scripted()): return
 	if not StateMachine.change_state(StateMachine.State.PAUSED):
 		return
 	_pause_open = true
@@ -654,6 +663,21 @@ func _sync_portrait_exit() -> void:
 			overlay.show_portrait_exit()
 	elif _overlay != null and _overlay.mode() == Ep2TouchOverlay.Mode.PORTRAIT:
 		_overlay.close()
+
+## Keep exactly one wordless PAUSE pad reachable while a scripted beat has hidden the touch
+## layer (audit 2026-10-29 P1-2). The overlay is created lazily and never during the access
+## gate, the pause card, a transition, or the portrait cue.
+func _sync_mini_pause() -> void:
+	if _root == null or not is_instance_valid(_root):
+		if _overlay != null: _overlay.hide_mini_pause()
+		return
+	var want: bool = _root.is_scripted_beat() and not _ended and _gate == null \
+		and not _pause_open and not get_tree().paused \
+		and TouchUi.is_touch() and not TouchUi.is_keyboard_mode()
+	if want:
+		_ensure_overlay().show_mini_pause()
+	elif _overlay != null:
+		_overlay.hide_mini_pause()
 
 func _exit_tree() -> void:
 	# the card pauses the StateMachine: never leave it paused behind a scene that is going away

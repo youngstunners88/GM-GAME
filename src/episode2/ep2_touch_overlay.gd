@@ -32,6 +32,9 @@ const DIM_ALPHA: float = 0.58
 ## PLAY 108 dp, HOME 88 dp - both above the 72 dp the brief asks of a pause card.
 const PLAY_RADIUS_DP: float = 44.0
 const HOME_RADIUS_DP: float = 34.0
+## The wordless PAUSE pad that stays reachable while a scripted beat hides the touch layer
+## (audit 2026-10-29 P1-2). 26 dp visible + 10 dp hit = 72 dp target, same target as PLAY.
+const MINI_RADIUS_DP: float = 26.0
 const PAD_HIT_DP: float = 10.0
 ## Centre-to-centre distance of PLAY and HOME (dp) so a thumb aimed at PLAY cannot leave the run.
 const PAD_SPACING_DP: float = 150.0
@@ -40,6 +43,7 @@ const PORTRAIT_HOME_LIFT_DP: float = 84.0
 const PAD_NONE := &""
 const PAD_PLAY := &"play"
 const PAD_HOME := &"home"
+const PAD_MINI := &"mini_pause"
 const BACKING := Color(0.06, 0.03, 0.0, 0.8)
 const RING := Color(1.0, 0.9, 0.62, 0.9)
 
@@ -101,8 +105,11 @@ var _dim: ColorRect
 var _field: Control
 var _play: Pad
 var _home: Pad
+var _mini: Pad
 var _play_vis: VirtualButton
 var _home_vis: VirtualButton
+var _mini_vis: VirtualButton
+var _mini_visible: bool = false
 var _mode: int = Mode.HIDDEN
 var _dp: float = 1.0
 var _opened_frame: int = -1
@@ -128,10 +135,17 @@ func _ready() -> void:
 	add_child(_field)
 	_play = _make_pad("PlayPad", PLAY_RADIUS_DP, VirtualButton.Glyph.PLAY)
 	_home = _make_pad("HomePad", HOME_RADIUS_DP, VirtualButton.Glyph.HOME)
+	_mini = _make_pad("MiniPausePad", MINI_RADIUS_DP, VirtualButton.Glyph.PAUSE)
 	_play_vis = _play.get_child(0) as VirtualButton
 	_home_vis = _home.get_child(0) as VirtualButton
+	_mini_vis = _mini.get_child(0) as VirtualButton
+	_mini_vis.role = &"pause"
+	_mini_vis.queue_redraw()
+	_mini.visible = false
 	_play.tapped.connect(func() -> void: resume_pressed.emit())
 	_home.tapped.connect(func() -> void: home_pressed.emit())
+	# The mini pad injects the SAME `pause` action a layout button injects: one input path.
+	_mini.tapped.connect(func() -> void: TouchActions.pulse(&"pause"))
 	var close_button: Button = preload("res://src/ui/panel_close.gd").install(self, func() -> void: resume_pressed.emit())
 	close_button.visible = false
 	_relayout()
@@ -165,6 +179,8 @@ func _make_pad(pad_name: String, radius_dp: float, glyph: VirtualButton.Glyph) -
 
 ## The pause card: dim + PLAY + HOME. The caller pauses the sim; this only draws and listens.
 func show_pause() -> void:
+	_mini_visible = false
+	if _mini != null: _mini.visible = false
 	get_node("PanelClose").show()
 	_mode = Mode.PAUSE
 	_open()
@@ -172,16 +188,41 @@ func show_pause() -> void:
 ## Only the HOME icon, no dim, nothing else swallowing touches (the portrait rotate cue stays
 ## visible underneath and a locked-portrait phone is never trapped on it).
 func show_portrait_exit() -> void:
+	_mini_visible = false
+	if _mini != null: _mini.visible = false
 	get_node("PanelClose").hide()
 	_mode = Mode.PORTRAIT
 	_open()
 
+## One wordless PAUSE pad for a scripted beat, when the touch layer is hidden and the foot
+## layout's PAUSE button is gone. It is only a shape: tapping it injects `pause` (audit P1-2).
+func show_mini_pause() -> void:
+	if _mini == null or _mode != Mode.HIDDEN:
+		return
+	_mini_visible = true
+	var pc: Node = get_node_or_null("PanelClose")
+	if pc is CanvasItem: (pc as CanvasItem).hide()
+	_relayout()
+	visible = true
+
+func hide_mini_pause() -> void:
+	_mini_visible = false
+	if _mini != null:
+		_mini.visible = false
+		_mini._down.clear()
+	if _mode == Mode.HIDDEN:
+		visible = false
+
 func close() -> void:
 	_mode = Mode.HIDDEN
+	_mini_visible = false
 	visible = false
-	for pad: Pad in [_play, _home]:
+	for pad: Pad in [_play, _home, _mini]:
 		if pad != null:
+			pad.visible = false
 			pad._down.clear()
+	var pc: Node = get_node_or_null("PanelClose")
+	if pc is CanvasItem: (pc as CanvasItem).hide()
 
 func is_open() -> bool:
 	return _mode != Mode.HIDDEN
@@ -202,6 +243,16 @@ func play_hit_radius() -> float:
 func home_hit_radius() -> float:
 	return (HOME_RADIUS_DP + PAD_HIT_DP) * _dp
 
+func mini_center() -> Vector2:
+	return _centre_of(_mini)
+
+func mini_hit_radius() -> float:
+	return (MINI_RADIUS_DP + PAD_HIT_DP) * _dp
+
+## True while the scripted-beat PAUSE pad is the visible control (no card, no dim).
+func is_mini_visible() -> bool:
+	return _mini_visible and _mode == Mode.HIDDEN and _mini != null and _mini.visible
+
 ## True when the PLAY pad takes touches in the current mode.
 func play_enabled() -> bool:
 	return _mode == Mode.PAUSE
@@ -209,6 +260,8 @@ func play_enabled() -> bool:
 ## Which pad is under `pos` (canvas units) in the current mode.
 func pad_at(pos: Vector2) -> StringName:
 	if _mode == Mode.HIDDEN:
+		if _mini_visible and pos.distance_to(mini_center()) <= mini_hit_radius():
+			return PAD_MINI
 		return PAD_NONE
 	if _mode == Mode.PAUSE and pos.distance_to(play_center()) <= play_hit_radius():
 		return PAD_PLAY
@@ -237,6 +290,9 @@ func _relayout() -> void:
 	_dim.visible = pause_mode
 	_field.mouse_filter = Control.MOUSE_FILTER_STOP if pause_mode else Control.MOUSE_FILTER_IGNORE
 	_play.visible = pause_mode
+	# Only the pause card or the portrait cue shows HOME; a scripted-beat mini pad must not
+	# inherit a visible HOME from a card that was open earlier.
+	_home.visible = _mode == Mode.PAUSE or _mode == Mode.PORTRAIT
 	var half: float = PAD_SPACING_DP * 0.5 * _dp
 	var play_c: Vector2 = centre - Vector2(half, 0.0)
 	var home_c: Vector2 = centre + Vector2(half, 0.0)
@@ -244,6 +300,11 @@ func _relayout() -> void:
 		home_c = Vector2(centre.x, m.safe_rect.end.y - PORTRAIT_HOME_LIFT_DP * _dp)
 	_place(_play, play_c, PLAY_RADIUS_DP)
 	_place(_home, home_c, HOME_RADIUS_DP)
+	if _mini != null:
+		_mini.visible = _mini_visible and _mode == Mode.HIDDEN
+		var inset: float = (MINI_RADIUS_DP + PAD_HIT_DP) * _dp
+		var mini_c: Vector2 = Vector2(m.safe_rect.end.x - inset, m.safe_rect.position.y + inset)
+		_place(_mini, mini_c, MINI_RADIUS_DP)
 
 func _place(pad: Pad, centre: Vector2, radius_dp: float) -> void:
 	pad.unit = _dp

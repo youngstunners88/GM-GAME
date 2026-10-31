@@ -696,6 +696,18 @@ func _foot_ok() -> bool:
 		return false
 	return (_active.has_method("has_player_control") and bool(_active.call("has_player_control"))) or _armory_is_open()
 
+## A chamber is playing a scripted beat: it has not handed the player control, no skippable film
+## owns the screen, the armory is closed, and the sim is playing. The touch layer is hidden then,
+## so Ep2Entry keeps one wordless mini PAUSE pad (`touch_profile() != none` for control/film).
+func is_scripted_beat() -> bool:
+	if _mode != Mode.CHAMBER or _active == null or not is_instance_valid(_active):
+		return false
+	if not StateMachine.is_playing() or _armory_is_open() or _rotate_wanted():
+		return false
+	if _active.has_method("is_film_skippable") and bool(_active.call("is_film_skippable")):
+		return false
+	return _active.has_method("has_player_control") and not bool(_active.call("has_player_control"))
+
 ## The window is taller than wide (TouchMetrics' own rule, so the cue and the layouts always agree).
 func _portrait_window() -> bool:
 	var win: Window = get_window()

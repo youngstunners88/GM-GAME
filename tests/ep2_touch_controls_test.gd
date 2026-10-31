@@ -278,8 +278,10 @@ func _section_profiles() -> void:
 	stub.armory = false
 	stub.control = false
 	_check("a scripted beat (no player control) -> none", r.touch_profile() == &"none")
+	_check("...and the overlay treats it as a pausable scripted beat", r.is_scripted_beat())
 	stub.film = true
 	_check("a skippable film -> ep2_film", r.touch_profile() == &"ep2_film")
+	_check("...a film is not the mini-pause scripted beat", not r.is_scripted_beat())
 	stub.film = false
 	stub.control = true
 	r._mode = Ep2SessionRoot.Mode.TRANSITION
@@ -611,6 +613,7 @@ func _section_foot() -> void:
 	# attack (the FIRE button) still reaches the shot
 	r._unhandled_input(_action(&"attack", true))
 	_check("the FIRE button's `attack` action still fires", stub.calls == ["shoot"], str(stub.calls))
+	stub.calls.clear()
 	stub.calls.clear()
 	# F13: on a phone the persistent RUN toggle must not pick the Diamond-burn payment
 	_check("(setup) touch is forced, so keys are hidden", not TouchUi.keys_shown())
@@ -964,6 +967,55 @@ func _section_entry() -> void:
 		_check("a SECOND finger (index 3, no emulated click) can tap PLAY", not entry.is_pause_open() and StateMachine.is_playing())
 		_touch(0, false, resting)
 		await _frames(2)
+	# A scripted beat hides the touch layer, so the layout's PAUSE button is gone. The overlay
+	# keeps one wordless mini PAUSE that injects the same `pause` action (audit P1-2).
+	if run != null:
+		entry.set_process(false)
+		var saved_mode: int = er._mode
+		var saved_active: Node = er._active
+		var scripted := FootStub.new()
+		er.add_child(scripted)
+		scripted.control = false
+		er._active = scripted
+		er._mode = Ep2SessionRoot.Mode.CHAMBER
+		er._touch_changed()
+		MobileLayoutManager.refresh()
+		await _frames(2)
+		entry._sync_mini_pause()
+		await _frames(2)
+		var mini_ov: Ep2TouchOverlay = entry.get_overlay()
+		_check("a scripted beat shows the wordless mini PAUSE pad",
+			mini_ov != null and mini_ov.is_mini_visible() and mini_ov.pad_at(mini_ov.mini_center()) == Ep2TouchOverlay.PAD_MINI)
+		_check("...its hit target is >= 72 dp", mini_ov != null and mini_ov.mini_hit_radius() * 2.0 >= 72.0 * _dp(),
+			"%f" % (mini_ov.mini_hit_radius() * 2.0 if mini_ov != null else 0.0))
+		_check("...the ordinary touch layer is hidden underneath", not MobileLayoutManager.controls_visible)
+		if mini_ov != null:
+			_touch(0, true, mini_ov.mini_center())
+			await _frames(2)
+			_touch(0, false, mini_ov.mini_center())
+			await _wait_pulse()
+			_check("a tap on the mini PAUSE opens the same pause card",
+				entry.is_pause_open() and mini_ov.is_open() and StateMachine.is_paused() and get_tree().paused)
+			_check("...the card replaces the mini pad", not mini_ov.is_mini_visible())
+			_touch(0, true, mini_ov.play_center())
+			await _frames(2)
+			_touch(0, false, mini_ov.play_center())
+			await _frames(3)
+			_check("...PLAY resumes the scripted beat", not entry.is_pause_open() and StateMachine.is_playing() and not get_tree().paused)
+			entry._sync_mini_pause()
+			await _frames(2)
+			_check("...and the mini pad comes back while the beat is still scripted", mini_ov.is_mini_visible())
+		entry._close_pause()
+		er._active = saved_active
+		er._mode = saved_mode
+		er._touch_changed()
+		MobileLayoutManager.refresh()
+		entry._sync_mini_pause()
+		entry.set_process(true)
+		scripted.queue_free()
+		await _frames(3)
+		_check("(restore) the runner is active and the mini pad is gone",
+			er.get_active() == run and er.touch_profile() == &"ep2_runner" and not entry.get_overlay().is_mini_visible())
 	# the run ends: ep2_end, retry
 	if run != null:
 		entry._on_session_failed()
