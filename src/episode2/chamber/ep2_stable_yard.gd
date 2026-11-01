@@ -283,8 +283,10 @@ func _tree_multi(mesh: Mesh, transforms: Array, mat: Material, label: String) ->
 	mmi.name = label
 	mmi.multimesh = mm
 	mmi.material_override = mat
-	mmi.visibility_range_end = 190.0
-	mmi.visibility_range_end_margin = 12.0
+	# drawn at any distance (founder 2026-11-01: riding in, "we see the town in the far horizon and after some time we see the trees of
+	# Dude's ranch" - the ranch stands 160 m on THIS side of the town but its trees were cut at 190 m, so they popped in late, in
+	# front of a town that had been on the horizon all along). Two multimeshes: two draw calls at any range.
+	mmi.visibility_range_end = 0.0
 	add_child(mmi)
 
 

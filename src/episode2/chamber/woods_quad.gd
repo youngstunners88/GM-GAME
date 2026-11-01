@@ -308,7 +308,7 @@ func _build_steps() -> Array:
 		steps.append(Callable(self, "_build_forest_chunk").bind(i))
 	# the town is three steps (geometry, the crowd's street graph, the crowd): this room builds behind the lift ride, one step a frame,
 	# and the single town step was the stall just after the facility doorway (founder 2026-11-01)
-	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_desert, _build_town_set, _build_town_space,
+	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_desert, _build_lake_glimpse, _build_town_set, _build_town_space,
 		_build_town_crowd, _build_cart])
 	var n: int = SCOUTS.size() + ROAD_BEARS.size()
 	for k in int(ceil(float(n) / 3.0)):
@@ -2761,6 +2761,12 @@ func get_cart_node() -> Node3D: return _cart
 
 
 # --- out of the woods: the desert, the town, the drop-off (founder lock 2026-10-14) ------------------------------------------
+
+## Logan's Lake on the horizon (founder 2026-11-01 "Guns Buff" §6B): its far stand-in at the lake road's real end, east of the forest
+## exit - basin, water, a ring of pines and Logan's camp smoke rising over the forest edge.
+func _build_lake_glimpse() -> void:
+	Ep2LakeGlimpse.build(_visuals)
+
 
 ## The town and Fort Knox (Ep2GoldTown - the SAME build the town chamber makes, at the same coordinates).
 func _build_town() -> void:

@@ -26,6 +26,7 @@ func _ready() -> void:
 	_test_nav_cost()
 	_test_mount_gaze()
 	_test_stampede()
+	_test_horizon()
 	await _test_lake_horse()
 	print("EP2_RESIDUALS_1101: %s" % ("ALL PASS" if _failures == 0 else "%d FAILED" % _failures))
 	get_tree().quit(0 if _failures == 0 else 1)
@@ -376,6 +377,32 @@ func _test_stampede() -> void:
 	again.queue_free()
 	c.free()
 	GameManager.ep2_stampede_done = keep
+
+
+## Guns Buff §6: the horizon tells the truth - Dude's ranch trees are drawn at every range (they stand 160 m on this side of the town,
+## so they can never pop in late in front of it), and Logan's Lake stands where the lake road really ends, seen from the woods.
+func _test_horizon() -> void:
+	print("-- HORIZON: ranch before town, the lake where the road ends")
+	var root := Node3D.new()
+	add_child(root)
+	var props: Array = []
+	var walls: Array = []
+	Ep2StableYard.build(root, props, walls)
+	var ranges_ok: bool = true
+	var found: int = 0
+	for n in root.find_children("Ranch*", "MultiMeshInstance3D", true, false):
+		found += 1
+		ranges_ok = ranges_ok and (n as GeometryInstance3D).visibility_range_end == 0.0
+	_check("the ranch's trees are drawn at any distance (no late pop-in in front of the town)", found >= 2 and ranges_ok, "%d multimeshes" % found)
+	_check("the ranch stands between the forest and the town on the ride in", Ep2StableYard.PADDOCK.position.y < Ep2GoldTown.TOWN_Z
+		and Ep2StableYard.PADDOCK.position.y > WoodsQuadChamber.FOREST_END_Z)
+	var g: Node3D = Ep2LakeGlimpse.build(root)
+	var last: Vector2 = Ep2LakeRoad.POINTS[Ep2LakeRoad.POINTS.size() - 1]
+	_check("the woods' distant lake stands at the lake road's real end", g.position.distance_to(Ep2LakeRoad.ORIGIN + Vector3(last.x, 0, last.y)) < 40.0)
+	_check("...with water, a pine ring and Logan's camp smoke", g.find_child("GlimpseWater", true, false) != null
+		and g.find_child("GlimpseCampSmoke", true, false) != null and (g.find_child("GlimpsePines", true, false) != null or g.find_child("GlimpseCrowns", true, false) != null))
+	root.free()
+	_check("the woods build the glimpse among their build steps", "_build_lake_glimpse" in FileAccess.get_file_as_string("res://src/episode2/chamber/woods_quad.gd"))
 
 
 func _test_nav_cost() -> void:
