@@ -893,9 +893,11 @@ func _open_shop() -> void:
 
 # --- Dude's Chill Bud patch (founder 2026-11-01) --------------------------------------------------------------------------------
 
-## True beside the patch outside Dude's fence, whenever the stable yard itself may be used and no trade panel is already up.
+## True beside the patch outside Dude's fence whenever he has control and no trade panel is up - including GEARED, the moment he is
+## at the ranch about to ride for the lake (the stable yard's own talk rule is closed then).
 func can_use_bud_patch() -> bool:
-	return _stable_yard != null and not _shop_open and not _mounted and _stable_interaction_allowed() and Ep2BudPatch.in_reach(_player_pos)
+	return _stable_yard != null and not _shop_open and not _mounted and not _depart_mounted and not _show_active \
+		and has_player_control() and Ep2BudPatch.in_reach(_player_pos)
 
 
 func _open_patch() -> void:
