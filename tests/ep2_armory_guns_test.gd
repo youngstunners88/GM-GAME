@@ -53,14 +53,14 @@ func _ready() -> void:
 
 	print("-- THE SHOP: the Sharps is sold, the Gatling never")
 	var sold: Dictionary = Ep2ArmoryState.shop_item("sniper")
-	check("the long rifle in the Armory's stock IS the Sharps 1874 Buffalo Gun", "SHARPS 1874" in str(sold.get("name", "")) and "BUFFALO" in str(sold.get("name", "")), str(sold))
+	check("the long rifle in the Armory's stock IS the Sharps 1874 Buffalo Gun", "SHARPS 1874" in str(sold.get("note", "")) and "BUFFALO" in str(sold.get("name", "")), str(sold))
 	var stock_text: String = ""
 	for it in Ep2ArmoryState.SHOP:
 		stock_text += (str(it["id"]) + " " + str(it["name"]) + " " + str(it["note"])).to_lower() + " "
 	check("the Gatling is not in the Armory's stock under any name (it is a showpiece outside the shop)", not ("gatling" in stock_text or "colt" in stock_text))
 	var st := Ep2ArmoryState.new()
-	check("the personal armory has its six slots (the founder's coach gun, MP18 and golden Thompson joined 2026-11-01) and never a Gatling slot",
-		Ep2ArmoryState.IDS.size() == 6 and not Ep2ArmoryState.IDS.has("gatling") and not st.owns("gatling") and not st.purchase_firearm("gatling", "btc"))
+	check("the personal armory has the founder's eight slots (Borchardt + buffalo gun joined 2026-11-01 evening) and never a Gatling slot",
+		Ep2ArmoryState.IDS.size() == 8 and not Ep2ArmoryState.IDS.has("gatling") and not st.owns("gatling") and not st.purchase_firearm("gatling", "btc"))
 
 	print("-- THE POST: arc, rounds, plates")
 	var root := Node3D.new()

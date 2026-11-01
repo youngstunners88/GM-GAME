@@ -14,16 +14,24 @@ const PICK := "pickaxe"
 const SHOT := "coach_shotgun"
 const MP18 := "bergmann_mp18"
 const TOMMY := "thompson_gold"
-const IDS := [WIN, REM, BOW, SHOT, MP18, TOMMY]
-const NAMES := {WIN: "Winchester 1886", REM: "Golden Remington 1875", BOW: "Recovered Bear Bow",
-	SHOT: "Coach Gun", MP18: "Bergmann MP18", TOMMY: "Golden Thompson"}
-const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round", BOW: "bear_arrow", SHOT: "buckshot_shell", MP18: "nine_mm", TOMMY: "forty_five"}
+## The founder's locked set (2026-11-01 evening, "Guns Buff"): the Borchardt C-93 toggle-lock pistol and the Sharps buffalo gun join
+## the quick-switch armory (keys 7 and 8), so all eight of his guns can be bought, carried and re-bought after jail.
+## `SHOT` keeps its save id but is now his Winchester 1887 LEVER shotgun (the double-barrel coach gun was replaced by his Meshy model).
+const BORCH := "borchardt_c93"
+const BUFF := "sharps_buffalo"
+const IDS := [WIN, REM, BOW, SHOT, MP18, TOMMY, BORCH, BUFF]
+const NAMES := {WIN: "GM Lever Rifle", REM: "Golden BTC Revolver", BOW: "GM Bow",
+	SHOT: "Lever Shotgun", MP18: "Drum SMG", TOMMY: "Golden Thompson", BORCH: "Borchardt Pistol", BUFF: "Buffalo Gun"}
+const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round", BOW: "bear_arrow", SHOT: "buckshot_shell", MP18: "nine_mm", TOMMY: "forty_five",
+	BORCH: "seven_six_five", BUFF: "sharps_round"}
 ## Rounds that come with a gun when it is acquired (loaded + reserve; never refilled for free afterwards).
-const START_RESERVE := {WIN: 24, REM: 18, BOW: 0, SHOT: 12, MP18: 64, TOMMY: 100}
+const START_RESERVE := {WIN: 24, REM: 18, BOW: 0, SHOT: 10, MP18: 64, TOMMY: 100, BORCH: 16, BUFF: 10}
 ## The guns' game profiles. Feel-values (F - free to tune): the coach gun is two barrels of buckshot (wide hit cone, a heavy kick,
 ## shell-by-shell reload); the two submachine guns fire while the trigger is HELD and change a whole drum at once.
 const PROFILES := {
-	SHOT: {"capacity": 2, "cycle": 0.28, "reload": 0.55, "kick": 4.6, "pellets": 8, "hit_scale": 2.4},
+	SHOT: {"capacity": 5, "cycle": 0.62, "reload": 0.55, "kick": 4.6, "pellets": 8, "hit_scale": 2.4},
+	BORCH: {"capacity": 8, "cycle": 0.24, "reload": 1.6, "kick": 2.0, "drum": true},
+	BUFF: {"capacity": 1, "cycle": 1.1, "reload": 1.35, "kick": 6.5},
 	MP18: {"capacity": 32, "cycle": 0.1, "reload": 2.3, "kick": 0.75, "automatic": true, "drum": true},
 	TOMMY: {"capacity": 50, "cycle": 0.085, "reload": 2.7, "kick": 0.85, "automatic": true, "drum": true},
 }
@@ -31,9 +39,10 @@ const SWITCH_TIME := 0.18
 const VERSION := 1
 const CONTROL_FILE := "user://ep2_armory_controls.cfg"
 const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_previous", "ep2_armory",
-	"ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6"]
-## The quick-switch key for each slot in IDS order (1-6).
-const SLOT_ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6"]
+	"ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6", "ep2_weapon_7", "ep2_weapon_8"]
+## The quick-switch key for each slot in IDS order (1-8).
+const SLOT_ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6",
+	"ep2_weapon_7", "ep2_weapon_8"]
 ## The Armory (Rich & Utah, off Main Street) is the one PAID acquisition source.
 ## It sells firearms and ammunition for Episode 1 crypto; it never awards anything
 ## for free and respects the same finite reserve cap as earned ammunition.
@@ -42,21 +51,29 @@ const RESERVE_CAP := 2000
 ## The Armory's stock (single source of truth for the trade panel AND the chamber that debits it).
 ## Prices are feel-values in Episode 1 crypto coins (F - free to tune; never a protocol fact).
 const SHOP: Array = [
-	{"id": "sniper", "name": "SHARPS 1874 BUFFALO GUN", "note": "SET TRIGGERS - FOR THE OVERLOOK", "price": 3, "rounds": 0},
-	{"id": "sniper_ammo", "name": "SHARPS CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
-	{"id": "rifle_ammo", "name": "REPEATER CARTRIDGES", "note": "A BOX OF TWENTY-FOUR", "price": 1, "rounds": 24},
+	{"id": REM, "name": "GOLDEN BTC REVOLVER", "note": "SINGLE ACTION - BITCOIN CYLINDER", "price": 4, "rounds": 0},
 	{"id": "revolver_ammo", "name": "SIXGUN CARTRIDGES", "note": "A BOX OF EIGHTEEN", "price": 1, "rounds": 18},
-	{"id": "river_gear", "name": "RIVER GEAR", "note": "SKIFF AND SEALED CRATES", "price": 2, "rounds": 0},
-	{"id": SHOT, "name": "COACH GUN", "note": "DOUBLE BARREL - BUCKSHOT", "price": 3, "rounds": 0},
-	{"id": "shotgun_ammo", "name": "BUCKSHOT SHELLS", "note": "A BOX OF TWELVE", "price": 1, "rounds": 12},
-	{"id": MP18, "name": "BERGMANN MP18", "note": "SUBMACHINE GUN - SNAIL DRUM", "price": 4, "rounds": 0},
+	{"id": BOW, "name": "GM BOW", "note": "RECURVE - GM MEDALLION", "price": 2, "rounds": 0},
+	{"id": "arrows", "name": "GM ARROWS", "note": "A QUIVER OF TWELVE", "price": 1, "rounds": 12},
+	{"id": WIN, "name": "GM LEVER RIFLE", "note": "WINCHESTER 1886 - GM RECEIVER", "price": 3, "rounds": 0},
+	{"id": "rifle_ammo", "name": "REPEATER CARTRIDGES", "note": "A BOX OF TWENTY-FOUR", "price": 1, "rounds": 24},
+	{"id": BORCH, "name": "BORCHARDT PISTOL", "note": "C-93 TOGGLE LOCK - EIGHT ROUNDS", "price": 3, "rounds": 0},
+	{"id": "borchardt_ammo", "name": "7.65 BORCHARDT", "note": "TWO MAGAZINES - SIXTEEN", "price": 1, "rounds": 16},
+	{"id": SHOT, "name": "LEVER SHOTGUN", "note": "WINCHESTER 1887 - FIVE SHELLS", "price": 3, "rounds": 0},
+	{"id": "shotgun_ammo", "name": "BUCKSHOT SHELLS", "note": "A BOX OF TEN", "price": 1, "rounds": 10},
+	{"id": "sniper", "name": "BUFFALO GUN", "note": "SHARPS 1874 - LADDER SIGHT", "price": 3, "rounds": 0},
+	{"id": "sniper_ammo", "name": "SHARPS CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
+	{"id": MP18, "name": "DRUM SMG", "note": "BERGMANN MP18 - SNAIL DRUM", "price": 4, "rounds": 0},
 	{"id": "mp18_ammo", "name": "9MM SNAIL DRUMS", "note": "TWO DRUMS - SIXTY-FOUR", "price": 1, "rounds": 64},
 	{"id": TOMMY, "name": "GOLDEN THOMPSON", "note": "1928 - FIFTY-ROUND DRUM", "price": 6, "rounds": 0},
 	{"id": "tommy_ammo", "name": ".45 DRUMS", "note": "TWO DRUMS - ONE HUNDRED", "price": 2, "rounds": 100},
+	{"id": "river_gear", "name": "RIVER GEAR", "note": "SKIFF AND SEALED CRATES", "price": 2, "rounds": 0},
 ]
-## Shop rows that sell a firearm of the quick-switch armory, and the ammunition row that belongs to each gun.
-const SHOP_GUNS := [SHOT, MP18, TOMMY]
-const SHOP_AMMO := {"rifle_ammo": WIN, "revolver_ammo": REM, "shotgun_ammo": SHOT, "mp18_ammo": MP18, "tommy_ammo": TOMMY}
+## Shop rows that sell a firearm of the quick-switch armory, and the ammunition row that belongs to each gun. The buffalo gun keeps its
+## story row id "sniper" (the day-88 overlook checks `sniper_owned`); buying it also puts the Sharps in the quick-switch armory (BUFF).
+const SHOP_GUNS := [REM, BOW, WIN, BORCH, SHOT, MP18, TOMMY]
+const SHOP_AMMO := {"rifle_ammo": WIN, "revolver_ammo": REM, "arrows": BOW, "borchardt_ammo": BORCH, "shotgun_ammo": SHOT,
+	"mp18_ammo": MP18, "tommy_ammo": TOMMY}
 
 
 static func shop_item(id: String) -> Dictionary:
@@ -80,6 +97,9 @@ var corpses: Dictionary = {}
 var sniper_owned: bool = false
 var sniper_rounds: int = 0
 var river_gear: bool = false
+## Guns the Sheriff is holding (jail). Each one comes back when the story returns the irons, or the moment Lil Blunt buys it again
+## at Rich & Utah's (founder 2026-11-01: "upon release Lil Blunt needs to be able to acquire them").
+var held: Dictionary = {}
 var _guns: Dictionary = {}
 var _switch_t: float = 0.0
 
@@ -161,9 +181,49 @@ func acquire(id: String, source: Ep2Winchester = null) -> bool:
 ## debits it before asking. A purchase never re-sells an owned gun and never marks
 ## ammunition free (the finite reserve cap is unchanged).
 func purchase_firearm(id: String, tender: String) -> bool:
-	if not IDS.has(id) or owns(id) or not ARMORY_TENDER.has(tender):
+	if not IDS.has(id) or not ARMORY_TENDER.has(tender):
 		return false
-	return acquire(id)
+	if owns(id):
+		if not is_held(id):
+			return false
+		# re-bought after jail: a fresh gun off Rich's rack, loaded, with its starting box
+		held.erase(id)
+		var gun: Ep2Winchester = firearm(id)
+		gun.cancel_reload()
+		gun.locked = false
+		gun.reload_locked = false
+		if id == BOW:
+			arrows = maxi(arrows, 12)
+			(gun as Ep2Bow).rounds = arrows
+		else:
+			gun.rounds = gun.capacity
+			gun.reserve = maxi(gun.reserve, int(START_RESERVE.get(id, 18)))
+		_take_up(id)
+		changed.emit()
+		return true
+	if not acquire(id):
+		return false
+	if id == BOW and arrows < 12:
+		arrows = 12
+		(firearm(BOW) as Ep2Bow).rounds = arrows
+	if firearms_confiscated:
+		_take_up(id)
+	changed.emit()
+	return true
+
+
+## A gun bought while the Sheriff holds the rest goes straight into Lil Blunt's hands (no pickaxe-only walk out of Rich's).
+func _take_up(id: String) -> void:
+	if equipped == id:
+		return
+	if IDS.has(equipped) and not is_held(equipped):
+		previous = equipped
+	equipped = id
+	_switch_t = SWITCH_TIME
+
+
+func is_held(id: String) -> bool:
+	return bool(held.get(id, false))
 
 
 func purchase_ammo(id: String, rounds: int, tender: String) -> bool:
@@ -184,9 +244,17 @@ func purchase_ammo(id: String, rounds: int, tender: String) -> bool:
 
 ## The day-88 long rifle: a one-time Armory purchase (Episode 1 crypto only).
 func purchase_sniper(tender: String) -> bool:
-	if sniper_owned or not ARMORY_TENDER.has(tender):
+	if not ARMORY_TENDER.has(tender):
+		return false
+	if sniper_owned and owns(BUFF) and not is_held(BUFF):
 		return false
 	sniper_owned = true
+	if owns(BUFF):
+		return purchase_firearm(BUFF, tender) or true
+	acquire(BUFF)
+	firearm(BUFF).reserve = maxi(firearm(BUFF).reserve, sniper_rounds)
+	if firearms_confiscated:
+		_take_up(BUFF)
 	changed.emit()
 	return true
 
@@ -196,6 +264,8 @@ func purchase_sniper_ammo(rounds: int, tender: String) -> bool:
 	if not sniper_owned or rounds <= 0 or sniper_rounds >= RESERVE_CAP or not ARMORY_TENDER.has(tender):
 		return false
 	sniper_rounds = mini(sniper_rounds + rounds, RESERVE_CAP)
+	if owns(BUFF):
+		firearm(BUFF).reserve = mini(firearm(BUFF).reserve + rounds, RESERVE_CAP)
 	changed.emit()
 	return true
 
@@ -228,6 +298,10 @@ func confiscate_firearms() -> void:
 		current.set_aim(false)
 	if IDS.has(equipped):
 		previous = equipped
+	held.clear()
+	for id in IDS:
+		if owns(id):
+			held[id] = true
 	firearms_confiscated = true
 	equipped = PICK
 	_switch_t = 0.0
@@ -240,6 +314,11 @@ func return_firearms() -> void:
 	if not firearms_confiscated:
 		return
 	firearms_confiscated = false
+	held.clear()
+	if IDS.has(equipped) and owns(equipped):
+		changed.emit()                 # he already bought a gun back at Rich's: keep it in his hands
+		firearms_returned.emit()
+		return
 	var choice: String = previous if IDS.has(previous) and owns(previous) else ""
 	if choice == "":
 		for id in IDS:
@@ -259,7 +338,7 @@ func return_firearms() -> void:
 
 
 func select(id: String) -> bool:
-	if firearms_confiscated or not owns(id) or id == equipped:
+	if is_held(id) or not owns(id) or id == equipped:
 		return false
 	active_gun().cancel_reload()
 	active_gun().set_aim(false)
@@ -276,9 +355,9 @@ func select_previous() -> bool:
 
 
 func ready() -> bool:
-	if firearms_confiscated:
-		return equipped == PICK
-	return owns(equipped) and _switch_t <= 0.0
+	if equipped == PICK:
+		return firearms_confiscated
+	return owns(equipped) and not is_held(equipped) and _switch_t <= 0.0
 
 
 func step(delta: float) -> void:
@@ -318,7 +397,7 @@ func snapshot() -> Dictionary:
 	return {"version": VERSION, "weapons": weapons, "equipped": equipped, "previous": previous,
 		"arrows": arrows, "corpses": corpses.duplicate(true), "switch_t": _switch_t,
 		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear,
-		"confiscated": firearms_confiscated}
+		"confiscated": firearms_confiscated, "held": held.keys()}
 
 
 func restore(data: Dictionary, earned_remington: bool = false) -> void:
@@ -354,8 +433,14 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 					corpses[str(id)] = {"arrows": clampi(SaveSafe.to_int(records[id].get("arrows", 0)), 0, 100), "searched": bool(records[id].get("searched", false)), "bow": bool(records[id].get("bow", false))}
 	(firearm(BOW) as Ep2Bow).rounds = arrows
 	firearms_confiscated = valid and bool(data.get("confiscated", false))
-	var wanted: String = str(data.get("equipped", REM if owns(REM) else WIN))
+	held.clear()
 	if firearms_confiscated:
+		var kept: Variant = data.get("held", null)
+		for id in IDS:
+			if owns(id) and (not kept is Array or (kept as Array).has(id)):
+				held[id] = true          # a save from before per-gun holds: everything he owned is held
+	var wanted: String = str(data.get("equipped", REM if owns(REM) else WIN))
+	if firearms_confiscated and (not IDS.has(wanted) or is_held(wanted) or not owns(wanted)):
 		equipped = PICK
 	else:
 		equipped = wanted
@@ -366,6 +451,14 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 		previous = str(data["previous"])
 	sniper_owned = valid and bool(data.get("sniper", false))
 	sniper_rounds = clampi(SaveSafe.to_int(data.get("sniper_rounds", 0)), 0, RESERVE_CAP) if sniper_owned else 0
+	if sniper_owned and not owns(BUFF):
+		# a save from before the buffalo gun joined the quick-switch armory: the Sharps he paid for is in it
+		owned[BUFF] = true
+		var sharps: Ep2Winchester = firearm(BUFF)
+		sharps.rounds = sharps.capacity
+		sharps.reserve = sniper_rounds
+		sharps.locked = false
+		sharps.reload_locked = false
 	river_gear = valid and bool(data.get("river_gear", false))
 	_switch_t = clampf(SaveSafe.to_float(data.get("switch_t", 0)), 0.0, SWITCH_TIME) if valid else 0.0
 	changed.emit()
@@ -382,7 +475,8 @@ static func install_actions() -> void:
 	config.load(CONTROL_FILE)
 	var bindings: Dictionary = {"ep2_weapon_1": [KEY_1, JOY_BUTTON_LEFT_SHOULDER], "ep2_weapon_2": [KEY_2, JOY_BUTTON_RIGHT_SHOULDER],
 		"ep2_weapon_3": [KEY_3, JOY_BUTTON_DPAD_UP], "ep2_weapon_previous": [KEY_Q, JOY_BUTTON_Y], "ep2_armory": [KEY_TAB, JOY_BUTTON_BACK],
-		"ep2_weapon_4": [KEY_4, JOY_BUTTON_DPAD_RIGHT], "ep2_weapon_5": [KEY_5, JOY_BUTTON_DPAD_DOWN], "ep2_weapon_6": [KEY_6, JOY_BUTTON_DPAD_LEFT]}
+		"ep2_weapon_4": [KEY_4, JOY_BUTTON_DPAD_RIGHT], "ep2_weapon_5": [KEY_5, JOY_BUTTON_DPAD_DOWN], "ep2_weapon_6": [KEY_6, JOY_BUTTON_DPAD_LEFT],
+		"ep2_weapon_7": [KEY_7, JOY_BUTTON_LEFT_STICK], "ep2_weapon_8": [KEY_8, JOY_BUTTON_RIGHT_STICK]}
 	for action in bindings:
 		if InputMap.has_action(action):
 			continue             # existing custom/rebound controls take precedence

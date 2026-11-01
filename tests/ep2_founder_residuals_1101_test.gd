@@ -62,6 +62,8 @@ func _test_new_guns() -> void:
 	print("-- ARMORY: coach gun, Bergmann MP18, golden Thompson")
 	for id in Ep2ArmoryState.SHOP_GUNS:
 		_check("%s is sold at Rich & Utah's for crypto" % id, not Ep2ArmoryState.shop_item(id).is_empty() and int(Ep2ArmoryState.shop_item(id)["price"]) > 0)
+		if not Ep2ArmoryGunView.has_view(id):
+			continue          # the Winchester, golden revolver and bow keep their own first-person views
 		_check("%s has a first-person model, an icon and report sounds" % id, Ep2ArmoryGunView.model(id) != null and Ep2ArmoryGunView.icon(id) != null
 			and ResourceLoader.exists("res://src/assets/sounds/%s.mp3" % str(Ep2ArmoryGunView.SOUNDS[id][0])))
 	var st := Ep2ArmoryState.new()
@@ -88,7 +90,7 @@ func _test_new_guns() -> void:
 	_check("a drum reload fills the whole drum in one change", mp18.rounds == 32 and mp18.reserve == reserve - 32)
 	_check("the Thompson carries a fifty-round drum", (st.firearm(Ep2ArmoryState.TOMMY) as Ep2Winchester).capacity == 50)
 	var coach: Ep2Winchester = st.firearm(Ep2ArmoryState.SHOT)
-	_check("the coach gun is two barrels of buckshot with a heavy kick", coach.capacity == 2 and coach.pellets > 1 and coach.hit_scale > 1.5
+	_check("the lever shotgun (founder's Winchester 1887) holds five shells of buckshot with a heavy kick", coach.capacity == 5 and coach.pellets > 1 and coach.hit_scale > 1.5
 		and coach.kick_rad() > (st.firearm(Ep2ArmoryState.WIN) as Ep2Winchester).kick_rad())
 	_check("ammunition for an unowned new gun is refused", not st.purchase_ammo(Ep2ArmoryState.TOMMY, 50, "btc"))
 	_check("the long-standing guns keep their profiles", (st.firearm(Ep2ArmoryState.WIN) as Ep2Winchester).capacity == Ep2Winchester.MAG
@@ -97,6 +99,49 @@ func _test_new_guns() -> void:
 	var back := Ep2ArmoryState.new()
 	back.restore(saved)
 	_check("a bought MP18 survives save and restore", back.owns(Ep2ArmoryState.MP18) and not back.owns(Ep2ArmoryState.TOMMY))
+	_test_guns_buff()
+
+
+## "Guns Buff" (founder 2026-11-01 evening): all eight of his guns at Rich & Utah's, his Meshy models, rebuy after jail.
+func _test_guns_buff() -> void:
+	print("-- GUNS BUFF: eight guns, Meshy models, jail rebuy")
+	for id in [Ep2ArmoryState.REM, Ep2ArmoryState.BOW, Ep2ArmoryState.WIN, Ep2ArmoryState.BORCH, Ep2ArmoryState.SHOT, Ep2ArmoryState.MP18, Ep2ArmoryState.TOMMY]:
+		_check("%s is a row of Rich's stock" % id, not Ep2ArmoryState.shop_item(id).is_empty())
+	_check("the buffalo gun is a row of Rich's stock (story id 'sniper')", "BUFFALO" in str(Ep2ArmoryState.shop_item("sniper").get("name", "")))
+	for ammo in ["revolver_ammo", "arrows", "rifle_ammo", "borchardt_ammo", "shotgun_ammo", "sniper_ammo", "mp18_ammo", "tommy_ammo"]:
+		_check("Rich sells %s" % ammo, int(Ep2ArmoryState.shop_item(ammo).get("rounds", 0)) > 0)
+	for id in Ep2ArmoryGunView.MESHY_MODELS:
+		var view: Node3D = Ep2ArmoryGunView.make(id)
+		_check("%s is the founder's Meshy model (his gun with Lil Blunt's hands)" % id, Ep2ArmoryGunView.meshy(id) and view.get_meta("meshy", false) and view.get_node_or_null("Gun") != null)
+		view.free()
+	var st := Ep2ArmoryState.post_hideout()
+	st.purchase_firearm(Ep2ArmoryState.MP18, "btc")
+	_check("buying the buffalo gun puts the Sharps in his quick-switch armory", st.purchase_sniper("eth") and st.sniper_owned and st.owns(Ep2ArmoryState.BUFF))
+	_check("Sharps cartridges feed the quick-switch Sharps too", st.purchase_sniper_ammo(10, "btc") and st.firearm(Ep2ArmoryState.BUFF).reserve >= 10)
+	st.confiscate_firearms()
+	_check("jail: every owned gun is held, he carries the pick", st.is_held(Ep2ArmoryState.WIN) and st.is_held(Ep2ArmoryState.MP18) and st.is_held(Ep2ArmoryState.BUFF) and st.equipped == Ep2ArmoryState.PICK)
+	_check("a held gun cannot be selected", not st.select(Ep2ArmoryState.MP18))
+	_check("after jail Rich sells a held gun again and it goes straight into his hands", st.purchase_firearm(Ep2ArmoryState.MP18, "sol")
+		and not st.is_held(Ep2ArmoryState.MP18) and st.equipped == Ep2ArmoryState.MP18 and st.firearm(Ep2ArmoryState.MP18).rounds == 32)
+	_check("a gun he never owned bought while the rest are held is usable too", st.purchase_firearm(Ep2ArmoryState.BORCH, "btc") and st.equipped == Ep2ArmoryState.BORCH)
+	_check("the other guns stay held until he buys them or leaves town", st.is_held(Ep2ArmoryState.WIN) and not st.select(Ep2ArmoryState.WIN))
+	var shop := Ep2ArmoryShop.new()
+	shop.state = st
+	_check("the panel offers the held Winchester for sale again", not shop._owned(Ep2ArmoryState.shop_item(Ep2ArmoryState.WIN)))
+	shop.free()
+	var kept: Dictionary = st.snapshot()
+	var back := Ep2ArmoryState.new()
+	back.restore(kept)
+	_check("holds and the rebought gun survive save and restore", back.is_held(Ep2ArmoryState.WIN) and not back.is_held(Ep2ArmoryState.MP18) and back.equipped == Ep2ArmoryState.BORCH)
+	st.return_firearms()
+	_check("leaving town returns every held gun and keeps the one in his hands", not st.is_held(Ep2ArmoryState.WIN) and st.equipped == Ep2ArmoryState.BORCH and st.select(Ep2ArmoryState.WIN))
+	var old := Ep2ArmoryState.new()
+	var legacy: Dictionary = Ep2ArmoryState.post_hideout().snapshot()
+	legacy["sniper"] = true
+	legacy["sniper_rounds"] = 7
+	(legacy["weapons"] as Dictionary).erase(Ep2ArmoryState.BUFF)
+	old.restore(legacy)
+	_check("an older save that bought the Sharps gets it in the quick-switch armory", old.owns(Ep2ArmoryState.BUFF) and old.firearm(Ep2ArmoryState.BUFF).reserve == 7)
 
 
 # --- 3. the showcase -----------------------------------------------------------------------------------------------------------

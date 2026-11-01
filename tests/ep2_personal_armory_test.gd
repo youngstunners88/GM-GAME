@@ -50,8 +50,9 @@ func _ready() -> void:
 	for item in Ep2ArmoryState.SHOP:
 		ids.append(str(item.get("id", "")))
 	_check("the catalogue is well formed and single-sourced (id / name / note / price / rounds)",
-		ids == ["sniper", "sniper_ammo", "rifle_ammo", "revolver_ammo", "river_gear",
-			Ep2ArmoryState.SHOT, "shotgun_ammo", Ep2ArmoryState.MP18, "mp18_ammo", Ep2ArmoryState.TOMMY, "tommy_ammo"]
+		ids == [Ep2ArmoryState.REM, "revolver_ammo", Ep2ArmoryState.BOW, "arrows", Ep2ArmoryState.WIN, "rifle_ammo",
+			Ep2ArmoryState.BORCH, "borchardt_ammo", Ep2ArmoryState.SHOT, "shotgun_ammo", "sniper", "sniper_ammo",
+			Ep2ArmoryState.MP18, "mp18_ammo", Ep2ArmoryState.TOMMY, "tommy_ammo", "river_gear"]
 		and int(Ep2ArmoryState.shop_item("sniper").get("price", 0)) > 0
 		and int(Ep2ArmoryState.shop_item("rifle_ammo").get("rounds", 0)) == 24
 		and Ep2ArmoryState.shop_item("no_such_item").is_empty())
@@ -238,7 +239,7 @@ func _ready() -> void:
 	var icons_ok: bool = true
 	for id in Ep2ArmoryState.IDS:
 		icons_ok = icons_ok and hud._panel.ICONS.has(id) and hud._panel.ICONS[id].get_width() == 640
-	_check("six weapon cards (founder 2026-11-01 added the coach gun, MP18, golden Thompson), every icon 640 wide", icons_ok and hud._slots.size() == 6)
+	_check("eight weapon cards (the founder's locked set, 2026-11-01 evening), every icon 640 wide", icons_ok and hud._slots.size() == Ep2ArmoryState.IDS.size() and Ep2ArmoryState.IDS.size() == 8)
 	key.physical_keycode = KEY_1
 	Input.parse_input_event(key)
 	await get_tree().process_frame

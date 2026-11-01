@@ -43,7 +43,7 @@ var footer_b: String = "NO FREE IRON IN THIS TOWN"
 ## highlight moves, and stops rendering while the panel is closed.
 const SHOWCASE_SPEED := 0.55                 # rad/s
 const SHOWCASE_TILT := 0.16
-const WINCHESTER_MODEL := "res://src/episode2/assets/winchester_1886.glb"
+const WINCHESTER_MODEL := "res://src/episode2/assets/weapons/winchester_1886_founder.glb"   # his GM lever rifle
 const REMINGTON_MODEL := "res://src/episode2/assets/weapons/armory/remington_1875_gold.glb"
 var showcase_key: String = ""                # which model is in the case now ("" = empty case); tests read it
 var showcase_spin: float = 0.0               # radians the current piece has turned
@@ -81,7 +81,7 @@ func _showcase_key_for(item: Dictionary) -> String:
 	if Ep2ArmoryState.SHOP_AMMO.has(id):
 		return str(Ep2ArmoryState.SHOP_AMMO[id])
 	if id == "sniper" or id == "sniper_ammo":
-		return "sniper"
+		return Ep2ArmoryState.BUFF if Ep2ArmoryGunView.meshy(Ep2ArmoryState.BUFF) else "sniper"
 	return ""
 
 
@@ -94,7 +94,9 @@ func _showcase_model(key: String) -> Node3D:
 		Ep2ArmoryState.WIN:
 			path = WINCHESTER_MODEL
 		Ep2ArmoryState.REM:
-			path = REMINGTON_MODEL
+			return Ep2RemingtonView.make_held()          # the founder's golden BTC revolver, gun only
+		Ep2ArmoryState.BOW:
+			path = Ep2ArmoryGunView.MESHY_BOW if Ep2Extras.has(Ep2ArmoryGunView.MESHY_BOW) else (Ep2Extras.BOW if Ep2Extras.has(Ep2Extras.BOW) else "")
 		"sniper":
 			path = Ep2Extras.SHARPS if Ep2Extras.has(Ep2Extras.SHARPS) else ""
 	if path == "" or not ResourceLoader.exists(path):
@@ -349,13 +351,13 @@ func _owned(item: Dictionary) -> bool:
 	var id: String = str(item["id"])
 	match id:
 		"sniper":
-			return state != null and state.sniper_owned
+			return state != null and state.sniper_owned and not state.is_held(Ep2ArmoryState.BUFF)
 		"river_gear":
 			return state != null and state.river_gear
 		"sniper_ammo":
 			return state != null and state.sniper_rounds >= Ep2ArmoryState.RESERVE_CAP
 	if Ep2ArmoryState.SHOP_GUNS.has(id):
-		return state != null and state.owns(id)
+		return state != null and state.owns(id) and not state.is_held(id)     # held by the Sheriff -> for sale again
 	if Ep2ArmoryState.SHOP_AMMO.has(id):
 		var gun_id: String = str(Ep2ArmoryState.SHOP_AMMO[id])
 		return state != null and state.owns(gun_id) and (state.firearm(gun_id) as Ep2Winchester).reserve >= Ep2ArmoryState.RESERVE_CAP

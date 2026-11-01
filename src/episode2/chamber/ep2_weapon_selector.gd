@@ -9,6 +9,8 @@ const ICONS := {
 	Ep2ArmoryState.SHOT: preload("res://src/episode2/assets/weapons/armory/coach_shotgun_icon.png"),
 	Ep2ArmoryState.MP18: preload("res://src/episode2/assets/weapons/armory/bergmann_mp18_icon.png"),
 	Ep2ArmoryState.TOMMY: preload("res://src/episode2/assets/weapons/armory/thompson_gold_icon.png"),
+	Ep2ArmoryState.BORCH: preload("res://src/episode2/assets/weapons/armory/borchardt_icon.png"),
+	Ep2ArmoryState.BUFF: preload("res://src/episode2/assets/weapons/armory/sharps_buffalo_icon.png"),
 }
 ## The purse (founder 2026-10-24: "Lil Blunt has been collecting Eth, BTC, WBTC, Solana and TitanX. These need to be reflected in the
 ## tab when he is selecting his weapon"): the game's own coin art for each token, in GameManager.PURSE_TOKENS order.
@@ -94,7 +96,7 @@ func supply_gui_point(point: Vector2) -> bool:
 
 ## Previewing never changes the ammunition/reload transaction; release commits once in the host.
 func preview(id: String) -> void:
-	if state != null and not state.firearms_confiscated and state.owns(id):
+	if state != null and not state.is_held(id) and state.owns(id):
 		bud_selected = false
 		refresh_supplies()
 		highlighted = id
@@ -113,7 +115,7 @@ func _process(_delta: float) -> void:
 	for i in cards.size():
 		cards[i].position = card_rect(i).position
 		cards[i].size = card_rect(i).size
-		cards[i].disabled = state == null or state.firearms_confiscated or not state.owns(Ep2ArmoryState.IDS[i])
+		cards[i].disabled = state == null or state.is_held(Ep2ArmoryState.IDS[i]) or not state.owns(Ep2ArmoryState.IDS[i])
 	var band: Rect2 = _ledger_band()
 	var action_width: float = 112.0 if size.x < 650 else 150.0
 	var supply_scale: float = _supply_scale()
@@ -172,14 +174,14 @@ func card_rect(i: int) -> Rect2:
 		var y: float = top + maxf(0.0, (available - used) * 0.25)
 		var x0: float = (size.x - total_w) * 0.5
 		return Rect2(Vector2(x0 + float(i % cols) * (w + 10.0), y + floorf(float(i) / float(cols)) * (h + 10.0)), Vector2(w, h))
-	var cols_w: int = 3
+	var cols_w: int = 4 if n > 6 else 3          # the founder's eight guns: two rows of four
 	var rows_w: int = int(ceil(float(n) / float(cols_w)))
 	var top_w: float = _ledger_band().end.y + 14.0
 	var available_w: float = maxf(120.0, size.y - top_w - 88.0)
 	var h_w: float = maxf(70.0, minf(260.0, (available_w - 12.0 * float(rows_w - 1)) / float(rows_w)))
 	var y_w: float = top_w + maxf(0.0, (available_w - h_w * float(rows_w) - 12.0 * float(rows_w - 1)) * 0.30)
-	var w_w: float = minf(460.0, (size.x - 96.0) / 3.0)
-	return Rect2(Vector2(size.x * 0.5 + float(i % cols_w - 1) * (w_w + 14.0) - w_w * 0.5, y_w + floorf(float(i) / float(cols_w)) * (h_w + 12.0)), Vector2(w_w, h_w))
+	var w_w: float = minf(460.0, (size.x - 96.0) / float(cols_w))
+	return Rect2(Vector2(size.x * 0.5 + (float(i % cols_w) - float(cols_w - 1) * 0.5) * (w_w + 14.0) - w_w * 0.5, y_w + floorf(float(i) / float(cols_w)) * (h_w + 12.0)), Vector2(w_w, h_w))
 
 func _text(text: String, p: Vector2, font_size: int, color: Color = PAPER, centered: bool = false) -> void:
 	drawn_text.append(text)
@@ -258,7 +260,7 @@ func _draw() -> void:
 	_text("BEAR ARROWS  ·  %d" % state.arrows,Vector2(mid,footer_y),13,BRASS,true)
 	_text("TIME STANDS STILL",Vector2(mid,footer_y+26),12,PAPER,true)
 	if keys:
-		var hint: String = "Hold %s / Back · point or choose 1 - 6 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
+		var hint: String = "Hold %s / Back · point or choose 1 - %d · release to equip" % [Ep2ArmoryState.key_label("ep2_armory"), Ep2ArmoryState.IDS.size()]
 		if compact:
 			hint = "Hold holster · drag to a weapon · release"
 		_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)
@@ -268,8 +270,8 @@ func _draw() -> void:
 func card_status(id: String) -> String:
 	if state == null:
 		return ""
-	if state.firearms_confiscated and state.owns(id):
-		return "HELD BY THE SHERIFF"
+	if state.is_held(id):
+		return "HELD - REBUY AT RICH & UTAH'S"
 	if not state.owns(id):
 		if Ep2ArmoryState.SHOP_GUNS.has(id):
 			return "SOLD AT RICH & UTAH'S"
