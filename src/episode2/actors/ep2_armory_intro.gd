@@ -270,7 +270,9 @@ func _say(who: String, text: String) -> void:
 	shown_lines.append([who, text])
 	_line_t = LINE_S
 	if not voice_seconds.is_null():
-		_line_t = maxf(LINE_S, float(voice_seconds.call(who, text)))
+		# the recorded take decides (founder 2026-11-01: no awkward pause); LINE_S is only the standalone/no-voice default
+		var voiced_t: float = float(voice_seconds.call(who, text))
+		_line_t = voiced_t if voiced_t > 0.0 else LINE_S
 	said.emit(who, text, _line_t - 0.15)
 
 

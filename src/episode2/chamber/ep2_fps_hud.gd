@@ -390,6 +390,19 @@ func toast(text: String, seconds: float = 1.6, token: int = Token.NONE) -> void:
 	_toast_t = seconds
 
 
+## Every spoken line the rooms handed to `speech()` ("WHO: words"), newest last (tests read it; nothing draws it).
+var speech_log: Array[String] = []
+
+## A character's spoken line (founder 2026-11-01: no subtitles). A voiced line is heard, not read: it is logged and never drawn.
+## A line whose take is missing falls back to the old toast so the words still reach the player (see Ep2Speech).
+func speech(text: String, seconds: float, voiced: bool) -> void:
+	speech_log.append(text)
+	if speech_log.size() > 64:
+		speech_log.remove_at(0)
+	if not voiced:
+		toast(text, seconds)
+
+
 ## Lil Blunt got hurt: a hot red-orange flash that fades over half a second.
 func hurt() -> void:
 	_hurt_t = 0.55

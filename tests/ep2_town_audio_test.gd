@@ -61,7 +61,9 @@ func _ready() -> void:
 		var text: String = Ep2ArmoryIntro.SHARPS_LINES[3][1]
 		c._intro._say("RICH", text)
 		var id: String = Ep2TownVoiceBank.id_for("rich", text)
-		check("Rich's full gun explanation has its recorded duration", c._intro._line_t >= Ep2TownVoiceBank.seconds(id) and c._intro._line_t > 4.2)
+		# founder 2026-11-01 ("awkward delay"): the line holds for the whole recording plus a short breath (Ep2Speech.GAP), never longer
+		var take: float = Ep2TownVoiceBank.stream(id).get_length() if Ep2TownVoiceBank.stream(id) != null else 0.0
+		check("Rich's full gun explanation has its recorded duration", take > 4.2 and c._intro._line_t >= take and c._intro._line_t <= take + 0.2)
 		check("Rich's intro really plays the recorded stream", AudioManager._voice_player != null and AudioManager._voice_player.stream == Ep2TownVoiceBank.stream(id))
 		# founder 2026-10-25 "people VO overshadowed by music": the normalized takes get a small lift (TOWN_TAKE_GAIN_DB), never the +6 dB
 		# announcer boost that clipped them - the loudest take peaks at -2.8 dBTP, so the lift must keep it under 0 dBTP

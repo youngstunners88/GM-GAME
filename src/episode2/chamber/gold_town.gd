@@ -231,6 +231,7 @@ var _rich_brain: Ep2ArmoryBrain = null          # the two-storey Armory only
 var _utah_brain: Ep2ArmoryBrain = null
 var _shop: Ep2ArmoryShop = null
 var _shop_layer: CanvasLayer = null
+var _patch_shop: Ep2BudPatchShop = null
 var _shop_open: bool = false
 var _shop_bought: bool = false
 var _town_audio: Ep2TownSoundscape = null
@@ -321,7 +322,10 @@ func _build_room() -> void:
 
 
 func _build_steps() -> Array:
-	return [_step_light, _step_ground, _step_town, _step_desert, _step_people, _step_town_audio]
+	# The cast is five steps, not one (founder 2026-11-01, "a glitch delay by the quad bike"): this room is prebuilt behind the woods
+	# from the quad's reveal on, and every step runs inside one frame - the old single people step was the frozen frame at the quad.
+	return [_step_light, _step_ground, _step_town, _step_desert, _step_people_core, _step_people_armory, _step_people_space,
+		_step_people_crowd, _step_people_after, _step_town_audio]
 
 
 func _step_town_audio() -> void:
@@ -341,7 +345,7 @@ func _town_speaker(who: String) -> String:
 func _town_line(who: String, text: String) -> void:
 	var id: String = Ep2TownVoiceBank.id_for(_town_speaker(who), text)
 	if _hud != null:
-		_hud.toast("%s: %s" % [who, text], Ep2TownVoiceBank.seconds(id))
+		_hud.speech("%s: %s" % [who, text], Ep2Speech.pace(id, text), Ep2Speech.voiced(id))
 	if id != "": _speak(id)
 
 
@@ -405,7 +409,17 @@ func _step_desert() -> void:
 		Ep2GoldTown.scrub_mat(), Ep2GoldTown.desert_rock_mat(), Ep2GoldTown.TOWN_Z - 260.0)
 
 
+## The whole cast in one call (the old single step; the prebuild runs the five parts on separate frames).
 func _step_people() -> void:
+	_step_people_core()
+	_step_people_armory()
+	_step_people_space()
+	_step_people_crowd()
+	_step_people_after()
+
+
+## The draw's cast: the Sheriff, the barman, the stranger with his Peacemaker, the glass, the coin and the muzzle light.
+func _step_people_core() -> void:
 	_build_sheriff()
 	_bartender = Ep2TownFolk.new()
 	_bartender.name = "Bartender"
@@ -437,10 +451,24 @@ func _step_people() -> void:
 	_flash.omni_range = 6.0
 	_flash.light_energy = 0.0
 	_visuals.add_child(_flash)
+
+
+func _step_people_armory() -> void:
 	_build_armory_folk()
+
+
+## The townspeople's street graph (Ep2TownNavigation, now bucketed: ~0.3 s instead of ~9 s).
+func _step_people_space() -> void:
 	_people = Ep2TownPeople.new()
 	_people.configure_space(_town_col)
+
+
+func _step_people_crowd() -> void:
 	_people.build(_visuals)
+
+
+## The jail, the shopkeepers, Inferno (hidden until he rides back) and the town law.
+func _step_people_after() -> void:
 	_build_jail_folk()
 	_build_shopkeepers()
 	if _bull == null:
@@ -607,7 +635,7 @@ func _build_guns() -> void:
 	_intro.utah = _utah_brain
 	_intro.gatling = _gatling
 	_intro.sharps_price = int(Ep2ArmoryState.shop_item("sniper").get("price", PRICE_SNIPER))
-	_intro.voice_seconds = func(who: String, text: String) -> float: return Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(_town_speaker(who), text))
+	_intro.voice_seconds = func(who: String, text: String) -> float: return Ep2Speech.pace(Ep2TownVoiceBank.id_for(_town_speaker(who), text), text)
 	if _gatling != null and _gatling.plate_count() > 0:
 		var first: Dictionary = _gatling.targets[0]
 		_intro.demo_target = (first["node"] as Node3D).position + _gatling.position + Vector3(0.0, 1.22, 0.0)
@@ -822,6 +850,9 @@ func start_rig(_payment: String = "") -> bool:
 		return true
 	if _stable_yard != null and _stable_interaction_allowed() and _stable_yard.try_talk(_player_pos):
 		return true
+	if can_use_bud_patch():
+		_open_patch()
+		return true
 	if (_beat != Beat.ARMORY and not _world_revisit) or _shop_open or _shop == null:
 		return false
 	if not _at_armory_counter():
@@ -858,6 +889,60 @@ func _open_shop() -> void:
 	_mouse_before = Input.mouse_mode
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_tree().paused = true
+
+
+# --- Dude's Chill Bud patch (founder 2026-11-01) --------------------------------------------------------------------------------
+
+## True beside the patch outside Dude's fence, whenever the stable yard itself may be used and no trade panel is already up.
+func can_use_bud_patch() -> bool:
+	return _stable_yard != null and not _shop_open and not _mounted and _stable_interaction_allowed() and Ep2BudPatch.in_reach(_player_pos)
+
+
+func _open_patch() -> void:
+	if _patch_shop == null:
+		_patch_shop = Ep2BudPatchShop.new()
+		_patch_shop.name = "BudPatchShop"
+		_patch_shop.process_mode = Node.PROCESS_MODE_ALWAYS
+		_patch_shop.buy_requested.connect(func(item_id: String, _price: int, tender: String) -> void: buy_buds_at_patch(item_id, tender))
+		_patch_shop.closed.connect(_close_patch)
+		if _shop_layer == null:
+			_build_shop()
+		_shop_layer.add_child(_patch_shop)
+	_patch_shop.purse_of = func(t: String) -> int: return GameManager.purse_balance(t)
+	_patch_shop.open_patch(GameManager.purse_balance(_patch_shop.tender))
+	_shop_open = true
+	_move_input = Vector2.ZERO
+	_run_input = false
+	set_aim(false)
+	_mouse_before = Input.mouse_mode
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	get_tree().paused = true
+
+
+func _close_patch() -> void:
+	if _patch_shop == null or not _patch_shop.visible:
+		return
+	_patch_shop.hide()
+	_shop_open = false
+	Input.mouse_mode = _mouse_before
+	if not StateMachine.is_paused():
+		get_tree().paused = false
+
+
+## The patch sale: debit the tender first, then store the buds in Tabs (the same Chill Bud Dude sells). Never free, never twice for one
+## payment. True when the buds were stored.
+func buy_buds_at_patch(item_id: String, tender: String = "btc") -> bool:
+	var row: Dictionary = Ep2BudPatch.item(item_id)
+	var ok: bool = false
+	if not row.is_empty() and Ep2ArmoryState.ARMORY_TENDER.has(tender) and GameManager.purse_spend(tender, int(row["price"])):
+		GameManager.add_chill_buds(int(row["buds"]))
+		ok = true
+	if _patch_shop != null:
+		_patch_shop.set_purse(GameManager.purse_balance(tender))
+		_patch_shop.purchase_result(item_id, ok)
+	if ok and _hud != null:
+		_hud.toast("CHILL BUDS +%d  ·  IN YOUR TABS" % int(row["buds"]), 1.6)
+	return ok
 
 
 func _close_shop() -> void:
@@ -931,6 +1016,11 @@ func _deliver(item_id: String, rounds: int, tender: String) -> bool:
 			return armory.purchase_ammo(Ep2ArmoryState.WIN, rounds, tender)
 		"revolver_ammo":
 			return armory.purchase_ammo(Ep2ArmoryState.REM, rounds, tender)
+	# the new stock (founder 2026-11-01): the coach gun, the MP18, the golden Thompson and their ammunition
+	if Ep2ArmoryState.SHOP_GUNS.has(item_id):
+		return armory.purchase_firearm(item_id, tender)
+	if Ep2ArmoryState.SHOP_AMMO.has(item_id):
+		return armory.purchase_ammo(str(Ep2ArmoryState.SHOP_AMMO[item_id]), rounds, tender)
 	return false
 
 
@@ -940,7 +1030,7 @@ func _note(item_id: String, ok: bool) -> void:
 	if _shop_open and _town_audio != null:
 		if ok:
 			_shop_bought = true
-			_town_audio.queue_line("town_trade_07" if item_id == "river_gear" else ("town_trade_04" if item_id == "sniper" else "town_trade_06"))
+			_town_audio.queue_line("town_trade_07" if item_id == "river_gear" else ("town_trade_04" if item_id == "sniper" or Ep2ArmoryState.SHOP_GUNS.has(item_id) else "town_trade_06"))
 		else:
 			_town_audio.queue_line("town_trade_09")
 
@@ -1370,13 +1460,14 @@ func _jail_show_steps() -> Array:
 		var who: String = str(ln[0])
 		var text: String = str(ln[1])
 		steps.append({"do": "call", "fn": func() -> void: _jail_line(who, text)})
-		steps.append(FacilityShow._say(Ep2TownVoiceBank.id_for(_town_speaker(who), text), 0.25))
+		steps.append(FacilityShow._say(Ep2TownVoiceBank.id_for(_town_speaker(who), text), Ep2Speech.GAP))
 	return steps
 
 
 func _jail_line(who: String, text: String) -> void:
 	if _hud != null:
-		_hud.toast("%s: %s" % [who, text], Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(_town_speaker(who), text)))
+		var jail_id: String = Ep2TownVoiceBank.id_for(_town_speaker(who), text)
+		_hud.speech("%s: %s" % [who, text], Ep2Speech.pace(jail_id, text), Ep2Speech.voiced(jail_id))
 	if who == "ACCOMPLICE" and _accomplice != null:
 		_accomplice.face_point(_player_pos)
 		_accomplice.hold_clip("Greet")
@@ -1418,18 +1509,19 @@ func _caption_steps(lines: Array) -> Array:
 
 
 static func _read_seconds(text: String) -> float:
-	return clampf(1.3 + float(text.length()) * 0.052, 2.4, 6.2)
+	return Ep2Speech.read_seconds(text)
 
 
+## How long a spoken line holds the exchange: its take + a breath when voiced (no reading time - there are no subtitles to read,
+## founder 2026-11-01), a reading time only for a line whose take is missing.
 func _caption_seconds(who: String, text: String) -> float:
-	var rec: float = Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(_town_speaker(who), text))
-	return maxf(_read_seconds(text), rec + 0.3)
+	return Ep2Speech.pace(Ep2TownVoiceBank.id_for(_town_speaker(who), text), text)
 
 
 func _caption_line(who: String, text: String) -> void:
 	var id: String = Ep2TownVoiceBank.id_for(_town_speaker(who), text)
 	if _hud != null:
-		_hud.toast("%s: %s" % [who, text], _caption_seconds(who, text))
+		_hud.speech("%s: %s" % [who, text], _caption_seconds(who, text), Ep2Speech.voiced(id))
 	if id != "":
 		_speak(id)
 	captioned.emit(who, text)
@@ -2025,7 +2117,11 @@ func _tick(delta: float) -> void:
 
 	if _stable_yard != null and _hud != null:
 		var show_prompt: bool = _stable_interaction_allowed() and _stable_yard.can_talk(_player_pos)
-		if show_prompt:
+		var patch_prompt: bool = not show_prompt and can_use_bud_patch()
+		if patch_prompt:
+			_hud.set_search_prompt("Buy Chill Buds [E]" if TouchUi.keys_shown() else "Buy Chill Buds")
+			show_prompt = true
+		elif show_prompt:
 			_hud.set_search_prompt("Talk to Dude [E]" if TouchUi.keys_shown() else "Talk to Dude")
 		elif _stable_prompt_shown and _beat != Beat.ARMORY:
 			_hud.set_search_prompt("")
@@ -2037,11 +2133,9 @@ func _stable_interaction_allowed() -> bool:
 
 
 func _on_stable_line(who: String, text: String, id: String, _voice: String) -> void:
-	var seconds: float = _read_seconds(text)
-	if id != "" and Ep2TownVoiceBank.LINES.has(id):
-		seconds = maxf(seconds, Ep2TownVoiceBank.seconds(id) + 0.3)
+	var seconds: float = Ep2Speech.pace(id, text)
 	if _hud != null:
-		_hud.toast("%s: %s" % [who, text], seconds)
+		_hud.speech("%s: %s" % [who, text], seconds, Ep2Speech.voiced(id))
 	if id != "":
 		line_spoken.emit(id)
 		if Ep2TownVoiceBank.LINES.has(id):

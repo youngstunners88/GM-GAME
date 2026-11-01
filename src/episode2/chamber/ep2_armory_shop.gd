@@ -31,10 +31,75 @@ var flash: String = ""
 var _flash_t: float = 0.0
 var _rows: Array[Button] = []
 var _tender_btn: Button = null
+## The panel's words (the Chill Bud patch reuses this cabinet with its own).
+var heading_small: String = "RICH & UTAH"
+var heading: String = "ARMS"
+var footer_a: String = "RICH KEEPS THE BOOK  ·  UTAH HAULS THE CRATES"
+var footer_b: String = "NO FREE IRON IN THIS TOWN"
+
+## THE SHOWCASE (founder 2026-11-01: "I want the weapons ... to appear and spin slowly in the form of a showcase when it is
+## highlighted"). The highlighted row's gun turns slowly in a lit display case beside the list (above it on a phone): its own
+## SubViewport world, a warm case light, one revolution about every eleven seconds with a slight tilt. It swaps the moment the
+## highlight moves, and stops rendering while the panel is closed.
+const SHOWCASE_SPEED := 0.55                 # rad/s
+const SHOWCASE_TILT := 0.16
+const WINCHESTER_MODEL := "res://src/episode2/assets/winchester_1886.glb"
+const REMINGTON_MODEL := "res://src/episode2/assets/weapons/armory/remington_1875_gold.glb"
+var showcase_key: String = ""                # which model is in the case now ("" = empty case); tests read it
+var showcase_spin: float = 0.0               # radians the current piece has turned
+var _case_box: SubViewportContainer = null
+var _case_vp: SubViewport = null
+var _case_turn: Node3D = null
+var _case_piece: Node3D = null
+var _case_cam: Camera3D = null
+const CASE_CAPTION := 20.0                   # the strip under the turning gun where its name is written
+## A short screen (a phone held sideways) cannot show all eleven rows at a readable height: the list becomes a window that keeps the
+## highlighted row in view, with brass up/down buttons (a finger), the mouse wheel and Up/Down (the keys) moving through it.
+const MIN_ROW := 40.0
+const MIN_ROW_SHORT := 34.0                  # a phone held sideways (under 520 units tall)
+const ARROW_H := 26.0
+const SIDE_CASE_MIN_W := 700.0               # from this width the case sits beside the list, not above it
+var _scroll: int = 0
+var _up_btn: Button = null
+var _down_btn: Button = null
 
 
 func _catalogue() -> Array:
 	return Ep2ArmoryState.SHOP
+
+
+## One row of this panel's stock by id ({} when it is not sold here).
+func _item(id: String) -> Dictionary:
+	return Ep2ArmoryState.shop_item(id)
+
+
+## The showcase key for a row: the gun itself, the gun its ammunition feeds, or "" for gear with no gun.
+func _showcase_key_for(item: Dictionary) -> String:
+	var id: String = str(item["id"])
+	if Ep2ArmoryState.SHOP_GUNS.has(id):
+		return id
+	if Ep2ArmoryState.SHOP_AMMO.has(id):
+		return str(Ep2ArmoryState.SHOP_AMMO[id])
+	if id == "sniper" or id == "sniper_ammo":
+		return "sniper"
+	return ""
+
+
+## A fresh instance of the showcase model for `key` (null = nothing to show).
+func _showcase_model(key: String) -> Node3D:
+	if Ep2ArmoryGunView.has_view(key):
+		return Ep2ArmoryGunView.model(key)
+	var path: String = ""
+	match key:
+		Ep2ArmoryState.WIN:
+			path = WINCHESTER_MODEL
+		Ep2ArmoryState.REM:
+			path = REMINGTON_MODEL
+		"sniper":
+			path = Ep2Extras.SHARPS if Ep2Extras.has(Ep2Extras.SHARPS) else ""
+	if path == "" or not ResourceLoader.exists(path):
+		return null
+	return (load(path) as PackedScene).instantiate() as Node3D
 
 
 func _ready() -> void:
@@ -61,11 +126,167 @@ func _ready() -> void:
 		_tender_btn.add_theme_stylebox_override(style, StyleBoxEmpty.new())
 	_tender_btn.pressed.connect(func() -> void: _cycle_tender(1))
 	add_child(_tender_btn)
+	_up_btn = _arrow_button("ScrollUp", -1)
+	_down_btn = _arrow_button("ScrollDown", 1)
 	# Wordless way out for a finger: the trade pauses the tree, so Esc / ui_cancel is not
 	# reachable on a phone and the counter used to be a softlock (audit 2026-10-29).
 	# The shared close keeps raw-finger handling and the panel's own pause owner.
 	preload("res://src/ui/panel_close.gd").install(self, func() -> void: closed.emit())
+	_build_showcase()
 	set_process(true)
+
+
+func _arrow_button(label: String, step: int) -> Button:
+	var b := Button.new()
+	b.name = label
+	b.flat = true
+	b.focus_mode = Control.FOCUS_NONE
+	for style in ["normal", "hover", "pressed", "focus", "disabled"]:
+		b.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	b.pressed.connect(func() -> void: page(step))
+	b.visible = false
+	add_child(b)
+	return b
+
+
+## Move the highlight one row past the visible window (up or down); the window follows it.
+func page(step: int) -> void:
+	var n: int = _catalogue().size()
+	if step > 0:
+		index = mini(n - 1, _scroll + rows_fit())
+	else:
+		index = maxi(0, _scroll - 1)
+	_keep_visible()
+
+
+func _keep_visible() -> void:
+	var n: int = _catalogue().size()
+	var fit: int = rows_fit()
+	_scroll = clampi(_scroll, index - fit + 1, index)
+	_scroll = clampi(_scroll, 0, maxi(0, n - fit))
+
+
+func scrolling() -> bool:
+	return rows_fit() < _catalogue().size()
+
+
+func is_row_shown(i: int) -> bool:
+	return i >= _scroll and i < _scroll + rows_fit()
+
+
+func _build_showcase() -> void:
+	_case_box = SubViewportContainer.new()
+	_case_box.name = "Showcase"
+	_case_box.stretch = true
+	_case_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_case_box)
+	_case_vp = SubViewport.new()
+	_case_vp.own_world_3d = true
+	_case_vp.size = Vector2i(480, 360)
+	_case_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	_case_box.add_child(_case_vp)
+	var env := Environment.new()
+	env.background_mode = Environment.BG_SKY
+	var sky := Sky.new()
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Color(0.16, 0.10, 0.06)
+	sky_mat.sky_horizon_color = Color(0.36, 0.25, 0.15)
+	sky_mat.ground_horizon_color = Color(0.30, 0.20, 0.12)
+	sky_mat.ground_bottom_color = Color(0.07, 0.045, 0.03)
+	sky.sky_material = sky_mat
+	env.sky = sky
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.78, 0.66, 0.52)
+	env.ambient_light_energy = 0.55
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	var world_env := WorldEnvironment.new()
+	world_env.environment = env
+	_case_vp.add_child(world_env)
+	var cam := Camera3D.new()
+	_case_cam = cam
+	cam.fov = 38.0
+	cam.position = Vector3(0.0, 0.12, 1.55)
+	cam.rotation.x = -0.075
+	cam.current = true
+	_case_vp.add_child(cam)
+	var key := DirectionalLight3D.new()
+	key.light_color = Color(1.0, 0.86, 0.66)
+	key.light_energy = 1.6
+	key.rotation = Vector3(-0.7, 0.55, 0.0)
+	_case_vp.add_child(key)
+	var rim := OmniLight3D.new()
+	rim.light_color = Color(1.0, 0.78, 0.48)
+	rim.light_energy = 1.3
+	rim.omni_range = 4.0
+	rim.position = Vector3(-0.9, 0.7, -0.8)
+	_case_vp.add_child(rim)
+	var tilt := Node3D.new()
+	tilt.rotation.x = SHOWCASE_TILT
+	_case_vp.add_child(tilt)
+	_case_turn = Node3D.new()
+	_case_turn.name = "Turntable"
+	tilt.add_child(_case_turn)
+
+
+## Put the highlighted row's piece in the case (only when it changes), fitted to about a metre and centred on the turntable.
+func _sync_showcase() -> void:
+	var rows: Array = _catalogue()
+	var key: String = _showcase_key_for(rows[index]) if index >= 0 and index < rows.size() else ""
+	if key == showcase_key and (_case_piece != null or key == ""):
+		return
+	showcase_key = key
+	showcase_spin = 0.0
+	if _case_turn == null:
+		return
+	_case_turn.rotation.y = PI * 0.5           # it comes in broadside (muzzle to the left), then turns
+	if _case_piece != null:
+		_case_piece.queue_free()
+		_case_piece = null
+	var piece: Node3D = _showcase_model(key) if key != "" else null
+	if piece == null:
+		return
+	var holder := Node3D.new()
+	holder.add_child(piece)
+	var bb: AABB = _bounds(piece)
+	var longest: float = maxf(bb.size.x, maxf(bb.size.y, bb.size.z))
+	var s: float = 1.0 / maxf(longest, 0.01)
+	holder.scale = Vector3.ONE * s
+	piece.position = -bb.get_center()
+	_case_turn.add_child(holder)
+	_case_piece = holder
+
+
+static func _bounds(root: Node3D) -> AABB:
+	var out := AABB()
+	var first: bool = true
+	for mi in root.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null:
+			continue
+		var xf := Transform3D.IDENTITY
+		var c: Node = m
+		while c != null and c != root:
+			if c is Node3D:
+				xf = (c as Node3D).transform * xf
+			c = c.get_parent()
+		var b: AABB = xf * m.get_aabb()
+		out = b if first else out.merge(b)
+		first = false
+	return out if not first else AABB(Vector3(-0.5, -0.1, -0.5), Vector3(1, 0.2, 1))
+
+
+## Where the display case sits: right of the list on a wide screen, above it on a phone.
+func showcase_rect() -> Rect2:
+	var compact: bool = size.x < SIDE_CASE_MIN_W
+	if compact:
+		var w: float = minf(560.0, size.x - 40.0)
+		var h: float = minf(200.0, size.y * (0.17 if _short() else 0.21))
+		return Rect2(Vector2((size.x - w) * 0.5, _list_top_base()), Vector2(w, h))
+	var list_w: float = _list_width()
+	var case_w: float = minf(420.0, size.x * 0.34)
+	var left: float = (size.x - list_w - 18.0 - case_w) * 0.5
+	var case_h: float = minf(case_w * 0.78, size.y * 0.93 - _list_top_base() - 30.0)
+	return Rect2(Vector2(left + list_w + 18.0, _list_top_base()), Vector2(case_w, case_h))
 
 
 ## Host calls this before showing the panel.
@@ -78,6 +299,9 @@ func open_shop(armory_state: Ep2ArmoryState, coin_purse: int) -> void:
 	grace = 0.25
 	flash = ""
 	show()
+	if _case_vp != null:
+		_case_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_sync_showcase()
 
 
 func set_purse(coin_purse: int) -> void:
@@ -110,7 +334,7 @@ func _buy() -> void:
 
 ## The host reports the purchase outcome back so the panel can answer with leather and brass.
 func purchase_result(item_id: String, ok: bool) -> void:
-	var item: Dictionary = Ep2ArmoryState.shop_item(item_id)
+	var item: Dictionary = _item(item_id)
 	if ok:
 		flash = "SOLD"
 	elif not item.is_empty() and purse < int(item["price"]):
@@ -128,12 +352,13 @@ func _owned(item: Dictionary) -> bool:
 			return state != null and state.sniper_owned
 		"river_gear":
 			return state != null and state.river_gear
-		"rifle_ammo":
-			return state != null and state.owns(Ep2ArmoryState.WIN) and (state.firearm(Ep2ArmoryState.WIN) as Ep2Winchester).reserve >= Ep2ArmoryState.RESERVE_CAP
-		"revolver_ammo":
-			return state != null and state.owns(Ep2ArmoryState.REM) and (state.firearm(Ep2ArmoryState.REM) as Ep2Winchester).reserve >= Ep2ArmoryState.RESERVE_CAP
 		"sniper_ammo":
 			return state != null and state.sniper_rounds >= Ep2ArmoryState.RESERVE_CAP
+	if Ep2ArmoryState.SHOP_GUNS.has(id):
+		return state != null and state.owns(id)
+	if Ep2ArmoryState.SHOP_AMMO.has(id):
+		var gun_id: String = str(Ep2ArmoryState.SHOP_AMMO[id])
+		return state != null and state.owns(gun_id) and (state.firearm(gun_id) as Ep2Winchester).reserve >= Ep2ArmoryState.RESERVE_CAP
 	return false
 
 
@@ -145,9 +370,7 @@ func _available(item: Dictionary) -> bool:
 		return false
 	if id == "sniper_ammo" and not state.sniper_owned:
 		return false
-	if id == "rifle_ammo" and not state.owns(Ep2ArmoryState.WIN):
-		return false
-	if id == "revolver_ammo" and not state.owns(Ep2ArmoryState.REM):
+	if Ep2ArmoryState.SHOP_AMMO.has(id) and not state.owns(str(Ep2ArmoryState.SHOP_AMMO[id])):
 		return false
 	return purse >= int(item["price"])
 
@@ -163,24 +386,103 @@ func _process(delta: float) -> void:
 	scale = Vector2.ONE * ui
 	size = view / ui
 	if _tender_btn != null:
-		var compact: bool = size.x < 650.0
+		var compact: bool = size.x < 650.0 or _short()
 		var tw: float = maxf(80.0, minf(560.0 if compact else 700.0, size.x - 80.0))
 		var line_y: float = size.y * 0.075 + (44.0 if compact else 58.0)
 		_tender_btn.size = Vector2(tw, 88.0)
 		_tender_btn.position = Vector2((size.x - tw) * 0.5, line_y - 8.0)
+	_keep_visible()
 	for i in _rows.size():
 		_rows[i].position = row_rect(i).position
 		_rows[i].size = row_rect(i).size
+		_rows[i].visible = is_row_shown(i)
+	var arrows: bool = scrolling()
+	if _up_btn != null:
+		var top_row: Rect2 = row_rect(_scroll)
+		_up_btn.visible = arrows and _scroll > 0
+		_up_btn.position = Vector2(top_row.position.x, top_row.position.y - ARROW_H - 4.0)
+		_up_btn.size = Vector2(top_row.size.x, ARROW_H)
+		var last_row: Rect2 = row_rect(mini(_catalogue().size() - 1, _scroll + rows_fit() - 1))
+		_down_btn.visible = arrows and _scroll + rows_fit() < _catalogue().size()
+		_down_btn.position = Vector2(last_row.position.x, last_row.end.y + 4.0)
+		_down_btn.size = Vector2(last_row.size.x, ARROW_H)
+	if _case_box != null:
+		var live: bool = is_visible_in_tree()
+		_case_box.visible = live and showcase_key != ""
+		if _case_vp != null:
+			_case_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS if _case_box.visible else SubViewport.UPDATE_DISABLED
+		if live:
+			_sync_showcase()
+			var r: Rect2 = showcase_rect().grow(-8.0)
+			r.size.y = maxf(24.0, r.size.y - CASE_CAPTION)
+			_case_box.position = r.position
+			_case_box.size = r.size
+			if _case_cam != null:
+				# frame a metre-long gun in any case shape: far enough that it spans the width, never closer than its height allows
+				var aspect: float = r.size.x / maxf(r.size.y, 1.0)
+				_case_cam.position.z = maxf(1.75 / maxf(aspect, 0.1), 0.72)
+			if _case_turn != null and _case_piece != null:
+				showcase_spin += SHOWCASE_SPEED * delta
+				_case_turn.rotation.y += SHOWCASE_SPEED * delta
 	queue_redraw()
 
 
+## The list's left edge, width and first row: beside the showcase on a wide screen, under it on a phone.
+func _list_width() -> float:
+	if size.x < SIDE_CASE_MIN_W:
+		return minf(560.0, size.x - 40.0)
+	return minf(560.0, size.x * 0.52 - 40.0)
+
+
+func _short() -> bool:
+	return size.y < 520.0
+
+
+func _list_top_base() -> float:
+	if _short():
+		return size.y * 0.075 + 44.0 + 30.0          # the compact heading + the purse line, then the list
+	return size.y * 0.075 + (44.0 if size.x < 650.0 else 58.0) + 34.0
+
+
+func _list_top() -> float:
+	if size.x < SIDE_CASE_MIN_W:
+		return showcase_rect().end.y + 10.0
+	return _list_top_base()
+
+
+func _list_available() -> float:
+	return size.y * 0.93 - _list_top() - (36.0 if _short() else 64.0)
+
+
+func _min_row() -> float:
+	return MIN_ROW_SHORT if _short() else MIN_ROW
+
+
+## How many rows show at once: all of them when each can be at least MIN_ROW tall, otherwise a window (room kept for the arrows).
+func rows_fit() -> int:
+	var n: int = maxi(1, _catalogue().size())
+	var available: float = _list_available()
+	if (available - 8.0 * float(n - 1)) / float(n) >= _min_row():
+		return n
+	return clampi(int(floor((available - 2.0 * (ARROW_H + 4.0) + 8.0) / (_min_row() + 8.0))), 1, n)
+
+
+func _row_height() -> float:
+	var n: int = maxi(1, _catalogue().size())
+	if rows_fit() < n:
+		return _min_row()
+	return clampf((_list_available() - 8.0 * float(n - 1)) / float(n), _min_row(), 64.0)
+
+
 func row_rect(i: int) -> Rect2:
-	var compact: bool = size.x < 650.0
-	var w: float = minf(560.0 if compact else 700.0, size.x - 40.0)
-	var h: float = minf(64.0, size.y * 0.085)
+	var w: float = _list_width()
+	var h: float = _row_height()
 	var x: float = (size.x - w) * 0.5
-	var y0: float = size.y * 0.30
-	return Rect2(Vector2(x, y0 + i * (h + 10.0)), Vector2(w, h))
+	if size.x >= SIDE_CASE_MIN_W:
+		var case_w: float = minf(420.0, size.x * 0.34)
+		x = (size.x - w - 18.0 - case_w) * 0.5
+	var top: float = _list_top() + ((ARROW_H + 4.0) if scrolling() else 0.0)
+	return Rect2(Vector2(x, top + float(i - _scroll) * (h + 8.0)), Vector2(w, h))
 
 
 func _text(text: String, p: Vector2, font_size: int, color: Color = PAPER, centered: bool = false) -> void:
@@ -209,19 +511,34 @@ func _draw() -> void:
 	if state == null:
 		return
 	var rows: Array = _catalogue()
-	var compact: bool = size.x < 650.0
+	var compact: bool = size.x < 650.0 or _short()
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.035, 0.024, 0.016, 0.86))
 	var mid: float = size.x * 0.5
 	var top: float = size.y * 0.075
-	_text("RICH & UTAH", Vector2(mid, top - 12), 14 if compact else 18, BRASS, true)
-	_text("ARMS", Vector2(mid, top + (22 if compact else 34)), 25 if compact else 40, PAPER, true)
+	_text(heading_small, Vector2(mid, top - 12), 14 if compact else 18, BRASS, true)
+	_text(heading, Vector2(mid, top + (22 if compact else 34)), 25 if compact else 40, PAPER, true)
 	var line_y: float = top + (44 if compact else 58)
 	draw_line(Vector2(mid - minf(220, size.x * 0.34), line_y), Vector2(mid - 14, line_y), BRASS, 1)
 	draw_line(Vector2(mid + 14, line_y), Vector2(mid + minf(220, size.x * 0.34), line_y), BRASS, 1)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid, line_y - 5), Vector2(mid + 5, line_y), Vector2(mid, line_y + 5), Vector2(mid - 5, line_y)]), BRASS)
 	_text("PAY WITH  ◂ %s ▸  ·  YOU HOLD %d" % [TENDER_NAMES.get(tender, tender.to_upper()), purse],
 		Vector2(mid, line_y + (14 if compact else 20)), 11 if compact else 14, BRASS, true)
+	if showcase_key != "":
+		var case_rect: Rect2 = showcase_rect()
+		_leather(case_rect, LEATHER_DIM, true)
+		var shown: String = ""
+		if index >= 0 and index < rows.size():
+			shown = str(rows[index]["name"])
+		_text(shown, Vector2(case_rect.get_center().x, case_rect.end.y - 9.0), 11 if compact else 13, BRASS, true)
+	var tall: bool = _row_height() >= 48.0
+	if scrolling():
+		if _scroll > 0:
+			_text("▲  MORE", Vector2(mid, row_rect(_scroll).position.y - 10.0), 12, BRASS, true)
+		if _scroll + rows_fit() < rows.size():
+			_text("▼  MORE", Vector2(mid, row_rect(_scroll + rows_fit() - 1).end.y + 20.0), 12, BRASS, true)
 	for i in rows.size():
+		if not is_row_shown(i):
+			continue
 		var item: Dictionary = rows[i]
 		var rect: Rect2 = row_rect(i)
 		var picked: bool = i == index
@@ -230,17 +547,22 @@ func _draw() -> void:
 		_leather(rect, LEATHER if picked else LEATHER_DIM, picked)
 		var left: float = rect.position.x + 16
 		var cy: float = rect.get_center().y
-		_text(str(item["name"]), Vector2(left, cy - 4), 15 if compact else 18, PAPER if can or owned else CLOSED)
-		_text(str(item["note"]), Vector2(left, cy + 16), 10 if compact else 12, BRASS)
+		_text(str(item["name"]), Vector2(left, cy - (4.0 if tall else 1.0)), (15 if compact else 18) if tall else (13 if compact else 15), PAPER if can or owned else CLOSED)
+		_text(str(item["note"]), Vector2(left, cy + (16.0 if tall else 12.0)), (10 if compact else 12) if tall else 9, BRASS)
 		var right: float = rect.end.x - 16
 		var label: String = "OWNED" if owned else "NOT ENOUGH CRYPTO" if purse < int(item["price"]) else "%d %s" % [int(item["price"]), TENDER_NAMES.get(tender, tender.to_upper())]
 		var ls: int = FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 		_text(label, Vector2(right - ls, cy + 6), 14, BRASS if can else CLOSED)
-	var footer: float = row_rect(rows.size() - 1).end.y + 24
-	_text("RICH KEEPS THE BOOK  ·  UTAH HAULS THE CRATES", Vector2(mid, footer), 11, BRASS, true)
-	_text("NO FREE IRON IN THIS TOWN", Vector2(mid, footer + 19), 11, PAPER, true)
-	if flash != "":
-		_text(flash, Vector2(mid, footer + 44), 14, BRASS, true)
+	var footer: float = row_rect(mini(rows.size() - 1, _scroll + rows_fit() - 1)).end.y + (24.0 + ARROW_H if scrolling() else 24.0)
+	if _short():
+		# a short screen keeps only what matters under the list: the sale's answer (the hint line stays at the bottom)
+		if flash != "":
+			_text(flash, Vector2(mid, footer), 14, BRASS, true)
+	else:
+		_text(footer_a, Vector2(mid, footer), 11, BRASS, true)
+		_text(footer_b, Vector2(mid, footer + 19), 11, PAPER, true)
+		if flash != "":
+			_text(flash, Vector2(mid, footer + 44), 14, BRASS, true)
 	_text("Up / Down choose  ·  E or Enter buy  ·  Esc leave" if TouchUi.keys_shown() else "Tap an item to buy",
 		Vector2(mid, size.y - 24), 10 if compact else 12, BRASS, true)
 
@@ -273,5 +595,10 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion:
 		for i in _rows.size():
-			if _rows[i].get_global_rect().has_point((event as InputEventMouseMotion).position):
+			if _rows[i].visible and _rows[i].get_global_rect().has_point((event as InputEventMouseMotion).position):
 				index = i
+	elif event is InputEventMouseButton and (event as InputEventMouseButton).pressed and scrolling():
+		var wheel: int = (event as InputEventMouseButton).button_index
+		if wheel == MOUSE_BUTTON_WHEEL_DOWN or wheel == MOUSE_BUTTON_WHEEL_UP:
+			index = clampi(index + (1 if wheel == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, _catalogue().size() - 1)
+			get_viewport().set_input_as_handled()

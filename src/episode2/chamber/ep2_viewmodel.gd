@@ -141,7 +141,21 @@ func attach(cam: Camera3D) -> void:
 	pick.scale = Vector3.ONE * VM_SCALE
 	pick.visible = false
 	_weapon_views[Ep2ArmoryState.PICK] = pick
+	# Rich & Utah's new stock (founder 2026-11-01: coach gun, Bergmann MP18, golden Thompson) is built the first time it is equipped
+	# (_ensure_armory_gun), so every room's first-person build stays as light as before.
 	_sync_weapon()
+
+
+## The first-person view of a new-stock gun, made on first use and kept.
+func _ensure_armory_gun(id: String) -> void:
+	if _weapon_views.has(id) or camera == null or not Ep2ArmoryGunView.has_view(id):
+		return
+	var view: Node3D = Ep2ArmoryGunView.make(id)
+	camera.add_child(view)
+	view.scale = Vector3.ONE * VM_SCALE
+	view.visible = false
+	_weapon_views[id] = view
+	_apply_world_shadows_to(view)
 
 
 ## Scale the rifle's albedo (and with it its metal reflections) for a very bright scene. In the hideout's lamplight the receiver
@@ -478,7 +492,8 @@ func _on_fired() -> void:
 				if "TriggerSqueeze" in clip:
 					anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 					anim.play(clip)
-	_recoil = 1.0
+	# the new stock scales the jump to its kick: a coach-gun barrel shoves, a submachine-gun round only shivers the view
+	_recoil = clampf(gun.kick_deg / Ep2Winchester.KICK_DEG, 0.35, 1.6) if Ep2ArmoryGunView.has_view(_active_id) else 1.0
 	_flash_t = 0.06
 	cam_kick += gun.kick_rad()
 	if _flash_light != null:
@@ -534,7 +549,7 @@ func _play_shot() -> void:
 		p.pitch_scale = randf_range(0.96, 1.03)
 		p.play()
 		shots_played += 1
-	_lever_due = -1.0 if _active_id == Ep2ArmoryState.REM else LEVER_DELAY
+	_lever_due = LEVER_DELAY if _active_id == Ep2ArmoryState.WIN else -1.0      # only the Winchester has a lever to rack
 
 
 ## Racks the lever LEVER_DELAY after the shot (driven by step(), so a headless test sees it too).
@@ -651,6 +666,7 @@ func _sync_weapon() -> void:
 		return
 	if armory.equipped == Ep2ArmoryState.BOW:
 		_ensure_founder_bow()
+	_ensure_armory_gun(armory.equipped)
 	if _active_id != armory.equipped:
 		for view in _weapon_views.values():
 			(view as Node3D).visible = false
@@ -668,7 +684,7 @@ func _sync_weapon() -> void:
 			_muzzle_flash = rifle.get_node_or_null("MuzzleFlash")
 			if _muzzle_flash == null:
 				_build_muzzle_flash()
-				_muzzle_flash.position = Vector3(0, 0.038, 0.35)
+				_muzzle_flash.position = Vector3(rifle.get_meta("muzzle", Vector3(0, 0.038, 0.35)))
 			_muzzle_flash.visible = false
 			_recoil = 0.0
 			_flash_t = 0.0
@@ -677,11 +693,16 @@ func _sync_weapon() -> void:
 			# Separate pools keep the outgoing report playing through a swap.
 			if not _report_pools.has(_active_id):
 				var pool: Array[AudioStreamPlayer] = []
-				for i in 3:
+				var names: Array = rifle.get_meta("shot_sounds", [])
+				# a submachine gun fires faster than one report lasts: more voices so a burst never cuts itself off
+				var voices: int = 6 if gun.automatic else 3
+				for i in voices:
 					var player := AudioStreamPlayer.new()
 					player.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
-					player.volume_db = SHOT_DB
-					player.stream = load(SOUND_DIR + "ep2_revolver_blast_%d.mp3" % (i + 1))
+					player.volume_db = SHOT_DB - (5.0 if gun.automatic else 0.0)
+					var sound: String = (str(names[i % names.size()]) + ".mp3") if not names.is_empty() else "ep2_revolver_blast_%d.mp3" % (i % 3 + 1)
+					if ResourceLoader.exists(SOUND_DIR + sound):
+						player.stream = load(SOUND_DIR + sound)
 					add_child(player)
 					pool.append(player)
 				_report_pools[_active_id] = pool

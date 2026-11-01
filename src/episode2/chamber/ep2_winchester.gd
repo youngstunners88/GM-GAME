@@ -51,6 +51,13 @@ var capacity: int = MAG
 var cycle_time: float = CYCLE
 var reload_interval: float = RELOAD_PER_SHELL
 var training_complete: bool = false
+## Armory profiles (Ep2ArmoryState.PROFILES): the view kick per shot, fire-while-held, a whole-drum reload (one `reload_interval`
+## fills the magazine from the reserve), and buckshot (`pellets` per shot; rooms widen their hit test by `hit_scale`).
+var kick_deg: float = KICK_DEG
+var automatic: bool = false
+var drum_reload: bool = false
+var pellets: int = 1
+var hit_scale: float = 1.0
 
 
 ## Advance the clocks. Call once per physics step.
@@ -108,8 +115,9 @@ func start_reload() -> bool:
 
 
 func _load_one_shell() -> void:
-	rounds += 1
-	reserve -= 1
+	var n: int = mini(capacity - rounds, reserve) if drum_reload else 1
+	rounds += n
+	reserve -= n
 	shell_loaded.emit(rounds)
 	if rounds >= capacity or reserve <= 0:
 		_stop_reload()
@@ -145,4 +153,4 @@ func spread_deg(moving: bool = false, airborne: bool = false) -> float:
 
 ## View kick (radians) one shot adds at the current aim state.
 func kick_rad() -> float:
-	return deg_to_rad(KICK_DEG) * lerpf(1.0, ADS_KICK_KEEP, ads)
+	return deg_to_rad(kick_deg) * lerpf(1.0, ADS_KICK_KEEP, ads)

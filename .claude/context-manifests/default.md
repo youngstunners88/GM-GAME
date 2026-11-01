@@ -20,6 +20,7 @@ the next agent hunting for files that were renamed.
 
 | Task | Load |
 |---|---|
+| Stall / jam / "glitch delay" at a room hand-over (quad, elevator door, lake ride); armory showcase or new guns; subtitles / dialogue delay; Chill Bud patch; bandit roles / seated rider; lake horse | `docs/founder-feedback/2026-11-01_residuals.md`; skills `ep2-prebuild-frame-budget` (probe `tools/ep2_perf/prebuild_steps.tscn`), `ep2-armory-new-stock`, `ep2-speech-no-subtitles`, `ep2-lake-trail-residuals`; gate `tests/ep2_founder_residuals_1101_test.tscn` |
 | Sheriff office pop-in / road appears on mounting / farmer arrives in town / selectable healing bud / GM Laker2 | `.claude/skills/ep2-world-presence-and-consumables/SKILL.md`, `docs/founder-feedback/2026-10-29_town-presence-healing.md`; then the doorway/route, farmer journey and Tabs healing component |
 | FIX document / tunnel film / elevator glitch / Sheriff or Utah walking / × panel exit / referral lost walking to Dude | `.claude/skills/ep2-founder-regression-repair/SKILL.md`, `docs/founder-feedback/2026-10-29_fix-document.md`; use the boundary and gait/panel component skills |
 | Logan cabin / porch branding / prospecting detail / wanted bills | `.claude/skills/ep2-logan-cabin/SKILL.md`, `design/ep2/lake/cabin-20261027/BRIEF.md`; then the signage/prospecting/proof component |

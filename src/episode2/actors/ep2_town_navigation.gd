@@ -11,10 +11,17 @@ var walls: Array = []
 var props: Array = []
 var blocked_rects: Array[Rect2] = []
 var cells: Dictionary = {}
+## NEARBY GEOMETRY ONLY (founder 2026-11-01: "a glitch delay by the quad bike"). Building this graph tested ~130 000 sample points
+## against every wall and prop in town - 8.8 s of main-thread work inside one prebuild step, a frozen frame at the quad where the
+## town starts building. Each test now reads only the walls/props of its 4 m bucket (anything within reach of the bucket, in the
+## original order), which gives the same clear/blocked answer: a point is clear exactly when nothing within RADIUS of it pushes.
+const BUCKET := 4.0
+var _buckets: Dictionary = {}                      # Vector2i -> [walls, props] near that bucket
 
 func configure(info: Dictionary) -> void:
 	walls = info.get("walls", []).duplicate(true)
 	props = info.get("props", []).duplicate(true)
+	_buckets.clear()
 	graph.clear()
 	cells.clear()
 	blocked_rects.clear()
@@ -68,7 +75,31 @@ func is_clear(p: Vector2) -> bool:
 	if not Rect2(ORIGIN, Vector2(SIZE - Vector2i.ONE) * SPACING).has_point(p): return false
 	for rect in blocked_rects:
 		if rect.has_point(p): return false
-	return Ep2GoldTown.collide(p, RADIUS, walls, props).distance_to(p) < 0.002
+	var near: Array = _near(p)
+	return Ep2GoldTown.collide(p, RADIUS, near[0], near[1]).distance_to(p) < 0.002
+
+
+## The walls and props that can touch a body standing anywhere in `p`'s bucket (built once per bucket, original order kept).
+func _near(p: Vector2) -> Array:
+	var key := Vector2i(floori((p.x - ORIGIN.x) / BUCKET), floori((p.y - ORIGIN.y) / BUCKET))
+	if _buckets.has(key):
+		return _buckets[key]
+	var reach: float = RADIUS + 0.05
+	var box := Rect2(ORIGIN + Vector2(key) * BUCKET, Vector2(BUCKET, BUCKET)).grow(reach)
+	var near_walls: Array = []
+	for s in walls:
+		var a: Vector2 = s[0]
+		var b: Vector2 = s[1]
+		if Rect2(a, Vector2.ZERO).expand(b).grow(0.001).intersects(box, true):
+			near_walls.append(s)
+	var near_props: Array = []
+	for pr in props:
+		var c: Vector2 = pr[0]
+		var rr: float = float(pr[1])
+		if Rect2(c - Vector2(rr, rr), Vector2(rr, rr) * 2.0).intersects(box, true):
+			near_props.append(pr)
+	_buckets[key] = [near_walls, near_props]
+	return _buckets[key]
 
 ## is_clear for a point someone is already STANDING on (a saved position): a walker can settle within a hair of a prop circle's edge
 ## (a horse at the rail: 1.341 m from its centre against 1.34 m), which the strict test calls blocked. 2 cm is far below anything that
@@ -77,7 +108,8 @@ func is_standing_clear(p: Vector2, tolerance: float = 0.02) -> bool:
 	if not Rect2(ORIGIN, Vector2(SIZE - Vector2i.ONE) * SPACING).has_point(p): return false
 	for rect in blocked_rects:
 		if rect.has_point(p): return false
-	return Ep2GoldTown.collide(p, RADIUS, walls, props).distance_to(p) < tolerance
+	var near: Array = _near(p)
+	return Ep2GoldTown.collide(p, RADIUS, near[0], near[1]).distance_to(p) < tolerance
 
 func segment_clear(a: Vector2, b: Vector2) -> bool:
 	var count: int = maxi(1, ceili(a.distance_to(b) / 0.16))

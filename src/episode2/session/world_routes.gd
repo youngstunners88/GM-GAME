@@ -74,6 +74,8 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  elif room is LakeTrailChamber:
   room._ending=false;room._end_t=0.0;room._beat=room.Beat.RIDE
   if previous is LogansLakeChamber:
+   # One horse: ridden away from the lake it carries him up the trail; left drinking, the trail is walked.
+   room.set_return_mounted(previous.is_riding_horse())
    room._place_at_distance(room._route_total-2.0)
   else:
    room._place_at_distance(0.0)
@@ -98,6 +100,7 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  if room is GoldTownChamber: Ep2DrawMusic.begin_town(room)
  if room is LogansLakeChamber:
   room._look_yaw=wrapf(yaw-(previous.lake_transform().basis.get_euler().y if previous is LakeTrailChamber else 0.0),-PI,PI)
+  room.arrive_from_trail(previous is LakeTrailChamber and previous.is_mounted())
   Ep2DrawMusic.begin_lake(room)
  elif room is LakeTrailChamber:
   if room.get_route_distance()>=room.get_route_length()-room.LAKE_REVEAL_DISTANCE:Ep2DrawMusic.begin_lake(room)

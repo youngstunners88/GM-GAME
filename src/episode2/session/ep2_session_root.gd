@@ -310,6 +310,11 @@ func _enter_chamber_chained(segment: int) -> void:
 ## Millisecond budget per frame for the background build; raised while the player is already waiting at the hand-over door.
 const PREBUILD_MS := 7.0
 const PREBUILD_MS_WAITING := 40.0
+## A next room is usually requested AT a crossing (Lil Blunt walks into the lift and the woods are asked for in that frame). Its build
+## steps hold off this long so the crossing itself and his first strides never share a frame with one (founder 2026-11-01: "the
+## transition between the smelting facility and the elevator ... jams and glitches"). A room that is waiting on the build never holds off.
+const PREBUILD_SETTLE := 1.0
+var _pb_settle: float = 0.0
 var world_routes := Ep2WorldRoutes.new()
 var farmer_trip := Ep2FarmerTrip.new()
 var _pb_node: Node = null
@@ -339,6 +344,7 @@ func _on_prebuild_requested(chamber_id: String) -> void:
 		add_child(n)
 	_pb_node = n
 	_pb_id = chamber_id
+	_pb_settle = PREBUILD_SETTLE
 
 
 ## THE OPEN DOOR (founder 2026-10-24: no transition at the hideout's elevator door - "the door should be open and we should be able to
@@ -799,10 +805,29 @@ func _process(_delta: float) -> void:
 	_update_rotate_pause()
 	_touch_changed()
 	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
-	_drive_prebuild(PREBUILD_MS_WAITING if waiting else PREBUILD_MS)
+	if _pb_settle > 0.0 and not waiting:
+		_pb_settle -= _delta
+	else:
+		_drive_prebuild(PREBUILD_MS_WAITING if waiting else PREBUILD_MS)
 	_drive_portal()
+	_hold_trigger()
 	if _active is LakeTrailChamber and _pb_id=="logans_lake" and is_prebuilt("logans_lake"):
 		_active.preview_lake(_pb_node)
+
+## FULL AUTO (the Bergmann MP18 and the golden Thompson, founder 2026-11-01): while the trigger is HELD - the left mouse button with
+## the pointer captured, or the touch FIRE button (`attack`) - the room is asked for a shot every frame and the gun's own cycle time
+## decides the cadence. Lever, hammer and break-action guns still fire once per press.
+func _hold_trigger() -> void:
+	if _mode != Mode.CHAMBER or not input_enabled or not _free_roam() or not _active.has_method("get_viewmodel"):
+		return
+	var vm: Variant = _active.get_viewmodel()
+	if vm == null or vm.gun == null or not bool(vm.gun.automatic):
+		return
+	var held: bool = (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)) \
+		or (InputMap.has_action("attack") and Input.is_action_pressed("attack"))
+	if held and not vm.gun.is_cycling():
+		_active.shoot()
+
 
 func _restore_town(chamber: Node) -> void:
 	if not chamber is GoldTownChamber: return
@@ -874,6 +899,10 @@ func _route_free_roam(event: InputEvent) -> bool:
 		if event.is_action_pressed("ep2_weapon_3"):
 			_active.select_weapon(Ep2ArmoryState.BOW)
 			return true
+		for slot in range(3, Ep2ArmoryState.SLOT_ACTIONS.size()):       # 4 / 5 / 6: the coach gun, the MP18, the Thompson
+			if InputMap.has_action(Ep2ArmoryState.SLOT_ACTIONS[slot]) and event.is_action_pressed(Ep2ArmoryState.SLOT_ACTIONS[slot]):
+				_active.select_weapon(Ep2ArmoryState.IDS[slot])
+				return true
 		if event.is_action_pressed("ep2_weapon_previous"):
 			_active.select_previous_weapon()
 			return true

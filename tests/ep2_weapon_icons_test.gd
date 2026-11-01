@@ -31,8 +31,11 @@ func _green_share(path: String) -> Array:
 
 func _ready() -> void:
 	var icons: Dictionary = Ep2WeaponSelector.ICONS
-	check("the selector has an icon for every personal-armory weapon", icons.size() == 3 and icons.has(Ep2ArmoryState.WIN) and icons.has(Ep2ArmoryState.REM) and icons.has(Ep2ArmoryState.BOW))
-	for id in [Ep2ArmoryState.WIN, Ep2ArmoryState.REM, Ep2ArmoryState.BOW]:
+	var every: bool = icons.size() == Ep2ArmoryState.IDS.size()
+	for id in Ep2ArmoryState.IDS:
+		every = every and icons.has(id)
+	check("the selector has an icon for every personal-armory weapon (six since 2026-11-01)", every)
+	for id in Ep2ArmoryState.IDS:
 		var tex: Texture2D = icons[id]
 		check("%s icon is a real raster render, 640 x 320 (not a vector sketch)" % id, tex != null and tex.get_width() == 640 and tex.get_height() == 320, "%s" % str(tex.get_size() if tex else null))
 		var r: Array = _green_share(str(tex.resource_path).get_basename() + ".png" if str(tex.resource_path).ends_with(".png") else str(tex.resource_path))

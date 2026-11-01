@@ -306,7 +306,10 @@ func _build_steps() -> Array:
 	var steps: Array = [_step_light_mats, _load_forest_kit, _step_ground, _build_ride_path, _resolve_specs, _build_trails]
 	for i in _forest_chunk_count():
 		steps.append(Callable(self, "_build_forest_chunk").bind(i))
-	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_desert, _build_town, _build_cart])
+	# the town is three steps (geometry, the crowd's street graph, the crowd): this room builds behind the lift ride, one step a frame,
+	# and the single town step was the stall just after the facility doorway (founder 2026-11-01)
+	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_desert, _build_town_set, _build_town_space,
+		_build_town_crowd, _build_cart])
 	var n: int = SCOUTS.size() + ROAD_BEARS.size()
 	for k in int(ceil(float(n) / 3.0)):
 		steps.append(Callable(self, "_spawn_batch").bind(k, 3))
@@ -2757,13 +2760,25 @@ func get_cart_node() -> Node3D: return _cart
 
 ## The town and Fort Knox (Ep2GoldTown - the SAME build the town chamber makes, at the same coordinates).
 func _build_town() -> void:
+	_build_town_set()
+	_build_town_space()
+	_build_town_crowd()
+
+
+func _build_town_set() -> void:
 	_town_col = Ep2GoldTown.build(_visuals, false)
 	_stable_yard = _visuals.find_child("StableYard", true, false) as Ep2StableYard
 	_wire_stable_yard()
-	# It is THEIR town (founder 2026-10-22): the people are out in the street before Lil Blunt arrives, not spawned
-	# after the drop-off. Their whole state is handed to the town chamber at the cut (get_handoff -> "town_people").
+
+
+# It is THEIR town (founder 2026-10-22): the people are out in the street before Lil Blunt arrives, not spawned
+# after the drop-off. Their whole state is handed to the town chamber at the cut (get_handoff -> "town_people").
+func _build_town_space() -> void:
 	_people = Ep2TownPeople.new()
 	_people.configure_space(_town_col)
+
+
+func _build_town_crowd() -> void:
 	_people.build(_visuals)
 	_people.player_clearance = 1.6                    # the quad is wider than a man on foot
 
@@ -2777,11 +2792,9 @@ func _wire_stable_yard() -> void:
 
 
 func _on_stable_line(who: String, text: String, id: String, _voice: String) -> void:
-	var seconds: float = clampf(1.3 + float(text.length()) * 0.052, 2.4, 6.2)
-	if id != "" and Ep2TownVoiceBank.LINES.has(id):
-		seconds = maxf(seconds, Ep2TownVoiceBank.seconds(id) + 0.3)
+	var seconds: float = Ep2Speech.pace(id, text)
 	if _hud != null:
-		_hud.toast("%s: %s" % [who, text], seconds)
+		_hud.speech("%s: %s" % [who, text], seconds, Ep2Speech.voiced(id))
 	if id != "":
 		line_spoken.emit(id)
 		if Ep2TownVoiceBank.LINES.has(id):

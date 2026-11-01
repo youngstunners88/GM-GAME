@@ -6,6 +6,9 @@ const ICONS := {
 	Ep2ArmoryState.WIN: preload("res://src/episode2/assets/weapons/armory/winchester_icon.png"),
 	Ep2ArmoryState.REM: preload("res://src/episode2/assets/weapons/armory/remington_icon.png"),
 	Ep2ArmoryState.BOW: preload("res://src/episode2/assets/weapons/armory/bow_icon.png"),
+	Ep2ArmoryState.SHOT: preload("res://src/episode2/assets/weapons/armory/coach_shotgun_icon.png"),
+	Ep2ArmoryState.MP18: preload("res://src/episode2/assets/weapons/armory/bergmann_mp18_icon.png"),
+	Ep2ArmoryState.TOMMY: preload("res://src/episode2/assets/weapons/armory/thompson_gold_icon.png"),
 }
 ## The purse (founder 2026-10-24: "Lil Blunt has been collecting Eth, BTC, WBTC, Solana and TitanX. These need to be reflected in the
 ## tab when he is selecting his weapon"): the game's own coin art for each token, in GameManager.PURSE_TOKENS order.
@@ -153,21 +156,30 @@ func _ledger_band() -> Rect2:
 	return Rect2(purse.position + Vector2(0.0, purse.size.y + 6.0),
 		Vector2(purse.size.x, 53.0+48.0*_supply_scale()))
 
+## Six slots (founder 2026-11-01 added the coach gun, the MP18 and the golden Thompson): three across and two down on a wide screen,
+## two across and three down on a phone.
 func card_rect(i: int) -> Rect2:
+	var n: int = Ep2ArmoryState.IDS.size()
 	if size.x < 650.0:
-		var w: float = minf(440.0, size.x - 32.0)
+		var cols: int = 2
+		var rows: int = int(ceil(float(n) / float(cols)))
+		var total_w: float = minf(440.0, size.x - 32.0)
+		var w: float = (total_w - 10.0) * 0.5
 		var top: float = _ledger_band().end.y + 10.0
 		var available: float = maxf(96.0, size.y - top - 82.0)
-		var h: float = maxf(28.0, minf(160.0, minf(size.y * 0.20, (available - 24.0) / 3.0)))
-		var used: float = h * 3.0 + 24.0
+		var h: float = maxf(28.0, minf(160.0, minf(size.y * 0.20, (available - 10.0 * float(rows - 1)) / float(rows))))
+		var used: float = h * float(rows) + 10.0 * float(rows - 1)
 		var y: float = top + maxf(0.0, (available - used) * 0.25)
-		return Rect2(Vector2((size.x - w) * 0.5, y + i * (h + 12.0)), Vector2(w, h))
-	var top: float = _ledger_band().end.y + 14.0
-	var available: float = maxf(120.0, size.y - top - 88.0)
-	var h: float = maxf(80.0, minf(300.0, minf(size.y * 0.45, available)))
-	var y: float = top + maxf(0.0, (available - h) * 0.30)
-	var w: float = minf(460.0, (size.x - 96.0) / 3.0)
-	return Rect2(Vector2(size.x * 0.5 + (i - 1) * (w + 14.0) - w * 0.5, y), Vector2(w, h))
+		var x0: float = (size.x - total_w) * 0.5
+		return Rect2(Vector2(x0 + float(i % cols) * (w + 10.0), y + floorf(float(i) / float(cols)) * (h + 10.0)), Vector2(w, h))
+	var cols_w: int = 3
+	var rows_w: int = int(ceil(float(n) / float(cols_w)))
+	var top_w: float = _ledger_band().end.y + 14.0
+	var available_w: float = maxf(120.0, size.y - top_w - 88.0)
+	var h_w: float = maxf(70.0, minf(260.0, (available_w - 12.0 * float(rows_w - 1)) / float(rows_w)))
+	var y_w: float = top_w + maxf(0.0, (available_w - h_w * float(rows_w) - 12.0 * float(rows_w - 1)) * 0.30)
+	var w_w: float = minf(460.0, (size.x - 96.0) / 3.0)
+	return Rect2(Vector2(size.x * 0.5 + float(i % cols_w - 1) * (w_w + 14.0) - w_w * 0.5, y_w + floorf(float(i) / float(cols_w)) * (h_w + 12.0)), Vector2(w_w, h_w))
 
 func _text(text: String, p: Vector2, font_size: int, color: Color = PAPER, centered: bool = false) -> void:
 	drawn_text.append(text)
@@ -238,15 +250,15 @@ func _draw() -> void:
 		# key names and mouse instructions are desktop-only (audit 2026-10-29 P1-3: the bud line was
 		# already gated, so the selector's own labels were an oversight)
 		if keys:
-			var key: String = Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i])
+			var key: String = Ep2ArmoryState.key_label(Ep2ArmoryState.SLOT_ACTIONS[i])
 			_text(key,rect.position+Vector2(24,32),18,BRASS)
 		if picked and keys:
 			_text("EQUIP ON RELEASE",Vector2(rect.get_center().x,rect.end.y-12),10,BRASS,true)
-	var footer_y: float = card_rect(2 if compact else 1).end.y + 26
+	var footer_y: float = card_rect(Ep2ArmoryState.IDS.size() - 1).end.y + 26
 	_text("BEAR ARROWS  ·  %d" % state.arrows,Vector2(mid,footer_y),13,BRASS,true)
 	_text("TIME STANDS STILL",Vector2(mid,footer_y+26),12,PAPER,true)
 	if keys:
-		var hint: String = "Hold %s / Back · point or choose 1 / 2 / 3 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
+		var hint: String = "Hold %s / Back · point or choose 1 - 6 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
 		if compact:
 			hint = "Hold holster · drag to a weapon · release"
 		_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)
@@ -259,6 +271,8 @@ func card_status(id: String) -> String:
 	if state.firearms_confiscated and state.owns(id):
 		return "HELD BY THE SHERIFF"
 	if not state.owns(id):
+		if Ep2ArmoryState.SHOP_GUNS.has(id):
+			return "SOLD AT RICH & UTAH'S"
 		return "RECOVER FROM AN ARCHER" if id == Ep2ArmoryState.BOW else "NOT YET ACQUIRED"
 	if id == Ep2ArmoryState.BOW:
 		return "%d ARROWS" % state.arrows

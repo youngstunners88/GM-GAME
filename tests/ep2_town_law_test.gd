@@ -155,6 +155,7 @@ func _civilian_and_cell() -> void:
 	add_child(selector)
 	var held: bool = true
 	for id in Ep2ArmoryState.IDS:
+		if not c.armory.owns(id): continue          # Rich & Utah's unbought stock (2026-11-01) is not his to hold
 		held = held and selector.card_status(id) == "HELD BY THE SHERIFF" and not c.armory.select(id)
 	_check("Tabs shows all three irons HELD BY THE SHERIFF and none can be selected", held)
 	selector.queue_free()
@@ -172,7 +173,7 @@ func _civilian_and_cell() -> void:
 	c.armory.firearms_returned.connect(func() -> void: returned.append(true))
 	c.return_firearms()
 	var usable: bool = not c.armory.firearms_confiscated and returned.size() == 1
-	for id in Ep2ArmoryState.IDS:
+	for id in ["winchester_1886", "remington_1875_gold", "bear_longbow"]:      # the three irons he owned when the Sheriff took them
 		# select() is false for the iron already in his hands (no-op switch), so that one counts as usable when it is equipped.
 		usable = usable and c.armory.owns(id) and (c.armory.equipped == id or c.armory.select(id))
 	_check("return_firearms() gives every previously owned iron back and emits once", usable,

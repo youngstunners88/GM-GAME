@@ -50,7 +50,8 @@ func _ready() -> void:
 	for item in Ep2ArmoryState.SHOP:
 		ids.append(str(item.get("id", "")))
 	_check("the catalogue is well formed and single-sourced (id / name / note / price / rounds)",
-		ids == ["sniper", "sniper_ammo", "rifle_ammo", "revolver_ammo", "river_gear"]
+		ids == ["sniper", "sniper_ammo", "rifle_ammo", "revolver_ammo", "river_gear",
+			Ep2ArmoryState.SHOT, "shotgun_ammo", Ep2ArmoryState.MP18, "mp18_ammo", Ep2ArmoryState.TOMMY, "tommy_ammo"]
 		and int(Ep2ArmoryState.shop_item("sniper").get("price", 0)) > 0
 		and int(Ep2ArmoryState.shop_item("rifle_ammo").get("rounds", 0)) == 24
 		and Ep2ArmoryState.shop_item("no_such_item").is_empty())
@@ -234,7 +235,10 @@ func _ready() -> void:
 	await get_tree().create_timer(0.08, true).timeout
 	_check("holding armory freezes world physics and finite ammunition", probe.ticks == ticks and loaded == root.armory.active_gun().rounds and room.get_player_position() == before and not room.shoot())
 	_check("holstered reload clock stays frozen throughout selection", root.armory.firearm(Ep2ArmoryState.WIN)._reload_t == reload_clock and root.armory.firearm(Ep2ArmoryState.WIN).rounds == 1)
-	_check("three weapon cards preserve the firearm textures and the bow-in-his-hands icon (all three 640 wide)", hud._panel.ICONS[Ep2ArmoryState.WIN].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.REM].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.BOW].get_width() == 640 and hud._slots.size() == 3)
+	var icons_ok: bool = true
+	for id in Ep2ArmoryState.IDS:
+		icons_ok = icons_ok and hud._panel.ICONS.has(id) and hud._panel.ICONS[id].get_width() == 640
+	_check("six weapon cards (founder 2026-11-01 added the coach gun, MP18, golden Thompson), every icon 640 wide", icons_ok and hud._slots.size() == 6)
 	key.physical_keycode = KEY_1
 	Input.parse_input_event(key)
 	await get_tree().process_frame
@@ -268,7 +272,10 @@ func _ready() -> void:
 	await get_tree().process_frame
 	room.toggle_armory()
 	await get_tree().process_frame
-	_check("portrait selector uses a readable 390-unit layout and separate stacked cards", is_equal_approx(hud._panel.size.x, 390) and hud._slots[0].get_global_rect().end.y < hud._slots[1].get_global_rect().position.y)
+	_check("portrait selector uses a readable 390-unit layout: two columns, stacked rows, no overlap", is_equal_approx(hud._panel.size.x, 390)
+		and hud._slots[0].get_global_rect().end.y < hud._slots[2].get_global_rect().position.y
+		and hud._slots[0].get_global_rect().end.x < hud._slots[1].get_global_rect().position.x
+		and hud._slots[5].get_global_rect().end.y <= hud._panel.get_global_rect().end.y)
 	hud.close_armory(false)
 	get_window().size = Vector2i(1280, 720)
 	await get_tree().process_frame

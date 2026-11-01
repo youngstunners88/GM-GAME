@@ -29,6 +29,31 @@ var _stage_calls: int = 0
 var _landscape := Ep2LakeLandscape.new()
 var _skiff: Ep2LoganSkiff
 var _cabin := Ep2LoganCabin.new()
+## DUDE'S HORSE AT THE LAKE (founder 2026-11-01: "the horse needs to go to the lake and drink this whole time while Lil Blunt speaks
+## with Logan ... Lil Blunt would be able to actually mount back on the horse ... as the horse just disappears at this point").
+## The trail room that carried the horse is parked off screen when the lake takes over, so the lake keeps its own horse: it walks from
+## where he dismounted to the water's edge, drinks through the whole of Logan's talk and after, and stays a mountable actor (E).
+## It is a child of the room, not of `_visuals`, so the trail's horizon preview never shows a second horse while he is still riding.
+const HORSE_MODEL := "res://src/episode2/assets/town/horse.glb"
+const HORSE_DRINK := Vector3(-0.7, 0, 5.0)        # forefeet on the bank, muzzle over the shallows beside Logan's landing
+const HORSE_DRINK_YAW := PI * 0.5                 # facing +X: the water
+const HORSE_WALK := 2.2                           # m/s, a brisk walk to the water (about 9 s from the shore end of the trail)
+const HORSE_CLIP_SPEED := 1.9                     # ground m/s of horse_walk at speed_scale 1 (same clip as the trail)
+const HORSE_REACH := 3.6                          # how close E mounts him (he drinks just past the bank path's edge, x = -4.1)
+const MOUNTED_EYE := 2.18
+const MOUNTED_SPEED := 6.0
+const SADDLE_HEIGHT := 1.28
+var _horse: Node3D
+var _horse_anim: AnimationPlayer
+var _horse_state: String = "drink"                # lead -> drink; ridden; graze (left where he dismounted)
+var _horse_clip: String = ""
+var _horse_sip_t: float = 2.0
+var _riding: bool = false
+var _mount_t: float = -1.0
+var _mount_from: Vector3 = Vector3.ZERO
+var _mount_horse_from: Vector3 = Vector3.ZERO
+var _mount_to: Vector3 = Vector3.ZERO
+var _foot_speed: float = 3.4
 
 func _init() -> void:
 	title_card = "LOGAN'S LAKE"
@@ -38,7 +63,7 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "logans_lake"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin, _build_ambience]
+func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin, _build_ambience, _build_horse]
 
 func _light() -> void:
 	var env := Environment.new()
@@ -121,6 +146,53 @@ func _shore() -> void:
 	for z in [-1.4, 0, 1.4]:
 		_box(Vector3(1.6, 0.9, 1.1), Vector3(0, 0.55, z), wood, _cargo)
 	_sign("DAY-88 RIVER", Vector3(-4.5, path_height(56), 56), 2.9)
+	_build_logan_camp()
+
+
+## LOGAN'S CAMP, READABLE FROM THE TRAIL (founder 2026-11-01: "we cant anticipate that Logan is in the distance"). A small fire on the
+## bank beside his landing, a tall pale smoke column and a lantern post at the dock: all under `_visuals`, so the trail copies them
+## onto its horizon while he is still riding and the column says "someone is camped by the water" long before Logan is a figure.
+const CAMP := Vector3(-2.3, 0, 13.2)
+func _build_logan_camp() -> void:
+	var camp := Node3D.new()
+	camp.name = "LoganCamp"
+	camp.position = CAMP
+	_visuals.add_child(camp)
+	var stone: Material = _plain(Color(0.36, 0.34, 0.31), 0.95)
+	for i in 8:
+		var a: float = float(i) / 8.0 * TAU
+		_sphere(0.16, Vector3(cos(a) * 0.48, 0.07, sin(a) * 0.48), stone, camp, 0.6)
+	var wood: Material = _plain(Color(0.27, 0.17, 0.09), 0.9)
+	for i in 3:
+		var stick := _cyl(0.05, 0.06, 0.7, Vector3(0, 0.12, 0), wood, camp, 7)
+		stick.rotation = Vector3(PI * 0.5 - 0.35, float(i) * TAU / 3.0, 0)
+	var embers := _sphere(0.2, Vector3(0, 0.14, 0), _glow(Color(1.0, 0.45, 0.12), 3.0), camp, 0.55)
+	embers.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var fire_light := OmniLight3D.new()
+	fire_light.name = "CampFireLight"
+	fire_light.light_color = Color(1.0, 0.6, 0.28)
+	fire_light.light_energy = 0.9
+	fire_light.omni_range = 4.5
+	fire_light.position = Vector3(0, 0.5, 0)
+	camp.add_child(fire_light)
+	var smoke := MeshInstance3D.new()
+	smoke.name = "CampSmokeColumn"
+	var quad := QuadMesh.new()
+	quad.size = Vector2(1.0, 1.0)
+	smoke.mesh = quad
+	var mat := ShaderMaterial.new()
+	mat.shader = load("res://src/episode2/art/camp_smoke.gdshader")
+	smoke.material_override = mat
+	smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	smoke.scale = Vector3(10.0, 34.0, 1.0)            # wide and tall enough to read from 150 m down the trail
+	smoke.position = Vector3(0, 17.2, 0)
+	camp.add_child(smoke)
+	# the landing lantern at the dock's shore end: a warm point where Logan stands
+	var post := _box(Vector3(0.1, 2.4, 0.1), Vector3(-0.6, 1.2, 8.4) - CAMP, _plain(Color(0.25, 0.16, 0.08), 0.9), camp)
+	post.name = "LandingLanternPost"
+	var lamp := _sphere(0.13, Vector3(-0.6, 2.35, 8.4) - CAMP, _glow(Color(1.0, 0.78, 0.42), 4.0), camp)
+	lamp.name = "LandingLantern"
+	lamp.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 func _vegetation() -> void:
 	_landscape.build_vegetation(_visuals)
@@ -181,6 +253,19 @@ func _on_setup() -> void:
 	if not _hud.search_requested.is_connected(start_rig):
 		_hud.search_requested.connect(start_rig)
 	_build_dialogue()
+	_foot_speed = walk_speed
+	_riding = false
+	_mount_t = -1.0
+	eye_height = FPS_EYE_HEIGHT
+	# Ridden in: he stops where Lil Blunt slid off (the trail's dismount stepped him 1.3 m to the right) and walks to the water.
+	# On foot (UNHORSE on the trail): Dude's horse found the water first and is already drinking - never strand him at the lake.
+	var slid_off_at: Vector3 = _player_pos - Vector3(1.3, 0, 0)
+	if bool(handoff.get("arrived_mounted", false)) and slid_off_at.distance_to(HORSE_DRINK) < 40.0:
+		_place_horse(slid_off_at, _look_yaw)
+		_horse_state = "lead"
+	else:
+		_place_horse(HORSE_DRINK, HORSE_DRINK_YAW)
+		_horse_state = "drink"
 	_advance_to(Beat.ARRIVE)
 
 func _build_dialogue() -> void:
@@ -209,17 +294,22 @@ func _build_dialogue() -> void:
 	_dialogue_panel.add_child(_dialogue)
 	_dialogue_panel.hide()
 
+## A spoken lake line. With its take it is heard and never boxed on screen, and the next line follows the take by a breath
+## (founder 2026-11-01: no subtitles, no awkward delay). Without a take the old dialogue box carries the words for `seconds`.
 func _say(text: String, seconds: float) -> void:
 	_dialogue.text = text
-	_dialogue_panel.show()
 	var parts: PackedStringArray = text.split(": ",true,1)
+	var voiced: bool = false
 	if parts.size() == 2:
 		var speaker: String = "logan" if parts[0] == "LOGAN" else "lil_blunt"
 		var id: String = Ep2TownVoiceBank.id_for(speaker,parts[1])
 		var stream: AudioStream = Ep2TownVoiceBank.stream(id)
 		if stream != null:
 			AudioManager.play_voice(id,stream)
-			seconds = stream.get_length()+0.3
+			seconds = stream.get_length()+Ep2Speech.GAP
+			voiced = true
+	_dialogue_panel.visible = not voiced
+	if _hud != null: _hud.speech(text, seconds, true)   # logged for tests; the box above is the only unvoiced caption
 	_talk_t = seconds
 
 func _gesture(name: String, seconds: float) -> void:
@@ -247,7 +337,13 @@ func start_rig(_payment: String = "") -> bool:
 	if _beat == Beat.OVERLOOK and _staged and _talk_t <= 0 and _player_pos.z > 59:
 		_resolve({"end_session": true, "lake_complete": true, "river_ready": true, "companion": ""})
 		return true
+	if _riding:
+		_dismount()
+		return true
 	if _logan == null:
+		if can_mount_horse():
+			_mount()
+			return true
 		if Ep2Extras.state() == "failed": Ep2Extras.retry(self)
 		return false
 	if _beat == Beat.ARRIVE and _player_pos.distance_to(LOGAN_MARK) < 3.2:
@@ -260,9 +356,13 @@ func start_rig(_payment: String = "") -> bool:
 		_hud.toast("STAGING CONFIRMED · DEPTH PROTECTED", 3)
 		_advance_to(Beat.HANDOFF)
 		return true
+	if can_mount_horse():
+		_mount()
+		return true
 	return false
 
 func _tick(delta: float) -> void:
+	_tick_horse(delta)
 	_landscape.refresh_streamed()
 	_build_cabin()
 	_cabin.refresh_materials()
@@ -299,6 +399,12 @@ func _tick(delta: float) -> void:
 		prompt = "Check staged cargo [E]"
 	elif _beat == Beat.OVERLOOK and _talk_t <= 0 and _player_pos.z > 59:
 		prompt = "Finish lake visit [E]"
+	elif _riding:
+		prompt = "Dismount [E]"
+	elif can_mount_horse():
+		prompt = "Mount the horse [E]"
+	if prompt != "" and not TouchUi.keys_shown():
+		prompt = prompt.replace(" [E]", "")
 	_hud.set_search_prompt(prompt)
 	if _staged:
 		_cargo.position.z = minf(72, _cargo.position.z + delta * 0.35)
@@ -315,8 +421,8 @@ func _collide(p: Vector3) -> Vector3:
 	var q := p
 	q.z = clampf(q.z, -16, 64)
 	q.x = clampf(q.x, -11.5, -4.1)
-	# Walk onto the dock only through its landward end; water stays impassable.
-	if p.z > 8.85 and p.z < 11.15:
+	# Walk onto the dock only through its landward end; water stays impassable (and no horse on the planks).
+	if p.z > 8.85 and p.z < 11.15 and not _riding:
 		q.x = clampf(p.x, -11.5, 3.65)
 	if _beat < Beat.HANDOFF and q.z > 27:
 		q.z = 27
@@ -353,3 +459,187 @@ func _build_ambience() -> void:
 	var life := preload("res://src/episode2/art/ep2_lake_ambience.gd").new()
 	life.name="LakeAmbience"
 	_visuals.add_child(life)
+
+
+# --- Dude's horse at the water ---------------------------------------------------------------------------------------
+
+func _build_horse() -> void:
+	if _horse != null:
+		return
+	_horse = Node3D.new()
+	_horse.name = "LakeHorse"
+	add_child(_horse)                     # not under _visuals: the trail preview copies _visuals onto its horizon
+	var model: Node3D = null
+	if ResourceLoader.exists(HORSE_MODEL):
+		model = (load(HORSE_MODEL) as PackedScene).instantiate() as Node3D
+	if model != null:
+		model.rotation.y = -PI * 0.5      # the supplied horse faces +X; the actor faces local +Z (as on the trail)
+		_horse.add_child(model)
+		for node in model.find_children("*", "AnimationPlayer", true, false):
+			_horse_anim = node as AnimationPlayer
+			break
+		if _horse_anim != null:
+			for clip in _horse_anim.get_animation_list():
+				_horse_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+	else:
+		var coat: StandardMaterial3D = _plain(Color(0.30, 0.16, 0.075), 0.92)
+		_box(Vector3(0.76, 0.82, 1.75), Vector3(0.0, 1.02, 0.0), coat, _horse)
+		_box(Vector3(0.40, 0.42, 0.70), Vector3(0.0, 1.62, 1.0), coat, _horse)
+	# Dude's saddle and stirrups, the same leather as on the trail: it is the same horse.
+	var leather: StandardMaterial3D = _plain(Color(0.16, 0.075, 0.035), 0.82)
+	_box(Vector3(0.72, 0.13, 0.76), Vector3(0.0, SADDLE_HEIGHT, -0.15), leather, _horse)
+	_box(Vector3(0.82, 0.07, 0.12), Vector3(0.0, SADDLE_HEIGHT + 0.11, -0.47), leather, _horse)
+	for side in [-1.0, 1.0]:
+		_box(Vector3(0.035, 0.52, 0.055), Vector3(side * 0.43, SADDLE_HEIGHT - 0.27, -0.12), leather, _horse)
+		_box(Vector3(0.13, 0.035, 0.22), Vector3(side * 0.43, SADDLE_HEIGHT - 0.52, -0.12), leather, _horse)
+	_place_horse(HORSE_DRINK, HORSE_DRINK_YAW)
+	_set_horse_clip("horse_graze", 0.55)
+
+
+func _ground_at(p: Vector3) -> float:
+	return Ep2LoganCabin.walk_height(p) if p.x < -11.5 else path_height(p.z)
+
+
+func _place_horse(at: Vector3, yaw: float) -> void:
+	if _horse == null:
+		return
+	_horse.position = Vector3(at.x, _ground_at(at), at.z)
+	_horse.rotation = Vector3(0, yaw, 0)
+
+
+func _set_horse_clip(clip: String, speed_scale: float) -> void:
+	_horse_clip = clip
+	if _horse_anim == null:
+		return
+	if (_horse_anim.current_animation != clip or not _horse_anim.is_playing()) and _horse_anim.has_animation(clip):
+		_horse_anim.play(clip, 0.25)
+	_horse_anim.speed_scale = speed_scale
+
+
+func _tick_horse(delta: float) -> void:
+	if _horse == null:
+		return
+	match _horse_state:
+		"lead":
+			var to: Vector3 = HORSE_DRINK - Vector3(_horse.position.x, 0, _horse.position.z)
+			to.y = 0.0
+			if to.length() < 0.08:
+				_horse_state = "drink"
+			else:
+				var step: Vector3 = to.normalized() * minf(to.length(), HORSE_WALK * delta)
+				_place_horse(_horse.position + step, lerp_angle(_horse.rotation.y, atan2(to.x, to.z), clampf(delta * 4.0, 0.0, 1.0)))
+				_set_horse_clip("horse_walk", HORSE_WALK / HORSE_CLIP_SPEED)
+		"drink":
+			_horse.rotation.y = lerp_angle(_horse.rotation.y, HORSE_DRINK_YAW, clampf(delta * 2.5, 0.0, 1.0))
+			_set_horse_clip("horse_graze", 0.55)
+			_horse_sip_t -= delta
+			if _horse_sip_t <= 0.0:
+				_horse_sip_t = 6.5
+				_sip()
+		"ridden":
+			if _mount_t >= 0.0:
+				# he swings up as the horse steps back from the water onto the bank path: both meet at `_mount_to`
+				_mount_t += delta
+				var k: float = clampf(_mount_t / 0.6, 0.0, 1.0)
+				var e: float = k * k * (3.0 - 2.0 * k)
+				_player_pos = Vector3(_mount_from.x, _player_pos.y, _mount_from.z).lerp(Vector3(_mount_to.x, _player_pos.y, _mount_to.z), e)
+				_place_horse(_mount_horse_from.lerp(_mount_to, e), _horse.rotation.y)
+				_set_horse_clip("horse_walk", 0.6)
+				if k >= 1.0:
+					_mount_t = -1.0
+			else:
+				var moved: Vector3 = Vector3(_player_pos.x - _horse.position.x, 0, _player_pos.z - _horse.position.z)
+				var yaw: float = _horse.rotation.y
+				if moved.length() > 0.002:
+					yaw = lerp_angle(yaw, atan2(moved.x, moved.z), clampf(delta * 8.0, 0.0, 1.0))
+				_place_horse(_player_pos, yaw)
+				var speed: float = moved.length() / maxf(delta, 0.0001)
+				if _moving and speed > 0.05:
+					_set_horse_clip("horse_walk", clampf(speed / HORSE_CLIP_SPEED, 0.4, 3.8))
+				else:
+					_set_horse_clip("horse_stand", 1.0)
+			eye_height = move_toward(eye_height, MOUNTED_EYE, delta * 2.4)
+		_:
+			_set_horse_clip("horse_graze", 0.55)
+			if not _riding:
+				eye_height = move_toward(eye_height, FPS_EYE_HEIGHT, delta * 2.4)
+
+
+func _sip() -> void:
+	var stream: AudioStream = load("res://src/episode2/extras/audio/town/water_trough.ogg") if Ep2Extras.has("res://src/episode2/extras/audio/town/water_trough.ogg") else null
+	if stream == null:
+		return
+	var player := AudioStreamPlayer3D.new()
+	player.stream = stream
+	player.bus = "SFX"
+	player.volume_db = -20.0
+	player.unit_size = 3.0
+	player.max_distance = 18.0
+	add_child(player)
+	player.position = _horse.position + _horse.basis * Vector3(0, 0.3, 1.2)
+	player.play()
+	player.finished.connect(player.queue_free)
+
+
+## E mounts him whenever Logan is not mid-explanation and the horse is beside Lil Blunt.
+func can_mount_horse() -> bool:
+	# not while he is still walking himself down to the water, nor while Logan is explaining
+	if _horse == null or _riding or _horse_state == "lead" or _beat == Beat.INVESTIGATE or not has_player_control():
+		return false
+	return Vector2(_player_pos.x - _horse.position.x, _player_pos.z - _horse.position.z).length() < HORSE_REACH
+
+
+func _mount() -> void:
+	_riding = true
+	_horse_state = "ridden"
+	_mount_from = _player_pos
+	_mount_horse_from = _horse.position
+	_mount_to = _collide(Vector3(_horse.position.x, _player_pos.y, _horse.position.z))
+	_mount_t = 0.0
+	walk_speed = MOUNTED_SPEED
+
+
+func _dismount() -> void:
+	_riding = false
+	_mount_t = -1.0
+	_horse_state = "graze"
+	walk_speed = _foot_speed
+	# He slides off on the left and the horse stays where it stands, grazing, ready to be mounted again.
+	var left: Vector3 = _horse.basis * Vector3(-1.2, 0, 0)
+	_player_pos = _collide(_player_pos + Vector3(left.x, 0, left.z))
+
+
+## True while Lil Blunt rides Dude's horse at the lake (the return trail keeps him mounted).
+func is_riding_horse() -> bool:
+	return _riding
+
+
+func get_horse_node() -> Node3D:
+	return _horse
+
+
+func get_horse_state() -> String:
+	return _horse_state
+
+
+func get_horse_clip() -> String:
+	return _horse_clip
+
+
+## A later visit from the trail (world routes, no fresh setup): ridden in, he is still in the saddle; on foot, the horse stays
+## wherever he left it at the water.
+func arrive_from_trail(mounted: bool) -> void:
+	if _horse == null:
+		return
+	if mounted:
+		_riding = true
+		_horse_state = "ridden"
+		_mount_t = -1.0
+		walk_speed = MOUNTED_SPEED
+		eye_height = MOUNTED_EYE
+		_place_horse(_player_pos, _look_yaw)
+	else:
+		_riding = false
+		walk_speed = _foot_speed
+		eye_height = FPS_EYE_HEIGHT
+

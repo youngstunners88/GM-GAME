@@ -59,7 +59,8 @@ func _ready() -> void:
 		stock_text += (str(it["id"]) + " " + str(it["name"]) + " " + str(it["note"])).to_lower() + " "
 	check("the Gatling is not in the Armory's stock under any name (it is a showpiece outside the shop)", not ("gatling" in stock_text or "colt" in stock_text))
 	var st := Ep2ArmoryState.new()
-	check("the personal armory still has its three slots only (no Gatling slot, no fourth gun)", Ep2ArmoryState.IDS.size() == 3 and not st.owns("gatling") and not st.purchase_firearm("gatling", "btc"))
+	check("the personal armory has its six slots (the founder's coach gun, MP18 and golden Thompson joined 2026-11-01) and never a Gatling slot",
+		Ep2ArmoryState.IDS.size() == 6 and not Ep2ArmoryState.IDS.has("gatling") and not st.owns("gatling") and not st.purchase_firearm("gatling", "btc"))
 
 	print("-- THE POST: arc, rounds, plates")
 	var root := Node3D.new()

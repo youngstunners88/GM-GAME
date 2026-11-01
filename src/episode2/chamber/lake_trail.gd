@@ -36,7 +36,7 @@ const RIDER_START_S := 215.0
 const RIDER_END_S := 294.0
 const UNHORSE_SECONDS := 1.4
 const SHORE_SECONDS := 8.0
-const LAKE_REVEAL_DISTANCE := 80.0
+const LAKE_REVEAL_DISTANCE := 130.0     # founder 2026-11-01: a longer, readable shore approach (was 80 m)
 
 ## Catmull-Rom control points (x, z). The sampled route is about 560 m long.
 const TRAIL_POINTS: Array = Ep2LakeRoad.POINTS
@@ -54,6 +54,20 @@ const BANDIT_SPECS: Array = [
 	{"s": 405.0, "lat": -10.0, "ambush": 1}, {"s": 421.0, "lat": 9.0, "ambush": 1}, {"s": 339.0, "lat": 12.0, "ambush": 1},
 ]
 const BANDIT_BARKS: Array = ["jh_bandit_1", "jh_bandit_2", "jh_bandit_3"]
+## TWO KINDS OF AMBUSHER (founder 2026-11-01: "some of the bandits actually run towards Lil Blunt while some hide behind the rocks").
+## Holdouts stay crouched below their rock's crest and only rise to telegraph and fire. Rushers break cover when he comes in range and
+## run at him across the open ground, stopping at the trail's edge or a few metres short of him, then fight standing in the open.
+## Both keep the full rise / Draw / glint tell before every shot - nothing fires from stealth.
+const RUSHER_SLOTS: Array = [1, 3]           # bandit index % 5 in these slots is a rusher (7 of the 18)
+const RUSH_SPEED := 4.6
+const RUSH_STANDOFF := 7.0
+const RUSH_TRAIL_EDGE := 2.8
+const RUSH_MAX_SECONDS := 6.0
+const HOLDOUT_HIDE := 0.78                   # crouch depth: the head stays below the 1.1 m rock crest
+## The chasing rider SITS the saddle (founder: mounted bandits "are actually standing on the horse. They need to be riding"): a rigged
+## townsman with the ranch's solved RanchRide pose (Ep2RanchPose, the same seat Dude rides), hips placed on the saddle.
+const RIDER_MODELS: Array = ["res://src/episode2/extras/people/townsman_rancher.glb", "res://src/episode2/assets/town/stable_assistant.glb"]
+const RIDER_HIP_LIFT := 0.1
 const LB_LINES: Dictionary = {
 	"trail_lb_start": "Logan's Lake first. Dude's horse needs water in this heat.",
 	"trail_lb_ambush": "Hammer's men on the ridge! Keep moving.",
@@ -136,7 +150,7 @@ func _beat_label(b: int) -> String:
 # --- set -------------------------------------------------------------------------------------------------------------
 
 func _build_steps() -> Array:
-	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_bandits, _build_vultures]
+	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_departure_space, _step_departure_crowd, _step_bandits, _build_vultures]
 
 
 func _warm_views() -> Array:
@@ -190,9 +204,21 @@ func _step_departure_yard() -> void:
 			if entry[0] == _departure_yard.horses[1]:
 				_town_props.erase(entry[1])
 				_departure_yard._solids.erase(entry)
+	_departure_survey = survey
+	_departure_parent = parent
+
+
+## The town crowd behind the departure is its own two steps (graph, people), not part of the town step (founder 2026-11-01: no stalls).
+var _departure_survey: Dictionary = {}
+var _departure_parent: Node3D = null
+func _step_departure_space() -> void:
 	_return_crowd = Ep2TownPeople.new()
-	_return_crowd.configure_space(survey)
-	_return_crowd.build(parent)
+	_return_crowd.configure_space(_departure_survey)
+
+
+func _step_departure_crowd() -> void:
+	if _return_crowd != null and _departure_parent != null:
+		_return_crowd.build(_departure_parent)
 
 func _step_ground() -> void:
 	var ground := MeshInstance3D.new()
@@ -204,6 +230,9 @@ func _step_ground() -> void:
 	_sand_material.shader=load("res://src/episode2/art/trail_sand.gdshader")
 	_sand_material.set_shader_parameter("sand",load("res://src/episode2/assets/town/tex_desert.jpg"))
 	_sand_material.set_shader_parameter("lake_inverse",lake_transform().affine_inverse())
+	if ResourceLoader.exists(Ep2LakeLandscape.FLOOR):
+		_sand_material.set_shader_parameter("forest",load(Ep2LakeLandscape.FLOOR))
+		_sand_material.set_shader_parameter("has_forest",true)
 	ground.material_override = _sand_material
 	ground.position = Vector3(170.0, -0.012, -140.0)
 	_visuals.add_child(ground)
@@ -220,6 +249,34 @@ func _step_trail() -> void:
 	ecotone.set_shader_parameter("forest",load(Ep2LakeLandscape.FLOOR))
 	var field: MeshInstance3D = _ribbon(_route_pts,190.0,ecotone,0.006)
 	field.name="GradualGrassApproach"
+	_build_lake_signpost()
+
+
+## A trail sign well before the shore (founder 2026-11-01: "we cant anticipate that Logan is in the distance"): it names the lake and
+## Logan's camp and points at the smoke column the lake room raises beside his landing.
+const SIGNPOST_BEFORE_END := 175.0
+func _build_lake_signpost() -> void:
+	var sample: Array = _route_sample(_route_total - SIGNPOST_BEFORE_END)
+	var yaw: float = float(sample[1])
+	var right := Vector3(-cos(yaw), 0.0, sin(yaw))
+	var root := Node3D.new()
+	root.name = "LogansLakeSignpost"
+	_visuals.add_child(root)
+	root.position = (sample[0] as Vector3) - right * 3.4
+	root.rotation.y = yaw + PI            # the board faces the oncoming rider
+	var wood: Material = _plain(Color(0.42, 0.27, 0.14), 0.9)
+	_box(Vector3(0.16, 2.6, 0.16), Vector3(0, 1.3, 0), wood, root)
+	_box(Vector3(2.5, 0.62, 0.1), Vector3(0, 2.05, 0), wood, root)
+	_box(Vector3(1.9, 0.42, 0.1), Vector3(0.18, 1.42, 0), wood, root)
+	for row in [["LOGAN'S LAKE", 2.05, 44], ["LOGAN'S CAMP AHEAD", 1.42, 30]]:
+		var label := Label3D.new()
+		label.text = str(row[0])
+		label.position = Vector3(0, float(row[1]), 0.06)      # the rider's side of the board (root +Z points back at him)
+		label.font_size = int(row[2])
+		label.pixel_size = 0.0095
+		label.modulate = Color(0.97, 0.84, 0.56)
+		label.outline_size = 4
+		root.add_child(label)
 
 
 func _step_desert() -> void:
@@ -390,7 +447,8 @@ func _spawn_bandits() -> void:
 		var root := Node3D.new()
 		root.name = "Ambusher%d" % i
 		_bandits_root.add_child(root)
-		root.position = home + Vector3(0.0, -0.5, 0.0)
+		var role: String = "rush" if RUSHER_SLOTS.has(i % 5) else "hold"
+		root.position = home + Vector3(0.0, -HOLDOUT_HIDE, 0.0)
 		var height: float = 1.74 + float(i % 3) * 0.055
 		var parts: Dictionary = _make_bandit(root, height, BANDIT_TINTS[i % BANDIT_TINTS.size()])
 		var folk: Ep2TownFolk = parts["folk"]
@@ -399,7 +457,7 @@ func _spawn_bandits() -> void:
 			"state": "cover", "cool": 0.25 + float(i % 3) * 0.42, "tell": 0.0, "tell_need": 1.0,
 			"last_tell": 0.0, "shots": 0, "rider": false, "released": true, "chase_s": 0.0,
 			"horse_anim": null, "height": height, "folk": folk, "gun": parts["gun"], "glint": parts["glint"],
-			"accents": parts["accents"]})
+			"accents": parts["accents"], "role": role, "exposed": false, "rush_t": 0.0})
 	_spawn_rider()
 
 
@@ -440,13 +498,102 @@ func _spawn_rider() -> void:
 	horse.name = "BanditHorse"
 	var anim: AnimationPlayer = _find_horse_anim(horse)
 	var height: float = 1.86
-	var parts: Dictionary = _make_bandit(root, height, Color(0.24, 0.035, 0.025))
+	var parts: Dictionary = _make_rider(root, Color(0.24, 0.035, 0.025))
+	if parts.is_empty():
+		parts = _make_bandit(root, height, Color(0.24, 0.035, 0.025))
+		parts["seat_y"] = SADDLE_HEIGHT
 	var folk: Ep2TownFolk = parts["folk"]
-	folk.position.y = SADDLE_HEIGHT
+	folk.position.y = float(parts["seat_y"])
+	if bool(parts.get("seated", false)):
+		height = 1.0          # seated: saddle to the crown of his hat is the target, not a standing man
 	_bandits.append({"root": root, "home": Vector3.ZERO, "s": 0.0, "ambush": 2, "state": "cover",
 		"cool": 0.5, "tell": 0.0, "tell_need": 1.0, "last_tell": 0.0, "shots": 0, "rider": true,
 		"released": false, "chase_s": 0.0, "horse_anim": anim, "height": height, "folk": folk,
-		"gun": parts["gun"], "glint": parts["glint"], "accents": parts["accents"]})
+		"gun": parts["gun"], "glint": parts["glint"], "accents": parts["accents"], "role": "ride",
+		"exposed": true, "rush_t": 0.0, "seat_y": float(parts["seat_y"]), "seated": bool(parts.get("seated", false))})
+
+
+## A rigged rider in the RanchRide pose with his hips on the saddle, or {} when no rigged townsman is in the build.
+func _make_rider(root: Node3D, tint: Color) -> Dictionary:
+	var path: String = ""
+	for candidate in RIDER_MODELS:
+		if (str(candidate).begins_with(Ep2Extras.PEOPLE_DIR) and Ep2Extras.has(str(candidate))) or (not str(candidate).begins_with(Ep2Extras.PEOPLE_DIR) and ResourceLoader.exists(str(candidate))):
+			path = str(candidate)
+			break
+	if path == "":
+		return {}
+	var folk := Ep2TownFolk.new()
+	folk.name = "SeatedRider"
+	root.add_child(folk)
+	if not folk.setup(path, 1.78) or not folk.has_clips():
+		folk.queue_free()
+		return {}
+	var ap: AnimationPlayer = folk.anim_player()
+	var skel: Skeleton3D = null
+	for node in folk.model.find_children("*", "Skeleton3D", true, false):
+		skel = node
+		break
+	if skel == null:
+		folk.queue_free()
+		return {}
+	# axes and metres of the skeleton relative to the folk model (the stable yard's own recipe for Dude)
+	var relative: Transform3D = _relative_to(skel, folk.model)
+	var inverse: Basis = relative.basis.inverse()
+	var unit: float = maxf(0.0001, folk.model.scale.y * relative.basis.get_scale().y)
+	if not Ep2RanchPose.install_ride(ap, skel, (inverse * Vector3.BACK).normalized(), (inverse * Vector3.UP).normalized(), unit):
+		folk.queue_free()
+		return {}
+	folk.hold_clip(Ep2RanchPose.RIDE)
+	ap.seek(0.0, true)
+	# Sit him: the hips (measured in the solved pose) land just above the saddle board, over its centre.
+	var hips: int = -1
+	for b in skel.get_bone_count():
+		if skel.get_bone_name(b).to_lower().ends_with("hips"):
+			hips = b
+			break
+	var hip_local: Vector3 = Vector3(0, 0.95, 0)
+	if hips >= 0:
+		hip_local = (folk.model.transform * relative) * skel.get_bone_global_pose(hips).origin
+	var seat_y: float = SADDLE_HEIGHT + RIDER_HIP_LIFT - hip_local.y
+	folk.position = Vector3(-hip_local.x, seat_y, -0.15 - hip_local.z)
+	var accent_mat: StandardMaterial3D = _plain(tint, 0.9)
+	var accents: Array = []
+	accents.append(_box(Vector3(0.30, 0.13, 0.045), hip_local + Vector3(0.0, 0.42, 0.13), accent_mat, folk))   # bandana
+	var gun := Node3D.new()
+	gun.name = "BanditRevolver"
+	folk.add_child(gun)
+	var steel: StandardMaterial3D = _plain(Color(0.20, 0.20, 0.22), 0.35, 0.8)
+	var grip: StandardMaterial3D = _plain(Color(0.30, 0.18, 0.09), 0.75)
+	Ep2KitProps.place(gun, "Kit_Revolver", Transform3D.IDENTITY, Transform3D.IDENTITY, func(h: Node3D) -> void:
+		_box(Vector3(0.03, 0.03, 0.22), Vector3(0.0, 0.0, 0.10), steel, h)
+		_box(Vector3(0.035, 0.11, 0.045), Vector3(0.0, -0.065, -0.035), grip, h))
+	gun.position = hip_local + Vector3(0.24, 0.42, 0.38)       # gun hand out over the horse's shoulder
+	gun.visible = false
+	var glint := _sphere(0.055, Vector3(0.0, 0.0, 0.23), _glow(Color(1.0, 0.91, 0.60), 5.0), gun)
+	glint.name = "TelegraphGlint"
+	glint.visible = false
+	glint.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return {"folk": folk, "gun": gun, "glint": glint, "accents": accents, "seat_y": seat_y, "seated": true}
+
+
+func _relative_to(node: Node3D, top: Node3D) -> Transform3D:
+	var t := Transform3D.IDENTITY
+	var c: Node = node
+	while c != null and c != top:
+		if c is Node3D:
+			t = (c as Node3D).transform * t
+		c = c.get_parent()
+	return t
+
+
+## The rest pose between shots: a seated rider goes back to his ride clip (the rig's "idle" would stand him up on the saddle).
+func _bandit_rest(b: Dictionary) -> void:
+	var folk: Ep2TownFolk = b["folk"]
+	if bool(b.get("seated", false)):
+		folk.pose_name = "idle"
+		folk.play_clip(Ep2RanchPose.RIDE)
+	else:
+		folk.set_pose("idle")
 
 
 func _tick_bandits(delta: float) -> void:
@@ -460,6 +607,10 @@ func _tick_bandits(delta: float) -> void:
 		var folk: Ep2TownFolk = b["folk"]
 		if str(b["state"]) == "dead":
 			folk.step(delta)
+			if bool(b["rider"]):
+				# shot out of the saddle: he slides off the horse's side to the ground
+				folk.position.y = move_toward(folk.position.y, 0.0, delta * 2.6)
+				folk.position.x = move_toward(folk.position.x, 1.1, delta * 1.6)
 			continue
 		var rider: bool = bool(b["rider"])
 		var active: bool = false
@@ -475,7 +626,14 @@ func _tick_bandits(delta: float) -> void:
 				_cancel_telegraph(b)
 			folk.step(delta)
 			if rider:
-				folk.position.y = SADDLE_HEIGHT
+				folk.position.y = float(b["seat_y"])
+			continue
+		if str(b["state"]) == "rush":
+			_tick_rush(b, delta)
+			continue
+		if str(b["state"]) == "cover" and str(b.get("role", "")) == "rush" and not bool(b["exposed"]) \
+				and _bandit_world_position(b).distance_to(_player_pos) <= SHOT_RANGE:
+			_begin_rush(b)
 			continue
 		_bandit_face_player(b)
 		var distance: float = _bandit_world_position(b).distance_to(_player_pos)
@@ -485,10 +643,10 @@ func _tick_bandits(delta: float) -> void:
 		if state == "telegraph":
 			b["tell"] = float(b["tell"]) + delta
 			var tell: float = float(b["tell"])
-			if not rider:
+			if not rider and not bool(b["exposed"]):
 				var home: Vector3 = b["home"]
 				var rise: float = clampf(tell / 0.28, 0.0, 1.0)
-				root.position.y = home.y - 0.5 * (1.0 - rise)
+				root.position.y = home.y - HOLDOUT_HIDE * (1.0 - rise)
 			var glint: MeshInstance3D = b["glint"]
 			glint.scale = Vector3.ONE * (1.0 + 0.35 * sin(tell * 25.0))
 			if tell >= float(b["tell_need"]):
@@ -501,7 +659,42 @@ func _tick_bandits(delta: float) -> void:
 			telegraphs += 1
 		folk.step(delta)
 		if rider:
-			folk.position.y = SADDLE_HEIGHT
+			folk.position.y = float(b["seat_y"])
+
+
+## A rusher leaves his rock: he stands, draws nothing yet, and runs at Lil Blunt.
+func _begin_rush(b: Dictionary) -> void:
+	b["state"] = "rush"
+	b["exposed"] = true
+	b["rush_t"] = 0.0
+	var root: Node3D = b["root"]
+	var home: Vector3 = b["home"]
+	root.position.y = home.y
+	_bandit_rest(b)
+
+
+## Run across the open ground toward him; stop at the trail's edge, a few metres short of him, or after RUSH_MAX_SECONDS, then
+## fight standing (state "cover" with `exposed`, so the normal telegraph/fire cycle runs without ducking behind anything).
+func _tick_rush(b: Dictionary, delta: float) -> void:
+	var folk: Ep2TownFolk = b["folk"]
+	b["rush_t"] = float(b["rush_t"]) + delta
+	var at: Vector3 = _bandit_world_position(b)
+	var to: Vector3 = _player_pos - at
+	to.y = 0.0
+	# his distance from the trail's centre line, measured where his ambush sits on it (not where Lil Blunt is)
+	var sample: Array = _route_sample(float(b["s"]))
+	var yaw: float = float(sample[1])
+	var right := Vector3(-cos(yaw), 0.0, sin(yaw))
+	var lateral: float = absf((at - (sample[0] as Vector3)).dot(right))
+	if to.length() <= RUSH_STANDOFF or lateral <= RUSH_TRAIL_EDGE or float(b["rush_t"]) >= RUSH_MAX_SECONDS:
+		folk.stop()
+		b["state"] = "cover"
+		b["cool"] = minf(float(b["cool"]), 0.35)
+		_bandit_face_player(b)
+		folk.step(delta)
+		return
+	folk.walk_to(folk.position + to.normalized() * 2.0, RUSH_SPEED)
+	folk.step(delta)
 
 
 func _tick_rider(b: Dictionary, delta: float) -> bool:
@@ -564,12 +757,11 @@ func _cancel_telegraph(b: Dictionary) -> void:
 		b["cool"] = maxf(float(b["cool"]), 0.45)
 	(b["gun"] as Node3D).visible = false
 	(b["glint"] as MeshInstance3D).visible = false
-	var folk: Ep2TownFolk = b["folk"]
-	folk.set_pose("idle")
-	if not bool(b["rider"]):
+	_bandit_rest(b)
+	if not bool(b["rider"]) and not bool(b["exposed"]):
 		var root: Node3D = b["root"]
 		var home: Vector3 = b["home"]
-		root.position.y = home.y - 0.5
+		root.position.y = home.y - HOLDOUT_HIDE
 
 
 func _fire_bandit(index: int) -> void:
@@ -581,15 +773,16 @@ func _fire_bandit(index: int) -> void:
 	b["cool"] = _rng.randf_range(1.35, 2.15)
 	(b["gun"] as Node3D).visible = false
 	(b["glint"] as MeshInstance3D).visible = false
-	folk.set_pose("idle")
+	_bandit_rest(b)
 	folk.kick()
 	var muzzle: Vector3 = _bandit_world_position(b) + Vector3(0.0, 1.25 + (SADDLE_HEIGHT if bool(b["rider"]) else 0.0), 0.0)
 	_flash(muzzle)
 	_sfx("ep2_revolver_blast_1")
-	if not bool(b["rider"]):
+	if not bool(b["rider"]) and not bool(b["exposed"]):
+		# a holdout ducks straight back behind his rock after the shot
 		var root: Node3D = b["root"]
 		var home: Vector3 = b["home"]
-		root.position.y = home.y - 0.25
+		root.position.y = home.y - HOLDOUT_HIDE
 	var distance: float = muzzle.distance_to(_player_pos)
 	var hit_chance: float = clampf(0.46 - distance * 0.004 - clampf(_speed / MAX_RIDE_SPEED, 0.0, 1.0) * 0.08, 0.16, 0.36)
 	if _rng.randf() >= hit_chance:
@@ -608,7 +801,12 @@ func _bandit_face_player(b: Dictionary) -> void:
 
 func _bandit_world_position(b: Dictionary) -> Vector3:
 	var root: Node3D = b["root"]
-	return root.global_position if root.is_inside_tree() else root.position
+	var at: Vector3 = root.global_position if root.is_inside_tree() else root.position
+	if not bool(b["rider"]):
+		# a rusher's body has run away from his rock: the folk's own ground offset under the (unrotated) ambush root
+		var folk: Ep2TownFolk = b["folk"]
+		at += Vector3(folk.position.x, 0.0, folk.position.z)
+	return at
 
 
 # --- setup and movement ----------------------------------------------------------------------------------------------
@@ -921,7 +1119,9 @@ func _bandit_ray_hit(b: Dictionary, eye: Vector3, direction: Vector3) -> float:
 		along_body = clampf((aa * ee - bb * dd) / denominator, 0.0, 1.0)
 	along_ray = maxf(along_ray, 0.0)
 	var miss: float = (eye + d * along_ray).distance_to(a + axis * along_body)
-	return along_ray if miss <= 0.46 and along_ray <= 180.0 else -1.0
+	# buckshot (the coach gun) spreads: its pattern forgives a wider miss, but only at shotgun range
+	var spread: float = _vm.gun.hit_scale if _vm != null and _vm.gun != null and along_ray <= 30.0 else 1.0
+	return along_ray if miss <= 0.46 * spread and along_ray <= 180.0 else -1.0
 
 
 func _drop_bandit(index: int) -> void:
@@ -1084,7 +1284,7 @@ func _say_trail_line(id: String) -> void:
 		if not line.is_empty():
 			caption = Ep2JackHammer.toast_text(line)
 	if _hud != null and caption != "":
-		_hud.toast(caption, clampf(1.4 + float(caption.length()) * 0.04, 2.4, 5.2))
+		_hud.speech(caption, Ep2Speech.pace(id, caption), Ep2Speech.voiced(id))   # heard, not subtitled (founder 2026-11-01)
 	_speak(id)
 
 
@@ -1162,6 +1362,23 @@ func get_handoff() -> Dictionary:
 	result["trail_seconds"] = _trail_time
 	result["bandits_down"] = _bandits_down
 	return result
+
+
+## Back from the lake (world routes): in the saddle of Dude's horse, or on foot because the horse was left drinking at the water.
+## There is one horse - when it stayed at the lake, the trail's copy is not shown.
+func set_return_mounted(on: bool) -> void:
+	_mounted = on
+	_unhorse_active = false
+	_unhorse_roll = 0.0
+	_horse_left = not on
+	if on:
+		_horse_hp = maxi(_horse_hp, 1)
+		eye_height = MOUNTED_EYE
+	else:
+		eye_height = FPS_EYE_HEIGHT
+	if _horse != null:
+		_horse.visible = on
+		_horse.rotation = Vector3.ZERO
 
 
 ## True while Lil Blunt is mounted and the trail is still being ridden.
@@ -1259,7 +1476,7 @@ func get_bandit_aim_position(index: int) -> Vector3:
 		return Vector3.ZERO
 	var b: Dictionary = _bandits[index]
 	var at: Vector3 = _bandit_world_position(b)
-	at.y += 1.05 + (SADDLE_HEIGHT if bool(b["rider"]) else 0.0)
+	at.y += (SADDLE_HEIGHT + 0.6) if bool(b["rider"]) else 1.05
 	return at
 
 

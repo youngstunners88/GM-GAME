@@ -197,6 +197,9 @@ func _build_ranch_props(props: Array) -> void:
 	for sx in [-1.0, 1.0]:
 		_part(feeder, "FeederLeg", Vector3(sx * 0.58, 0.18, 0), Vector3(0.12, 0.36, 0.55), wood)
 	_solid(feeder, 0.72, 0.55, props)
+	# Dude's Chill Bud patch outside the east fence (founder 2026-11-01): a paid shop, opened with E from the room
+	var patch: Node3D = Ep2BudPatch.build(self)
+	_solid(patch, 1.25, 0.6, props)
 
 
 func _build_trees(props: Array) -> void:
@@ -563,11 +566,9 @@ func _emit_next_line() -> void:
 	voice_line_requested.emit(str(_conv_current["id"]), str(_conv_current["voice"]))
 
 
+## The take + a breath when voiced; a reading time only when the take is missing (founder 2026-11-01: no dead air, no subtitles).
 func _line_seconds(id: String, text: String) -> float:
-	var seconds: float = clampf(1.3 + float(text.length()) * 0.052, 2.4, 6.2)
-	if id != "" and Ep2TownVoiceBank.LINES.has(id):
-		seconds = maxf(seconds, Ep2TownVoiceBank.seconds(id) + 0.3)
-	return seconds
+	return Ep2Speech.pace(id, text)
 
 
 func _perform_conversation_action(action: String) -> void:

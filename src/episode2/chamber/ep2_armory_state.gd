@@ -9,13 +9,31 @@ const REM := "remington_1875_gold"
 const BOW := "bear_longbow"
 ## An equipped mode while the Sheriff holds the irons, never a fourth slot.
 const PICK := "pickaxe"
-const IDS := [WIN, REM, BOW]
-const NAMES := {WIN: "Winchester 1886", REM: "Golden Remington 1875", BOW: "Recovered Bear Bow"}
-const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round", BOW: "bear_arrow"}
+## Rich & Utah's new stock (founder 2026-11-01: "more weapons like a shotgun ... a bergmann mp18 submachine gun and a golden thompson
+## submachine gun"). Bought at the counter with Episode 1 crypto like the rest; once owned they join the quick-switch armory.
+const SHOT := "coach_shotgun"
+const MP18 := "bergmann_mp18"
+const TOMMY := "thompson_gold"
+const IDS := [WIN, REM, BOW, SHOT, MP18, TOMMY]
+const NAMES := {WIN: "Winchester 1886", REM: "Golden Remington 1875", BOW: "Recovered Bear Bow",
+	SHOT: "Coach Gun", MP18: "Bergmann MP18", TOMMY: "Golden Thompson"}
+const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round", BOW: "bear_arrow", SHOT: "buckshot_shell", MP18: "nine_mm", TOMMY: "forty_five"}
+## Rounds that come with a gun when it is acquired (loaded + reserve; never refilled for free afterwards).
+const START_RESERVE := {WIN: 24, REM: 18, BOW: 0, SHOT: 12, MP18: 64, TOMMY: 100}
+## The guns' game profiles. Feel-values (F - free to tune): the coach gun is two barrels of buckshot (wide hit cone, a heavy kick,
+## shell-by-shell reload); the two submachine guns fire while the trigger is HELD and change a whole drum at once.
+const PROFILES := {
+	SHOT: {"capacity": 2, "cycle": 0.28, "reload": 0.55, "kick": 4.6, "pellets": 8, "hit_scale": 2.4},
+	MP18: {"capacity": 32, "cycle": 0.1, "reload": 2.3, "kick": 0.75, "automatic": true, "drum": true},
+	TOMMY: {"capacity": 50, "cycle": 0.085, "reload": 2.7, "kick": 0.85, "automatic": true, "drum": true},
+}
 const SWITCH_TIME := 0.18
 const VERSION := 1
 const CONTROL_FILE := "user://ep2_armory_controls.cfg"
-const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_previous", "ep2_armory"]
+const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_previous", "ep2_armory",
+	"ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6"]
+## The quick-switch key for each slot in IDS order (1-6).
+const SLOT_ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6"]
 ## The Armory (Rich & Utah, off Main Street) is the one PAID acquisition source.
 ## It sells firearms and ammunition for Episode 1 crypto; it never awards anything
 ## for free and respects the same finite reserve cap as earned ammunition.
@@ -29,7 +47,16 @@ const SHOP: Array = [
 	{"id": "rifle_ammo", "name": "REPEATER CARTRIDGES", "note": "A BOX OF TWENTY-FOUR", "price": 1, "rounds": 24},
 	{"id": "revolver_ammo", "name": "SIXGUN CARTRIDGES", "note": "A BOX OF EIGHTEEN", "price": 1, "rounds": 18},
 	{"id": "river_gear", "name": "RIVER GEAR", "note": "SKIFF AND SEALED CRATES", "price": 2, "rounds": 0},
+	{"id": SHOT, "name": "COACH GUN", "note": "DOUBLE BARREL - BUCKSHOT", "price": 3, "rounds": 0},
+	{"id": "shotgun_ammo", "name": "BUCKSHOT SHELLS", "note": "A BOX OF TWELVE", "price": 1, "rounds": 12},
+	{"id": MP18, "name": "BERGMANN MP18", "note": "SUBMACHINE GUN - SNAIL DRUM", "price": 4, "rounds": 0},
+	{"id": "mp18_ammo", "name": "9MM SNAIL DRUMS", "note": "TWO DRUMS - SIXTY-FOUR", "price": 1, "rounds": 64},
+	{"id": TOMMY, "name": "GOLDEN THOMPSON", "note": "1928 - FIFTY-ROUND DRUM", "price": 6, "rounds": 0},
+	{"id": "tommy_ammo", "name": ".45 DRUMS", "note": "TWO DRUMS - ONE HUNDRED", "price": 2, "rounds": 100},
 ]
+## Shop rows that sell a firearm of the quick-switch armory, and the ammunition row that belongs to each gun.
+const SHOP_GUNS := [SHOT, MP18, TOMMY]
+const SHOP_AMMO := {"rifle_ammo": WIN, "revolver_ammo": REM, "shotgun_ammo": SHOT, "mp18_ammo": MP18, "tommy_ammo": TOMMY}
 
 
 static func shop_item(id: String) -> Dictionary:
@@ -64,8 +91,24 @@ func _init() -> void:
 		if id == REM:
 			gun.capacity = 6           # existing runner's six-round game convention
 			gun.cycle_time = 0.35      # existing runner's hammer cadence
+		_apply_profile(id, gun)
 		_guns[id] = gun
 		_watch(gun)
+
+
+## Give a new-stock gun its capacity, cadence, reload, kick and fire mode (PROFILES); the three original guns keep their defaults.
+static func _apply_profile(id: String, gun: Ep2Winchester) -> void:
+	if not PROFILES.has(id):
+		return
+	var p: Dictionary = PROFILES[id]
+	gun.capacity = int(p["capacity"])
+	gun.cycle_time = float(p["cycle"])
+	gun.reload_interval = float(p["reload"])
+	gun.kick_deg = float(p["kick"])
+	gun.automatic = bool(p.get("automatic", false))
+	gun.drum_reload = bool(p.get("drum", false))
+	gun.pellets = int(p.get("pellets", 1))
+	gun.hit_scale = float(p.get("hit_scale", 1.0))
 
 
 func _watch(gun: Ep2Winchester) -> void:
@@ -104,7 +147,7 @@ func acquire(id: String, source: Ep2Winchester = null) -> bool:
 		_watch(source)
 	else:
 		gun.rounds = arrows if id == BOW else gun.capacity
-		gun.reserve = 24 if id == WIN else 0 if id == BOW else 18
+		gun.reserve = int(START_RESERVE.get(id, 18))
 		gun.locked = false
 		gun.reload_locked = false
 	if not firearms_confiscated and (id == WIN or not owns(equipped)):
@@ -338,7 +381,8 @@ static func install_actions() -> void:
 	var config := ConfigFile.new()
 	config.load(CONTROL_FILE)
 	var bindings: Dictionary = {"ep2_weapon_1": [KEY_1, JOY_BUTTON_LEFT_SHOULDER], "ep2_weapon_2": [KEY_2, JOY_BUTTON_RIGHT_SHOULDER],
-		"ep2_weapon_3": [KEY_3, JOY_BUTTON_DPAD_UP], "ep2_weapon_previous": [KEY_Q, JOY_BUTTON_Y], "ep2_armory": [KEY_TAB, JOY_BUTTON_BACK]}
+		"ep2_weapon_3": [KEY_3, JOY_BUTTON_DPAD_UP], "ep2_weapon_previous": [KEY_Q, JOY_BUTTON_Y], "ep2_armory": [KEY_TAB, JOY_BUTTON_BACK],
+		"ep2_weapon_4": [KEY_4, JOY_BUTTON_DPAD_RIGHT], "ep2_weapon_5": [KEY_5, JOY_BUTTON_DPAD_DOWN], "ep2_weapon_6": [KEY_6, JOY_BUTTON_DPAD_LEFT]}
 	for action in bindings:
 		if InputMap.has_action(action):
 			continue             # existing custom/rebound controls take precedence
