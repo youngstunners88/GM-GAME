@@ -11,7 +11,8 @@ func check(label: String, ok: bool, detail: String = "") -> void:
 		failures += 1
 
 
-## Fraction of the opaque pixels that are Lil Blunt's green sleeve (leaf green: g clearly above r and b).
+## Fraction of the opaque pixels that are Lil Blunt's green sleeve (leaf to olive green: g above r and clearly above b). The founder's
+## Meshy guns (2026-11-01 evening) carry his own olive-green leafy sleeves, a little yellower than the Blender-built ones.
 func _green_share(path: String) -> Array:
 	var img: Image = Image.load_from_file(ProjectSettings.globalize_path(path))
 	if img == null:
@@ -24,7 +25,7 @@ func _green_share(path: String) -> Array:
 			if c.a < 0.5:
 				continue
 			opaque += 1
-			if c.g > 0.20 and c.g > c.r * 1.18 and c.g > c.b * 1.30:
+			if c.g > 0.20 and c.g > c.r * 1.10 and c.g > c.b * 1.30:
 				green += 1
 	return [float(green) / maxf(opaque, 1.0), opaque, img.get_width() * 1000 + img.get_height()]
 

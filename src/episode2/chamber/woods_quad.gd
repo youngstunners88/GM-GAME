@@ -2211,6 +2211,10 @@ func _bear_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0) -> Ep
 
 
 ## The same ray test, with the near-side capsule contact and its outward normal for the wound.
+func aim_on_target(eye: Vector3, dir: Vector3) -> bool:
+	return _bear_hit_on_ray(eye, dir, 170.0, false).get("bear", null) != null
+
+
 func _bear_hit_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0, include_dead: bool = false) -> Dictionary:
 	var best: Ep2BearBrain = null
 	var best_t: float = 1e9

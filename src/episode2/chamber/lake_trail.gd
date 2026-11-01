@@ -108,6 +108,9 @@ var _bandits_root: Node3D = null
 var _bandits: Array = []
 var _bandits_down: int = 0
 var _first_ambush_said: bool = false
+## THE BUFFALO STAMPEDE (Ep2Stampede, founder 2026-11-01 "Guns Buff" §5): once per save, between the first ambush and the chasing rider.
+const STAMPEDE_S := 165.0
+var _stampede: Ep2Stampede = null
 var _bandit_voice: AudioStreamPlayer3D
 var _flashes: Array = []
 var _blood_marks: Array = []
@@ -150,7 +153,13 @@ func _beat_label(b: int) -> String:
 # --- set -------------------------------------------------------------------------------------------------------------
 
 func _build_steps() -> Array:
-	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_departure_space, _step_departure_crowd, _step_bandits, _build_vultures]
+	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_departure_space, _step_departure_crowd, _step_bandits, _build_vultures, _step_warm_music]
+
+
+## The ride song (2.5 MB) is read here, in a budgeted build step, not in the frame he swings into the saddle: that read used to land in
+## the hand-over frame on top of the swap (founder 2026-11-01: the music "is not smooth ... a glitch" when mounting).
+func _step_warm_music() -> void:
+	Ep2DrawMusic.warm_trail()
 
 
 func _warm_views() -> Array:
@@ -827,7 +836,9 @@ func _on_setup() -> void:
 	_ground_y = 0.0
 	_place_at_distance(0.0)
 	_speed = 0.0
-	_apply_handoff_gaze(_travel_yaw, -0.075, 0.65)
+	# the gaze he mounted with, whole (founder 2026-11-01: the old +-0.65 rad clamp swung his view round to the road the moment the
+	# trail took over - "forces the player to turn around"). Free look is the trail's normal state while riding.
+	_apply_handoff_gaze(_travel_yaw, -0.075, PI)
 	_clamp_look()
 	_player_yaw = _travel_yaw
 	if _hud != null:
@@ -998,11 +1009,56 @@ func _tick(delta: float) -> void:
 				_hud.objective = "Bandits! Watch for the rise, the Draw pose and the gun glint. Shoot or outrun them."
 		if not _ending:
 			_tick_bandits(delta)
+			_tick_stampede(delta)
 		if _route_s >= _route_total - 0.001 and not _ending:
 			_begin_shore()
 	if _ending:
 		_tick_shore(delta)
 	_update_horse(delta)
+
+
+func _tick_stampede(delta: float) -> void:
+	if _stampede == null:
+		if GameManager.ep2_stampede_done or not _mounted or _route_s < STAMPEDE_S or _route_s > RIDER_START_S - 20.0:
+			return
+		_begin_stampede()
+	if _stampede.active:
+		_stampede.step(delta, _player_pos)
+
+
+## The herd aims at where he WILL be if he keeps riding as he is: holding his pace runs him into it, so he must rein back, push on
+## harder, or shoot (founder: "the option of shooting them or getting out the way").
+func _begin_stampede() -> void:
+	_stampede = Ep2Stampede.new()
+	_stampede.name = "Stampede"
+	_visuals.add_child(_stampede)
+	var arrive: float = Ep2Stampede.TELEGRAPH + Ep2Stampede.START_DIST / Ep2Stampede.SPEED
+	var ahead: float = clampf(_route_s + maxf(_speed, 2.5) * arrive, _route_s + 8.0, _route_total - 30.0)
+	var sample: Array = _route_sample(ahead)
+	var target: Vector3 = sample[0]
+	var dir: Vector3 = Vector3(sin(float(sample[1])), 0.0, cos(float(sample[1])))
+	_stampede.begin(target, dir, -1.0)          # out of the open desert (the pine line stands on the other side)
+	_stampede.trampled.connect(_on_trampled)
+	_stampede.finished.connect(func(_killed: int) -> void:
+		GameManager.ep2_stampede_done = true
+		if _hud != null:
+			_hud.toast("THE HERD HAS PASSED" if TouchUi.keys_shown() else "", 2.0))
+	if _hud != null:
+		_hud.toast("STAMPEDE! Shoot them or get out of the way (S reins back)" if TouchUi.keys_shown() else "", 4.0)
+		_hud.objective = "STAMPEDE - shoot the buffalo or ride clear of the herd."
+
+
+func _on_trampled() -> void:
+	if _invuln > 0.0 or _failing or _resolved:
+		return
+	_look_pitch = clampf(_look_pitch + 0.22, -1.2, 1.2)        # the jolt of the herd going through
+	if _hud != null:
+		_hud.toast("TRAMPLED!" if TouchUi.keys_shown() else "", 1.4)
+	var horse_first: bool = _mounted and _horse_hp > 1
+	_hurt_player()
+	if horse_first:
+		_invuln = 0.0
+		_hurt_horse()
 
 
 func _tick_unhorse(delta: float) -> void:
@@ -1074,6 +1130,13 @@ func _on_player_shot() -> void:
 		return
 	var eye: Vector3 = _camera.global_position
 	var direction: Vector3 = -_camera.global_transform.basis.z
+	if _stampede != null and _stampede.active:
+		var before: int = _stampede.killed
+		var t_hit: float = _stampede.shoot(eye, direction, armory.equipped == Ep2ArmoryState.BUFF)
+		if t_hit >= 0.0:
+			if _hud != null:
+				_hud.hit_marker(_stampede.killed > before)
+			return
 	var best: int = -1
 	var best_t: float = 181.0
 	for i in _bandits.size():
@@ -1090,6 +1153,15 @@ func _on_player_shot() -> void:
 			_hud.hit_marker(true)
 		var hit_folk: Ep2TownFolk = (_bandits[best] as Dictionary)["folk"]
 		_blood(eye + direction * best_t, direction, hit_folk.model if hit_folk.model != null else hit_folk)
+
+
+func aim_on_target(eye: Vector3, dir: Vector3) -> bool:
+	if _stampede != null and _stampede.active and _stampede.under_sight(eye, dir):
+		return true
+	for b in _bandits:
+		if (b["root"] as Node3D).visible and str(b["state"]) != "dead" and _bandit_ray_hit(b, eye, dir) >= 0.0:
+			return true
+	return false
 
 
 func _bandit_ray_hit(b: Dictionary, eye: Vector3, direction: Vector3) -> float:
@@ -1237,6 +1309,9 @@ func _retry_trail() -> void:
 		_bandits_root.queue_free()
 	_bandits_root = null
 	_bandits.clear()
+	if _stampede != null and is_instance_valid(_stampede) and not _stampede.done:
+		_stampede.queue_free()            # a failed attempt meets the herd again; a passed herd never returns
+		_stampede = null
 	_rng.seed = 1886 + _attempt * 31
 	_spawn_bandits()
 	_health = HEALTH_MAX
@@ -1530,6 +1605,9 @@ func adopt_departure(town: Node3D, woods: Node3D = null) -> void:
 	var copy: Node = _visuals.get_node_or_null("DepartureTown")
 	if copy != null: copy.free()
 	_adopted_town=town
+	# The saloon piano and the street chatter ride with the streets (founder 2026-11-01: the music/sound "is not smooth" on mounting):
+	# they fade with distance as he rides out instead of stopping dead when the town is parked.
+	if is_instance_valid(town._town_audio) and town._town_audio.get_parent()==town: town._town_audio.reparent(town._visuals)
 	if town._visuals.get_parent()!=_visuals: town._visuals.reparent(_visuals)
 	town._visuals.position=-GoldTownChamber.DEPART_HORSE
 	# The retained town already has this exact road. Draw it once at the mapped origin.
@@ -1556,6 +1634,8 @@ func restore_departure() -> void:
 	if is_instance_valid(_adopted_town):
 		_adopted_town._visuals.reparent(_adopted_town)
 		_adopted_town._visuals.position=Vector3.ZERO
+		if is_instance_valid(_adopted_town._town_audio) and _adopted_town._town_audio.get_parent()==_adopted_town._visuals:
+			_adopted_town._town_audio.reparent(_adopted_town)
 		_adopted_town=null
 	if _road_survey != null: _road_survey.show()
 

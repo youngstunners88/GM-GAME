@@ -42,6 +42,14 @@ var _selector_layer: CanvasLayer
 
 var spread_deg: float = 2.6
 var ads: float = 0.0
+## THE SIGHT ON A TARGET (founder 2026-11-01: "right now it's just a dot making it difficult to aim accurately ... once we view a target
+## the crosshair sight must turn red with expression when it lands on targets"). The room pushes `on_target` each frame from its own hit
+## test (a living hostile under the centre of the view); `_lock_k` eases it in and out so the change reads as a reaction, not a flicker.
+var on_target: bool = false
+var _lock_k: float = 0.0
+var _lock_t: float = 0.0
+const AIM_COLOR := Color(1.0, 0.94, 0.62)
+const LOCK_COLOR := Color(1.0, 0.16, 0.12)
 var rounds: int = 0
 var reserve: int = 0
 var mag: int = 4
@@ -124,6 +132,8 @@ func _process(delta: float) -> void:
 	_toast_t = maxf(0.0, _toast_t - delta)
 	_hit_t = maxf(0.0, _hit_t - delta)
 	_hurt_t = maxf(0.0, _hurt_t - delta)
+	_lock_k = move_toward(_lock_k, 1.0 if on_target else 0.0, delta * (9.0 if on_target else 5.0))
+	_lock_t = _lock_t + delta if on_target else 0.0
 	fade = move_toward(fade, _fade_goal, _fade_rate * delta)
 	if _vignette:
 		_vignette.modulate.a = ads * 0.85
@@ -430,18 +440,8 @@ func _draw() -> void:
 	var beat: float = Time.get_ticks_msec() * 0.001
 	# --- crosshair ---------------------------------------------------------------------------------------
 	var gap: float = 5.0 + spread_deg * 5.2 * (1.0 - ads * 0.8)
-	if not show_crosshair:
-		pass
-	elif ads > 0.55:
-		draw_circle(c, 2.4, Color(1.0, 0.95, 0.7, 0.95))
-		draw_arc(c, 2.4, 0.0, TAU, 14, Color(0, 0, 0, 0.7), 1.0)
-	else:
-		var col := Color(1.0, 0.92, 0.55, 0.95 * (1.0 - ads * 1.6))
-		var sh := Color(0, 0, 0, 0.6 * (1.0 - ads * 1.6))
-		for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
-			draw_line(c + d * gap + Vector2(1, 1), c + d * (gap + 11.0) + Vector2(1, 1), sh, 3.0)
-			draw_line(c + d * gap, c + d * (gap + 11.0), col, 2.0)
-		draw_circle(c, 1.4, col)
+	if show_crosshair:
+		_draw_sight(c, gap)
 	# --- hurt flash + hearts ------------------------------------------------------------------------------
 	if _hurt_t > 0.0:
 		var ha: float = clampf(_hurt_t / 0.55, 0.0, 1.0)
@@ -636,6 +636,47 @@ func _draw_token(kind: int, at: Vector2, s: float, col: Color) -> void:
 
 
 ## A heart from two circles and a triangle (no font glyph needed, so it also draws in the web build).
+## The aiming sight. Hip: four ticks whose gap is the weapon's spread. Aimed: a readable frontier sight - four longer ticks around an open
+## centre, a thin ring and a centre point - sized to the screen so it reads on a phone. On a target it turns red and tightens: the ticks
+## close in, corner brackets snap round the centre and pulse once ("expression"), then hold while the sight stays on.
+func _draw_sight(c: Vector2, gap: float) -> void:
+	var u: float = clampf(minf(size.x, size.y) / 720.0, 0.8, 1.8)
+	var k: float = _lock_k * _lock_k * (3.0 - 2.0 * _lock_k)
+	var col: Color = AIM_COLOR.lerp(LOCK_COLOR, k)
+	var sh := Color(0, 0, 0, 0.65)
+	var aimed: float = clampf((ads - 0.35) / 0.4, 0.0, 1.0)
+	# hip ticks (fade out as the sight comes up)
+	if aimed < 1.0:
+		var a: float = 0.95 * (1.0 - aimed)
+		var hg: float = lerpf(gap, gap * 0.7, k)
+		for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+			draw_line(c + d * hg + Vector2(1, 1), c + d * (hg + 11.0 * u) + Vector2(1, 1), Color(sh, sh.a * a), 3.0 * u)
+			draw_line(c + d * hg, c + d * (hg + 11.0 * u), Color(col, a), 2.0 * u)
+		draw_circle(c, 1.5 * u, Color(col, a))
+	# aimed sight
+	if aimed > 0.0:
+		var a2: float = aimed
+		var inner: float = lerpf(9.0, 5.5, k) * u
+		var outer: float = inner + 13.0 * u
+		for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+			draw_line(c + d * inner + Vector2(1, 1), c + d * outer + Vector2(1, 1), Color(sh, sh.a * a2), 3.4 * u)
+			draw_line(c + d * inner, c + d * outer, Color(col, a2), 2.2 * u)
+		draw_arc(c, outer + 3.0 * u, 0.0, TAU, 40, Color(sh, 0.35 * a2), 2.6 * u)
+		draw_arc(c, outer + 3.0 * u, 0.0, TAU, 40, Color(col, 0.55 * a2), 1.2 * u)
+		draw_circle(c, 2.0 * u, Color(sh, 0.7 * a2))
+		draw_circle(c, 1.4 * u, Color(col, a2))
+	# the reaction on a target: corner brackets snap in (with one pulse on the first lock) and hold
+	if k > 0.01:
+		var pulse: float = 1.0 + 0.35 * maxf(0.0, 1.0 - _lock_t / 0.18)
+		var r: float = (lerpf(36.0, 27.0, k) * pulse) * u
+		var arm: float = 7.0 * u
+		for q in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+			var corner: Vector2 = c + q * r
+			for e in [Vector2(-q.x, 0.0), Vector2(0.0, -q.y)]:
+				draw_line(corner + Vector2(1, 1), corner + e * arm + Vector2(1, 1), Color(sh, sh.a * k), 3.4 * u)
+				draw_line(corner, corner + e * arm, Color(LOCK_COLOR, k), 2.2 * u)
+
+
 func _draw_heart(c: Vector2, r: float, full: bool) -> void:
 	var col: Color = Color(1.0, 0.22, 0.2, 0.95) if full else Color(0.25, 0.12, 0.12, 0.8)
 	var out := Color(0, 0, 0, 0.8)

@@ -2114,7 +2114,8 @@ func _tick(delta: float) -> void:
 				var mount_k: float = smoothstep(0.0,1.0,1.0-_end_t/1.2)
 				_player_pos = _depart_from.lerp(DEPART_HORSE,mount_k)
 				eye_height = lerpf(1.55,2.18,mount_k)
-				_look_yaw = lerp_angle(_look_yaw,atan2(10.0,-9.0),mount_k)
+				# no turn: he keeps looking where he was looking as he swings up (founder 2026-11-01: mounting "forces the player to turn
+				# around"); the trail takes this gaze as it is
 				if _end_t == 0.0 and _handoff_ok(): _advance_to(Beat.DONE)
 
 	if _stable_yard != null and _hud != null:
@@ -2350,6 +2351,11 @@ func _on_player_shot() -> void:
 		return
 	if _law != null:
 		_law.player_shot(eye, dir, in_draw)
+
+
+## The draw's stranger is the town's one hostile in the sights (townsfolk never turn the sight red: shooting them is a crime).
+func aim_on_target(eye: Vector3, dir: Vector3) -> bool:
+	return _beat == Beat.DRAW and _draw_state == "go" and _opp != null and aim_hits_opponent(eye, dir)
 
 
 ## True when a ray from `eye` along `dir` passes within OPP_HIT_R of the stranger's body (feet to hat).

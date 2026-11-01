@@ -30,6 +30,7 @@ func _ready() -> void:
  session.add_child(trail);trail.setup();trail.set_physics_process(false)
  trail.adopt_departure(town,woods)
  check("mounted town uses actual original actors",trail._visuals.is_ancestor_of(town._opp))
+ check("the saloon piano and street chatter ride out with the streets (no dead stop on mounting)",town._town_audio!=null and trail._visuals.is_ancestor_of(town._town_audio))
  session._active=trail;session._mode=session.Mode.CHAMBER
  check("correct minister voice",Ep2TownVoiceBank.LINES.vo_minister_1.ready and JSON.parse_string(FileAccess.get_file_as_string("res://assets/town-audio-generated.json"))["vo_minister_1"]["voice_id"]=="CfxYdK3WmF3bmrvyLAiU")
  check("correct Dude voice",Ep2StableYard.DUDE_VOICE=="3N5PpVsIKXqmtLAhF2Lj")

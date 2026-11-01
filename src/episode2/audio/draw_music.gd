@@ -4,6 +4,10 @@ extends RefCounted
 const TRACK := "res://src/episode2/extras/audio/music/06_28_remastered.mp3"
 const LAKE_TRACK := "res://src/episode2/extras/audio/music/gm_laker2.mp3"
 static var token: int = -1
+## Held so the ride song is in the resource cache before the trail starts it (load() then returns the cached stream at once).
+static var _warm: Array = []
+static func warm_trail() -> void:
+ if _warm.is_empty() and ResourceLoader.exists(TRACK): _warm.append(load(TRACK))
 static var lake_token: int = -1
 static func begin(owner: Node) -> void:
  finish_lake(owner)

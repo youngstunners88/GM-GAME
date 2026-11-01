@@ -592,6 +592,11 @@ func _can_jump() -> bool:
 	return true
 
 
+## True when a living hostile is under the centre of the view (the HUD sight turns red). Each room answers from its own hit test.
+func aim_on_target(_eye: Vector3, _dir: Vector3) -> bool:
+	return false
+
+
 ## LMB: a round out of the Winchester in his hands. True when a shot left the barrel (not while a scripted beat has the
 ## controls, not mid lever-cycle, not on an empty chamber). What the shot MEANS is the chamber's `_on_player_shot()`.
 func shoot() -> bool:
@@ -870,6 +875,8 @@ func _tick_viewmodel(delta: float) -> void:
 	if _hud != null:
 		_hud.spread_deg = _vm.gun.spread_deg(_moving, _player_pos.y > _ground_y + 0.05)
 		_hud.ads = maxf(_vm.gun.ads, _scope_k)
+		var armed: bool = armory == null or armory.equipped != Ep2ArmoryState.PICK
+		_hud.on_target = armed and has_player_control() and _camera != null and aim_on_target(_camera.global_position, -_camera.global_transform.basis.z)
 		_hud.set_ammo(_vm.gun.rounds, _vm.gun.reserve, _vm.gun.capacity)
 		_hud.health = get_health()
 		_hud.health_max = 3

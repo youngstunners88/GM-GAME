@@ -278,10 +278,15 @@ func _enter_chamber_chained(segment: int) -> void:
 	_pb_id = ""
 	_portal_on = false
 	var old: Node = _active
+	# Mounting at Dude's (founder 2026-11-01: "the transition of the music when going to mount the horse ... is not smooth and there is
+	# a glitch"): the trail ADOPTS the town's own streets, cast and sounds. Parking the town first moved that whole street into a
+	# separate world and then straight back (two moves of the biggest scene in one frame, ~100 ms) and stopped every town sound
+	# mid-note. The town is parked AFTER the trail has taken its streets, so they move once and keep playing.
+	var adopt_town: bool = c is LakeTrailChamber and old is GoldTownChamber
 	if old != null:
 		if old.has_method("portal_detach"):old.portal_detach()
 		_persist_town()
-		if old.get_parent() == self:
+		if old.get_parent() == self and not adopt_town:
 			world_routes.park(self,old)
 			# Isolated viewport retains the visited world without leaking its camera, sky or lights.
 	_active = c
@@ -293,9 +298,11 @@ func _enter_chamber_chained(segment: int) -> void:
 	else:
 		add_child(c)
 		c.setup(0, [], 0)
-	if c is LakeTrailChamber and old is GoldTownChamber:
+	if adopt_town:
 		var woods: Node3D = world_routes.rooms.get("woods_quad",{}).get("node",null)
 		c.adopt_departure(old,woods)
+		if old.get_parent() == self:
+			world_routes.park(self,old)
 	_restore_town(c)
 	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)

@@ -156,8 +156,8 @@ func _civilian_and_cell() -> void:
 	var held: bool = true
 	for id in Ep2ArmoryState.IDS:
 		if not c.armory.owns(id): continue          # Rich & Utah's unbought stock (2026-11-01) is not his to hold
-		held = held and selector.card_status(id) == "HELD BY THE SHERIFF" and not c.armory.select(id)
-	_check("Tabs shows all three irons HELD BY THE SHERIFF and none can be selected", held)
+		held = held and selector.card_status(id).begins_with("HELD") and not c.armory.select(id)
+	_check("Tabs shows every iron he owns as HELD (rebuy at Rich & Utah's) and none can be selected", held)
 	selector.queue_free()
 	var swings: int = c.get_viewmodel().pickaxe_swings
 	var rounds: int = c.armory.firearm(Ep2ArmoryState.WIN).rounds

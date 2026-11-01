@@ -24,6 +24,8 @@ func _ready() -> void:
 	_test_bud_patch()
 	_test_bandits()
 	_test_nav_cost()
+	_test_mount_gaze()
+	_test_stampede()
 	await _test_lake_horse()
 	print("EP2_RESIDUALS_1101: %s" % ("ALL PASS" if _failures == 0 else "%d FAILED" % _failures))
 	get_tree().quit(0 if _failures == 0 else 1)
@@ -259,10 +261,122 @@ func _test_bandits() -> void:
 	_check("the trail names Logan's camp ahead, well before the shore", c._visuals.find_child("LogansLakeSignpost", true, false) != null
 		and LakeTrailChamber.SIGNPOST_BEFORE_END > LakeTrailChamber.LAKE_REVEAL_DISTANCE)
 	_check("the desert floor turns to grassland toward the lake", bool(c._sand_material.get_shader_parameter("has_forest")))
+	# THE SIGHT (Guns Buff): red + a reaction while a living hostile is under it
+	var live: int = -1
+	for i in c._bandits.size():
+		if str(c._bandits[i]["state"]) != "dead" and (c._bandits[i]["root"] as Node3D).visible:
+			live = i
+			break
+	if live >= 0:
+		var eye: Vector3 = c.get_bandit_aim_position(live) + Vector3(0.0, 0.0, -6.0)
+		var on: Vector3 = (c.get_bandit_aim_position(live) - eye).normalized()
+		_check("the sight reads ON a living bandit under it", c.aim_on_target(eye, on))
+		_check("...and OFF when the view is turned away", not c.aim_on_target(eye, -on))
+	var hud := Ep2FpsHud.new()
+	add_child(hud)
+	hud.ads = 1.0
+	hud.on_target = true
+	for i in 12:
+		hud._process(1.0 / 60.0)
+	_check("on a target the sight eases to red (lock reaction)", hud._lock_k > 0.95)
+	hud.on_target = false
+	for i in 30:
+		hud._process(1.0 / 60.0)
+	_check("off the target it returns to the aim colour", hud._lock_k < 0.05)
+	hud.free()
 	c.queue_free()
 
 
 # --- 1/2. frame cost of the town crowd's street graph ------------------------------------------------------------------------------
+
+## Founder 2026-11-01 (evening): mounting Dude's horse "forces the player to turn around". The trail takes the gaze he mounted with,
+## whole, and the town's mount never turns him; the ride song is read in a build step, never in the hand-over frame.
+func _test_mount_gaze() -> void:
+	print("-- MOUNT: no forced turn, no song read at the swap")
+	var c: LakeTrailChamber = TRAIL.instantiate() as LakeTrailChamber
+	c.handoff = {"yaw": 0.0, "pitch": 0.1}
+	add_child(c)
+	c.set_physics_process(false)
+	var back: float = wrapf(c._travel_yaw + 2.6, -PI, PI)
+	c.handoff = {"yaw": back, "pitch": 0.1}
+	c.setup(0, [], 0)
+	back = wrapf(c._travel_yaw + 2.6, -PI, PI)
+	c.handoff = {"yaw": back, "pitch": 0.1}
+	c._apply_handoff_gaze(c._travel_yaw, -0.075, PI)
+	_check("looking back toward town as he mounts, the trail keeps that view (no swing to the road)", absf(wrapf(c._look_yaw - back, -PI, PI)) < 0.01,
+		"look %.2f wanted %.2f" % [c._look_yaw, back])
+	var src: String = FileAccess.get_file_as_string("res://src/episode2/chamber/lake_trail.gd")
+	_check("the trail's own setup takes the whole gaze (no +-0.65 clamp)", "_apply_handoff_gaze(_travel_yaw, -0.075, PI)" in src)
+	_check("the town's mount no longer turns him to a fixed heading", not ("atan2(10.0,-9.0)" in FileAccess.get_file_as_string("res://src/episode2/chamber/gold_town.gd")))
+	_check("the ride song is warmed by a trail build step", c._build_steps().has(c._step_warm_music))
+	c.free()
+
+
+## Guns Buff §5: the one-time buffalo stampede - telegraphed, shootable (one Sharps round drops a bison), dodgeable, fair if caught,
+## and never again once the herd has passed.
+func _test_stampede() -> void:
+	print("-- STAMPEDE: shoot or get out of the way, once")
+	var keep: bool = GameManager.ep2_stampede_done
+	GameManager.ep2_stampede_done = false
+	var c: LakeTrailChamber = TRAIL.instantiate() as LakeTrailChamber
+	add_child(c)
+	c.set_physics_process(false)
+	c.setup(0, [], 0)
+	c.debug_invulnerable = true
+	c._place_at_distance(LakeTrailChamber.STAMPEDE_S - 5.0)
+	c._route_s = LakeTrailChamber.STAMPEDE_S - 5.0
+	c._tick_stampede(0.1)
+	_check("no herd before its stretch of the trail", c._stampede == null)
+	c._route_s = LakeTrailChamber.STAMPEDE_S + 1.0
+	c._place_at_distance(c._route_s)
+	c._speed = LakeTrailChamber.MAX_RIDE_SPEED
+	c._tick_stampede(0.1)
+	var st: Ep2Stampede = c._stampede
+	_check("the herd forms on its stretch of the trail", st != null and st.active and st.herd.size() == Ep2Stampede.COUNT)
+	_check("...first a telegraph (rumble and dust, no charge yet)", st != null and st.telegraphing())
+	if st == null:
+		c.free()
+		GameManager.ep2_stampede_done = keep
+		return
+	var start0: Vector3 = st.herd[0]["pos"]
+	for i in int(Ep2Stampede.TELEGRAPH * 60.0) + 30:
+		st.step(1.0 / 60.0, Vector3(0, 0, -9999))
+	_check("...then it charges", (st.herd[0]["pos"] as Vector3).distance_to(start0) > 3.0)
+	# shoot the lead bison with the buffalo gun: one round drops it and it stays down
+	var lead: Dictionary = st.herd[0]
+	# the eye in front of the herd, looking back down its line: the front row stands first in every line of fire
+	var eye: Vector3 = (lead["pos"] as Vector3) + Vector3(0, 1.4, 0) + st.heading * 25.0
+	var aim: Vector3 = ((lead["pos"] as Vector3) + Vector3(0, 1.15, 0) - eye).normalized()
+	_check("the sight turns red on a charging bison", st.under_sight(eye, aim))
+	var hit: float = st.shoot(eye, aim, true)
+	_check("one buffalo-gun round drops a bison", hit > 0.0 and bool(lead["dead"]) and st.killed == 1)
+	var second: Dictionary = st.herd[1]
+	eye = (second["pos"] as Vector3) + Vector3(0, 1.4, 0) + st.heading * 25.0
+	var aim2: Vector3 = ((second["pos"] as Vector3) + Vector3(0, 1.15, 0) - eye).normalized()
+	st.shoot(eye, aim2, false)
+	_check("another gun needs two hits", not bool(second["dead"]))
+	st.shoot(eye, aim2, false)
+	_check("...and the second drops it", bool(second["dead"]) and st.killed == 2)
+	# caught in its path: trampled (a hurt, never an instant death)
+	var in_path: Vector3 = (st.herd[4]["pos"] as Vector3) + st.heading * 0.5
+	var tramples: int = st.trample_count
+	st.step(1.0 / 60.0, in_path)
+	_check("standing in the herd's path tramples him", st.trample_count > tramples)
+	# out of the way: the rest pass him by and the event ends for good
+	for i in 60 * 30:
+		st.step(1.0 / 60.0, Vector3(0, 0, -9999))
+		if not st.active:
+			break
+	_check("the herd passes and the stampede is over", st.done and not st.active)
+	_check("...and it is written so it never comes again on this save", GameManager.ep2_stampede_done)
+	var again := c._stampede
+	c._stampede = null
+	c._tick_stampede(0.1)
+	_check("riding the stretch again: no second herd", c._stampede == null)
+	again.queue_free()
+	c.free()
+	GameManager.ep2_stampede_done = keep
+
 
 func _test_nav_cost() -> void:
 	print("-- STALLS: the town crowd's street graph")

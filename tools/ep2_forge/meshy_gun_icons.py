@@ -17,8 +17,8 @@ for name, icon in pairs:
     sc.render.film_transparent = True
     sc.render.image_settings.color_mode = 'RGBA'
     w = bpy.data.worlds.new("w"); sc.world = w; w.use_nodes = True
-    bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (0.8, 0.74, 0.66, 1); bg.inputs[1].default_value = 1.1
-    sun = bpy.data.objects.new("sun", bpy.data.lights.new("sun", 'SUN')); sun.data.energy = 3.2
+    bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (0.7, 0.72, 0.72, 1); bg.inputs[1].default_value = 1.0
+    sun = bpy.data.objects.new("sun", bpy.data.lights.new("sun", 'SUN')); sun.data.energy = 3.8
     sun.rotation_euler = (0.9, 0.3, -0.6); sc.collection.objects.link(sun)
     cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); sc.collection.objects.link(cam); sc.camera = cam
     cam.data.type = 'ORTHO'
