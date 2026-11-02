@@ -12,7 +12,7 @@ extends Node3D
 ##
 ## The room owns the player, the camera and the shot; this node owns the herd. `step()` is driven by LakeTrailChamber._tick.
 
-const MODEL := "res://src/episode2/extras/trail/bison.glb"        # tools/ep2_blender/build_bison_from_horse.py
+const MODEL := "res://src/episode2/extras/trail/bison.glb"        # Meshy mesh on the horse bone names, clips run + stand: tools/ep2_blender/build_bison_meshy.py
 const RUMBLE := "res://src/episode2/extras/audio/town/horse_hooves_loop.ogg"
 const COUNT := 12
 const SPEED := 10.5                       # m/s at the charge
@@ -66,7 +66,8 @@ func begin(target: Vector3, trail_dir: Vector3, side: float) -> void:
 			"bob": rng.randf_range(0.0, TAU), "speed": SPEED * rng.randf_range(0.94, 1.06)})
 		_place(herd[i], 0.0)
 		if anim != null:
-			anim.play("horse_walk" if anim.has_animation("horse_walk") else anim.get_animation_list()[0])
+			anim.get_animation("run").loop_mode = Animation.LOOP_LINEAR
+			anim.play("run")
 			anim.speed_scale = 0.0
 	_build_dust(origin)
 	_rumble = AudioStreamPlayer3D.new()
@@ -107,7 +108,7 @@ func step(delta: float, player: Vector3) -> void:
 			b["pos"] = (b["pos"] as Vector3) + heading * float(b["speed"]) * delta
 			var anim: AnimationPlayer = b["anim"]
 			if anim != null:
-				anim.speed_scale = 3.3
+				anim.speed_scale = 1.0             # `run` is baked for the herd's real speed
 			# caught in the herd: one trample per pass of the herd (the room's own invulnerability spaces the hurts)
 			var flat: Vector3 = (b["pos"] as Vector3) - player
 			flat.y = 0.0
