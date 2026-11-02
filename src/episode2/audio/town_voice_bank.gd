@@ -828,7 +828,7 @@ const LINES: Dictionary = {
 	},
 	"town_loot_00": {
 		"speaker": "lil_blunt",
-		"text": "A Colt Peacemaker. And the map to the auction - that's what he wanted a Bitcoin for.",
+		"text": "A Borchardt pistol. And the map to the auction - that's what he wanted a Bitcoin for.",
 		"seconds": 5.905,
 		"start_seconds": 0,
 		"ready": true,

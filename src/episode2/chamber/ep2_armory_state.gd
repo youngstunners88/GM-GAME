@@ -176,6 +176,16 @@ func acquire(id: String, source: Ep2Winchester = null) -> bool:
 	return true
 
 
+## A gun taken in the world, not bought: grants it, or tops it back up when he has it already. Never changes what is in his hands.
+func take_found(id: String) -> void:
+	if acquire(id):
+		return
+	var gun: Ep2Winchester = firearm(id)
+	gun.rounds = gun.capacity
+	gun.reserve = maxi(gun.reserve, int(START_RESERVE.get(id, 18)))
+	changed.emit()
+
+
 ## The Armory's paid path (Rich & Utah, off Main Street). `tender` is the Episode 1
 ## crypto currency ("btc" / "eth" / "sol"); the calling room owns the balance and
 ## debits it before asking. A purchase never re-sells an owned gun and never marks

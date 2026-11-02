@@ -119,6 +119,13 @@
       "name": "Stranger"
     }
   },
+  "lines_pending_second_account": [
+    {
+      "id": "dude_ranch_16",
+      "speaker": "dude",
+      "text": "It's a long road to Logan's Lake, partner. My patch is just outside the east fence. Buy Chill Buds there, and they'll heal you on the way."
+    }
+  ],
   "lines": [
     {
       "id": "trail_lb_start",
@@ -698,7 +705,7 @@
     {
       "id": "town_loot_00",
       "speaker": "lil_blunt",
-      "text": "A Colt Peacemaker. And the map to the auction - that's what he wanted a Bitcoin for."
+      "text": "A Borchardt pistol. And the map to the auction - that's what he wanted a Bitcoin for."
     },
     {
       "id": "town_jobjail_01",

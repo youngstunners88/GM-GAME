@@ -1632,11 +1632,11 @@
     "start_seconds": 0.01525
   },
   "town_loot_00": {
-    "source_hash": "880e41d32edcb00937a347b69f356b63917f9877dc8d02bdddf3c600135b3231",
+    "source_hash": "62664c9c759ad41cd1fa2b1a875f7018303a7635fe23ff3fa37dddac517c4f81",
     "processing_version": 2,
-    "sha256": "b76efaa87bed83cf6e453667989d96d8f782c2a2fbe519585d36fa6c8984a233",
-    "bytes": 32087,
-    "text": "A Colt Peacemaker. And the map to the auction - that's what he wanted a Bitcoin for.",
+    "sha256": "e8080f8b01ecc8b147339b35b5ee6ae9ceb461a9bb6044b905b00254ba33569f",
+    "bytes": 31492,
+    "text": "A Borchardt pistol. And the map to the auction - that's what he wanted a Bitcoin for.",
     "speaker": "lil_blunt",
     "voice_id": "HMGfKwZCRujgXyRDUW0b",
     "model_id": "eleven_v4",

@@ -26,6 +26,7 @@ const HP_OTHER := 2
 
 signal trampled
 signal finished(killed: int)
+signal bison_down(at: Vector3)
 
 var active: bool = false
 var done: bool = false
@@ -160,6 +161,7 @@ func _fall(b: Dictionary) -> void:
 	var node: Node3D = b["node"]
 	var k: float = clampf(float(b["t_dead"]) / 0.55, 0.0, 1.0)
 	node.rotation.x = lerpf(0.0, PI * 0.5, k * k)        # rolls onto its side, stays down
+	node.position.y = lerpf(0.0, 0.42, k * k)            # it rolls about its feet: lifted by half its width, so it lies ON the ground
 	var anim: AnimationPlayer = b["anim"]
 	if anim != null:
 		anim.speed_scale = 0.0
@@ -181,6 +183,7 @@ func shoot(eye: Vector3, dir: Vector3, sharps: bool) -> float:
 	if int(b["hp"]) <= 0:
 		b["dead"] = true
 		killed += 1
+		bison_down.emit(b["pos"])
 	return best_t
 
 

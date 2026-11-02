@@ -56,7 +56,7 @@ const TREE_SPOTS: Array = [
 	Vector2(-29, 1243), Vector2(-37, 1210), Vector2(-38, 1222), Vector2(-36, 1236),
 	Vector2(-23, 1198), Vector2(-16, 1196), Vector2(-9, 1198), Vector2(-2, 1196),
 	Vector2(-22, 1245), Vector2(-15, 1247), Vector2(-8, 1245), Vector2(-1, 1244),
-	Vector2(1, 1207), Vector2(2, 1237), Vector2(0, 1199), Vector2(1, 1249),
+	Vector2(9, 1201), Vector2(2, 1237), Vector2(9, 1192), Vector2(1, 1249),      # (the two nearest the patch stand clear of its purple trees and their light)
 	Vector2(-27, 1211), Vector2(-28, 1230), Vector2(-34, 1201), Vector2(-35, 1245),
 ]
 const CONV_LINES: Dictionary = {
@@ -75,6 +75,7 @@ const CONV_LINES: Dictionary = {
 	"dude_ranch_13": ["DUDE", "First go to Logan's Lake so your horse can drink and cool down in this heat. It's on the map."],
 	"dude_ranch_14": ["DUDE", "Anything else, partner? Your horse is ready when you are. No hurry around here."],
 	"dude_ranch_15": ["DUDE", "Remember: Logan's Lake first. Let her drink and cool down. It's right there on the map."],
+	"dude_ranch_16": ["DUDE", "It's a long road to Logan's Lake, partner. My patch is just outside the east fence. Buy Chill Buds there, and they'll heal you on the way."],
 }
 
 var actors: Array[Ep2TownFolk] = []
@@ -102,6 +103,10 @@ var _deal_paid: int = 0
 var _deal_credit: int = 0
 var _horse_followup_said: bool = false
 var _bud_packs_sold: int = 0
+var _patch_root: Node3D = null
+var _patch_ready: bool = false
+var _patch_told: bool = false
+var _ranch_props: Array = []
 var _conv_active: bool = false
 var _conv_queue: Array = []
 var _conv_current: Dictionary = {}
@@ -198,8 +203,9 @@ func _build_ranch_props(props: Array) -> void:
 		_part(feeder, "FeederLeg", Vector3(sx * 0.58, 0.18, 0), Vector3(0.12, 0.36, 0.55), wood)
 	_solid(feeder, 0.72, 0.55, props)
 	# Dude's Chill Bud patch outside the east fence (founder 2026-11-01): a paid shop, opened with E from the room
-	var patch: Node3D = Ep2BudPatch.build(self)
-	_solid(patch, 1.25, 0.6, props)
+	_patch_root = Ep2BudPatch.build(self)
+	_ranch_props = props
+	_solid(_patch_root, 1.25, 0.6, props)
 
 
 func _build_trees(props: Array) -> void:
@@ -501,6 +507,7 @@ func try_talk(player: Vector3) -> bool:
 		# fix pack 2026-10-27 step 11: in the same talk Dude offers his Chill Buds (the first one is his gift; more on the next talk)
 		if not GameManager.dude_free_bud_claimed:
 			lines.append(_line("dude_ranch_03", "free_bud"))
+		lines.append(_line("dude_ranch_16", "tell_patch"))
 	elif not _greeted:
 		_greeted = true
 		lines.append(_line("dude_ranch_01"))
@@ -511,6 +518,8 @@ func try_talk(player: Vector3) -> bool:
 		_horse_followup_said = true
 		lines.append(_line("dude_ranch_14"))
 		lines.append(_line("dude_ranch_15"))
+		if not _patch_told:
+			lines.append(_line("dude_ranch_16", "tell_patch"))
 	else:
 		lines.append(_line("dude_ranch_04"))
 		lines.append(_line("dude_ranch_05" if _tender_for(BUD_PRICE) != "" else "dude_ranch_06", "buy_buds" if _tender_for(BUD_PRICE) != "" else ""))
@@ -522,6 +531,13 @@ func try_talk(player: Vector3) -> bool:
 ## protocol product or a staking mechanic.
 func set_referred(on: bool) -> void:
 	_referred = on
+
+
+## Before the ride to the lake Lil Blunt has heard where the buds are (founder 2026-11-02): a save from before this line hears it here, once.
+func announce_patch() -> void:
+	if _patch_told or _conv_active or actors.is_empty():
+		return
+	_begin_conversation([_line("dude_ranch_16", "tell_patch")])
 
 
 ## Buy two Chill Buds for one face in the first affordable Armory tender.
@@ -579,6 +595,11 @@ func _perform_conversation_action(action: String) -> void:
 			GameManager.claim_dude_free_bud()
 		"buy_buds":
 			buy_buds()
+		"tell_patch":
+			_patch_told = true
+			if not actors.is_empty():
+				actors[0].stop()
+				actors[0].face_point(Ep2BudPatch.POS)
 		"horse_deal":
 			if _horse_deal_done: return
 			var paid: int = _charge(HORSE_PRICE)
@@ -613,6 +634,8 @@ func step(delta: float, player: Vector3, quiet: bool = false) -> void:
 	if delta <= 0.0: return
 	_quiet = quiet
 	_talk_cd = maxf(0, _talk_cd - delta)
+	if not _patch_ready and _patch_root != null:
+		_step_patch()
 	# Offscreen routines tick at2Hz; nearby people and animals retain full rate.
 	_distant_dt += delta
 	if player.distance_to(STABLE_POS) > 150.0 and _distant_dt < 0.5: return
@@ -636,6 +659,20 @@ func step(delta: float, player: Vector3, quiet: bool = false) -> void:
 	for entry in _solids:
 		var p: Vector3 = (entry[0] as Node3D).position
 		(entry[1] as Array)[0] = Vector2(p.x, p.z)
+
+
+## The founder's plants arrive one per frame as the streamed pack allows; the purple trees are solid once they stand.
+func _step_patch() -> void:
+	if not Ep2BudPatch.upgrade_step(_patch_root):
+		return
+	_patch_ready = true
+	for row in Ep2BudPatch.PLANTS:
+		if bool(row["tree"]):
+			var trunk := Node3D.new()
+			trunk.name = "PatchTreeTrunk"
+			add_child(trunk)
+			trunk.position = _patch_root.position + (row["at"] as Vector3)
+			_solid(trunk, 0.34, 3.0, _ranch_props)
 
 
 func _advance_folk(folk: Ep2TownFolk, delta: float) -> void:
@@ -941,7 +978,7 @@ func snapshot() -> Dictionary:
 			"speed": (_horse_anims[i] as AnimationPlayer).speed_scale})
 	return {"time": _time, "talk_cd": _talk_cd, "people": people,
 		"horse_phases": _horse_anims.map(func(ap): return ap.current_animation_position), "horse_state": horse_state,
-		"greeted": _greeted, "referred": _referred, "horse_deal_done": _horse_deal_done,
+		"patch_told": _patch_told, "greeted": _greeted, "referred": _referred, "horse_deal_done": _horse_deal_done,
 		"deal_paid": _deal_paid, "deal_credit": _deal_credit, "horse_followup": _horse_followup_said,
 		"bud_packs_sold": _bud_packs_sold,
 		"conversation": {"active": _conv_active, "queue": _conv_queue.duplicate(true), "current": _conv_current.duplicate(true), "wait": _conv_wait},
@@ -957,6 +994,7 @@ func snapshot() -> Dictionary:
 func restore(data: Dictionary) -> void:
 	_time = float(data.get("time", 0.0))
 	_talk_cd = float(data.get("talk_cd", 0.0))
+	_patch_told = bool(data.get("patch_told", false))
 	_greeted = bool(data.get("greeted", false))
 	_referred = bool(data.get("referred", false))
 	_horse_deal_done = bool(data.get("horse_deal_done", false))

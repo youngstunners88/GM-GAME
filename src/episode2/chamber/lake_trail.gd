@@ -111,6 +111,7 @@ var _first_ambush_said: bool = false
 ## THE BUFFALO STAMPEDE (Ep2Stampede, founder 2026-11-01 "Guns Buff" §5): once per save, between the first ambush and the chasing rider.
 const STAMPEDE_S := 165.0
 var _stampede: Ep2Stampede = null
+var _carrion: Ep2CarrionVultures = null
 var _bandit_voice: AudioStreamPlayer3D
 var _flashes: Array = []
 var _blood_marks: Array = []
@@ -998,6 +999,8 @@ func _tick(delta: float) -> void:
 	if _failing:
 		_tick_fail(delta)
 		return
+	if _carrion != null:
+		_carrion.step(delta, _player_pos)
 	_trail_time += delta
 	if _unhorse_active:
 		_tick_unhorse(delta)
@@ -1039,6 +1042,9 @@ func _begin_stampede() -> void:
 	var dir: Vector3 = Vector3(sin(float(sample[1])), 0.0, cos(float(sample[1])))
 	_stampede.begin(target, dir, -1.0)          # out of the open desert (the pine line stands on the other side)
 	_stampede.trampled.connect(_on_trampled)
+	_stampede.bison_down.connect(func(at: Vector3) -> void:
+		if _carrion != null:
+			_carrion.add_body(at, 1.7))
 	_stampede.finished.connect(func(_killed: int) -> void:
 		GameManager.ep2_stampede_done = true
 		if _hud != null:
@@ -1130,6 +1136,8 @@ func _on_player_shot() -> void:
 		return
 	var eye: Vector3 = _camera.global_position
 	var direction: Vector3 = -_camera.global_transform.basis.z
+	if _carrion != null:
+		_carrion.notify_shot(eye, direction)
 	if _stampede != null and _stampede.active:
 		var before: int = _stampede.killed
 		var t_hit: float = _stampede.shoot(eye, direction, armory.equipped == Ep2ArmoryState.BUFF)
@@ -1204,6 +1212,9 @@ func _drop_bandit(index: int) -> void:
 	b["state"] = "dead"
 	var folk: Ep2TownFolk = b["folk"]
 	folk.fall_dead()
+	if _carrion != null:
+		var body_at: Vector3 = _bandit_world_position(b)
+		_carrion.add_body(Vector3(body_at.x, _player_pos.y, body_at.z))
 	(b["gun"] as Node3D).visible = false
 	(b["glint"] as MeshInstance3D).visible = false
 	for accent in b["accents"]:
@@ -1309,6 +1320,8 @@ func _retry_trail() -> void:
 		_bandits_root.queue_free()
 	_bandits_root = null
 	_bandits.clear()
+	if _carrion != null:
+		_carrion.clear()
 	if _stampede != null and is_instance_valid(_stampede) and not _stampede.done:
 		_stampede.queue_free()            # a failed attempt meets the herd again; a passed herd never returns
 		_stampede = null
@@ -1665,3 +1678,6 @@ func _build_vultures() -> void:
 	flock.name="CirclingVultures"
 	_visuals.add_child(flock)
 	flock.position = _route_sample(160.0)[0]
+	_carrion = Ep2CarrionVultures.new()
+	_carrion.name = "CarrionVultures"
+	_visuals.add_child(_carrion)

@@ -196,10 +196,10 @@ func _ready() -> void:
 		"%s opp %s sheriff %s" % [c.get_beat_name(), str(c.get_opponent().position), str(sheriff.position)])
 	_check("his hearts are on the HUD for the draw", c.get_hud().show_health and c.get_health() == 3)
 	var holstered: Node3D = c.get_revolver()
-	_check("the stranger wears a Colt Single Action Army (the Peacemaker, the CAD kit's, real size) holstered on his hip before the bell",
+	_check("the stranger wears a Borchardt C93 (gun only, real size) holstered on his hip before the bell",
 		holstered != null and holstered.visible and holstered.get_parent() == c.get_opponent()
-		and holstered.position.distance_to(GoldTownChamber.OPP_HOLSTER) < 0.01 and holstered.find_child("Prop_Revolver", true, false) != null
-		and (not Ep2KitProps.available("Kit_Revolver") or holstered.find_child("PeacemakerStandIn", true, false) == null),
+		and holstered.position.distance_to(GoldTownChamber.OPP_HOLSTER) < 0.01 and (holstered.find_child("Borchardt", true, false) != null or not Ep2Extras.has(Ep2Extras.BORCHARDT_GUN))
+		and (not Ep2Extras.has(Ep2Extras.BORCHARDT_GUN) or holstered.find_child("BorchardtStandIn", true, false) == null),
 		str(holstered.position if holstered != null else Vector3.INF))
 	_run(c, 0.3)
 	_check("before the bell the rifle is DOWN (low ready)", c.get_viewmodel().lowered and c.get_draw_state() == "wait")
@@ -218,6 +218,11 @@ func _ready() -> void:
 	_until(c, 10.0, func(): return c.get_draw_state() == "go")
 	_check("the town bell signals DRAW and the stranger's gun hand comes up with the revolver in it", c._town_audio.bell_count == 1 and not said.has("vo_sheriff_draw") and c.get_draw_state() == "go"
 		and c.get_opponent().pose_name == "draw" and c.get_opponent().find_child("Revolver", true, false).visible)
+	for i in 12:
+		c.step(1.0 / 60.0)
+	var fist: Vector3 = GoldTownChamber.COWBOY_HAND_DRAW * GoldTownChamber.COWBOY_HEIGHT
+	_check("the pistol has come off the hip and its grip is in his fist, not back at his shoulder", c.get_revolver().position.distance_to(GoldTownChamber.opp_gun_in_hand()) < 0.02
+		and absf(fist.z - 0.58) < 0.03 and absf(fist.y - 1.35) < 0.03, str(c.get_revolver().position))
 	_check("the rifle stays out of view until Enter draws it", c.get_viewmodel().lowered and not c._player_drawn)
 	_until(c, 5.0, func(): return c.get_draw_state() != "go")
 	_check("too slow: the stranger fires first (a loss, never a death)", c.get_losses() == 1 and c.get_draw_state() == "lost")
@@ -256,7 +261,7 @@ func _ready() -> void:
 	_check("a shot that misses wide would not count (the hit is a real ray test)", not c.aim_hits_opponent(c.get_player_position() + Vector3(0, 1.5, 0), Vector3(1.0, 0.0, 0.0)))
 	var colt: Node3D = c.get_revolver()
 	var opp_at: Vector3 = c.get_opponent().position
-	_check("his Peacemaker falls out of his hand into the dirt beside him", colt != null and colt.visible and colt.get_parent() == c._visuals
+	_check("his Borchardt falls out of his hand into the dirt beside him", colt != null and colt.visible and colt.get_parent() == c._visuals
 		and colt.position.y < 0.12 and Vector2(colt.position.x - opp_at.x, colt.position.z - opp_at.z).length() < 1.2, str(colt.position if colt != null else Vector3.INF))
 	_until(c, 10.0, func(): return c.get_beat_name() == "WON")
 	_check("-> WON: the Sheriff calls it fair and square", c.get_beat_name() == "WON" and said.has("vo_sheriff_win"))
@@ -268,7 +273,7 @@ func _ready() -> void:
 	c.captioned.connect(func(w: String, t: String) -> void: caps.append([w, t]))
 	_check("Inferno does NOT arrive at the draw", not c.is_bull_here())
 	_until(c, 30.0, func(): return c.get_beat_name() == "LOOT")
-	_check("-> LOOT: search the stranger for his Peacemaker and the map", c.get_beat_name() == "LOOT" and "PEACEMAKER" in str(c.get_hud().objective),
+	_check("-> LOOT: search the stranger for his Borchardt and the map", c.get_beat_name() == "LOOT" and "BORCHARDT" in str(c.get_hud().objective),
 		str(c.get_hud().objective))
 	_check("[E] from across the street does nothing (he has to go to the body)", not c.can_loot() and not c.start_rig("") and not c.has_map())
 	var mike: Ep2TownFolk = c.get_minister()
@@ -277,7 +282,8 @@ func _ready() -> void:
 	var reached_body: bool = _walk_to(c, opp_at + Vector3(-1.3, 0.0, -0.6), 30.0)
 	_until(c, 30.0, func(): return c.can_loot())
 	_check("he walks up the street to the fallen stranger, and [E] can search him there", reached_body and c.can_loot(), str(c.get_player_position()))
-	_check("[E]: the Peacemaker and the map to the auction are his", c.start_rig("") and c.has_peacemaker() and c.has_map() and not colt.visible)
+	_check("[E]: the Borchardt and the map to the auction are his, and it goes in his armory", c.start_rig("") and c.has_peacemaker() and c.has_map() and not colt.visible
+		and c.armory.owns(Ep2ArmoryState.BORCH))
 	var ran: bool = _minister_ran_seen
 	var mike_outside: bool = false
 	var cheered: int = _cheer_seen
@@ -304,7 +310,7 @@ func _ready() -> void:
 			danced_pairs = maxi(danced_pairs, int(now_dance / 2.0))
 		if c.get_beat_name() == want_next and danced_pairs > 0:
 			break
-	_check("Lil Blunt names what he found (the Colt Peacemaker, the map)", caps.any(func(l: Array) -> bool: return l[0] == "LIL BLUNT" and "peacemaker" in str(l[1]).to_lower()))
+	_check("Lil Blunt names what he found (the Borchardt, the map)", caps.any(func(l: Array) -> bool: return l[0] == "LIL BLUNT" and "borchardt" in str(l[1]).to_lower()))
 	_check("Minister Mike Dean leaves his counter and comes out of the office", mike_outside)
 	_check("...at a run (the founder's Mike Dean rigged, on his Run clip; the statue only if the streamed pack is missing)", ran or not c.minister_rigged(),
 		"rigged %s" % c.minister_rigged())
@@ -560,7 +566,7 @@ func _ready() -> void:
 	c._player_pos = GoldTownChamber.DEPART_HORSE + Vector3(1.5,0,0)
 	_check("E explicitly mounts the horse at the stables",c.can_mount_departure() and c.start_rig(""))
 	_until(c, 20.0, func(): return res.size() == 1)
-	_check("the town hands on to the ride to Logan's Lake on Dude's horse, the map and the Peacemaker in hand, the certificate stamped, mints nothing",
+	_check("the town hands on to the ride to Logan's Lake on Dude's horse, the map and the Borchardt in hand, the certificate stamped, mints nothing",
 		res.size() == 1 and str(res[0].get("next_chamber", "")) == "lake_trail" and bool(res[0].get("horse", false))
 		and not bool(res[0].get("end_session", false)) and bool(res[0].get("got_map", false)) and bool(res[0].get("peacemaker", false))
 		and bool(res[0].get("stamped", false)) and int(res[0].get("gold_awarded", -1)) == 0, str(res))

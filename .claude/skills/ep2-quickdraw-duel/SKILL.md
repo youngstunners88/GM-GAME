@@ -36,3 +36,7 @@ The stranger at the bar (and the barman) are **human** and **the town has no bea
 Tripo multiview from the Muapi sheet `fort_knox_prep/cowboy_stranger` (black flat-brim hat, charcoal waistcoat, rust-red shirt, red neckerchief, gloves, gun belt with an empty right holster, spurs),
 baked with two arm poses: `Idle` (arms down) and `Draw` (gun arm out, the revolver prop `Revolver` appears in his hand). On the bell he swaps to the Draw pose; when shot he tips over (`fall_dead`).
 `Ep2TownFolk` is the actor; gate `tests/ep2_gold_town_test.tscn` asserts no `Ep2Actor` / bear node exists in the town.
+
+
+## UPDATE 2026-11-02: the stranger's gun is a Borchardt C93, not a Colt
+`cowboy.glb` has NO skeleton (static `Idle` / `Draw` meshes), so there is no hand bone: `COWBOY_HAND_DRAW` is the measured fist in the Draw mesh and `OPP_GUN_GRIP` the measured grip on the gun. The old value sat at his shoulder, which is why he looked empty-handed. Internal names (`_revolver`, `_got_peacemaker`, the `peacemaker` result key) stay for save compatibility. `_loot` calls `armory.take_found(BORCH)`. Proof: `tools/ep2_shots/followups_1102_shot.tscn`.

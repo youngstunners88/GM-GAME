@@ -26,3 +26,7 @@ weapon "appear and spin slowly in the form of a showcase". Follow the same path 
    the case). `gold_town.buy_buds_at_patch` debits the purse then `GameManager.add_chill_buds` - never free.
 8. **Gate** - `tests/ep2_founder_residuals_1101_test`, `ep2_personal_armory_test`, `ep2_armory_guns_test`, `ep2_tabs_ledger_test`.
    Watch the main pack budget (`scripts/pack-gate-fresh.sh`, 190 MiB).
+
+## Founder's plants in the patch (2026-11-02)
+`Ep2BudPatch.PLANTS` (streamed, `Ep2Extras.PATCH_*`) replaces the drawn stand-ins one load per `upgrade_step`. Shrink with `tools/ep2_forge/meshy_prop_to_game.py`.
+Meshy foliage is loose thin leaves: `gltfpack -sa`, Meshy remesh and even thinning all shredded the Grove, so it stays at 47k with a draw distance. ALWAYS look at a contact sheet (Verdant War Pick is a pickaxe, not a plant) and capture in the real town (`tools/ep2_shots/patch_town_shot.tscn`): a test set hid a pine standing on the bed and backlit purple reading brown (`LEAF_GLOW`).

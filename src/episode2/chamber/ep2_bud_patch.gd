@@ -9,6 +9,16 @@ extends RefCounted
 const POS := Vector3(-1.2, 0.0, 1210.6)         # outside the paddock's east fence (x = -4), 10 m south of the lake road
 const REACH := 2.6                               # E works within this many metres of the bed's centre
 const BED := Vector2(2.6, 1.7)
+const LEAF_GLOW := 0.1
+const BUSH_RANGE := 110.0                        # the bed's plants stop drawing here (the trees stand on the horizon, so they never do)
+## The founder's plants (Ep2Extras, streamed): the bed in front, the purple trees behind the back rail. Metres from the bed's centre.
+const PLANTS: Array = [
+	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(-0.55, 0.1, -0.1), "yaw": 0.4, "scale": 1.0, "tree": false},
+	{"path": Ep2Extras.PATCH_FROST, "at": Vector3(0.72, 0.1, -0.32), "yaw": 1.1, "scale": 1.0, "tree": false},
+	{"path": Ep2Extras.PATCH_FROST, "at": Vector3(0.78, 0.1, 0.42), "yaw": 3.6, "scale": 0.82, "tree": false},
+	{"path": Ep2Extras.PATCH_TREE, "at": Vector3(0.7, 0.0, -2.7), "yaw": 0.0, "scale": 1.0, "tree": true},
+	{"path": Ep2Extras.PATCH_TREE, "at": Vector3(-1.5, 0.0, -3.3), "yaw": 2.2, "scale": 0.82, "tree": true},
+]
 ## The patch's stock (single source for the panel and the room that debits it). Prices are feel-values in purse coins (any tender).
 const STOCK: Array = [
 	{"id": "buds_two", "name": "TWO CHILL BUDS", "note": "FRESH FROM THE PATCH", "price": 1, "buds": 2},
@@ -54,13 +64,17 @@ static func build(parent: Node3D) -> Node3D:
 	bud_mat.albedo_color = Color(0.52, 0.70, 0.30)
 	bud_mat.roughness = 0.85
 	var leaf: ArrayMesh = _leaflet()
+	# the drawn stand-ins hold the bed until the streamed pack mounts; upgrade_step() swaps them for the founder's plants
+	var stand_ins := Node3D.new()
+	stand_ins.name = "StandInBed"
+	root.add_child(stand_ins)
 	var i: int = 0
 	for row in [-0.45, 0.45]:
 		for col in [-0.9, -0.3, 0.3, 0.9]:
 			var plant := _plant(leaf, leaf_mat, bud_mat, 0.55 + 0.12 * float((i * 5) % 3), float(i) * 1.37)
 			plant.position = Vector3(col, 0.12, row)
 			plant.name = "ChillBudPlant%d" % i
-			root.add_child(plant)
+			stand_ins.add_child(plant)
 			i += 1
 	var sign := Label3D.new()
 	sign.name = "PatchSign"
@@ -70,10 +84,56 @@ static func build(parent: Node3D) -> Node3D:
 	sign.modulate = Color(0.97, 0.86, 0.58)
 	sign.outline_size = 4
 	sign.position = Vector3(1.75, 1.05, 0.0)
-	sign.rotation.y = PI * 0.5               # faces the road side (+X)
+	sign.rotation.y = PI * 0.25              # faces the bed's open front and the road side: never read from behind, mirrored
 	root.add_child(sign)
 	_box(root, "SignPost", Vector3(1.75, 0.5, 0.0), Vector3(0.08, 1.0, 0.08), wood)
 	return root
+
+
+## Place the next of the founder's plants once the streamed pack has it: one load per call, so a mounting pack never costs one long frame. The
+## stand-ins go when the last plant is in. True when the bed is finished. Without the pack it stays false and the stand-ins stay.
+static func upgrade_step(root: Node3D) -> bool:
+	var next: int = int(root.get_meta("plants_placed", 0))
+	if next >= PLANTS.size():
+		return true
+	var row: Dictionary = PLANTS[next]
+	if not Ep2Extras.has(str(row["path"])):
+		return false
+	var packed: PackedScene = load(str(row["path"])) as PackedScene
+	if packed == null:
+		return false
+	var plant: Node3D = packed.instantiate() as Node3D
+	plant.name = "ChillBudPlant_founder%d" % next
+	plant.position = row["at"]
+	plant.rotation.y = float(row["yaw"])
+	plant.scale = Vector3.ONE * float(row["scale"])
+	root.add_child(plant)
+	for mi in plant.find_children("*", "MeshInstance3D", true, false):
+		_dress_plant(mi as MeshInstance3D, bool(row["tree"]))
+	root.set_meta("plants_placed", next + 1)
+	if next + 1 < PLANTS.size():
+		return false
+	var stand_ins: Node = root.get_node_or_null("StandInBed")
+	if stand_ins != null:
+		stand_ins.queue_free()
+	return true
+
+
+## Thin leaves are seen from both sides; only the trees throw a shadow, and only the bed has a draw distance.
+static func _dress_plant(mi: MeshInstance3D, tree: bool) -> void:
+	for s in mi.mesh.get_surface_count():
+		var m: BaseMaterial3D = mi.mesh.surface_get_material(s) as BaseMaterial3D
+		if m != null:
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED
+			# backlit by the town's low warm sun the purple goes brown: a little of the leaf's own colour keeps it purple from every side
+			m.emission_enabled = true
+			m.emission_texture = m.albedo_texture
+			m.emission = Color.WHITE
+			m.emission_energy_multiplier = LEAF_GLOW
+	if tree:
+		return
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.visibility_range_end = BUSH_RANGE
 
 
 ## One plant: a short stem, two tiers of five-fingered leaf fans and a pale green bud on top. Friendly, healthy, not a prop gag.

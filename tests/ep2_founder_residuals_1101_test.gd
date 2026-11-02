@@ -26,6 +26,10 @@ func _ready() -> void:
 	_test_nav_cost()
 	_test_mount_gaze()
 	_test_stampede()
+	_test_real_bison()
+	_test_carrion()
+	_test_patch_plants()
+	_test_dude_announces()
 	_test_horizon()
 	await _test_lake_horse()
 	print("EP2_RESIDUALS_1101: %s" % ("ALL PASS" if _failures == 0 else "%d FAILED" % _failures))
@@ -193,6 +197,109 @@ func _test_showcase() -> void:
 	await get_tree().process_frame
 	_check("closing the panel stops the case rendering", shop._case_vp.render_target_update_mode == SubViewport.UPDATE_DISABLED)
 	layer.queue_free()
+
+
+# --- founder 2026-11-02: the real bison, carrion birds, the founder's plants, Dude's telling -----------------------------------
+
+func _test_real_bison() -> void:
+	print("-- THE REAL BISON")
+	var scene: PackedScene = load(Ep2Stampede.MODEL) as PackedScene
+	_check("the bison model is in the project", scene != null)
+	if scene == null:
+		return
+	var bison: Node3D = scene.instantiate() as Node3D
+	var ap: AnimationPlayer = bison.find_children("*", "AnimationPlayer", true, false).front()
+	_check("it has the gallop the herd plays", ap != null and ap.has_animation("run") and ap.get_animation("run").length > 0.3)
+	var tris: int = 0
+	for mi in bison.find_children("*", "MeshInstance3D", true, false):
+		for s in (mi as MeshInstance3D).mesh.get_surface_count():
+			tris += (mi as MeshInstance3D).mesh.surface_get_array_index_len(s) / 3
+	_check("it stays within the 15k triangle budget", tris > 3000 and tris <= 15000, str(tris))
+	bison.free()
+
+
+func _test_carrion() -> void:
+	print("-- VULTURES AT THE CARCASSES")
+	var birds := Ep2CarrionVultures.new()
+	add_child(birds)
+	var far := Vector3(200.0, 0.0, 0.0)
+	birds.add_body(Vector3.ZERO)
+	for i in int(19.0 * 10.0):
+		birds.step(0.1, far)
+	_check("no bird comes straight away (nothing inside 19 s of the death)", birds.birds.is_empty())
+	for i in int(22.0 * 10.0):
+		birds.step(0.1, far)
+	_check("after the delay one or two come down", birds.feeders() >= 1 and birds.feeders() <= Ep2CarrionVultures.MAX_AT_BODY, str(birds.feeders()))
+	var high: float = (birds.birds[0]["node"] as Node3D).position.y
+	for i in int((Ep2CarrionVultures.DESCEND_S + 0.5) * 10.0):
+		birds.step(0.1, far)
+	var landed: Node3D = birds.birds[0]["node"]
+	_check("they spiral down and land beside the body", birds.feeding() == birds.feeders() and landed.position.y < 0.3 and Vector2(landed.position.x, landed.position.z).length() < 1.5,
+		"%s from %.1f" % [str(landed.position), high])
+	var neck: Node3D = birds.birds[0]["neck"]
+	var angles: Array = []
+	for i in 160:                      # eight seconds: it pecks in bouts, with the head up between them
+		birds.step(0.05, far)
+		angles.append(neck.rotation.x)
+	_check("on the ground the head bobs (pecking)", angles.max() - angles.min() > 0.2)
+	birds.step(0.1, Vector3(8.0, 0.0, 0.0))
+	_check("riding within 12 m lifts them off", birds.feeders() == 0 and not birds.birds.is_empty())
+	for i in int((Ep2CarrionVultures.FLEE_S + 0.5) * 10.0):
+		birds.step(0.1, Vector3(8.0, 0.0, 0.0))
+	_check("they fly off and are gone", birds.birds.is_empty())
+	for i in int(45.0 * 10.0):
+		birds.step(0.1, Vector3(20.0, 0.0, 0.0))
+	_check("no bird comes down while he stands within 25 m", birds.birds.is_empty())
+	for i in int(1.0 * 10.0):
+		birds.step(0.1, far)
+	for i in int((Ep2CarrionVultures.DESCEND_S + 0.5) * 10.0):
+		birds.step(0.1, far)
+	_check("they come back once he has gone", birds.feeding() >= 1)
+	birds.notify_shot(Vector3(100.0, 2.0, 0.0), Vector3(-1.0, 0.0, 0.0))
+	_check("a shot past them lifts them off", birds.feeders() == 0)
+	birds.clear()
+	for i in 12:
+		birds.add_body(Vector3(float(i) * 40.0 - 220.0, 0.0, 0.0))
+	for i in int(45.0 * 10.0):
+		birds.step(0.1, Vector3(0.0, 0.0, 400.0))
+	_check("the feeders are capped however many bodies lie out", birds.feeders() > 0 and birds.feeders() <= Ep2CarrionVultures.MAX_FEEDERS, str(birds.feeders()))
+	birds.clear()
+	_check("a restaged trail clears them", birds.birds.is_empty() and birds.bodies.is_empty())
+	birds.queue_free()
+	var trail: LakeTrailChamber = TRAIL.instantiate() as LakeTrailChamber
+	add_child(trail)
+	trail.set_physics_process(false)
+	trail.setup(0, [], 0)
+	_check("the trail keeps the carrion birds", trail._carrion != null)
+	if trail._carrion != null:
+		trail._drop_bandit(0)
+		_check("a dead bandit is a body for them", trail._carrion.bodies.size() == 1)
+	trail.free()
+
+
+func _test_patch_plants() -> void:
+	print("-- THE FOUNDER'S PLANTS IN THE PATCH")
+	var root := Node3D.new()
+	add_child(root)
+	var patch: Node3D = Ep2BudPatch.build(root)
+	_check("the drawn stand-ins hold the bed until the pack is there", patch.get_node_or_null("StandInBed") != null)
+	var calls: int = 0
+	while not Ep2BudPatch.upgrade_step(patch) and calls < 20:
+		calls += 1
+	_check("one plant per call, so a mounting pack never costs one long frame", calls == Ep2BudPatch.PLANTS.size() - 1, str(calls))
+	_check("every founder plant stands in the bed", patch.find_children("ChillBudPlant_founder*", "", true, false).size() == Ep2BudPatch.PLANTS.size())
+	_check("the stand-ins are retired", patch.get_node("StandInBed").is_queued_for_deletion())
+	for row in Ep2BudPatch.PLANTS:
+		_check("not the pickaxe: " + str(row["path"]).get_file(), not "war_pick" in str(row["path"]))
+	root.queue_free()
+
+
+func _test_dude_announces() -> void:
+	print("-- DUDE TELLS HIM ABOUT THE BUDS")
+	_check("until its take is recorded the line is still seen, never silent (Dude's voice is on the second account: lines_pending_second_account)",
+		Ep2Speech.pace("dude_ranch_16", str(Ep2StableYard.CONV_LINES["dude_ranch_16"][1])) > 2.0)
+	var said: String = str(Ep2StableYard.CONV_LINES["dude_ranch_16"][1]).to_lower()
+	_check("he says where and what for", "patch" in said and "chill buds" in said and "heal" in said and "logan" in said, said)
 
 
 # --- 5. the Chill Bud patch ----------------------------------------------------------------------------------------------------

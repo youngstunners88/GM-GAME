@@ -17,9 +17,9 @@ extends Ep2Interlude
 ##             = the map. Too slow = he shoots first: the screen drops, hearts restored, the Sheriff sets it up again (retry, never a death)
 ## POST-DRAW - THE LOCKED STORY ORDER (founder fix pack 2026-10-27 section 2, docs/founder-feedback/2026-10-27_fix_pack.md; it replaces the
 ## 2026-10-25 order and keeps its scenes):
-##   WON       he wins: the stranger had drawn a Colt Single Action Army (the Peacemaker) from his hip; it falls by the body, which bleeds.
+##   WON       he wins: the stranger had drawn a Borchardt C93 from his hip (founder 2026-11-02); it falls by the body, which bleeds.
 ##             The street celebrates, then dances. Inferno does NOT arrive.
-##   LOOT      E at the body takes the Peacemaker and the map to the auction (the map is never handed over without it)
+##   LOOT      E at the body takes the Borchardt and the map to the auction (the map is never handed over without it)
 ##             ...then Minister Mike Dean runs out of his office, alarmed, asks what happened, and kneels to pray over the gentleman
 ##   JOB       Sheriff James, impressed with the draw, offers the job (who let the bears hold Fort Knox) and leads him to the jail
 ##   JAIL_TIP / JAIL  the Sheriff walks him out to the jailhouse; the prisoner talks; THEN the Sheriff sends him to Rich & Utah
@@ -68,9 +68,9 @@ const ARMORY_SEND_LINES: Array = [
 	["SHERIFF", "But get yourself properly armed first. Go see Rich and Utah, down the side lane."],
 	["LIL BLUNT", "Rich and Utah. I'm on it, Sheriff."],
 ]
-## The loot at the body (section 2 step 2): his Peacemaker and the map to the auction.
+## The loot at the body (section 2 step 2): his Borchardt and the map to the auction.
 const LOOT_LINES: Array = [
-	["LIL BLUNT", "A Colt Peacemaker. And the map to the auction - that's what he wanted a Bitcoin for."],
+	["LIL BLUNT", "A Borchardt pistol. And the map to the auction - that's what he wanted a Bitcoin for."],
 ]
 const BULL_BACK_LINES: Array = [
 	["INFERNO", "Heard that Gatling clear across town. Figured it had to be you, little man."],
@@ -110,9 +110,10 @@ const FP_DRINK_S := 2.4
 const FP_GLASS_DOWN := Vector3(0.13, -0.30, -0.42)          # camera space: the glass held low at the bar
 const FP_GLASS_LIP := Vector3(0.03, -0.12, -0.24)          # ...at his lips, tipped
 const LOOT_R := 2.4                                         # how close to the body [E] takes the gun and the map
-## The stranger's Peacemaker: in its holster on his gun-hand hip until the bell (his own frame, metres; the gun side is -x, as in
+## The stranger's Borchardt: in its holster on his gun-hand hip until the bell (his own frame, metres; the gun side is -x, as in
 ## COWBOY_HAND_DRAW), barrel down.
 const OPP_HOLSTER := Vector3(-0.21, 0.93, 0.04)
+const OPP_HOLSTER_ROT := Vector3(PI * 0.5 - 0.12, 0.0, 0.0)
 ## Inferno's ride back in: the road he left town on, reversed (woods_quad.gd _bull_ride_off), up the lane to Rich's. He parks east of the
 ## shop door, clear of the Gatling yard to the west (Ep2GoldTown.GATLING_POST) and of the lane walk.
 const QUAD_RETURN: Array = [Vector3(70.0, 0.0, 1500.0), Vector3(16.0, 0.0, 1478.0), Vector3(2.0, 0.0, 1466.0), Vector3(0.0, 0.0, 1452.0),
@@ -134,7 +135,9 @@ const COWBOY_MODEL := "res://src/episode2/assets/town/cowboy.glb"        # the s
 const BARTENDER_MODEL := "res://src/episode2/assets/town/bartender.glb"  # the barman: a human too - the town has no bears
 const COWBOY_HEIGHT := 1.84
 ## His gun hand in the Draw pose, as a fraction of his height (x right, y up, z forward; measured in Blender by prep_founder_town_models.py).
-const COWBOY_HAND_DRAW := Vector3(-0.18, 0.75, 0.10)
+const COWBOY_HAND_DRAW := Vector3(-0.122, 0.734, 0.315)     # his fist in the baked Draw mesh, measured (x -0.22, y 1.35, z 0.58 m at 1.84 m)
+const OPP_GUN_GRIP := Vector3(0.005, -0.1, 0.015)          # where that fist closes on the Borchardt, in the gun's own frame (measured)
+const OPP_DRAW_S := 0.14                                   # the pistol's travel from the hip to the aimed hand
 const BARTENDER_HEIGHT := 1.76
 const WHISKEY_MODEL := "res://src/episode2/assets/whiskey_glass.glb"
 const COIN_MODEL := "res://src/episode2/assets/btc_coin.glb"
@@ -280,7 +283,9 @@ var _body_said: bool = false
 var _drinks_said: bool = false
 var _glass2: Node3D = null
 ## The locked order's new steps (fix pack 2026-10-27 section 2).
-var _got_peacemaker: bool = false                     # E at the body took the stranger's Colt
+var _got_peacemaker: bool = false                     # E at the body took the stranger's Borchardt (the name stays: saves and hand-over results carry it)
+var _opp_gun_real: bool = false                        # the streamed Borchardt is in his holder (not the stand-in)
+var _opp_draw_k: float = -1.0                          # the draw's progress, hip to hand; below 0 when not drawing
 var _loot_prompt: bool = false
 var _jail_sent: bool = false                          # the Sheriff has sent him on to Rich & Utah after the jail
 var _fp_glass: Node3D = null                          # Lil Blunt's own glass, on the camera while he drinks
@@ -418,7 +423,7 @@ func _step_people() -> void:
 	_step_people_after()
 
 
-## The draw's cast: the Sheriff, the barman, the stranger with his Peacemaker, the glass, the coin and the muzzle light.
+## The draw's cast: the Sheriff, the barman, the stranger with his Borchardt, the glass, the coin and the muzzle light.
 func _step_people_core() -> void:
 	_build_sheriff()
 	_bartender = Ep2TownFolk.new()
@@ -433,15 +438,12 @@ func _step_people_core() -> void:
 	_opp.setup(COWBOY_MODEL, COWBOY_HEIGHT, Color(0.2, 0.17, 0.15), false)
 	_opp.position = Ep2GoldTown.local_to_world("Bldg_Saloon", OPP_AT_BAR)
 	_face_folk(_opp, Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT + Vector3(0.0, 0.0, -1.5)))
-	# his Peacemaker (fix pack 2026-10-27 P0: "the opponent visibly draws a Colt Single Action Army"): the CAD kit's Colt SAA at real
-	# size (the old primitive stands in until the streamed kit mounts), in its holster on his hip until the bell, then in his gun hand
+	# his Borchardt C93 (founder 2026-11-02: "holds and drops a Borchardt, not a Colt"): the gun-only model at real size (the old primitive
+	# stands in until the streamed pack mounts), in its holster on his hip until the bell, then in his fist
 	_revolver = Node3D.new()
 	_revolver.name = "Revolver"
 	_opp.add_child(_revolver)
-	Ep2KitProps.place(_revolver, "Kit_Revolver", Transform3D.IDENTITY, Transform3D.IDENTITY, func(h: Node3D) -> void:
-		var stand_in: Node3D = _make_revolver()
-		stand_in.name = "PeacemakerStandIn"
-		h.add_child(stand_in))
+	_arm_stranger()
 	_holster_revolver()
 	_glass = _prop(WHISKEY_MODEL, 0.11)
 	_whiskey_look(_glass)
@@ -1317,7 +1319,7 @@ func _on_beat_entered(b: int) -> void:
 			if _hud:
 				_hud.objective = ""
 			# section 2 step 1: the street celebrates round Lil Blunt (clear of the fallen stranger), then pairs off and dances. Inferno does
-			# NOT arrive at the draw. The map is NOT handed over: it is on the body with his Peacemaker (LOOT).
+			# NOT arrive at the draw. The map is NOT handed over: it is on the body with his Borchardt (LOOT).
 			if _people != null:
 				_people.celebrate(_player_pos, _opp.position)
 			if _town_audio != null:
@@ -1326,10 +1328,10 @@ func _on_beat_entered(b: int) -> void:
 				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
 		Beat.LOOT:
-			# section 2 step 2: E at the body takes the Peacemaker and the map to the auction
+			# section 2 step 2: E at the body takes the Borchardt and the map to the auction
 			if _hud:
-				_hud.objective = "Search the stranger: his PEACEMAKER and the map to the auction."
-				_hud.toast("HE DROPPED HIS PEACEMAKER", 2.6)
+				_hud.objective = "Search the stranger: his BORCHARDT and the map to the auction."
+				_hud.toast("HE DROPPED HIS BORCHARDT", 2.6)
 		Beat.JOB:
 			# section 2 step 4: Sheriff James walks over, impressed with the draw, and offers the job - who let the bears hold Fort Knox
 			# (his prisoner knows more) - then leads him to the jail (Rich & Utah come after it)
@@ -1431,6 +1433,8 @@ func _on_beat_entered(b: int) -> void:
 				if _hud:
 					_hud.toast("THE SHERIFF HANDS BACK YOUR IRONS AT THE TOWN LIMITS", 3.4)
 			prebuild_requested.emit("lake_trail")
+			if _stable_yard != null:
+				_stable_yard.announce_patch()
 			if _hud:
 				_hud.objective = "Mount your horse at Dude’s stables. Logan’s Lake is marked on your map."
 				_hud.toast("TO LOGAN'S LAKE", 3.4)
@@ -1773,7 +1777,7 @@ func _after_story() -> void:
 		_advance_to(Beat.ARMORY)
 
 
-## Section 2 step 2: close enough to the fallen stranger (or the Colt by him) for E to search him.
+## Section 2 step 2: close enough to the fallen stranger (or the Borchardt by him) for E to search him.
 func _can_loot() -> bool:
 	if _beat != Beat.LOOT or _got_peacemaker or _show_active or _opp == null:
 		return false
@@ -1783,10 +1787,11 @@ func _can_loot() -> bool:
 	return near < LOOT_R
 
 
-## E at the body: his Peacemaker and the map to the auction are Lil Blunt's. Then Minister Mike Dean comes running (step 3).
+## E at the body: his Borchardt and the map to the auction are Lil Blunt's. Then Minister Mike Dean comes running (step 3).
 func _loot() -> void:
 	_got_peacemaker = true
 	_got_map = true
+	armory.take_found(Ep2ArmoryState.BORCH)
 	GameManager.has_region_map = true
 	GameManager.map_active_destination = "auction"
 	GameManager.save_session()
@@ -1796,7 +1801,7 @@ func _loot() -> void:
 	if _hud != null:
 		_hud.set_search_prompt("")
 		_hud.objective = ""
-		_hud.toast("YOU TOOK HIS PEACEMAKER AND THE MAP TO THE AUCTION", 3.4)
+		_hud.toast("YOU TOOK HIS BORCHARDT AND THE MAP TO THE AUCTION", 3.4)
 	look_toward(_opp.position + Vector3(0.0, 0.3, 0.0), 2.0)
 	_start_show(_caption_steps(LOOT_LINES) + [{"do": "call", "fn": release_look}], false)
 
@@ -2147,6 +2152,8 @@ func _on_stable_line(who: String, text: String, id: String, _voice: String) -> v
 			if recording != null:
 				var am: Node = get_node_or_null("/root/AudioManager")
 				if am != null: am.play_voice(id, recording)
+		if id == "dude_ranch_16" and _hud != null:     # the hint goes with his one telling: where the buds are, never a caption of his words
+			_hud.toast("BUY CHILL BUDS AT DUDE'S PATCH  ·  OUTSIDE THE EAST FENCE", 4.2)
 	captioned.emit(who, text)
 
 
@@ -2204,6 +2211,9 @@ func _tick_people(delta: float) -> void:
 	_sheriff.step(delta)
 	_minister.step(delta)
 	_opp.step(delta)
+	_tick_opp_draw(delta)
+	if not _opp_gun_real and _revolver != null and Ep2Extras.state() == "ready":
+		_arm_stranger()
 	_bartender.step(delta)
 
 
@@ -2391,32 +2401,65 @@ func _opp_ray_points(eye: Vector3, dir: Vector3) -> Array:
 	return [eye + d * sc, a + u * tc]
 
 
-## The stranger's gun hand comes up with the revolver in it (the baked "Draw" arm pose + the prop at his hand).
+## Put the Borchardt in the holder once it can be loaded; the primitive holds its place until then.
+func _arm_stranger() -> void:
+	if not Ep2Extras.has(Ep2Extras.BORCHARDT_GUN):
+		if _revolver.get_child_count() == 0:
+			var stand_in: Node3D = _make_revolver()
+			stand_in.name = "BorchardtStandIn"
+			_revolver.add_child(stand_in)
+		return
+	for old in _revolver.get_children():
+		old.queue_free()
+	var gun: Node3D = (load(Ep2Extras.BORCHARDT_GUN) as PackedScene).instantiate() as Node3D
+	gun.name = "Borchardt"
+	_revolver.add_child(gun)
+	_opp_gun_real = true
+
+
+## Where the holder goes for his fist to close on the grip.
+static func opp_gun_in_hand() -> Vector3:
+	return COWBOY_HAND_DRAW * COWBOY_HEIGHT - OPP_GUN_GRIP
+
+
+## The bell: the baked "Draw" arm comes up and the pistol travels from the hip into his fist (a short, readable move; he fires well after it lands).
 func _opp_draws() -> void:
 	_opp.set_pose("draw")
 	if _revolver.get_parent() != _opp:
 		_revolver.reparent(_opp, false)
 	_revolver.visible = true
-	_revolver.position = COWBOY_HAND_DRAW * COWBOY_HEIGHT
-	_revolver.rotation = Vector3(0.0, 0.0, 0.0)
+	_opp_draw_k = 0.0
 	_opp.kick()
 
 
-## The Peacemaker back in its holster on his hip, barrel down (a new round, a restage).
+func _tick_opp_draw(delta: float) -> void:
+	if _opp_draw_k < 0.0:
+		return
+	_opp_draw_k = minf(_opp_draw_k + delta / OPP_DRAW_S, 1.0)
+	var k: float = smoothstep(0.0, 1.0, _opp_draw_k)
+	_revolver.position = OPP_HOLSTER.lerp(opp_gun_in_hand(), k)
+	_revolver.rotation = OPP_HOLSTER_ROT.lerp(Vector3.ZERO, k)
+	if _opp_draw_k >= 1.0:
+		_opp_draw_k = -1.0
+
+
+## The Borchardt back in its holster on his hip, barrel down (a new round, a restage).
 func _holster_revolver() -> void:
 	if _revolver == null:
 		return
 	if _revolver.get_parent() != _opp:
 		_revolver.reparent(_opp, false)
+	_opp_draw_k = -1.0
 	_revolver.visible = true
 	_revolver.position = OPP_HOLSTER
-	_revolver.rotation = Vector3(PI * 0.5 - 0.12, 0.0, 0.0)
+	_revolver.rotation = OPP_HOLSTER_ROT
 
 
-## He falls: the Colt leaves his hand and lies in the dirt by him, on its side - E there takes it (and the map) in Beat.LOOT.
+## He falls: the Borchardt leaves his hand and lies in the dirt by him, on its side - E there takes it (and the map) in Beat.LOOT.
 func _drop_revolver() -> void:
 	if _revolver == null:
 		return
+	_opp_draw_k = -1.0
 	var at: Vector3 = _opp.to_global(Vector3(-0.42, 0.0, 0.38)) if _opp.is_inside_tree() else _opp.position + Vector3(-0.42, 0.0, 0.38)
 	_revolver.reparent(_visuals, false)
 	_revolver.position = Vector3(at.x, 0.045, at.z)
@@ -2424,10 +2467,10 @@ func _drop_revolver() -> void:
 	_revolver.visible = true
 
 
-## Where the round leaves the Colt's barrel (the kit's origin is the bore at the cylinder's front face; the barrel runs +z).
+## Where the round leaves the Borchardt's barrel (the origin is on the bore; the barrel runs +z).
 func _opp_muzzle() -> Vector3:
 	if _revolver != null and _revolver.is_inside_tree():
-		return _revolver.to_global(Vector3(0.0, 0.0, 0.19))
+		return _revolver.to_global(Vector3(0.0, 0.0, 0.223))
 	return _opp.position + Vector3(0.3, 1.2, 0.4)
 
 

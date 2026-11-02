@@ -15,6 +15,7 @@ extends RefCounted
 const PACK := "ep2_extras.pck"
 const LOCAL := "user://ep2_extras.pck"
 const ARMORY := "res://src/episode2/extras/armory/armory2.glb"
+const BORCHARDT_GUN := "res://src/episode2/extras/armory/borchardt_c93.glb"   # gun only (Meshy image-to-3D of the founder's C93 reference): the stranger's, in the draw
 const SHARPS := "res://src/episode2/extras/armory/sharps_1874.glb"        # Rich's Sharps Model 1874 Buffalo Gun (case, hand, the long rifle he sells)
 const GATLING := "res://src/episode2/extras/armory/gatling_post.glb"      # the Colt Gatling on its post (NOT FOR SALE) + the firing yard's plates and bale
 ## The smelter's CAD prop kit (founder 2026-10-25 "not grey primitives"): Colt SAA, kegs, anvil, tongs, ladle, ingot mould, tools, chain, crates (Ep2KitProps).
@@ -52,6 +53,11 @@ const SHOPKEEPER_GENERAL := "res://src/episode2/extras/people/shopkeeper_general
 const SHOPKEEPER_HOTEL := "res://src/episode2/extras/people/shopkeeper_hotel.glb"
 ## Canonical founder stable assets stay at their requested town paths, but their
 ## imported payloads stream with this pack (main-pack headroom is under1MiB).
+## Dude's Chill Bud patch, the founder's Meshy plants (2026-11-02; tools/ep2_forge/meshy_prop_to_game.py). The Grove stays at 47k triangles: it is
+## thin loose leaves, and every reduction below that shredded it, so it is placed once with a draw distance (Ep2BudPatch.PLANTS).
+const PATCH_GROVE := "res://src/episode2/extras/patch/purple_bloom_grove.glb"
+const PATCH_FROST := "res://src/episode2/extras/patch/purple_frost.glb"
+const PATCH_TREE := "res://src/episode2/extras/patch/purple_bloom_tree.glb"
 const STABLE_DUDE := "res://src/episode2/assets/town/dude_stable_owner.glb"
 const STABLE_ASSISTANT := "res://src/episode2/assets/town/stable_assistant.glb"
 
