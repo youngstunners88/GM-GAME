@@ -16,6 +16,9 @@ const PACK := "ep2_extras.pck"
 const LOCAL := "user://ep2_extras.pck"
 const ARMORY := "res://src/episode2/extras/armory/armory2.glb"
 const BORCHARDT_GUN := "res://src/episode2/extras/armory/borchardt_c93.glb"   # gun only (Meshy image-to-3D of the founder's C93 reference): the stranger's, in the draw
+## The trade counter's display pieces (founder 2026-11-03, tools/ep2_forge/meshy_prop_to_game.py ... solid): his gun-only and in-hand models and the Shipment crate.
+const SHOWCASE_DIR := "res://src/episode2/extras/armory/showcase/"
+const SHIPMENT := "res://src/episode2/extras/armory/showcase/shipment.glb"
 const SHARPS := "res://src/episode2/extras/armory/sharps_1874.glb"        # Rich's Sharps Model 1874 Buffalo Gun (case, hand, the long rifle he sells)
 const GATLING := "res://src/episode2/extras/armory/gatling_post.glb"      # the Colt Gatling on its post (NOT FOR SALE) + the firing yard's plates and bale
 ## The smelter's CAD prop kit (founder 2026-10-25 "not grey primitives"): Colt SAA, kegs, anvil, tongs, ladle, ingot mould, tools, chain, crates (Ep2KitProps).

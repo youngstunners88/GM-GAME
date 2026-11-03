@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://b3w1bbnujoqit"
+path="res://.godot/imported/golden_tommy_Free_Golden_Tommy_normal.jpg-2e665b82583602c325123b72a55e4689.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "6d432633f0f2f245309ab81becf6705b"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/armory/showcase/golden_tommy_Free_Golden_Tommy_normal.jpg"
+dest_files=["res://.godot/imported/golden_tommy_Free_Golden_Tommy_normal.jpg-2e665b82583602c325123b72a55e4689.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1

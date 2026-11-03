@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://c85a78woch3yx"
+path="res://.godot/imported/golden_tommy_held_golden_Tommy_Gun_normal.jpg-9e9de5c35e3895fee8885200f36a496f.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "96fd1bb080d5341c3c5aa5416a45e9a1"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/armory/showcase/golden_tommy_held_golden_Tommy_Gun_normal.jpg"
+dest_files=["res://.godot/imported/golden_tommy_held_golden_Tommy_Gun_normal.jpg-9e9de5c35e3895fee8885200f36a496f.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1

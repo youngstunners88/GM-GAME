@@ -999,7 +999,7 @@ func buy(item_id: String, _price: int, tender: String = "btc") -> bool:
 		_note(item_id, false)
 		return false
 	if not Ep2ArmoryState.unlocks_stock(armory, item_id):
-		_note(item_id, false)                              # the water gear opens the rest of the counter (founder 2026-11-03)
+		_note(item_id, false)                              # the Shipment, then the Sharps, open the counter (founder 2026-11-03)
 		return false
 	var cost: int = int(item["price"])
 	if cost <= 0 or not Ep2ArmoryState.ARMORY_TENDER.has(tender):
