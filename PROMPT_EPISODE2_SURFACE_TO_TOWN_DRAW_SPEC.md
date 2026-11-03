@@ -32,6 +32,9 @@
 - The sheriff is present and involved.  
   **Sheriff identity lock:** Jake (JakeX / TitanX ecosystem tribute character). Cigarette in mouth. Recognizable as the TitanX founder-meme figure elevated into a Western lawman role. He is not a random NPC; he is the on-screen identification of the broader TitanX ecosystem inside the Gold Mine town.
 - The sheriff directs Lil Blunt (certificate process / next step). Exact certificate mechanics stay faithful to the whitepaper (non-transferable claims, share requirements, etc.) but do not need to be fully resolved in this beat—direction is sufficient.
+- **Phase 2 reframe (2026-11-03, `docs/founder-feedback/2026-11-03_phase2_license_reframe.md` section 3.1):** Mike Dean, at his
+  desk facing the door, delivers the soft gate: the four Miner's Licenses on his left wall (Prospector's, Miner's, Foreman's, Mine
+  Owner's) and the Flip / Builder bonds. No free certificate.
 - After the sheriff interaction, Lil Blunt is pointed toward (or simply finds) the bar.
 
 ### 4. Bar Arrival (Lil Blunt alone)

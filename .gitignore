@@ -248,3 +248,4 @@ tripo-out/
 # Godot extracts these textures from the two canonical small GLBs
 /src/episode2/assets/town/dude_stable_owner_*.jpg
 /src/episode2/assets/town/stable_assistant_*.jpg
+graphify-out/

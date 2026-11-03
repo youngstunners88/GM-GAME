@@ -24,7 +24,7 @@ func _ready() -> void:
 	town._show_active = false
 	town._show_blocks_control = false
 	town._hold = 0.0
-	town._stamped = true
+	town._license_talk = true
 	town._advance_to(town.Beat.STABLES)
 	session._active = town
 	session._mode = session.Mode.CHAMBER

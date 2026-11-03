@@ -842,30 +842,6 @@ const LINES: Dictionary = {
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_jobjail_01.ogg"
 	},
-	"town_gift_00": {
-		"speaker": "inferno",
-		"text": "Oh - and take this to Mike Dean for me. The Gold Panner. He's had his eye on it for years.",
-		"seconds": 5.605,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/town_gift_00.ogg"
-	},
-	"town_gift_01": {
-		"speaker": "lil_blunt",
-		"text": "The Gold Panner. I'll see he gets it.",
-		"seconds": 2.976917,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/town_gift_01.ogg"
-	},
-	"town_minister2_00": {
-		"speaker": "lil_blunt",
-		"text": "Minister. Inferno sent you this. The Gold Panner.",
-		"seconds": 4.205,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/town_minister2_00.ogg"
-	},
 	"town_minister2_03": {
 		"speaker": "lil_blunt",
 		"text": "Much obliged, Minister.",
@@ -1106,38 +1082,6 @@ const LINES: Dictionary = {
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_jobjail_00.ogg"
 	},
-	"town_minister2_01": {
-		"speaker": "minister",
-		"text": "The Gold Panner! Bless that big fella, he remembered.",
-		"seconds": 4.605042,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/town_minister2_01.ogg"
-	},
-	"town_minister2_02": {
-		"speaker": "minister",
-		"text": "And your certificate, son. Made out in your name - stamped and sealed.",
-		"seconds": 5.305,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/town_minister2_02.ogg"
-	},
-	"town_minister2_04": {
-		"speaker": "minister",
-		"text": "You'll want a horse for the trail. Go see my friend Dude at the horse stables. Tell him I sent you.",
-		"seconds": 6.005,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/town_minister2_04.ogg"
-	},
-	"vo_minister_1": {
-		"speaker": "minister",
-		"text": "Welcome, friend. A certificate is made out in your name, and it stays in your name. It cannot be sold on and it cannot be traded. Bring your share and I will stamp it.",
-		"seconds": 11.805,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/vo_minister_1.ogg"
-	},
 	"vo_opp_2": {
 		"speaker": "stranger",
 		"text": "Give me a Bitcoin in exchange for this map to the auction. You could walk away with more gold and Bitcoin.",
@@ -1177,6 +1121,102 @@ const LINES: Dictionary = {
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/logan_handoff.ogg"
+	},
+	"town_cert1_0": {
+		"speaker": "minister",
+		"text": "Bull sent you. Looking for a claim.",
+		"seconds": 2.829667,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cert1_0.ogg"
+	},
+	"town_cert1_1": {
+		"speaker": "minister",
+		"text": "We don't hand out paper for free. What you're looking at on the wall are the four licenses that actually sit on the wBTC vault.",
+		"seconds": 8.605042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cert1_1.ogg"
+	},
+	"town_cert1_2": {
+		"speaker": "minister",
+		"text": "Prospector's is the floor. Then Miner's, Foreman's, Mine Owner's. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight.",
+		"seconds": 12.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cert1_2.ogg"
+	},
+	"town_cert1_3": {
+		"speaker": "minister",
+		"text": "You can start with a Prospector's when you're ready, or go the bond route if you want the discount and a real share of the gold. Flip bond gets you NOTE cheaper. Builder bond puts you in the longer pool.",
+		"seconds": 12.905042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cert1_3.ogg"
+	},
+	"town_cert1_4": {
+		"speaker": "minister",
+		"text": "Sheriff's the one who can walk you through the process once you've got skin in it. Right now you're just a man who walked in with Bull's name. That's not enough for a license.",
+		"seconds": 9.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cert1_4.ogg"
+	},
+	"town_inferno_license_0": {
+		"speaker": "inferno",
+		"text": "You already got the map off that fool. That'll get you in the door at the auction.",
+		"seconds": 4.405,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_inferno_license_0.ogg"
+	},
+	"town_inferno_license_1": {
+		"speaker": "inferno",
+		"text": "If you want real weight - lower fees, Builder share, something that actually sits on the vault - go back to Mike Dean. Get a proper Miner's License. Or bond if you've got the ETH. I ain't carrying paper for you.",
+		"seconds": 12.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_inferno_license_1.ogg"
+	},
+	"town_minister2_10": {
+		"speaker": "minister",
+		"text": "You're back. And you walked out of a street draw with a map and a dead man behind you.",
+		"seconds": 5.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_minister2_10.ogg"
+	},
+	"town_minister2_11": {
+		"speaker": "minister",
+		"text": "The map is useful. The license is weight.",
+		"seconds": 3.5685,
+		"start_seconds": 0.0365,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_minister2_11.ogg"
+	},
+	"town_minister2_12": {
+		"speaker": "minister",
+		"text": "Prospector's gets you on the board. Higher licenses unlock the pre-order queue, cut the trade tax, and put real Builder pool weight behind your name. Everything is backed by the same wBTC vault - floor is real.",
+		"seconds": 15.205,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_minister2_12.ogg"
+	},
+	"town_minister2_13": {
+		"speaker": "minister",
+		"text": "If you've got ETH and want the bigger share, look at a Builder bond. If you just want NOTE at a discount, the Flip bond is open when the round is live.",
+		"seconds": 10.605,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_minister2_13.ogg"
+	},
+	"town_minister2_14": {
+		"speaker": "minister",
+		"text": "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to Dude at the stables. Tell him I sent you.",
+		"seconds": 11.305,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_minister2_14.ogg"
 	}
 }
 const GREETINGS: Dictionary = {

@@ -1,5 +1,14 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-03 (later) — Your Phase 2 license reframe: Mike Dean's new dialogue — IN CODE, voiced, gate-tested; shipping, NOT founder-verified.**
+- **Gold Panner removed everywhere:** the gift, the toast, the stamp, its lines and its recordings. Inferno gifts no paper.
+- **First visit:** Mike Dean, at his desk facing the door, gives the soft gate. He covers the four licenses (Prospector's, Miner's, Foreman's, Mine Owner's), the wBTC vault and the Flip and Builder bonds. No free paper.
+- **Four certificates** hang on the office's left wall in a slight rising diagonal, each labelled with its tier. The camera glances at them on the line where Mike Dean points them out.
+- **Inferno (after the drink, before Flux):** "go back to Mike Dean, get a proper Miner's License... I ain't carrying paper for you."
+- **Second visit:** "The map is useful. The license is weight." He lays out the bonds, then sends you to Dude.
+- **Voices:** all 12 new lines recorded with ElevenLabs, using Mike Dean's voice `CfxYdK3WmF3bmrvyLAiU` and Inferno's own voice.
+- **Tools installed:** graphify (it skips GDScript, so it's useful for `tools/` and the docs), the EGM plugin (draft a spec, then review it before coding), and the gemini-api CLI (free tier, 20 calls per day). How to use them: skill `gm-game-graphify-egm-gemini`.
+
 **2026-11-03 — Water gear first at Rich & Utah's (fix for "after Dude he is sent back for the water equipment") — IN CODE, gate-tested (7 suites, 454 checks, 0 fails); shipping, NOT founder-verified.**
 - **Root cause:** after buying Dude's horse, the game only let Lil Blunt ride for Logan's Lake if he owned BOTH the river gear and the Sharps long rifle. Missing either one sent him back to Rich's.
 - **Fix:** **WATER & RIVER GEAR** (skiff, canteens, sealed crates) is now the **top row** of the Armory trade, with its own model turning in the display case. **Every other row reads "WATER GEAR FIRST" and is locked until it is bought.** The lake ride now needs only the water gear. The Sharps is still sold, but it no longer holds the ride back.

@@ -159,11 +159,28 @@ func _ready() -> void:
 	_check("The Sheriff is smoking his pipe (a curl of smoke) and stands at human height", sheriff.find_child("CigSmoke", true, false) != null and (sheriff.find_child("CigSmoke", true, false) as CPUParticles3D).emitting
 		and absf(sheriff.height_m - GoldTownChamber.SHERIFF_HEIGHT) < 0.01)
 	_until(c, 60.0, func(): return c.get_beat_name() == "TO_BAR")
-	_check("the Sheriff greets him, Lil Blunt asks for the certificate, the Sheriff hands him to Minister Mike Dean, who lays out the rules, then the Sheriff sends him to the saloon - in order",
-		said.find("vo_sheriff_1") < said.find("vo_lb_cert1") and said.find("vo_lb_cert1") < said.find("vo_sheriff_2") and said.find("vo_sheriff_2") < said.find("vo_minister_1") and said.find("vo_minister_1") < said.find("vo_sheriff_3") and said.find("vo_sheriff_1") >= 0, str(said))
-	var rules: String = _manifest_text("vo_minister_1").to_lower()
-	_check("the certificate rules are the whitepaper's: in your name, can't sell it on, can't trade it, bring your share - no invented numbers",
-		"your name" in rules and "sold" in rules and "trade" in rules and "share" in rules and not rules.contains("%") and not rules.contains("0") and not rules.contains("5"), rules)
+	_check("the Sheriff greets him, Lil Blunt asks for the certificate, the Sheriff hands him to Minister Mike Dean, who lays out the four licenses, then the Sheriff sends him to the saloon - in order",
+		said.find("vo_sheriff_1") < said.find("vo_lb_cert1") and said.find("vo_lb_cert1") < said.find("vo_sheriff_2") and said.find("vo_sheriff_2") < said.find("town_cert1_0") and said.find("town_cert1_4") < said.find("vo_sheriff_3") and said.find("vo_sheriff_1") >= 0, str(said))
+	# Phase 2 reframe (founder 2026-11-03, section 3.1): the first visit is a soft gate - four licenses + bonds, no free paper
+	var first: String = " ".join(GoldTownChamber.MINISTER1_LINES.map(func(l: Array) -> String: return str(l[1]))).to_lower()
+	_check("first visit: Mike Dean names all four licenses, the wBTC vault and both bonds, and refuses free paper - no invented numbers",
+		"prospector's" in first and "miner's" in first and "foreman's" in first and "mine owner's" in first and "wbtc vault" in first
+			and "flip bond" in first and "builder bond" in first and "not enough for a license" in first and not first.contains("%"), first)
+	_check("every first-visit Mike Dean line is voiced in his ElevenLabs voice", GoldTownChamber.MINISTER1_LINES.all(func(l: Array) -> bool:
+		var id: String = Ep2TownVoiceBank.id_for("minister", str(l[1]))
+		return id != "" and bool(Ep2TownVoiceBank.LINES[id]["ready"])))
+	var lic_wall: Node3D = c.license_wall()
+	var office_inv: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Certificates")).affine_inverse()
+	var tiers: Array = []
+	var on_left: bool = lic_wall != null and lic_wall.get_child_count() == 4
+	if lic_wall != null:
+		for cert in lic_wall.get_children():
+			var cert_lp: Vector3 = office_inv * (cert as Node3D).global_position
+			on_left = on_left and cert_lp.x < -3.5 and cert_lp.z < GoldTownChamber.OFFICE_SPOT.z and cert_lp.y > 1.2
+			for n in cert.get_children():
+				if n is Label3D and "LICENSE" in (n as Label3D).text: tiers.append((n as Label3D).text)
+	_check("the four certificates hang on the office's LEFT wall, beyond the counter (Prospector's, Miner's, Foreman's, Mine Owner's)",
+		on_left and tiers == ["PROSPECTOR'S LICENSE", "MINER'S LICENSE", "FOREMAN'S LICENSE", "MINE OWNER'S LICENSE"], str(tiers))
 	_check("-> TO_BAR, the objective is the saloon", "SALOON" in c.get_hud().objective, c.get_hud().objective)
 	# ---- the saloon
 	var crossed: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Certificates", 1.5)) and _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", 1.2))
@@ -512,13 +529,14 @@ func _ready() -> void:
 	_check("...then Inferno: his cousin Flux needs help with his new kettle - they'll meet up later",
 		caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "flux" in str(l[1]).to_lower() and "kettle" in str(l[1]).to_lower())
 		and caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "later" in str(l[1]).to_lower()))
-	_check("...and leaves him a gift for Mike Dean: THE GOLD PANNER", c.has_gold_panner()
-		and caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "gold panner" in str(l[1]).to_lower() and "mike dean" in str(l[1]).to_lower()))
-	_check("-> MINISTER2: the next thread is the gift, at Mike Dean's counter", c.get_beat_name() == "MINISTER2"
-		and "gold panner" in str(c.get_hud().objective).to_lower(), c.get_beat_name() + " | " + str(c.get_hud().objective))
+	_check("...and Inferno gifts no paper: he points him back to Mike Dean for a real Miner's License or a bond",
+		caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "mike dean" in str(l[1]).to_lower() and "miner's license" in str(l[1]).to_lower() and "ain't carrying paper" in str(l[1]).to_lower())
+		and not caps.any(func(l: Array) -> bool: return "panner" in str(l[1]).to_lower() or "stamp" in str(l[1]).to_lower()))
+	_check("-> MINISTER2: the next thread is the license talk at Mike Dean's counter", c.get_beat_name() == "MINISTER2"
+		and "miner's license" in str(c.get_hud().objective).to_lower(), c.get_beat_name() + " | " + str(c.get_hud().objective))
 
 	# ---- steps 9-10: the second visit - the gift, the stamp, the referral to Dude
-	print("-- THE SECOND VISIT TO MIKE DEAN (the stamp)")
+	print("-- THE SECOND VISIT TO MIKE DEAN (license / bond close)")
 	var left: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", -0.9), 30.0)
 	left = _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", 2.0), 30.0) and left
 	_check("he steps back out into the street", left)
@@ -531,10 +549,11 @@ func _ready() -> void:
 	for line in GoldTownChamber.MINISTER2_LINES:
 		m2_budget += Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(c._town_speaker(str(line[0])), str(line[1]))) + 4.0
 	_until(c, m2_budget, func(): return c.get_beat_name() == "STABLES")
-	_check("Mike Dean takes the Gold Panner", c.gold_panner_given() and not c.has_gold_panner()
-		and caps.any(func(l: Array) -> bool: return l[0] == "MIKE DEAN" and "gold panner" in str(l[1]).to_lower()))
-	_check("...and the certificate is stamped on this second visit (the first one laid out the rules)", c.is_stamped()
-		and caps.any(func(l: Array) -> bool: return l[0] == "MIKE DEAN" and "stamped" in str(l[1]).to_lower()))
+	_check("second visit: the map is useful, the license is weight - Builder bond and Flip bond laid out, no paper handed over", c.license_talk_heard()
+		and caps.any(func(l: Array) -> bool: return l[0] == "MIKE DEAN" and "the license is weight" in str(l[1]).to_lower())
+		and caps.any(func(l: Array) -> bool: return l[0] == "MIKE DEAN" and "builder bond" in str(l[1]).to_lower() and "flip bond" in str(l[1]).to_lower())
+		and not caps.any(func(l: Array) -> bool: return "panner" in str(l[1]).to_lower() or "stamped" in str(l[1]).to_lower()))
+	_check("...the four certificates are still on the left wall", c.license_wall() != null and c.license_wall().get_child_count() == 4)
 	_check("...and he sends him to his friend Dude at the horse stables", caps.any(func(l: Array) -> bool:
 		return l[0] == "MIKE DEAN" and "dude" in str(l[1]).to_lower() and "stables" in str(l[1]).to_lower()))
 	_check("-> STABLES: the objective is Dude's", c.get_beat_name() == "STABLES" and "dude" in str(c.get_hud().objective).to_lower(), str(c.get_hud().objective))
@@ -570,10 +589,10 @@ func _ready() -> void:
 	c._player_pos = GoldTownChamber.DEPART_HORSE + Vector3(1.5,0,0)
 	_check("E explicitly mounts the horse at the stables",c.can_mount_departure() and c.start_rig(""))
 	_until(c, 20.0, func(): return res.size() == 1)
-	_check("the town hands on to the ride to Logan's Lake on Dude's horse, the map and the Borchardt in hand, the certificate stamped, mints nothing",
+	_check("the town hands on to the ride to Logan's Lake on Dude's horse, the map and the Borchardt in hand, the license talk heard (no paper), mints nothing",
 		res.size() == 1 and str(res[0].get("next_chamber", "")) == "lake_trail" and bool(res[0].get("horse", false))
 		and not bool(res[0].get("end_session", false)) and bool(res[0].get("got_map", false)) and bool(res[0].get("peacemaker", false))
-		and bool(res[0].get("stamped", false)) and int(res[0].get("gold_awarded", -1)) == 0, str(res))
+		and bool(res[0].get("license_talk", false)) and int(res[0].get("gold_awarded", -1)) == 0, str(res))
 	_check("the ending carries the Armory: he visited it, and the long rifle + river gear come with him",
 		res.size() == 1 and bool(res[0].get("armory_visited", false)) and bool(res[0].get("sniper", false))
 		and int(res[0].get("sniper_rounds", 0)) == GoldTownChamber.SNIPER_BOX and bool(res[0].get("river_gear", false)), str(res))

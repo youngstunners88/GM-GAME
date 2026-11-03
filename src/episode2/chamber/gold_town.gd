@@ -6,8 +6,10 @@ extends Ep2Interlude
 ## desert at the same coordinates in both rooms) and plays the rest of the slice in first person, the Winchester in his hands:
 ##
 ##   STREET    walk to the CERTIFICATES office
-##   OFFICE    The Sheriff (the founder's own character: weathered, long duster, star, a wisp of smoke) and Minister Mike Dean (the certificate book) behind the counter: the certificate is made out in your
-##             name, can't be sold on or traded, bring your share and he stamps it (whitepaper-faithful, no invented numbers)
+##   OFFICE    The Sheriff (the founder's own character: weathered, long duster, star, a wisp of smoke) and Minister Mike Dean behind the
+##             counter, facing the door. On his left wall hang the four Miner's License certificates (Prospector's, Miner's, Foreman's, Mine
+##             Owner's). First visit = a soft gate: the four licenses + Flip / Builder bonds explained, no free paper (Phase 2 reframe
+##             2026-11-03, docs/founder-feedback/2026-11-03_phase2_license_reframe.md section 3.1)
 ##   TO_BAR    cross the street to the SALOON
 ##   BAR       a whiskey, a quarter of a Bitcoin on the bar, the bartender's jaw drops, a stranger at the end of the bar noticed -
 ##             "Give me a Bitcoin in exchange for the map to the auction, where you can get more gold and Bitcoin." Lil Blunt won't. the Sheriff walks
@@ -29,9 +31,10 @@ extends Ep2Interlude
 ##   BULL_BACK after the Gatling: Inferno rides back in on his quad, parks outside Rich's; the first whiskey's on him
 ##   BODY      on the way: Mike Dean again, still praying by the body; Inferno greets him - "Must've been a bird ..."
 ##   DRINKS    the bar: they really drink (Inferno lifts his glass, Lil Blunt's comes up to the camera); Inferno has to help his cousin
-##             Flux with his new kettle, and leaves him a gift for Mike Dean: THE GOLD PANNER
-##   MINISTER2 the second visit: Lil Blunt brings Mike Dean the Gold Panner; Mike Dean stamps the certificate (the first visit refused)
-##             and sends him to his friend Dude at the horse stables
+##             Flux with his new kettle; before he goes he points Lil Blunt back to Mike Dean for a real Miner's License or a bond
+##             (Phase 2 reframe 2026-11-03: Inferno gifts NO paper - there is no Gold Panner and no stamp anywhere)
+##   MINISTER2 the second visit: Mike Dean's license / bond close (the four licenses on his left wall), then the referral to his
+##             friend Dude at the horse stables
 ##   STABLES   Dude: the Minister sent him; they agree a price in BTC for the horse; Dude offers his Chill Buds (Tabs health); then
 ##             "Logan's Lake first" - the horse needs to drink in this heat (the lake is on the map)
 ##   GEARED    on the way out of town (with the long rifle and the river gear: else first back to Rich's counter for them)
@@ -88,22 +91,41 @@ const DRINK_LINES: Array = [
 	["INFERNO", "To the quickest little hand in GoldMine."],
 	["LIL BLUNT", "Cheers."],
 ]
-## ...they drink (section 2 step 7: visible drinking, not pantomime), then Flux's kettle, and Inferno's gift for Mike Dean (step 9).
+## ...they drink (section 2 step 7: visible drinking, not pantomime), then Inferno's pointer back to Mike Dean (no gift), and Flux's kettle.
 const FLUX_LINES: Array = [
 	["INFERNO", "Listen, my cousin Flux needs a hand with his new kettle."],
 	["INFERNO", "We'll lie low a little while and meet up later. Stay out of trouble."],
 ]
-const GIFT_LINES: Array = [
-	["INFERNO", "Oh - and take this to Mike Dean for me. The Gold Panner. He's had his eye on it for years."],
-	["LIL BLUNT", "The Gold Panner. I'll see he gets it."],
+## Phase 2 reframe (2026-11-03) section 3.2: post-drink, before Flux - Inferno gifts nothing, he points back to Mike Dean.
+const INFERNO_LICENSE_LINES: Array = [
+	["INFERNO", "You already got the map off that fool. That'll get you in the door at the auction."],
+	["INFERNO", "If you want real weight - lower fees, Builder share, something that actually sits on the vault - go back to Mike Dean. Get a proper Miner's License. Or bond if you've got the ETH. I ain't carrying paper for you."],
 ]
-## The second visit to the certificate office (section 2 steps 9-10): the gift, the stamp, the referral to Dude.
+## Section 3.1: the first visit (pre-draw, Bull sent him) - the four licenses on the left wall and the bonds; a soft gate, no free paper.
+## Index 1 is the line where Mike Dean turns Lil Blunt's eye to the wall (`MINISTER_WALL_LINE`).
+const MINISTER1_LINES: Array = [
+	["MIKE DEAN", "Bull sent you. Looking for a claim."],
+	["MIKE DEAN", "We don't hand out paper for free. What you're looking at on the wall are the four licenses that actually sit on the wBTC vault."],
+	["MIKE DEAN", "Prospector's is the floor. Then Miner's, Foreman's, Mine Owner's. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight."],
+	["MIKE DEAN", "You can start with a Prospector's when you're ready, or go the bond route if you want the discount and a real share of the gold. Flip bond gets you NOTE cheaper. Builder bond puts you in the longer pool."],
+	["MIKE DEAN", "Sheriff's the one who can walk you through the process once you've got skin in it. Right now you're just a man who walked in with Bull's name. That's not enough for a license."],
+]
+const MINISTER_WALL_LINE := 1
+## Section 3.3: the second visit (post-Flux) - the license / bond close, then the referral to Dude (steps 9-10). Index 1 turns to the wall.
 const MINISTER2_LINES: Array = [
-	["LIL BLUNT", "Minister. Inferno sent you this. The Gold Panner."],
-	["MIKE DEAN", "The Gold Panner! Bless that big fella, he remembered."],
-	["MIKE DEAN", "And your certificate, son. Made out in your name - stamped and sealed."],
+	["MIKE DEAN", "You're back. And you walked out of a street draw with a map and a dead man behind you."],
+	["MIKE DEAN", "The map is useful. The license is weight."],
+	["MIKE DEAN", "Prospector's gets you on the board. Higher licenses unlock the pre-order queue, cut the trade tax, and put real Builder pool weight behind your name. Everything is backed by the same wBTC vault - floor is real."],
+	["MIKE DEAN", "If you've got ETH and want the bigger share, look at a Builder bond. If you just want NOTE at a discount, the Flip bond is open when the round is live."],
+	["MIKE DEAN", "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to Dude at the stables. Tell him I sent you."],
 	["LIL BLUNT", "Much obliged, Minister."],
-	["MIKE DEAN", "You'll want a horse for the trail. Go see my friend Dude at the horse stables. Tell him I sent you."],
+]
+## The four Miner's License tiers on the office's left wall, low to high (the same ladder as the Auctions - Miner's License UI).
+const LICENSE_TIERS: Array = [
+	["PROSPECTOR'S LICENSE", Color(0.72, 0.45, 0.25)],
+	["MINER'S LICENSE", Color(0.75, 0.76, 0.78)],
+	["FOREMAN'S LICENSE", Color(0.93, 0.74, 0.25)],
+	["MINE OWNER'S LICENSE", Color(0.86, 0.90, 0.95)],
 ]
 ## The drink itself: Inferno's Stand_and_Drink (the hideout's clip) and Lil Blunt's glass up to the camera, then down.
 const FP_DRINK_S := 2.4
@@ -149,6 +171,10 @@ const MINISTER_STEP := 0.5                               # the low wooden step h
 ## Where the smoke rises on the Sheriff, as a fraction of his height (x his left, y up, z forward): Sheriff James's pipe bowl, which
 ## hangs from the left corner of his mouth.
 const SHERIFF_MOUTH := Vector3(0.03, 0.855, 0.095)
+## The license wall (office-local): the left wall's inner face, beside the counter, clear of the clock (z -4.4) and over the desk.
+const LICENSE_WALL_AT := Vector3(-3.86, 1.42, -5.0)
+const LICENSE_WALL_STEP := 0.62                           # along the wall, towards the back
+const LICENSE_WALL_RISE := 0.1                            # the slight diagonal
 const MINISTER_DESK := Vector3(0.6, 0.0, -5.7)          # Minister Mike Dean behind the certificate counter, the certificate book open
 const SHERIFF_OFFICE_AT := Vector3(-2.3, 0.0, -2.9)     # the Sheriff by the stove, where he greets whoever walks in
 const OFFICE_SPOT := Vector3(0.6, 0.0, -3.4)          # where Lil Blunt stands at the counter
@@ -292,9 +318,7 @@ var _fp_glass: Node3D = null                          # Lil Blunt's own glass, o
 var _fp_drink_t: float = -1.0                         # >= 0 while that glass is up
 var _bull_sip_t: float = -1.0                         # >= 0 while Inferno drinks
 var _drinks_done: int = 0                             # drinks taken at the bar (test evidence)
-var _gold_panner: bool = false                        # Inferno's gift, until it is handed to Mike Dean
-var _panner_given: bool = false
-var _stamped: bool = false                            # the certificate's stamp (the second visit)
+var _license_talk: bool = false                       # the second visit's license / bond close has been heard (no paper changes hands)
 var _minister2_said: bool = false
 var _horse_bought: bool = false
 var _depart_mounted: bool = false
@@ -426,6 +450,7 @@ func _step_people() -> void:
 ## The draw's cast: the Sheriff, the barman, the stranger with his Borchardt, the glass, the coin and the muzzle light.
 func _step_people_core() -> void:
 	_build_sheriff()
+	_build_license_wall()
 	_bartender = Ep2TownFolk.new()
 	_bartender.name = "Bartender"
 	_visuals.add_child(_bartender)
@@ -1258,7 +1283,7 @@ func _on_beat_entered(b: int) -> void:
 	match b:
 		Beat.STREET:
 			if _hud:
-				_hud.objective = "Go to the CERTIFICATES office. Get the sheriff to sort you a certificate."
+				_hud.objective = "Go to the CERTIFICATES office. Ask about a Miner's License."
 		Beat.OFFICE:
 			if _hud:
 				_hud.objective = ""
@@ -1269,7 +1294,7 @@ func _on_beat_entered(b: int) -> void:
 				FacilityShow._say("vo_lb_cert1", 0.25),
 				FacilityShow._say("vo_sheriff_2", 0.3),
 				{"do": "call", "fn": func() -> void: look_toward(_minister.position + Vector3(0.0, MINISTER_HEIGHT * 0.85, 0.0), 2.4)},
-				FacilityShow._say("vo_minister_1", 0.3),
+			] + _minister_steps(MINISTER1_LINES, MINISTER_WALL_LINE) + [
 				{"do": "call", "fn": func() -> void: look_toward(_sheriff.position + Vector3(0.0, SHERIFF_HEIGHT * 0.9, 0.0), 2.4)},
 				FacilityShow._say("vo_sheriff_3", 0.3),
 				{"do": "call", "fn": release_look}], true)
@@ -1407,7 +1432,7 @@ func _on_beat_entered(b: int) -> void:
 			_bull_task = "to_body"
 			_bull_route([Ep2GoldTown.door_world("Bldg_Armory", 6.0), LANE_MARK, Vector3(-2.2, 0.0, 1450.0), _body_stand()], 1.5)
 		Beat.DRINKS:
-			# section 2 steps 7-9: whiskey at the bar - they really drink - then cousin Flux's new kettle, and Inferno's gift for Mike Dean
+			# section 2 steps 7-9: whiskey at the bar - they really drink - Inferno's pointer to Mike Dean for a real license, then cousin Flux's new kettle
 			if _hud:
 				_hud.objective = "Inferno's buying. Into the saloon, up to the bar."
 			_drinks_said = false
@@ -1415,10 +1440,10 @@ func _on_beat_entered(b: int) -> void:
 			_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", 2.4), Ep2GoldTown.door_world("Bldg_Saloon", -1.0),
 				Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT + Vector3(1.4, 0.0, -0.1))], 1.4)
 		Beat.MINISTER2:
-			# section 2 steps 9-10: the Gold Panner to Mike Dean; the stamp lands on this second visit; he sends him to Dude
+			# section 2 steps 9-10: back to Mike Dean for the Miner's License / bond talk; he sends him to Dude
 			_minister2_said = false
 			if _hud:
-				_hud.objective = "Take the Gold Panner to Minister Mike Dean at the CERTIFICATES office."
+				_hud.objective = "Go back to Minister Mike Dean at the CERTIFICATES office: ask about a Miner's License."
 		Beat.STABLES:
 			prebuild_requested.emit("lake_trail")
 			# section 2 steps 11-12: Dude - the Minister sent him; the horse for BTC; his Chill Buds; "Logan's Lake first"
@@ -1444,7 +1469,7 @@ func _on_beat_entered(b: int) -> void:
 			# Wait here for the player to mount at the actual stables.
 		Beat.DONE:
 			_resolve({"next_chamber": "lake_trail", "horse": _horse_bought, "got_map": _got_map, "peacemaker": _got_peacemaker,
-				"stamped": _stamped, "draw_losses": _losses,
+				"license_talk": _license_talk, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
 				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear,
 				"jail_visited": _jail_visited, "investigation": _investigation_open})
@@ -1894,26 +1919,90 @@ func _town_sfx(id: String) -> void:
 	p.finished.connect(p.queue_free)
 
 
-## Inferno's gift for Mike Dean (step 9): Lil Blunt carries the Gold Panner to the certificate office.
-func _take_gold_panner() -> void:
-	_gold_panner = true
-	if _hud != null:
-		_hud.toast("INFERNO'S GIFT FOR MIKE DEAN: THE GOLD PANNER", 3.6)
+## Phase 2 reframe (2026-11-03): the second visit ends with the license / bond close heard - a story flag only. No paper, no stamp,
+## no mint: the real license / bond surfaces are the protocol's own (out of scope in the game, section 6).
+func _hear_license_talk() -> void:
+	_license_talk = true
 
 
-func _give_gold_panner() -> void:
-	_gold_panner = false
-	_panner_given = true
-	if _hud != null:
-		_hud.toast("YOU GAVE MIKE DEAN THE GOLD PANNER", 2.6)
+## Turn Lil Blunt's eye to the four licenses on the left wall for one line, then back to Mike Dean.
+func _look_at_license_wall() -> void:
+	look_toward(Ep2GoldTown.local_to_world("Bldg_Certificates", LICENSE_WALL_AT + Vector3(0.0, 0.15, -LICENSE_WALL_STEP * 1.5)), 2.4)
 
 
-## The second visit's stamp (the certificate path: the first visit refused, the stamp lands now).
-func _stamp_certificate() -> void:
-	_stamped = true
-	_town_sfx("stamp_thud")
-	if _hud != null:
-		_hud.toast("YOUR CERTIFICATE IS STAMPED", 3.0)
+func _look_at_minister() -> void:
+	if _minister != null:
+		look_toward(_minister.position + Vector3(0.0, MINISTER_HEIGHT * 0.85, 0.0), 2.4)
+
+
+## Mike Dean's lines with a glance at the license wall on `wall_line` (the doc: "gesture or glance toward the left-wall display").
+func _minister_steps(lines: Array, wall_line: int) -> Array:
+	return (_caption_steps(lines.slice(0, wall_line)) + [{"do": "call", "fn": _look_at_license_wall}]
+		+ _caption_steps(lines.slice(wall_line, wall_line + 1)) + [{"do": "call", "fn": _look_at_minister}]
+		+ _caption_steps(lines.slice(wall_line + 1)))
+
+
+## The four Miner's License certificates on the certificate office's LEFT wall (the player's left facing Mike Dean, who faces the door):
+## a slight rising diagonal of framed papers beside the counter, each with its tier name, so the ladder reads during the talk.
+## Procedural (wood frame, paper, a tier-coloured seal, Label3D lettering) so it always shows - no asset, no pack weight.
+func _build_license_wall() -> void:
+	var e: Array = Ep2GoldTown.entry("Bldg_Certificates")
+	if e.is_empty() or _visuals == null:
+		return
+	var wall := Node3D.new()
+	wall.name = "LicenseWall"
+	_visuals.add_child(wall)
+	var frame_mat := StandardMaterial3D.new()
+	frame_mat.albedo_color = Color(0.24, 0.14, 0.07)
+	frame_mat.roughness = 0.8
+	var paper_mat := StandardMaterial3D.new()
+	paper_mat.albedo_color = Color(0.93, 0.87, 0.72)
+	paper_mat.roughness = 0.95
+	for i in LICENSE_TIERS.size():
+		var local: Vector3 = LICENSE_WALL_AT + Vector3(0.0, i * LICENSE_WALL_RISE, -i * LICENSE_WALL_STEP)
+		var cert := Node3D.new()
+		cert.name = "License%d" % (i + 1)
+		cert.transform = Ep2GoldTown.building_xform(e) * Transform3D(Basis(Vector3.UP, PI * 0.5), local)   # faces +x: into the room
+		wall.add_child(cert)
+		var frame := MeshInstance3D.new()
+		var fb := BoxMesh.new()
+		fb.size = Vector3(0.52, 0.66, 0.03)
+		frame.mesh = fb
+		frame.material_override = frame_mat
+		cert.add_child(frame)
+		var paper := MeshInstance3D.new()
+		var pq := QuadMesh.new()
+		pq.size = Vector2(0.44, 0.58)
+		paper.mesh = pq
+		paper.material_override = paper_mat
+		paper.position.z = 0.017
+		cert.add_child(paper)
+		var seal := MeshInstance3D.new()
+		var sm := CylinderMesh.new()
+		sm.top_radius = 0.055
+		sm.bottom_radius = 0.055
+		sm.height = 0.01
+		seal.mesh = sm
+		var seal_mat := StandardMaterial3D.new()
+		seal_mat.albedo_color = LICENSE_TIERS[i][1]
+		seal_mat.metallic = 0.7
+		seal_mat.roughness = 0.35
+		seal.material_override = seal_mat
+		seal.rotation.x = PI * 0.5
+		seal.position = Vector3(0.0, -0.17, 0.022)
+		cert.add_child(seal)
+		for t in [[str(LICENSE_TIERS[i][0]), 0.15, 34], ["BACKED BY THE wBTC VAULT", 0.04, 18], ["TIER %d OF 4" % (i + 1), -0.03, 18]]:
+			var label := Label3D.new()
+			label.text = str(t[0])
+			label.font_size = int(t[2])
+			label.pixel_size = 0.001
+			label.modulate = Color(0.22, 0.13, 0.06)
+			label.outline_size = 0
+			label.width = 400.0
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			label.position = Vector3(0.0, float(t[1]), 0.02)
+			label.double_sided = false
+			cert.add_child(label)
 
 
 func _show_finished() -> void:
@@ -2088,27 +2177,26 @@ func _tick(delta: float) -> void:
 				_pour_two()
 				_bull.face_point(_player_pos)
 				look_toward(_bull.head_world(), 2.0)
-				# the toast, then they really drink (step 7), then Flux's kettle (step 8) and the gift for Mike Dean (step 9)
+				# the toast, then they really drink (step 7), then Inferno points him back to Mike Dean (no paper) and Flux's kettle (step 8)
 				_start_show(_caption_steps(DRINK_LINES) + [{"do": "call", "fn": _drink_together}, {"do": "wait", "t": FP_DRINK_S + 0.2}]
-					+ _caption_steps(FLUX_LINES) + _caption_steps(GIFT_LINES) + [{"do": "call", "fn": _take_gold_panner},
+					+ _caption_steps(INFERNO_LICENSE_LINES) + _caption_steps(FLUX_LINES) + [
 					{"do": "call", "fn": release_look}], false)
 			elif _drinks_said and not _show_active and not is_drinking():
-				# Inferno heads off to his cousin's; the story's next thread is the gift for Mike Dean
+				# Inferno heads off to his cousin's; the story's next thread is the second visit to Mike Dean
 				_bull_task = "leaving"
 				_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), Ep2GoldTown.door_world("Bldg_Saloon", 3.0), Vector3(1.5, 0.0, 1470.0),
 					Vector3(16.0, 0.0, 1480.0)], 1.6)
 				_advance_to(Beat.MINISTER2)
 		Beat.MINISTER2:
-			# the second visit: in at the counter with the Gold Panner - the stamp, then the referral to Dude (steps 9-10)
+			# the second visit: in at the counter - the license / bond close, then the referral to Dude (steps 9-10)
 			if not _minister2_said and not _show_active and _in_room("Bldg_Certificates", -1.4) \
 					and (_minister == null or not _minister.is_walking()):
 				_minister2_said = true
 				if _minister != null:
 					_minister.face_point(_player_pos)
 					look_toward(_minister.position + Vector3(0.0, MINISTER_HEIGHT * 0.85, 0.0), 2.4)
-				_start_show(_caption_steps(MINISTER2_LINES.slice(0, 2)) + [{"do": "call", "fn": _give_gold_panner}]
-					+ _caption_steps(MINISTER2_LINES.slice(2, 3)) + [{"do": "call", "fn": _stamp_certificate}]
-					+ _caption_steps(MINISTER2_LINES.slice(3)) + [{"do": "call", "fn": release_look}], false)
+				_start_show(_minister_steps(MINISTER2_LINES, MINISTER_WALL_LINE) + [{"do": "call", "fn": _hear_license_talk},
+					{"do": "call", "fn": release_look}], false)
 			elif _minister2_said and not _show_active:
 				_advance_to(Beat.STABLES)
 		Beat.STABLES:
@@ -2553,9 +2641,8 @@ func has_map() -> bool: return _got_map
 func has_peacemaker() -> bool: return _got_peacemaker
 func can_loot() -> bool: return _can_loot()
 func get_revolver() -> Node3D: return _revolver
-func has_gold_panner() -> bool: return _gold_panner
-func gold_panner_given() -> bool: return _panner_given
-func is_stamped() -> bool: return _stamped
+func license_talk_heard() -> bool: return _license_talk
+func license_wall() -> Node3D: return _visuals.get_node_or_null("LicenseWall") as Node3D if _visuals != null else null
 func drinks_done() -> int: return _drinks_done
 func horse_bought() -> bool: return _horse_bought
 func jail_sent_to_armory() -> bool: return _jail_sent
