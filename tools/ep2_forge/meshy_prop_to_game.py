@@ -1,5 +1,7 @@
 """Founder Meshy props (plants, trees) -> game weight, kept upright and at the model's own origin.
-blender -b --factory-startup -P tools/ep2_forge/meshy_prop_to_game.py -- <src.glb> <out.glb> <height_m> [tris] [tex]
+blender -b --factory-startup -P tools/ep2_forge/meshy_prop_to_game.py -- <src.glb> <out.glb> <height_m> [tris] [tex] [solid]
+Tripo's marker icosphere (a mesh with no material) is dropped. `solid` is for a hard object (a gun, a crate), never foliage: it strips Tripo's armature and empties,
+turns off the alpha blending it exports (which sorts wrongly in the engine), and welds by position first, because its meshes are unwelded and a collapse tears holes in them.
 Scales so the model is <height_m> tall with its base on y = 0, decimates to <tris> (default 12000), textures to <tex> px (base) and half that
 for normal / metal-rough, JPEG. Prints the result's size.
 Foliage is loose leaf triangles, which an edge-collapse cannot reduce past a point (47k on the Grove) and an aggressive simplify shreds: whatever is
@@ -12,9 +14,14 @@ a = sys.argv[sys.argv.index("--") + 1:]
 SRC, OUT, H = a[0], a[1], float(a[2])
 TRIS = int(a[3]) if len(a) > 3 else 12000
 TEX = int(a[4]) if len(a) > 4 else 1024
+SOLID = len(a) > 5 and a[5] == "solid"
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=SRC)
 meshes = [o for o in bpy.context.scene.objects if o.type == 'MESH']
+for o in list(meshes):
+    if len(o.data.materials) == 0:
+        meshes.remove(o)
+        bpy.data.objects.remove(o, do_unlink=True)
 for o in bpy.context.scene.objects:
     o.select_set(o in meshes)
 bpy.context.view_layer.objects.active = meshes[0]
@@ -23,10 +30,28 @@ bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 if len(meshes) > 1:
     bpy.ops.object.join()
 obj = bpy.context.view_layer.objects.active
+if SOLID:
+    obj.modifiers.clear()
+    obj.vertex_groups.clear()
+    for o in list(bpy.context.scene.objects):
+        if o != obj:
+            bpy.data.objects.remove(o, do_unlink=True)
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    ext = max(max(v.co[i] for v in bm.verts) - min(v.co[i] for v in bm.verts) for i in range(3))
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=ext * 1e-5)
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
 for mat in obj.data.materials:
     if mat is None or not mat.use_nodes:
         continue
     b = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+    if SOLID and b is not None:
+        for l in list(b.inputs['Alpha'].links):
+            mat.node_tree.links.remove(l)
+        b.inputs['Alpha'].default_value = 1.0
+        mat.blend_method = 'OPAQUE'
     for n in mat.node_tree.nodes:
         if n.type == 'TEX_IMAGE' and n.image is not None:
             base = b is not None and any(l.to_socket == b.inputs['Base Color'] for l in n.outputs[0].links)

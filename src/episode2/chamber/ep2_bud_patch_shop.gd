@@ -29,11 +29,25 @@ func _available(item: Dictionary) -> bool:
 	return purse >= int(item["price"])
 
 
+## The patch has no weapon tabs and nothing in it waits on the Armory's chain.
+func _tabs() -> Array:
+	return []
+
+
+func _lock_note(_id: String) -> String:
+	return ""
+
+
 func _showcase_key_for(_item_row: Dictionary) -> String:
 	return "chill_bud"
 
 
 func _showcase_model(_key: String) -> Node3D:
+	if Ep2Extras.has(Ep2Extras.PATCH_FROST):       # the founder's Purple Frost; the drawn plant holds its place until the pack mounts
+		var frost: Node3D = (load(Ep2Extras.PATCH_FROST) as PackedScene).instantiate() as Node3D
+		for mi in frost.find_children("*", "MeshInstance3D", true, false):
+			Ep2BudPatch._dress_plant(mi as MeshInstance3D, false)
+		return frost
 	var leaf_mat := StandardMaterial3D.new()
 	leaf_mat.albedo_color = Color(0.30, 0.58, 0.22)
 	leaf_mat.cull_mode = BaseMaterial3D.CULL_DISABLED

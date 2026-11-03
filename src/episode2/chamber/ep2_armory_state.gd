@@ -51,9 +51,10 @@ const RESERVE_CAP := 2000
 ## The Armory's stock (single source of truth for the trade panel AND the chamber that debits it).
 ## Prices are feel-values in Episode 1 crypto coins (F - free to tune; never a protocol fact).
 const SHOP: Array = [
-	# FIRST ROW, ALWAYS (founder 2026-11-03): the water gear is the priority buy. Without it Dude's lake ride used to bounce
-	# Lil Blunt back to this counter; now nothing else here is sold until it is in his hands (`unlocks_stock`).
-	{"id": "river_gear", "name": "WATER & RIVER GEAR", "note": "SKIFF - CANTEENS - SEALED CRATES - BUY FIRST", "price": 2, "rounds": 0},
+	# FIRST ROW, ALWAYS (founder 2026-11-03): the Shipment - the water gear and sealed crates - is the priority buy. Without it Dude's lake
+	# ride used to bounce Lil Blunt back to this counter; now nothing else here is sold until it is in his hands (`unlocks_stock`). The row
+	# keeps its save id "river_gear", so a save that already holds it keeps it.
+	{"id": "river_gear", "name": "THE SHIPMENT", "note": "WATER - SKIFF - SEALED CRATES", "price": 2, "rounds": 0},
 	{"id": REM, "name": "GOLDEN BTC REVOLVER", "note": "SINGLE ACTION - BITCOIN CYLINDER", "price": 4, "rounds": 0},
 	{"id": "revolver_ammo", "name": "SIXGUN CARTRIDGES", "note": "A BOX OF EIGHTEEN", "price": 1, "rounds": 18},
 	{"id": BOW, "name": "GM BOW", "note": "RECURVE - GM MEDALLION", "price": 2, "rounds": 0},
@@ -78,14 +79,28 @@ const SHOP_AMMO := {"rifle_ammo": WIN, "revolver_ammo": REM, "arrows": BOW, "bor
 	"mp18_ammo": MP18, "tommy_ammo": TOMMY}
 
 
-## The water gear is the key to the rest of the counter (founder 2026-11-03: "buying it unlocks access to the rest of the weapons").
+## The unlock chain (founder 2026-11-03): the Shipment opens the counter, and the Sharps opens the other guns.
 const GATE_ITEM := "river_gear"
+const SHARPS_ITEM := "sniper"
 
 
-## True when `id` may be sold to this state now: the water gear always, everything else only once he owns the water gear.
+## True when `id` may be sold to this state now: the Shipment always, everything else once he owns it, and the other guns only once he
+## owns the Sharps too. Ammunition for a gun he carries stays on sale, and a gun the Sheriff holds can be bought back, so the chain can
+## never leave him unable to reload or unarmed. Both links read `river_gear` and `sniper_owned`, which saves already carry.
 ## The panel greys rows with it and the chamber's buy() refuses with it, so the rule lives once.
 static func unlocks_stock(armory_state: Ep2ArmoryState, id: String) -> bool:
-	return id == GATE_ITEM or (armory_state != null and armory_state.river_gear)
+	return lock_note(armory_state, id) == ""
+
+
+## Why `id` is locked, in the counter's words ("" when it is not).
+static func lock_note(armory_state: Ep2ArmoryState, id: String) -> String:
+	if id == GATE_ITEM:
+		return ""
+	if armory_state == null or not armory_state.river_gear:
+		return "SHIPMENT FIRST"
+	if SHOP_GUNS.has(id) and not armory_state.sniper_owned and not armory_state.owns(id):
+		return "SHARPS FIRST"
+	return ""
 
 
 static func shop_item(id: String) -> Dictionary:

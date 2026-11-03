@@ -30,3 +30,7 @@ weapon "appear and spin slowly in the form of a showcase". Follow the same path 
 ## Founder's plants in the patch (2026-11-02)
 `Ep2BudPatch.PLANTS` (streamed, `Ep2Extras.PATCH_*`) replaces the drawn stand-ins one load per `upgrade_step`. Shrink with `tools/ep2_forge/meshy_prop_to_game.py`.
 Meshy foliage is loose thin leaves: `gltfpack -sa`, Meshy remesh and even thinning all shredded the Grove, so it stays at 47k with a draw distance. ALWAYS look at a contact sheet (Verdant War Pick is a pickaxe, not a plant) and capture in the real town (`tools/ep2_shots/patch_town_shot.tscn`): a test set hid a pine standing on the bed and backlit purple reading brown (`LEAF_GLOW`).
+
+## Weapon tabs and the unlock chain (2026-11-03)
+`Ep2ArmoryShop.WEAPON_TABS` is one tab per supplied model (`extras/armory/showcase/`, built with `meshy_prop_to_game.py ... solid`); a tab previews and moves the highlight, it never buys. `Ep2ArmoryState.lock_note` is the one chain rule (Shipment, then Sharps, then the guns), read by the panel and `GoldTownChamber.buy()`; `river_gear` and `sniper_owned` are its saved state. Gate `tests/ep2_armory_chain_test.tscn`; capture `tools/ep2_shots/armory_tabs_shot.tscn` (renders in a SubViewport, because the window manager overrides the window size).
+Tripo GLBs carry a marker icosphere and an armature and are unwelded: use `solid`, and look at a contact sheet.

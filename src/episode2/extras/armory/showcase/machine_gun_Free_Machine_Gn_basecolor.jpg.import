@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://dku2mtr8n4en4"
+path="res://.godot/imported/machine_gun_Free_Machine_Gn_basecolor.jpg-0657575199cd53ca2ea0f85ba780e350.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "5c7abb769b6b7046bb2d87d31a4db6ba"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/armory/showcase/machine_gun_Free_Machine_Gn_basecolor.jpg"
+dest_files=["res://.godot/imported/machine_gun_Free_Machine_Gn_basecolor.jpg-0657575199cd53ca2ea0f85ba780e350.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1

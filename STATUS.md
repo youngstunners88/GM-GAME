@@ -7,6 +7,13 @@
 - **Mike Dean** says "talk to my good friend Dude at the stables" again (re-recorded in his voice).
 - Evidence: `docs/episode2-quality/route-tree-licenses-20261103/`.
 
+**2026-11-03 — Rich & Utah: 9 weapon tabs, Shipment -> Sharps -> the rest, your new models — IN CODE, gate-tested + real-renderer captures; shipping, NOT founder-verified, not tried on a real phone.**
+- **Weapon tabs:** nine tabs across the top of the counter, one per model you supplied, each turning in the display case. Looking at a tab never buys. Your files are 7 guns plus 2 of the same guns held in Lil Blunt's hands (`golden Tommy Gun`, `Brodtch gun`), so those two tabs show the in-hand model and sell the same gun as their gun-only tab.
+- **Unlock chain:** the Shipment (the first-buy row, now shown as your crate) opens the Sharps, and the Sharps opens the other guns. Ammo for guns he already carries, and guns the Sheriff is holding, stay on sale so the chain cannot strand him. It is saved with the game.
+- **Bud:** Dude's buds show in Tabs with their count and can be used; now covered by a test. Your new Purple Frost is in the patch and in the patch's display case. The Tabs card keeps its existing icon.
+- **Fixed on the way:** Dude's patch rows said "WATER GEAR FIRST" instead of their prices.
+- **Models stream with the extras pack, not the main pack** (it has about 0.6 MB left), so they appear once the pack has mounted; the old pieces hold their place until then.
+
 **2026-11-03 (later) — Your Phase 2 license reframe: Mike Dean's new dialogue — IN CODE, voiced, gate-tested; shipping, NOT founder-verified.**
 - **Gold Panner removed everywhere:** the gift, the toast, the stamp, its lines and its recordings. Inferno gifts no paper.
 - **First visit:** Mike Dean, at his desk facing the door, gives the soft gate. He covers the four licenses (Prospector's, Miner's, Foreman's, Mine Owner's), the wBTC vault and the Flip and Builder bonds. No free paper.

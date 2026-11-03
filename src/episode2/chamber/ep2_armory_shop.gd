@@ -52,6 +52,26 @@ var _case_vp: SubViewport = null
 var _case_turn: Node3D = null
 var _case_piece: Node3D = null
 var _case_cam: Camera3D = null
+var _case_min_z: float = 0.72                # the nearest the camera may come and still show the whole piece
+## THE WEAPON TABS (founder 2026-11-03): one tab per gun model he supplied, across the top of the counter. A tab puts its model in the case
+## and moves the highlight to the row that sells that gun; it never buys. Two tabs are the same guns held in Lil Blunt's hands, so they share
+## a row with their gun-only tab. `yaw` lays the model along the barrel axis the case expects.
+const TAB_DIR := Ep2Extras.SHOWCASE_DIR
+const WEAPON_TABS: Array = [
+	{"key": Ep2ArmoryState.BUFF, "label": "SHARPS", "row": Ep2ArmoryState.SHARPS_ITEM, "model": TAB_DIR + "sharps.glb", "yaw": PI * 0.25},
+	{"key": Ep2ArmoryState.WIN, "label": "WINCHESTER", "row": Ep2ArmoryState.WIN, "model": TAB_DIR + "winchester_1886.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.REM, "label": "REMINGTON", "row": Ep2ArmoryState.REM, "model": TAB_DIR + "gold_remington.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.BORCH, "label": "BORCHARDT", "row": Ep2ArmoryState.BORCH, "model": TAB_DIR + "borchardt.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.BORCH + "_held", "label": "HELD C93", "row": Ep2ArmoryState.BORCH, "model": TAB_DIR + "borchardt_held.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.SHOT, "label": "COACH GUN", "row": Ep2ArmoryState.SHOT, "model": TAB_DIR + "coach_shotgun.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.MP18, "label": "MACHINE GUN", "row": Ep2ArmoryState.MP18, "model": TAB_DIR + "machine_gun.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.TOMMY, "label": "GOLD TOMMY", "row": Ep2ArmoryState.TOMMY, "model": TAB_DIR + "golden_tommy.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.TOMMY + "_held", "label": "HELD TOMMY", "row": Ep2ArmoryState.TOMMY, "model": TAB_DIR + "golden_tommy_held.glb", "yaw": PI * 0.5},
+]
+const TAB_WIDE_MIN := 600.0                  # from this width the tabs are one strip; narrower they stack three across
+const TAB_GAP := 4.0
+var _tab_btns: Array[Button] = []
+var _tab_key: String = ""                    # the tab chosen by hand, while the highlight stays on its row
 const CASE_CAPTION := 20.0                   # the strip under the turning gun where its name is written
 ## A short screen (a phone held sideways) cannot show all eleven rows at a readable height: the list becomes a window that keeps the
 ## highlighted row in view, with brass up/down buttons (a finger), the mouse wheel and Up/Down (the keys) moving through it.
@@ -66,6 +86,46 @@ var _down_btn: Button = null
 
 func _catalogue() -> Array:
 	return Ep2ArmoryState.SHOP
+
+
+## This panel's weapon tabs (the Chill Bud patch has none).
+func _tabs() -> Array:
+	return WEAPON_TABS
+
+
+## Why a row is locked, in the counter's words ("" = it is not).
+func _lock_note(id: String) -> String:
+	return Ep2ArmoryState.lock_note(state, id)
+
+
+func _tab_for_key(key: String) -> Dictionary:
+	for tab in _tabs():
+		if str(tab["key"]) == key:
+			return tab
+	return {}
+
+
+## Choose a tab: its model goes in the case and the highlight moves to the row that sells it. Looking is free, so this never buys.
+func show_tab(i: int) -> void:
+	var tabs: Array = _tabs()
+	if i < 0 or i >= tabs.size():
+		return
+	var rows: Array = _catalogue()
+	for r in rows.size():
+		if str(rows[r]["id"]) == str(tabs[i]["row"]):
+			index = r
+			_tab_key = str(tabs[i]["key"])
+			_sync_showcase()
+			return
+
+
+## The tab whose model is in the case now (-1 = none).
+func active_tab() -> int:
+	var tabs: Array = _tabs()
+	for i in tabs.size():
+		if str(tabs[i]["key"]) == showcase_key:
+			return i
+	return -1
 
 
 ## One row of this panel's stock by id ({} when it is not sold here).
@@ -89,9 +149,18 @@ func _showcase_key_for(item: Dictionary) -> String:
 
 ## A fresh instance of the showcase model for `key` (null = nothing to show).
 func _showcase_model(key: String) -> Node3D:
+	var tab: Dictionary = _tab_for_key(key)
+	if not tab.is_empty() and Ep2Extras.has(str(tab["model"])):
+		var laid := Node3D.new()                     # the streamed gun-only model, turned so it comes in broadside like the rest
+		var gun: Node3D = (load(str(tab["model"])) as PackedScene).instantiate() as Node3D
+		gun.rotation.y = float(tab["yaw"])
+		laid.add_child(gun)
+		return laid
 	if Ep2ArmoryGunView.has_view(key):
 		return Ep2ArmoryGunView.model(key)
 	if key == Ep2ArmoryState.GATE_ITEM:
+		if Ep2Extras.has(Ep2Extras.SHIPMENT):
+			return (load(Ep2Extras.SHIPMENT) as PackedScene).instantiate() as Node3D
 		return _water_gear_model()
 	var path: String = ""
 	match key:
@@ -187,6 +256,18 @@ func _ready() -> void:
 		_tender_btn.add_theme_stylebox_override(style, StyleBoxEmpty.new())
 	_tender_btn.pressed.connect(func() -> void: _cycle_tender(1))
 	add_child(_tender_btn)
+	move_child(_tender_btn, 0)                     # its finger-sized strip reaches under the first rows: a row or a tab wins where they overlap
+	for t in _tabs().size():
+		var tab_btn := Button.new()
+		tab_btn.name = "WeaponTab%d" % t
+		tab_btn.flat = true
+		tab_btn.focus_mode = Control.FOCUS_NONE
+		tab_btn.mouse_filter = Control.MOUSE_FILTER_PASS
+		for style in ["normal", "hover", "pressed", "focus", "disabled"]:
+			tab_btn.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+		tab_btn.pressed.connect(func() -> void: show_tab(t))
+		add_child(tab_btn)
+		_tab_btns.append(tab_btn)
 	_up_btn = _arrow_button("ScrollUp", -1)
 	_down_btn = _arrow_button("ScrollDown", 1)
 	# Wordless way out for a finger: the trade pauses the tree, so Esc / ui_cancel is not
@@ -293,6 +374,12 @@ func _build_showcase() -> void:
 func _sync_showcase() -> void:
 	var rows: Array = _catalogue()
 	var key: String = _showcase_key_for(rows[index]) if index >= 0 and index < rows.size() else ""
+	if _tab_key != "":
+		var chosen: Dictionary = _tab_for_key(_tab_key)
+		if not chosen.is_empty() and index >= 0 and index < rows.size() and str(chosen["row"]) == str(rows[index]["id"]):
+			key = _tab_key
+		else:
+			_tab_key = ""                            # the highlight moved on to another row
 	if key == showcase_key and (_case_piece != null or key == ""):
 		return
 	showcase_key = key
@@ -309,9 +396,10 @@ func _sync_showcase() -> void:
 	var holder := Node3D.new()
 	holder.add_child(piece)
 	var bb: AABB = _bounds(piece)
-	var longest: float = maxf(bb.size.x, maxf(bb.size.y, bb.size.z))
-	var s: float = 1.0 / maxf(longest, 0.01)
+	# fitted by its diagonal: a long gun is about the size it always was, and a bulky piece (the crate, a bush) still clears the case as it turns
+	var s: float = 1.0 / maxf(bb.size.length(), 0.01)
 	holder.scale = Vector3.ONE * s
+	_case_min_z = maxf(0.72, bb.size.y * s * 0.5 / tan(deg_to_rad(_case_cam.fov * 0.5)) * 1.15 + 0.25)
 	piece.position = -bb.get_center()
 	_case_turn.add_child(holder)
 	_case_piece = holder
@@ -341,7 +429,7 @@ func showcase_rect() -> Rect2:
 	var compact: bool = size.x < SIDE_CASE_MIN_W
 	if compact:
 		var w: float = minf(560.0, size.x - 40.0)
-		var h: float = minf(200.0, size.y * (0.17 if _short() else 0.21))
+		var h: float = minf(200.0, size.y * (0.17 if _short() or not _tabs().is_empty() else 0.21))
 		return Rect2(Vector2((size.x - w) * 0.5, _list_top_base()), Vector2(w, h))
 	var list_w: float = _list_width()
 	var case_w: float = minf(420.0, size.x * 0.34)
@@ -398,8 +486,8 @@ func purchase_result(item_id: String, ok: bool) -> void:
 	var item: Dictionary = _item(item_id)
 	if ok:
 		flash = "SOLD"
-	elif not item.is_empty() and not Ep2ArmoryState.unlocks_stock(state, item_id):
-		flash = "BUY THE WATER GEAR FIRST"
+	elif not item.is_empty() and _lock_note(item_id) != "":
+		flash = "BUY " + _lock_note(item_id).replace(" FIRST", "") + " FIRST"
 	elif not item.is_empty() and purse < int(item["price"]):
 		flash = "NOT ENOUGH CRYPTO"
 	else:
@@ -431,8 +519,8 @@ func _available(item: Dictionary) -> bool:
 		return false
 	if _owned(item):
 		return false
-	if not Ep2ArmoryState.unlocks_stock(state, id):
-		return false                                       # water gear first (founder 2026-11-03)
+	if _lock_note(id) != "":
+		return false                                       # the Shipment, then the Sharps (founder 2026-11-03)
 	if id == "sniper_ammo" and not state.sniper_owned:
 		return false
 	if Ep2ArmoryState.SHOP_AMMO.has(id) and not state.owns(str(Ep2ArmoryState.SHOP_AMMO[id])):
@@ -457,6 +545,10 @@ func _process(delta: float) -> void:
 		_tender_btn.size = Vector2(tw, 88.0)
 		_tender_btn.position = Vector2((size.x - tw) * 0.5, line_y - 8.0)
 	_keep_visible()
+	for t in _tab_btns.size():
+		var tab_r: Rect2 = tab_rect(t)
+		_tab_btns[t].position = tab_r.position
+		_tab_btns[t].size = tab_r.size
 	for i in _rows.size():
 		_rows[i].position = row_rect(i).position
 		_rows[i].size = row_rect(i).size
@@ -485,7 +577,7 @@ func _process(delta: float) -> void:
 			if _case_cam != null:
 				# frame a metre-long gun in any case shape: far enough that it spans the width, never closer than its height allows
 				var aspect: float = r.size.x / maxf(r.size.y, 1.0)
-				_case_cam.position.z = maxf(1.75 / maxf(aspect, 0.1), 0.72)
+				_case_cam.position.z = maxf(1.75 / maxf(aspect, 0.1), _case_min_z)
 			if _case_turn != null and _case_piece != null:
 				showcase_spin += SHOWCASE_SPEED * delta
 				_case_turn.rotation.y += SHOWCASE_SPEED * delta
@@ -503,10 +595,41 @@ func _short() -> bool:
 	return size.y < 520.0
 
 
-func _list_top_base() -> float:
+## The top of the tabs: the heading and the purse line end here.
+func _tabs_top() -> float:
 	if _short():
 		return size.y * 0.075 + 44.0 + 30.0          # the compact heading + the purse line, then the list
 	return size.y * 0.075 + (44.0 if size.x < 650.0 else 58.0) + 34.0
+
+
+func _tab_columns() -> int:
+	return _tabs().size() if size.x >= TAB_WIDE_MIN else 3
+
+
+func _tab_height() -> float:
+	return 26.0 if _short() or _tab_columns() < _tabs().size() else 32.0
+
+
+## The height the tabs take, with the gap under them (0 when this panel has none).
+func tabs_height() -> float:
+	var n: int = _tabs().size()
+	if n == 0:
+		return 0.0
+	var rows: int = int(ceil(float(n) / float(_tab_columns())))
+	return float(rows) * _tab_height() + float(rows - 1) * TAB_GAP + 8.0
+
+
+func tab_rect(i: int) -> Rect2:
+	var total: float = minf(1000.0, size.x - 40.0)
+	var cols: int = maxi(1, _tab_columns())
+	var w: float = (total - TAB_GAP * float(cols - 1)) / float(cols)
+	var x: float = (size.x - total) * 0.5 + float(i % cols) * (w + TAB_GAP)
+	var y: float = _tabs_top() + float(i / cols) * (_tab_height() + TAB_GAP)
+	return Rect2(Vector2(x, y), Vector2(w, _tab_height()))
+
+
+func _list_top_base() -> float:
+	return _tabs_top() + tabs_height()
 
 
 func _list_top() -> float:
@@ -588,12 +711,28 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([Vector2(mid, line_y - 5), Vector2(mid + 5, line_y), Vector2(mid, line_y + 5), Vector2(mid - 5, line_y)]), BRASS)
 	_text("PAY WITH  ◂ %s ▸  ·  YOU HOLD %d" % [TENDER_NAMES.get(tender, tender.to_upper()), purse],
 		Vector2(mid, line_y + (14 if compact else 20)), 11 if compact else 14, BRASS, true)
+	var picked_tab: int = active_tab()
+	var tabs: Array = _tabs()
+	for t in tabs.size():
+		var tab_r: Rect2 = tab_rect(t)
+		var tab_row: String = str(tabs[t]["row"])
+		var locked: bool = _lock_note(tab_row) != ""
+		var box := StyleBoxFlat.new()
+		box.bg_color = LEATHER if t == picked_tab else LEATHER_DIM
+		box.border_color = BRASS if t == picked_tab else Color("765839")
+		box.set_border_width_all(2 if t == picked_tab else 1)
+		box.set_corner_radius_all(6)
+		draw_style_box(box, tab_r)
+		var tab_font: int = 9 if tab_r.size.x < 80.0 else (10 if compact else 12)
+		_text(str(tabs[t]["label"]), Vector2(tab_r.get_center().x, tab_r.get_center().y + float(tab_font) * 0.36), tab_font, CLOSED if locked else PAPER, true)
 	if showcase_key != "":
 		var case_rect: Rect2 = showcase_rect()
 		_leather(case_rect, LEATHER_DIM, true)
 		var shown: String = ""
 		if index >= 0 and index < rows.size():
 			shown = str(rows[index]["name"])
+			if showcase_key.ends_with("_held"):
+				shown += "  ·  IN HAND"
 		_text(shown, Vector2(case_rect.get_center().x, case_rect.end.y - 9.0), 11 if compact else 13, BRASS, true)
 	var tall: bool = _row_height() >= 48.0
 	if scrolling():
@@ -615,7 +754,7 @@ func _draw() -> void:
 		_text(str(item["name"]), Vector2(left, cy - (4.0 if tall else 1.0)), (15 if compact else 18) if tall else (13 if compact else 15), PAPER if can or owned else CLOSED)
 		_text(str(item["note"]), Vector2(left, cy + (16.0 if tall else 12.0)), (10 if compact else 12) if tall else 9, BRASS)
 		var right: float = rect.end.x - 16
-		var label: String = "OWNED" if owned else "WATER GEAR FIRST" if not Ep2ArmoryState.unlocks_stock(state, str(item["id"])) \
+		var label: String = "OWNED" if owned else _lock_note(str(item["id"])) if _lock_note(str(item["id"])) != "" \
 			else "NOT ENOUGH CRYPTO" if purse < int(item["price"]) else "%d %s" % [int(item["price"]), TENDER_NAMES.get(tender, tender.to_upper())]
 		var ls: int = FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 		_text(label, Vector2(right - ls, cy + 6), 14, BRASS if can else CLOSED)
@@ -625,10 +764,12 @@ func _draw() -> void:
 		if flash != "":
 			_text(flash, Vector2(mid, footer), 14, BRASS, true)
 	else:
-		_text(footer_a, Vector2(mid, footer), 11, BRASS, true)
-		_text(footer_b, Vector2(mid, footer + 19), 11, PAPER, true)
+		# a short list ends beside the case: its lines sit under the list, not behind the case
+		var foot_x: float = row_rect(0).get_center().x if size.x >= SIDE_CASE_MIN_W and footer + 40.0 < showcase_rect().end.y else mid
+		_text(footer_a, Vector2(foot_x, footer), 11, BRASS, true)
+		_text(footer_b, Vector2(foot_x, footer + 19), 11, PAPER, true)
 		if flash != "":
-			_text(flash, Vector2(mid, footer + 44), 14, BRASS, true)
+			_text(flash, Vector2(foot_x, footer + 44), 14, BRASS, true)
 	_text("Up / Down choose  ·  E or Enter buy  ·  Esc leave" if TouchUi.keys_shown() else "Tap an item to buy",
 		Vector2(mid, size.y - 24), 10 if compact else 12, BRASS, true)
 
