@@ -56,7 +56,10 @@ const TREE_SPOTS: Array = [
 	Vector2(-29, 1243), Vector2(-37, 1210), Vector2(-38, 1222), Vector2(-36, 1236),
 	Vector2(-23, 1198), Vector2(-16, 1196), Vector2(-9, 1198), Vector2(-2, 1196),
 	Vector2(-22, 1245), Vector2(-15, 1247), Vector2(-8, 1245), Vector2(-1, 1244),
-	Vector2(9, 1201), Vector2(2, 1237), Vector2(9, 1192), Vector2(1, 1249),      # (the two nearest the patch stand clear of its purple trees and their light)
+	# (the two nearest the patch stand clear of its purple trees and their light - and, founder 2026-11-03 "a tree in the road as Inferno
+	# approaches Dude's ranch", clear of Inferno's quad road too: 2026-11-02 had put them at (9, 1201) / (9, 1192), 1.2 m and 2.0 m from
+	# the road's centre line. Both now stand >= 10 m from the quad road, the lake road and the town-return road; gate tests/ep2_ranch_test)
+	Vector2(-4, 1186), Vector2(2, 1237), Vector2(-12, 1186), Vector2(1, 1249),
 	Vector2(-27, 1211), Vector2(-28, 1230), Vector2(-34, 1201), Vector2(-35, 1245),
 ]
 const CONV_LINES: Dictionary = {

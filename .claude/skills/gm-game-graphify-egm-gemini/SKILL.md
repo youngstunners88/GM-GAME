@@ -47,7 +47,10 @@ Skills: `egm:egm-brainstorm`, `egm:egm-draft`, `egm:egm-review`, `egm:egm-review
 - `gemini-api analyze <file> "<question>"` - images, audio, video, PDFs (a cheap first read of a founder video or a stack of
   captures, like DeepSeek triage: **a lead, not a fact**).
 - `gemini-api image`, `music`, `tts`, `video`, `generate`; add `--dry-run` to preview a call without spending.
-- **Free tier: 20 requests/day per model** (hit on 2026-11-03: `429 rate_limit_error`). Batch questions into one call;
+- **Image generation is NOT available on the free tier** (measured 2026-11-03: `gemini-nano-banana-2.1`, `gemini-3.1-flash-image`,
+  `gemini-3.1-flash-lite-image`, `gemini-3-pro-image` all answer `limit: 0` - "credits refreshed" does not change it; a paid tier
+  does). For images use Muapi GPT Image 2 (`tools/ep2_film/muapi_film.py`, ~$0.06 per 1K image) - the license prints were made so.
+- **Free tier text: 20 requests/day per model** (hit on 2026-11-03: `429 rate_limit_error`). Batch questions into one call;
   fall back to DeepSeek V4.1 Flash (`scripts/or-call.mjs`) for volume triage.
 - Character voices stay on ElevenLabs (`scripts/generate-town-audio.mjs`) - never swap a cast voice to Gemini TTS.
 

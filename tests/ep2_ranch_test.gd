@@ -121,6 +121,14 @@ func _ready() -> void:
 		var p: Vector2 = tree["pos"]
 		tree_ok = tree_ok and Vector2(Ep2StableYard.STABLE_POS.x, Ep2StableYard.STABLE_POS.z).distance_to(p) <= 45.0 and not Ep2StableYard.ACCESS_CLEAR.has_point(p)
 	check("at least twenty woods-style ranch trees, none in gate approach", tree_ok)
+	# founder 2026-11-03: "a tree in the road as Inferno approaches Dude's ranch" (2026-11-02 had moved two pines onto his quad road)
+	var quad_road: PackedVector3Array = Ep2LakeRoad.smooth(WoodsQuadChamber.RIDE_TRAIL, 1.5)
+	var nearest_tree: float = INF
+	for tree in yard.ranch_trees:
+		var tp: Vector2 = tree["pos"]
+		for q in quad_road:
+			nearest_tree = minf(nearest_tree, Vector2(q.x, q.z).distance_to(tp))
+	check("no ranch tree stands in Inferno's quad road (every trunk >= 6 m from its centre line; nearest %.1f m)" % nearest_tree, nearest_tree >= 6.0)
 	# Dude's own model wears rectangular black glasses (part of his mesh): the yard must not stack a procedural pair on them.
 	check("Dude wears his own glasses - no second, procedural pair added", yard.actors[0].find_child("DudeGlasses", true, false) == null)
 

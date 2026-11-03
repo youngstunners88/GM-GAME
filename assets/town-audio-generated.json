@@ -2068,7 +2068,7 @@
     "processing_version": 2,
     "sha256": "0d7c6839b86f09eca983900200ec43c3f6fa6b45b67f248a35740b9575e19824",
     "bytes": 34284,
-    "text": "Cargo checked. The depth holds. Follow the outflow to the high ground\u2014the day-88 shipment leaves from here.",
+    "text": "Cargo checked. The depth holds. Follow the outflow to the high ground—the day-88 shipment leaves from here.",
     "speaker": "logan",
     "voice_id": "01s40UXbrIC3SwHf5nUh",
     "model_id": "eleven_v4",
@@ -2184,15 +2184,15 @@
     "start_seconds": 0
   },
   "town_minister2_14": {
-    "source_hash": "269800121f0fa0922e5302bdc06e62995de9720463f96a6acece35be434b9426",
+    "source_hash": "35a95d0e2bf75bf60e05be26fc073938d777dc99dcfaebe2e4ce92267ef506e4",
     "processing_version": 2,
-    "sha256": "b7280c089843bd897055ee53298f695401d43c7fef2796621afee8e8ab015ccd",
-    "bytes": 58689,
-    "text": "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to Dude at the stables. Tell him I sent you.",
+    "sha256": "2873a7ccedb5b3a029e11823818a849044cea5c69d7a1744d1068f2db260c668",
+    "bytes": 64153,
+    "text": "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to my good friend Dude at the stables. Tell him I sent you.",
     "speaker": "minister",
     "voice_id": "CfxYdK3WmF3bmrvyLAiU",
     "model_id": "eleven_v4",
-    "seconds": 11.305,
+    "seconds": 12.105,
     "start_seconds": 0
   },
   "town_inferno_license_0": {

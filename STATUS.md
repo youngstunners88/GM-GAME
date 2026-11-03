@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-03 (evening) — Your follow-ups: the lake-route wall, the tree in Inferno's road, the certificates moved and printed — IN CODE, gate-tested, real-renderer captures; shipping, NOT founder-verified.**
+- **Invisible wall on the way to Logan's Lake:** fixed. The trail only took the horse when he was within 2 m of the road's middle, and the road is 5.8 m wide. Riding on its edge, he ran into an invisible bound about 120 m out and stopped. Now anywhere on the road works, and so does riding beside it. A test reproduces the old stop (stuck at 128 m) and passes the new ride.
+- **Tree in the road as Inferno nears Dude's ranch:** two pines moved on 2026-11-02 had landed 1–2 m from his road. They now stand at least 10 m from every road. A test checks it, and there is a before/after capture.
+- **Certificates:** now on the wall opposite Mike Dean's desk, reading left to right from Prospector's up to Mine Owner's. Each has new printed artwork (title, "GOLDMINE TERRITORY", "BACKED BY THE wBTC VAULT", a copper/silver/gold/platinum seal). **Gemini can't make images on the free tier (the limit is 0 a day), so they were made with GPT Image 2 via Muapi for $0.24.**
+- **Mike Dean** says "talk to my good friend Dude at the stables" again (re-recorded in his voice).
+- Evidence: `docs/episode2-quality/route-tree-licenses-20261103/`.
+
 **2026-11-03 (later) — Your Phase 2 license reframe: Mike Dean's new dialogue — IN CODE, voiced, gate-tested; shipping, NOT founder-verified.**
 - **Gold Panner removed everywhere:** the gift, the toast, the stamp, its lines and its recordings. Inferno gifts no paper.
 - **First visit:** Mike Dean, at his desk facing the door, gives the soft gate. He covers the four licenses (Prospector's, Miner's, Foreman's, Mine Owner's), the wBTC vault and the Flip and Builder bonds. No free paper.

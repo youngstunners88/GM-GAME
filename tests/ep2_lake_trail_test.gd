@@ -230,8 +230,32 @@ func _test_mounted_arrival_and_prebuild() -> void:
 	c.free()
 
 
+## Founder 2026-11-03: "an invisible wall prevents the horse from moving forward on the route to Logan's Lake". Out of the ranch the
+## horse roams free until the trail takes him; the old hand-off needed him within 2 m of the road's centre line, so a rider on the
+## visible road's edge (it is 5.8 m wide) - or a little off it - rode into the departure bound (z = -80, ~116 m out) and stopped dead.
+func _test_departure_never_walls() -> void:
+	for offset in [2.8, -2.8, 8.0]:
+		var c: LakeTrailChamber = _make_trail()
+		var s0: float = 90.0
+		var smp: Array = c._route_sample(s0)
+		var yaw: float = float(smp[1])
+		c._in_departure_area = true
+		c._route_s = s0
+		c._player_pos = (smp[0] as Vector3) + Vector3(-cos(yaw), 0.0, sin(yaw)) * offset
+		c.set_move_input(Vector2(0.0, 1.0))
+		for i in 900:                                            # up to 15 s, looking down the road the way a rider does
+			c._look_yaw = float(c._route_sample(c.get_route_distance() + 4.0)[1])
+			c.step(1.0 / 60.0)
+			if c.get_route_distance() > 150.0 and not c._in_departure_area and absf(c.get_lane_offset()) <= 2.2 + 0.001:
+				break                                                # past the old wall at ~128 m: stop before the first ambush
+		_check("riding %.1f m off the road's centre line out of the ranch, the horse passes the old wall (route %.0f m > 150) onto the trail lane" % [offset, c.get_route_distance()],
+			c.get_route_distance() > 150.0 and not c._in_departure_area and absf(c.get_lane_offset()) <= 2.2 + 0.001, "lane %.2f" % c.get_lane_offset())
+		c.free()
+
+
 func _ready() -> void:
 	print("-- EP2 LAKE TRAIL")
+	_test_departure_never_walls()
 	_test_town_hook()
 	_test_riding()
 	_test_bandits_and_damage()

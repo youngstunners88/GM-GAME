@@ -117,15 +117,18 @@ const MINISTER2_LINES: Array = [
 	["MIKE DEAN", "The map is useful. The license is weight."],
 	["MIKE DEAN", "Prospector's gets you on the board. Higher licenses unlock the pre-order queue, cut the trade tax, and put real Builder pool weight behind your name. Everything is backed by the same wBTC vault - floor is real."],
 	["MIKE DEAN", "If you've got ETH and want the bigger share, look at a Builder bond. If you just want NOTE at a discount, the Flip bond is open when the round is live."],
-	["MIKE DEAN", "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to Dude at the stables. Tell him I sent you."],
+	["MIKE DEAN", "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to my good friend Dude at the stables. Tell him I sent you."],
 	["LIL BLUNT", "Much obliged, Minister."],
 ]
 ## The four Miner's License tiers on the office's left wall, low to high (the same ladder as the Auctions - Miner's License UI).
+## Each tier's printed certificate (GPT Image 2 via Muapi, 2026-11-03: engraved parchment, its title, "GOLDMINE TERRITORY", "BACKED BY
+## THE wBTC VAULT", a copper / silver / gold / platinum seal, "TIER n OF 4"). Streamed in the Episode 2 extras pack (the main pack has
+## no room for four textures); until it mounts each frame shows a plain placard with the tier name.
 const LICENSE_TIERS: Array = [
-	["PROSPECTOR'S LICENSE", Color(0.72, 0.45, 0.25)],
-	["MINER'S LICENSE", Color(0.75, 0.76, 0.78)],
-	["FOREMAN'S LICENSE", Color(0.93, 0.74, 0.25)],
-	["MINE OWNER'S LICENSE", Color(0.86, 0.90, 0.95)],
+	["PROSPECTOR'S LICENSE", Color(0.72, 0.45, 0.25), "res://src/episode2/extras/town/licenses/tex_license_prospector.jpg"],
+	["MINER'S LICENSE", Color(0.75, 0.76, 0.78), "res://src/episode2/extras/town/licenses/tex_license_miner.jpg"],
+	["FOREMAN'S LICENSE", Color(0.93, 0.74, 0.25), "res://src/episode2/extras/town/licenses/tex_license_foreman.jpg"],
+	["MINE OWNER'S LICENSE", Color(0.86, 0.90, 0.95), "res://src/episode2/extras/town/licenses/tex_license_mine-owner.jpg"],
 ]
 ## The drink itself: Inferno's Stand_and_Drink (the hideout's clip) and Lil Blunt's glass up to the camera, then down.
 const FP_DRINK_S := 2.4
@@ -171,10 +174,13 @@ const MINISTER_STEP := 0.5                               # the low wooden step h
 ## Where the smoke rises on the Sheriff, as a fraction of his height (x his left, y up, z forward): Sheriff James's pipe bowl, which
 ## hangs from the left corner of his mouth.
 const SHERIFF_MOUTH := Vector3(0.03, 0.855, 0.095)
-## The license wall (office-local): the left wall's inner face, beside the counter, clear of the clock (z -4.4) and over the desk.
-const LICENSE_WALL_AT := Vector3(-3.86, 1.42, -5.0)
-const LICENSE_WALL_STEP := 0.62                           # along the wall, towards the back
-const LICENSE_WALL_RISE := 0.1                            # the slight diagonal
+## The license wall (office-local). Founder 2026-11-03 (follow-up): on the side OPPOSITE Minister Mike Dean's desk - the right wall's
+## inner face (x +3.86; his desk and chair stand on the left, x -2.3), on the clear stretch between the side window (z ~ -5.3..-6.5,
+## measured in tools/ep2_shots/license_wall_shot) and the back wall, above the safe. Seen from the counter it reads left to right
+## Prospector's -> Mine Owner's, rising slightly - the ladder.
+const LICENSE_WALL_AT := Vector3(3.86, 1.55, -6.9)       # the FRONT-most frame (the top tier); lower tiers step towards the back
+const LICENSE_WALL_STEP := 0.58                           # along the wall
+const LICENSE_WALL_RISE := 0.08                           # the slight diagonal, rising to the top tier
 const MINISTER_DESK := Vector3(0.6, 0.0, -5.7)          # Minister Mike Dean behind the certificate counter, the certificate book open
 const SHERIFF_OFFICE_AT := Vector3(-2.3, 0.0, -2.9)     # the Sheriff by the stove, where he greets whoever walks in
 const OFFICE_SPOT := Vector3(0.6, 0.0, -3.4)          # where Lil Blunt stands at the counter
@@ -1942,7 +1948,7 @@ func _minister_steps(lines: Array, wall_line: int) -> Array:
 		+ _caption_steps(lines.slice(wall_line + 1)))
 
 
-## The four Miner's License certificates on the certificate office's LEFT wall (the player's left facing Mike Dean, who faces the door):
+## The four Miner's License certificates on the certificate office's RIGHT wall, opposite Mike Dean's desk (founder 2026-11-03 follow-up):
 ## a slight rising diagonal of framed papers beside the counter, each with its tier name, so the ladder reads during the talk.
 ## Procedural (wood frame, paper, a tier-coloured seal, Label3D lettering) so it always shows - no asset, no pack weight.
 func _build_license_wall() -> void:
@@ -1959,10 +1965,12 @@ func _build_license_wall() -> void:
 	paper_mat.albedo_color = Color(0.93, 0.87, 0.72)
 	paper_mat.roughness = 0.95
 	for i in LICENSE_TIERS.size():
-		var local: Vector3 = LICENSE_WALL_AT + Vector3(0.0, i * LICENSE_WALL_RISE, -i * LICENSE_WALL_STEP)
+		var rank: int = LICENSE_TIERS.size() - 1 - i                    # 0 = Mine Owner's (front, highest) ... 3 = Prospector's (back)
+		var local: Vector3 = LICENSE_WALL_AT + Vector3(0.0, -rank * LICENSE_WALL_RISE, -rank * LICENSE_WALL_STEP)
 		var cert := Node3D.new()
 		cert.name = "License%d" % (i + 1)
-		cert.transform = Ep2GoldTown.building_xform(e) * Transform3D(Basis(Vector3.UP, PI * 0.5), local)   # faces +x: into the room
+		cert.transform = Ep2GoldTown.building_xform(e) * Transform3D(Basis(Vector3.UP, -PI * 0.5), local)  # faces -x: into the room
+		cert.set_meta("tier", str(LICENSE_TIERS[i][0]))
 		wall.add_child(cert)
 		var frame := MeshInstance3D.new()
 		var fb := BoxMesh.new()
@@ -1976,6 +1984,7 @@ func _build_license_wall() -> void:
 		paper.mesh = pq
 		paper.material_override = paper_mat
 		paper.position.z = 0.017
+		paper.name = "Paper"
 		cert.add_child(paper)
 		var seal := MeshInstance3D.new()
 		var sm := CylinderMesh.new()
@@ -1990,6 +1999,7 @@ func _build_license_wall() -> void:
 		seal.material_override = seal_mat
 		seal.rotation.x = PI * 0.5
 		seal.position = Vector3(0.0, -0.17, 0.022)
+		seal.name = "Seal"
 		cert.add_child(seal)
 		for t in [[str(LICENSE_TIERS[i][0]), 0.15, 34], ["BACKED BY THE wBTC VAULT", 0.04, 18], ["TIER %d OF 4" % (i + 1), -0.03, 18]]:
 			var label := Label3D.new()
@@ -2003,6 +2013,41 @@ func _build_license_wall() -> void:
 			label.position = Vector3(0.0, float(t[1]), 0.02)
 			label.double_sided = false
 			cert.add_child(label)
+	if not _upgrade_license_wall():
+		# the printed certificates arrive with the streamed extras pack: look again twice a second until they are in
+		var t := Timer.new()
+		t.name = "LicenseArtWait"
+		t.wait_time = 0.5
+		t.autostart = true
+		t.timeout.connect(func() -> void:
+			if _upgrade_license_wall(): t.queue_free())
+		wall.add_child(t)
+
+
+## Swap each placard for its printed certificate once every texture can load. True when the wall shows the printed art.
+func _upgrade_license_wall() -> bool:
+	var wall: Node3D = license_wall()
+	if wall == null:
+		return false
+	if bool(wall.get_meta("printed", false)):
+		return true
+	for tier in LICENSE_TIERS:
+		if not Ep2Extras.has(str(tier[2])):
+			return false
+	for i in LICENSE_TIERS.size():
+		var cert: Node3D = wall.get_node_or_null("License%d" % (i + 1)) as Node3D
+		if cert == null:
+			continue
+		var mat := StandardMaterial3D.new()
+		mat.albedo_texture = load(str(LICENSE_TIERS[i][2])) as Texture2D
+		mat.roughness = 0.9
+		mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		(cert.get_node("Paper") as MeshInstance3D).material_override = mat
+		for n in cert.get_children():
+			if n is Label3D or n.name == "Seal":
+				(n as Node3D).visible = false                   # the print carries its own title, lettering and seal
+	wall.set_meta("printed", true)
+	return true
 
 
 func _show_finished() -> void:

@@ -180,11 +180,18 @@ func _ready() -> void:
 	if lic_wall != null:
 		for cert in lic_wall.get_children():
 			var cert_lp: Vector3 = office_inv * (cert as Node3D).global_position
-			on_left = on_left and cert_lp.x < -3.5 and cert_lp.z < GoldTownChamber.OFFICE_SPOT.z and cert_lp.y > 1.2
-			for n in cert.get_children():
-				if n is Label3D and "LICENSE" in (n as Label3D).text: tiers.append((n as Label3D).text)
-	_check("the four certificates hang on the office's LEFT wall, beyond the counter (Prospector's, Miner's, Foreman's, Mine Owner's)",
+			# founder 2026-11-03 follow-up: on the side OPPOSITE Mike Dean's desk (his desk and chair stand at x -2.3)
+			on_left = on_left and cert_lp.x > 3.5 and cert_lp.z < GoldTownChamber.OFFICE_SPOT.z and cert_lp.y > 1.2
+			tiers.append(str(cert.get_meta("tier", "")))
+	_check("the four certificates hang on the wall opposite Mike Dean's desk, beyond the counter (Prospector's, Miner's, Foreman's, Mine Owner's)",
 		on_left and tiers == ["PROSPECTOR'S LICENSE", "MINER'S LICENSE", "FOREMAN'S LICENSE", "MINE OWNER'S LICENSE"], str(tiers))
+	var printed: bool = lic_wall != null and bool(lic_wall.get_meta("printed", false))
+	if printed:
+		for i in 4:
+			var paper: MeshInstance3D = lic_wall.get_node("License%d/Paper" % (i + 1)) as MeshInstance3D
+			var pm: StandardMaterial3D = paper.material_override as StandardMaterial3D
+			printed = printed and pm != null and pm.albedo_texture != null and pm.albedo_texture.resource_path == str(GoldTownChamber.LICENSE_TIERS[i][2])
+	_check("...each shows its printed certificate (the generated tier art, in tier order)", printed)
 	_check("-> TO_BAR, the objective is the saloon", "SALOON" in c.get_hud().objective, c.get_hud().objective)
 	# ---- the saloon
 	var crossed: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Certificates", 1.5)) and _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", 1.2))
@@ -559,7 +566,7 @@ func _ready() -> void:
 		and not caps.any(func(l: Array) -> bool: return "panner" in str(l[1]).to_lower() or "stamped" in str(l[1]).to_lower()))
 	_check("...the four certificates are still on the left wall", c.license_wall() != null and c.license_wall().get_child_count() == 4)
 	_check("...and he sends him to his friend Dude at the horse stables", caps.any(func(l: Array) -> bool:
-		return l[0] == "MIKE DEAN" and "dude" in str(l[1]).to_lower() and "stables" in str(l[1]).to_lower()))
+		return l[0] == "MIKE DEAN" and "friend dude" in str(l[1]).to_lower() and "stables" in str(l[1]).to_lower()))
 	_check("-> STABLES: the objective is Dude's", c.get_beat_name() == "STABLES" and "dude" in str(c.get_hud().objective).to_lower(), str(c.get_hud().objective))
 
 	# ---- steps 11-12: Dude - the Minister sent him, a price in BTC, his Chill Buds, "Logan's Lake first"

@@ -22,6 +22,13 @@ const MIN_RIDE_SPEED := -7.0
 const MAX_RIDE_SPEED := 7.0
 const FOOT_SPEED := 2.9
 const LANE_LIMIT := 2.2
+## The open ranch ground hands the horse to the trail once he is on the visible road (5.8 m wide: +-2.9, plus the horse) past 65 m...
+const DEPART_CAPTURE_R := 3.6
+## ...or, wherever the departure bounds would stop him, within this far of the road: the bound is the trail's way in, never a wall
+## (founder 2026-11-03 "an invisible wall prevents the horse from moving forward": the old 2 m capture let a rider on the road's edge
+## ride into the z = -80 bound and stop dead).
+const DEPART_EDGE_CAPTURE_R := 16.0
+const LANE_SETTLE := 3.0                       # m/s: a hand-off from beside the road eases onto the trail lane, never a snap
 const LANE_RATE := 3.2
 const LOOK_LIMIT := PI # Full azimuth; never clamp a combat camera.
 const MOUNTED_EYE := 2.18
@@ -864,7 +871,11 @@ func _move_player(delta: float) -> void:
 	if _ending or _failing or _unhorse_active:
 		_moving = false
 		return
-	_lane = clampf(_lane + _move_input.x * LANE_RATE * delta, -LANE_LIMIT, LANE_LIMIT)
+	var lane_wish: float = clampf(_lane + _move_input.x * LANE_RATE * delta, -LANE_LIMIT, LANE_LIMIT)
+	if absf(_lane) > LANE_LIMIT:
+		_lane = move_toward(_lane, lane_wish, LANE_SETTLE * delta)     # just handed off from beside the road: ease onto the lane
+	else:
+		_lane = lane_wish
 	var facing: float = cos(_look_yaw - _travel_yaw)
 	var direction: float = signf(facing) if absf(facing) > 0.15 else 0.0
 	var wanted: float = _move_input.y * direction * (MAX_RIDE_SPEED if _mounted else FOOT_SPEED)
@@ -884,6 +895,7 @@ func _move_departure_area(delta: float) -> void:
 	var forward := Vector3(sin(_look_yaw),0,cos(_look_yaw))
 	var right := Vector3(-cos(_look_yaw),0,sin(_look_yaw))
 	var wish: Vector3 = forward * _move_input.y + right * _move_input.x
+	var at_bound: bool = false
 	var target_speed: float = (MAX_RIDE_SPEED if _mounted else FOOT_SPEED) * minf(1.0,wish.length())
 	_speed = move_toward(absf(_speed),target_speed,6.0*delta)
 	_moving = wish.length() > 0.05 and _speed > 0.05
@@ -894,8 +906,9 @@ func _move_departure_area(delta: float) -> void:
 		var candidate: Vector3 = _player_pos + direction * _speed * delta
 		var town_pos: Vector3 = candidate + GoldTownChamber.DEPART_HORSE
 		var corrected: Vector2 = Ep2GoldTown.collide(Vector2(town_pos.x,town_pos.z),0.65,_town_walls,_town_props)
-		_player_pos = Vector3(clampf(corrected.x-GoldTownChamber.DEPART_HORSE.x,-60.0,85.0),0,
-			clampf(corrected.y-GoldTownChamber.DEPART_HORSE.z,-80.0,265.0))
+		var free := Vector3(corrected.x-GoldTownChamber.DEPART_HORSE.x,0,corrected.y-GoldTownChamber.DEPART_HORSE.z)
+		_player_pos = Vector3(clampf(free.x,-60.0,85.0),0,clampf(free.z,-80.0,265.0))
+		at_bound = not free.is_equal_approx(_player_pos)
 		_walk_phase += delta * _speed * 1.4
 	var best: float = INF
 	var nearest: int = 0
@@ -905,12 +918,13 @@ func _move_departure_area(delta: float) -> void:
 			best = d
 			nearest = i
 	_route_s = _route_arc[nearest]
-	if _route_s > 65.0 and best < 4.0:
+	if _route_s > 65.0 and (best < DEPART_CAPTURE_R * DEPART_CAPTURE_R or (at_bound and best < DEPART_EDGE_CAPTURE_R * DEPART_EDGE_CAPTURE_R)):
 		_in_departure_area = false
 		var sample: Array = _route_sample(_route_s)
 		_travel_yaw = float(sample[1])
 		_previous_travel_yaw = _travel_yaw
-		_lane = clampf((_player_pos-(sample[0] as Vector3)).dot(Vector3(-cos(_travel_yaw),0,sin(_travel_yaw))),-LANE_LIMIT,LANE_LIMIT)
+		# keep the true offset (eased onto the lane in _move_player), so the hand-off is never a sideways jump
+		_lane = clampf((_player_pos-(sample[0] as Vector3)).dot(Vector3(-cos(_travel_yaw),0,sin(_travel_yaw))),-DEPART_EDGE_CAPTURE_R,DEPART_EDGE_CAPTURE_R)
 
 func _sync_route_pose(delta: float) -> void:
 	var sample: Array = _route_sample(_route_s)
@@ -1519,7 +1533,7 @@ func get_route_speed() -> float:
 	return _speed
 
 
-## Signed lateral lane offset; always within +/-2.2 m.
+## Signed lateral lane offset; within +/-2.2 m (a hand-off from beside the road eases into that band at LANE_SETTLE).
 func get_lane_offset() -> float:
 	return _lane
 

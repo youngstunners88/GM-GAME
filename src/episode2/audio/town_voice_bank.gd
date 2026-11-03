@@ -1212,8 +1212,8 @@ const LINES: Dictionary = {
 	},
 	"town_minister2_14": {
 		"speaker": "minister",
-		"text": "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to Dude at the stables. Tell him I sent you.",
-		"seconds": 11.305,
+		"text": "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to my good friend Dude at the stables. Tell him I sent you.",
+		"seconds": 12.105,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_minister2_14.ogg"
