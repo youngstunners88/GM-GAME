@@ -158,7 +158,11 @@ func _ready() -> void:
 	var sheriff: Node3D = c.get_sheriff()
 	_check("The Sheriff is smoking his pipe (a curl of smoke) and stands at human height", sheriff.find_child("CigSmoke", true, false) != null and (sheriff.find_child("CigSmoke", true, false) as CPUParticles3D).emitting
 		and absf(sheriff.height_m - GoldTownChamber.SHERIFF_HEIGHT) < 0.01)
-	_until(c, 60.0, func(): return c.get_beat_name() == "TO_BAR")
+	# the first visit now carries Mike Dean's five-line license soft gate (~47 s voiced): budget from the takes, not a guess
+	var office_budget: float = 30.0
+	for line in GoldTownChamber.MINISTER1_LINES:
+		office_budget += Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for("minister", str(line[1]))) + 2.0
+	_until(c, office_budget, func(): return c.get_beat_name() == "TO_BAR")
 	_check("the Sheriff greets him, Lil Blunt asks for the certificate, the Sheriff hands him to Minister Mike Dean, who lays out the four licenses, then the Sheriff sends him to the saloon - in order",
 		said.find("vo_sheriff_1") < said.find("vo_lb_cert1") and said.find("vo_lb_cert1") < said.find("vo_sheriff_2") and said.find("vo_sheriff_2") < said.find("town_cert1_0") and said.find("town_cert1_4") < said.find("vo_sheriff_3") and said.find("vo_sheriff_1") >= 0, str(said))
 	# Phase 2 reframe (founder 2026-11-03, section 3.1): the first visit is a soft gate - four licenses + bonds, no free paper
