@@ -413,14 +413,18 @@ func _ready() -> void:
 	_check("tapping the purse strip moves to the next tender (%s -> %s)" % [tender0, tender1], tender1 != tender0)
 	_check("the purse follows the tender (holds %d)" % c.get_shop().purse,
 		c.get_shop().purse == GameManager.purse_balance(tender1))
+	# founder 2026-11-03: the water & river gear is the top row and opens the rest of the counter
+	_check("the water & river gear is the counter's first row", str(Ep2ArmoryState.SHOP[0]["id"]) == "river_gear")
+	_check("before the water gear nothing else is sold, and no coin moves", not c.buy("sniper", 3, "btc") and not c.has_sniper()
+		and GameManager.purse_balance("btc") == before and c.coins_spent() == 0)
+	_check("the river gear (skiff and sealed crates) is his for the day-88 shipment, paid in ETH", c.buy("river_gear", 2, "eth") and c.has_river_gear() and GameManager.purse_balance("eth") == 2)
 	_check("the long rifle is sold for BTC - 3 faces of BTC debited, not minted, nothing else touched",
-		c.buy("sniper", 3, "btc") and c.has_sniper() and GameManager.purse_balance("btc") == before - 3 and c.coins_spent() == 3
-			and GameManager.purse_balance("eth") == 4 and GameManager.purse_balance("sol") == 5,
+		c.buy("sniper", 3, "btc") and c.has_sniper() and GameManager.purse_balance("btc") == before - 3 and c.coins_spent() == 5
+			and GameManager.purse_balance("eth") == 2 and GameManager.purse_balance("sol") == 5,
 		"purse %s spent %d" % [str(GameManager.token_purse), c.coins_spent()])
 	_check("a second look at the same rifle is not a second sale", not c.buy("sniper", 3, "btc") and GameManager.purse_balance("btc") == before - 3)
 	_check("the long-rifle cartridges come by the box and only after the rifle, paid in SOL",
 		c.buy("sniper_ammo", 2, "sol") and c.armory.sniper_rounds == GoldTownChamber.SNIPER_BOX and GameManager.purse_balance("sol") == 3)
-	_check("the river gear (skiff and sealed crates) is his for the day-88 shipment, paid in ETH", c.buy("river_gear", 2, "eth") and c.has_river_gear() and GameManager.purse_balance("eth") == 2)
 	_check("a token he does not hold enough of is refused (no TitanX on him)", GameManager.purse_balance("titanx") > 0 or not c.buy("rifle_ammo", 1, "titanx"))
 	_check("the room refuses a tender that is not in his purse", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
 	# A finger must be able to shut the trade: the tree is paused, so the touch controls are

@@ -1,5 +1,10 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-03 — Water gear first at Rich & Utah's (fix for "after Dude he is sent back for the water equipment") — IN CODE, gate-tested (7 suites, 454 checks, 0 fails); shipping, NOT founder-verified.**
+- **Root cause:** after buying Dude's horse, the game only let Lil Blunt ride for Logan's Lake if he owned BOTH the river gear and the Sharps long rifle. Missing either one sent him back to Rich's.
+- **Fix:** **WATER & RIVER GEAR** (skiff, canteens, sealed crates) is now the **top row** of the Armory trade, with its own model turning in the display case. **Every other row reads "WATER GEAR FIRST" and is locked until it is bought.** The lake ride now needs only the water gear. The Sharps is still sold, but it no longer holds the ride back.
+- **Not done:** the Drive doc sent with this request (Phase 2 Miner's License / Mike Dean dialogue reframe) is a separate job and is not in this change.
+
 **2026-11-02 — Your follow-ups: real bison, vultures, your plants, Dude's telling, the Borchardt draw — IN CODE, gate-tested + real-renderer captures; shipping, NOT founder-verified, not tried on a real phone.**
 - **Guns Buff parts 1-3:** deployed (master CI green, butler pushed to itch).
 - **Real bison:** Meshy American bison (14k triangles, 1K textures, darkened to dark brown), rigged here on the horse's bones with a new gallop clip. Meshy's rigger is humanoid-only.

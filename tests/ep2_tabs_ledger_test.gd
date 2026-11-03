@@ -73,6 +73,7 @@ func _ready() -> void:
 		"btc %d, entries %d" % [GameManager.purse_balance("btc"), session.entries])
 	check("the run records its credited amount for the ledger", GameManager.runner_btc_credited == 3)
 	var town := GoldTownChamber.new()
+	town.armory.river_gear = true                   # the water gear opens the rest of Rich's counter (founder 2026-11-03)
 	var sharps: Dictionary = Ep2ArmoryState.shop_item("sniper")
 	check("a fresh purse plus this 3-coin run buys Rich's 3-BTC Sharps through the chamber buy()",
 		int(sharps.get("price", 0)) == 3 and town.buy("sniper", 3, "btc") and town.armory.sniper_owned)

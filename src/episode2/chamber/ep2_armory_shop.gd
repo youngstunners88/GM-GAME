@@ -80,6 +80,8 @@ func _showcase_key_for(item: Dictionary) -> String:
 		return id
 	if Ep2ArmoryState.SHOP_AMMO.has(id):
 		return str(Ep2ArmoryState.SHOP_AMMO[id])
+	if id == Ep2ArmoryState.GATE_ITEM:
+		return Ep2ArmoryState.GATE_ITEM                    # the water gear has its own piece in the case (`_water_gear_model`)
 	if id == "sniper" or id == "sniper_ammo":
 		return Ep2ArmoryState.BUFF if Ep2ArmoryGunView.meshy(Ep2ArmoryState.BUFF) else "sniper"
 	return ""
@@ -89,6 +91,8 @@ func _showcase_key_for(item: Dictionary) -> String:
 func _showcase_model(key: String) -> Node3D:
 	if Ep2ArmoryGunView.has_view(key):
 		return Ep2ArmoryGunView.model(key)
+	if key == Ep2ArmoryState.GATE_ITEM:
+		return _water_gear_model()
 	var path: String = ""
 	match key:
 		Ep2ArmoryState.WIN:
@@ -102,6 +106,61 @@ func _showcase_model(key: String) -> Node3D:
 	if path == "" or not ResourceLoader.exists(path):
 		return null
 	return (load(path) as PackedScene).instantiate() as Node3D
+
+
+## The water & river gear as one readable display piece (no asset needed, so it always shows): a little plank skiff with an
+## oar, two sealed crates lashed in it and a canteen with its strap - about a metre long, which the case fits anyway.
+static func _water_gear_model() -> Node3D:
+	var root := Node3D.new()
+	root.name = "WaterGear"
+	var wood := _mat(Color(0.46, 0.30, 0.17), 0.85)
+	var dark := _mat(Color(0.28, 0.18, 0.10), 0.9)
+	var tin := _mat(Color(0.62, 0.64, 0.62), 0.35, 0.8)
+	var rope := _mat(Color(0.72, 0.62, 0.42), 0.95)
+	_box(root, Vector3(1.0, 0.05, 0.36), Vector3(0.0, 0.0, 0.0), wood)                       # skiff floor
+	_box(root, Vector3(1.0, 0.16, 0.04), Vector3(0.0, 0.08, 0.18), wood)                     # port side
+	_box(root, Vector3(1.0, 0.16, 0.04), Vector3(0.0, 0.08, -0.18), wood)                    # starboard side
+	_box(root, Vector3(0.04, 0.16, 0.36), Vector3(-0.5, 0.08, 0.0), dark)                    # transom
+	var bow := _box(root, Vector3(0.22, 0.16, 0.26), Vector3(0.56, 0.08, 0.0), wood)        # pointed bow block
+	bow.rotation.y = PI * 0.25
+	_box(root, Vector3(0.05, 0.03, 0.36), Vector3(0.05, 0.15, 0.0), dark)                    # thwart
+	_box(root, Vector3(0.24, 0.18, 0.2), Vector3(-0.26, 0.12, 0.0), dark)                    # sealed crate 1
+	_box(root, Vector3(0.2, 0.15, 0.18), Vector3(0.28, 0.1, 0.02), dark)                     # sealed crate 2
+	_box(root, Vector3(0.25, 0.02, 0.21), Vector3(-0.26, 0.215, 0.0), rope)                  # lashing
+	var oar := _box(root, Vector3(0.9, 0.025, 0.035), Vector3(0.0, 0.2, 0.24), wood)
+	oar.rotation.z = 0.08
+	_box(root, Vector3(0.16, 0.015, 0.08), Vector3(0.48, 0.24, 0.24), wood)                 # oar blade
+	var canteen := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.075
+	cyl.bottom_radius = 0.075
+	cyl.height = 0.05
+	canteen.mesh = cyl
+	canteen.material_override = tin
+	canteen.rotation.x = PI * 0.5
+	canteen.position = Vector3(0.05, 0.27, 0.0)
+	root.add_child(canteen)
+	_box(root, Vector3(0.02, 0.16, 0.012), Vector3(0.05, 0.37, 0.0), rope)                   # canteen strap
+	return root
+
+
+static func _mat(color: Color, roughness: float, metallic: float = 0.0) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.roughness = roughness
+	m.metallic = metallic
+	return m
+
+
+static func _box(parent: Node3D, box_size: Vector3, at: Vector3, material: Material) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = box_size
+	mi.mesh = bm
+	mi.material_override = material
+	mi.position = at
+	parent.add_child(mi)
+	return mi
 
 
 func _ready() -> void:
@@ -339,6 +398,8 @@ func purchase_result(item_id: String, ok: bool) -> void:
 	var item: Dictionary = _item(item_id)
 	if ok:
 		flash = "SOLD"
+	elif not item.is_empty() and not Ep2ArmoryState.unlocks_stock(state, item_id):
+		flash = "BUY THE WATER GEAR FIRST"
 	elif not item.is_empty() and purse < int(item["price"]):
 		flash = "NOT ENOUGH CRYPTO"
 	else:
@@ -370,6 +431,8 @@ func _available(item: Dictionary) -> bool:
 		return false
 	if _owned(item):
 		return false
+	if not Ep2ArmoryState.unlocks_stock(state, id):
+		return false                                       # water gear first (founder 2026-11-03)
 	if id == "sniper_ammo" and not state.sniper_owned:
 		return false
 	if Ep2ArmoryState.SHOP_AMMO.has(id) and not state.owns(str(Ep2ArmoryState.SHOP_AMMO[id])):
@@ -552,7 +615,8 @@ func _draw() -> void:
 		_text(str(item["name"]), Vector2(left, cy - (4.0 if tall else 1.0)), (15 if compact else 18) if tall else (13 if compact else 15), PAPER if can or owned else CLOSED)
 		_text(str(item["note"]), Vector2(left, cy + (16.0 if tall else 12.0)), (10 if compact else 12) if tall else 9, BRASS)
 		var right: float = rect.end.x - 16
-		var label: String = "OWNED" if owned else "NOT ENOUGH CRYPTO" if purse < int(item["price"]) else "%d %s" % [int(item["price"]), TENDER_NAMES.get(tender, tender.to_upper())]
+		var label: String = "OWNED" if owned else "WATER GEAR FIRST" if not Ep2ArmoryState.unlocks_stock(state, str(item["id"])) \
+			else "NOT ENOUGH CRYPTO" if purse < int(item["price"]) else "%d %s" % [int(item["price"]), TENDER_NAMES.get(tender, tender.to_upper())]
 		var ls: int = FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 		_text(label, Vector2(right - ls, cy + 6), 14, BRASS if can else CLOSED)
 	var footer: float = row_rect(mini(rows.size() - 1, _scroll + rows_fit() - 1)).end.y + (24.0 + ARROW_H if scrolling() else 24.0)

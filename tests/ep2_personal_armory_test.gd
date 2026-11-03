@@ -50,9 +50,9 @@ func _ready() -> void:
 	for item in Ep2ArmoryState.SHOP:
 		ids.append(str(item.get("id", "")))
 	_check("the catalogue is well formed and single-sourced (id / name / note / price / rounds)",
-		ids == [Ep2ArmoryState.REM, "revolver_ammo", Ep2ArmoryState.BOW, "arrows", Ep2ArmoryState.WIN, "rifle_ammo",
+		ids == ["river_gear", Ep2ArmoryState.REM, "revolver_ammo", Ep2ArmoryState.BOW, "arrows", Ep2ArmoryState.WIN, "rifle_ammo",
 			Ep2ArmoryState.BORCH, "borchardt_ammo", Ep2ArmoryState.SHOT, "shotgun_ammo", "sniper", "sniper_ammo",
-			Ep2ArmoryState.MP18, "mp18_ammo", Ep2ArmoryState.TOMMY, "tommy_ammo", "river_gear"]
+			Ep2ArmoryState.MP18, "mp18_ammo", Ep2ArmoryState.TOMMY, "tommy_ammo"]
 		and int(Ep2ArmoryState.shop_item("sniper").get("price", 0)) > 0
 		and int(Ep2ArmoryState.shop_item("rifle_ammo").get("rounds", 0)) == 24
 		and Ep2ArmoryState.shop_item("no_such_item").is_empty())

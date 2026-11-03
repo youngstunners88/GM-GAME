@@ -181,7 +181,7 @@ func _test_showcase() -> void:
 	shop.index = gear_row
 	await get_tree().process_frame
 	await get_tree().process_frame
-	_check("moving to gear with no gun empties the case cleanly", shop.showcase_key == "" and not shop._case_box.visible)
+	_check("the water & river gear has its own piece in the display case (founder 2026-11-03)", shop.showcase_key == "river_gear" and shop._case_box.visible)
 	for screen in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(844, 390), Vector2i(390, 844)]:
 		get_window().size = screen
 		shop.index = Ep2ArmoryState.SHOP.size() - 1

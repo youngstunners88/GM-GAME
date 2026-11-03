@@ -51,6 +51,9 @@ const RESERVE_CAP := 2000
 ## The Armory's stock (single source of truth for the trade panel AND the chamber that debits it).
 ## Prices are feel-values in Episode 1 crypto coins (F - free to tune; never a protocol fact).
 const SHOP: Array = [
+	# FIRST ROW, ALWAYS (founder 2026-11-03): the water gear is the priority buy. Without it Dude's lake ride used to bounce
+	# Lil Blunt back to this counter; now nothing else here is sold until it is in his hands (`unlocks_stock`).
+	{"id": "river_gear", "name": "WATER & RIVER GEAR", "note": "SKIFF - CANTEENS - SEALED CRATES - BUY FIRST", "price": 2, "rounds": 0},
 	{"id": REM, "name": "GOLDEN BTC REVOLVER", "note": "SINGLE ACTION - BITCOIN CYLINDER", "price": 4, "rounds": 0},
 	{"id": "revolver_ammo", "name": "SIXGUN CARTRIDGES", "note": "A BOX OF EIGHTEEN", "price": 1, "rounds": 18},
 	{"id": BOW, "name": "GM BOW", "note": "RECURVE - GM MEDALLION", "price": 2, "rounds": 0},
@@ -67,13 +70,22 @@ const SHOP: Array = [
 	{"id": "mp18_ammo", "name": "9MM SNAIL DRUMS", "note": "TWO DRUMS - SIXTY-FOUR", "price": 1, "rounds": 64},
 	{"id": TOMMY, "name": "GOLDEN THOMPSON", "note": "1928 - FIFTY-ROUND DRUM", "price": 6, "rounds": 0},
 	{"id": "tommy_ammo", "name": ".45 DRUMS", "note": "TWO DRUMS - ONE HUNDRED", "price": 2, "rounds": 100},
-	{"id": "river_gear", "name": "RIVER GEAR", "note": "SKIFF AND SEALED CRATES", "price": 2, "rounds": 0},
 ]
 ## Shop rows that sell a firearm of the quick-switch armory, and the ammunition row that belongs to each gun. The buffalo gun keeps its
 ## story row id "sniper" (the day-88 overlook checks `sniper_owned`); buying it also puts the Sharps in the quick-switch armory (BUFF).
 const SHOP_GUNS := [REM, BOW, WIN, BORCH, SHOT, MP18, TOMMY]
 const SHOP_AMMO := {"rifle_ammo": WIN, "revolver_ammo": REM, "arrows": BOW, "borchardt_ammo": BORCH, "shotgun_ammo": SHOT,
 	"mp18_ammo": MP18, "tommy_ammo": TOMMY}
+
+
+## The water gear is the key to the rest of the counter (founder 2026-11-03: "buying it unlocks access to the rest of the weapons").
+const GATE_ITEM := "river_gear"
+
+
+## True when `id` may be sold to this state now: the water gear always, everything else only once he owns the water gear.
+## The panel greys rows with it and the chamber's buy() refuses with it, so the rule lives once.
+static func unlocks_stock(armory_state: Ep2ArmoryState, id: String) -> bool:
+	return id == GATE_ITEM or (armory_state != null and armory_state.river_gear)
 
 
 static func shop_item(id: String) -> Dictionary:

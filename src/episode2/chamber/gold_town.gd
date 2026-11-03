@@ -973,6 +973,9 @@ func buy(item_id: String, _price: int, tender: String = "btc") -> bool:
 	if item.is_empty():
 		_note(item_id, false)
 		return false
+	if not Ep2ArmoryState.unlocks_stock(armory, item_id):
+		_note(item_id, false)                              # the water gear opens the rest of the counter (founder 2026-11-03)
+		return false
 	var cost: int = int(item["price"])
 	if cost <= 0 or not Ep2ArmoryState.ARMORY_TENDER.has(tender):
 		_note(item_id, false)
@@ -1045,7 +1048,7 @@ func _check_geared() -> void:
 		return
 	# section 4: the first visit to Rich's goes on to the Gatling and Inferno's return; geared shows only once the story has been to
 	# the bar (and the jail): already geared then -> straight on (_after_story), else this return visit is the one that gears him
-	if armory.sniper_owned and armory.river_gear and _armory_return:
+	if armory.river_gear and _armory_return:
 		_gear_t = 1.0
 
 
@@ -1378,8 +1381,8 @@ func _on_beat_entered(b: int) -> void:
 			if _armory_return:
 				# back from the jail only to gear up for the river: no second welcome
 				if _hud:
-					_hud.objective = ("Gear up for the river at Rich's counter [E]: the long rifle and the river gear."
-						if TouchUi.keys_shown() else "Gear up for the river at Rich's counter: the long rifle and the river gear.")
+					_hud.objective = ("Buy the water & river gear at Rich's counter [E] - it is the top row."
+						if TouchUi.keys_shown() else "Buy the water & river gear at Rich's counter - it is the top row.")
 				_check_geared()
 			else:
 				if _hud:
@@ -1767,10 +1770,11 @@ func _pour_two() -> void:
 	_place(_glass2, bar_top + (Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3(1.1, 0.0, 0.0)) - Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3.ZERO)))
 
 
-## What follows Dude's horse (the town's last errand): the ride - straight on if he bought the long rifle and the river gear at Rich's,
-## else back to Rich's counter for them first.
+## What follows Dude's horse (the town's last errand): the ride - straight on if he has the water & river gear from Rich's,
+## else back to Rich's counter for it first. Founder 2026-11-03: the long rifle no longer holds the lake ride back (it was the
+## recurring "after Dude he is sent back to Rich and Utah" stall); the water gear is the one priority buy and the counter's first row.
 func _after_story() -> void:
-	if armory.sniper_owned and armory.river_gear:
+	if armory.river_gear:
 		_advance_to(Beat.GEARED)
 	else:
 		_armory_return = true
