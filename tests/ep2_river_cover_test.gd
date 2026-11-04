@@ -298,7 +298,6 @@ func _test_ranged_threat() -> void:
 	ar["true"] = true                                # the arrow that would hit him if he stayed
 	c._player_pos += Vector3(0, 0, 4.0)
 	var before: int = c.get_health()
-	var hits_from_man: bool = false
 	for i in 80:
 		c._invuln = 1.0                              # only this arrow is on trial here, not the raft's guns
 		_advance(c, 0.05)
