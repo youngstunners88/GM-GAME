@@ -557,6 +557,11 @@ func conversation_active() -> bool:
 
 
 ## True during the mount, ridden loop and dismount performance.
+## Where Dude is right now (a shot horse is brought to him: ep2-npc-reality-awareness).
+func dude_position() -> Vector3:
+	return (actors[0] as Node3D).global_position if not actors.is_empty() and is_instance_valid(actors[0]) else Vector3.INF
+
+
 func is_dude_riding() -> bool:
 	return _ride_state in ["mount", "ride", "dismount"]
 

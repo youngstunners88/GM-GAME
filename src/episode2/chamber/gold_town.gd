@@ -167,6 +167,7 @@ const BARTENDER_HEIGHT := 1.76
 const WHISKEY_MODEL := "res://src/episode2/assets/whiskey_glass.glb"
 const COIN_MODEL := "res://src/episode2/assets/btc_coin.glb"
 const SHERIFF_HEIGHT := 1.78
+const DUDE_TREATS_WITHIN := 7.0
 const ACCOMPLICE_HEIGHT := 1.74
 const MINISTER_HEIGHT := 1.65
 const MINISTER_STEP := 0.5                               # the low wooden step he stands on behind the counter, so the counter does not hide him
@@ -2096,6 +2097,15 @@ static func upgrade_license_wall(wall: Node3D) -> bool:
 	return true
 
 
+## A shot horse stays shot until he brings it to Dude (founder 2026-11-04); walking up to Dude is all it takes.
+func _dude_treats_horse() -> void:
+	if armory.horse_is_sound() or _player_pos.distance_to(_stable_yard.dude_position()) > DUDE_TREATS_WITHIN:
+		return
+	armory.treat_horse()
+	if _hud != null:
+		_hud.toast("DUDE PATCHES UP THE HORSE - IT CAN DRINK AND CARRY YOU AGAIN", 3.0)
+
+
 func _show_finished() -> void:
 	match _beat:
 		Beat.OFFICE:
@@ -2136,6 +2146,7 @@ func _tick(delta: float) -> void:
 	var duel: bool = _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW]
 	if _stable_yard != null:
 		_stable_yard.step(delta, _player_pos, duel or _hold > 0.0 or _show_active or intro_busy or _shop_open)
+		_dude_treats_horse()
 	if _town_audio != null:
 		_town_audio.step(delta, _people, _player_pos, _hold > 0.0 or _show_active or intro_busy or _shop_open, duel)
 		if not _show_active and _hold <= 0.0 and not intro_busy and not duel and not _shop_open and _town_audio.has_queued():

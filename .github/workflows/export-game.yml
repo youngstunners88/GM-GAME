@@ -463,6 +463,9 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_lake_ecotone_test.tscn > lake-ecotone-tests.log 2>&1
           grep -q 'LAKE_ECOTONE: ALL PASS' lake-ecotone-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-ecotone-tests.log; then exit 1; fi
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_horse_and_logan_test.tscn > horse-logan-tests.log 2>&1
+          grep -q 'HORSE_LOGAN: ALL PASS' horse-logan-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' horse-logan-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_lake_life_test.tscn > lake-life-tests.log 2>&1
           grep -q 'LAKE_LIFE: 0 failed' lake-life-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-life-tests.log; then exit 1; fi

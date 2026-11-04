@@ -124,6 +124,11 @@ var corpses: Dictionary = {}
 var sniper_owned: bool = false
 var sniper_rounds: int = 0
 var river_gear: bool = false
+## DUDE'S HORSE CARRIES ITS WOUNDS (founder 2026-11-04: "If the horse gets shot that must carry through so that Lil Blunt is unable to water it").
+## 0 = sound, 1-2 = wounded (it walks but will not drink and cannot be ridden on), HORSE_WOUNDS_MAX = down. Held here because this state goes into
+## every room hand-over and every save. Dude's care (treat_horse) is the one thing that clears it.
+const HORSE_WOUNDS_MAX := 3
+var horse_wounds: int = 0
 ## Guns the Sheriff is holding (jail). Each one comes back when the story returns the irons, or the moment Lil Blunt buys it again
 ## at Rich & Utah's (founder 2026-11-01: "upon release Lil Blunt needs to be able to acquire them").
 var held: Dictionary = {}
@@ -424,6 +429,20 @@ func claim_corpse(id: String) -> int:
 	return count
 
 
+func wound_horse() -> void:
+	horse_wounds = mini(horse_wounds + 1, HORSE_WOUNDS_MAX)
+	changed.emit()
+
+
+func treat_horse() -> void:
+	horse_wounds = 0
+	changed.emit()
+
+
+func horse_is_sound() -> bool: return horse_wounds == 0
+func horse_is_down() -> bool: return horse_wounds >= HORSE_WOUNDS_MAX
+
+
 func snapshot() -> Dictionary:
 	var weapons: Dictionary = {}
 	for id in IDS:
@@ -433,7 +452,7 @@ func snapshot() -> Dictionary:
 			"locked": gun.locked, "reload_locked": gun.reload_locked, "training_complete": gun.training_complete}
 	return {"version": VERSION, "weapons": weapons, "equipped": equipped, "previous": previous,
 		"arrows": arrows, "corpses": corpses.duplicate(true), "switch_t": _switch_t,
-		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear,
+		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear, "horse_wounds": horse_wounds,
 		"confiscated": firearms_confiscated, "held": held.keys()}
 
 
@@ -497,6 +516,7 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 		sharps.locked = false
 		sharps.reload_locked = false
 	river_gear = valid and bool(data.get("river_gear", false))
+	horse_wounds = clampi(SaveSafe.to_int(data.get("horse_wounds", 0)), 0, HORSE_WOUNDS_MAX) if valid else 0
 	_switch_t = clampf(SaveSafe.to_float(data.get("switch_t", 0)), 0.0, SWITCH_TIME) if valid else 0.0
 	changed.emit()
 

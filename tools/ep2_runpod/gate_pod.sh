@@ -5,12 +5,12 @@
 # directly and holds no secrets; this script only sends the working tree's differences, runs things, and brings logs and shots back.
 # Commits and pushes stay on the local machine. It never creates, stops or terminates a pod (that is a Runpod MCP call, priced first).
 #
-#   POD=gm-pod tools/ep2_runpod/gate_pod.sh setup <git-ref>         clone, packages, pinned Godot 4.3, import, idle guard
+#   POD=gm-pod tools/ep2_runpod/gate_pod.sh setup <git-ref>         clone, packages, pinned Godot 4.3, idle guard, import
 #   tools/ep2_runpod/gate_pod.sh sync                               send tracked changes + untracked files; remove local deletions
 #   tools/ep2_runpod/gate_pod.sh test ep2_river_cover ep2_ranch     sync, then run tests/<name>_test.tscn in parallel (fresh user://)
 #   tools/ep2_runpod/gate_pod.sh ci                                 sync, then CI's whole headless block (scripts/ci-gates-local.sh)
 #   tools/ep2_runpod/gate_pod.sh shot <scene.tscn> <local_dir> [k=v] sync, render on xvfb (Compatibility, as the web build), fetch PNGs
-#   tools/ep2_runpod/gate_pod.sh import                             re-import after new assets or a new class_name (runs twice)
+#   tools/ep2_runpod/gate_pod.sh import                             sync, then re-import after new assets or a new class_name
 #   tools/ep2_runpod/gate_pod.sh run "<shell command>"              one command in the pod's repo
 set -uo pipefail
 POD="${POD:-gm-pod}"
@@ -55,6 +55,7 @@ EOF
 	;;
 sync) sync_tree ;;
 import)
+	sync_tree
 	remote "cd $REPO && touch /workspace/.active && for i in 1 2; do timeout 1500 $G --headless --editor --quit >/dev/null 2>&1; done; timeout 1500 $G --headless --import >/dev/null 2>&1; echo IMPORT_DONE \$(du -sh .godot | cut -f1)"
 	;;
 test)
@@ -66,7 +67,7 @@ cd /workspace/repo && touch /workspace/.active
 L=/workspace/logs/$(date +%H%M%S); mkdir -p "$L"
 one() {
 	t=$1; f="$2/$t.log"; x=$(mktemp -d)
-	XDG_DATA_HOME=$x/d XDG_CONFIG_HOME=$x/c XDG_CACHE_HOME=$x/k timeout 900 .godot-cache/Godot_v4.3-stable_linux.x86_64 --headless --path . "res://tests/${t}_test.tscn" > "$f" 2>&1
+	XDG_DATA_HOME=$x/d XDG_CONFIG_HOME=$x/c XDG_CACHE_HOME=$x/k timeout 320 .godot-cache/Godot_v4.3-stable_linux.x86_64 --headless --path . "res://tests/${t}_test.tscn" > "$f" 2>&1
 	rc=$?; rm -rf "$x"
 	printf '%-36s rc=%-3s PASS=%-4s FAIL=%-3s SCRIPT_ERR=%s\n' "$t" "$rc" "$(grep -c '\[PASS\]' "$f")" "$(grep -c '\[FAIL\]' "$f")" "$(grep -cE 'SCRIPT ERROR|Parse Error' "$f")"
 }
