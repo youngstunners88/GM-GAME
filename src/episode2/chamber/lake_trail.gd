@@ -250,6 +250,8 @@ func _step_ground() -> void:
 	if ResourceLoader.exists(Ep2LakeLandscape.FLOOR):
 		_sand_material.set_shader_parameter("forest",load(Ep2LakeLandscape.FLOOR))
 		_sand_material.set_shader_parameter("has_forest",true)
+		var start: Vector3 = lake_transform().affine_inverse() * _route_pts[0]
+		_sand_material.set_shader_parameter("approach_dir",(Vector2(start.x, start.z) - Vector2(Ep2LakeLandform.CENTER_X, 20.0)).normalized())
 	ground.material_override = _sand_material
 	ground.position = Vector3(170.0, -0.012, -140.0)
 	_visuals.add_child(ground)
