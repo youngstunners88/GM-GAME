@@ -63,6 +63,10 @@ const PLACES := {
 	"water": Vector2(-2.8, 1444), "yard": Vector2(-13.0, 1457),
 	"rest_south": Vector2(-2.6, 1401), "rest_north": Vector2(3.0, 1450),
 }
+## Whose Rest clip is SEATED (measured: hips under 42% of their height; gate ep2_town_grounding). Founder 2026-11-04: "I've seen some women sitting
+## in mid air" - these four took it at the bare rest spots with nothing under them. Now they walk the last steps to that spot's bench
+## (Ep2GoldTown.REST_BENCHES) and rest on it, looking out over the street.
+const REST_SITTERS := ["grandma", "grandfather", "grandmother", "oldtimer"]
 const SHELTERS := [Vector2(-3.2, 1401), Vector2(3.2, 1401), Vector2(-3.2, 1450), Vector2(3.2, 1450), Vector2(-15, 1456)]
 const ACTIVITIES := ["work", "errand", "rest", "observe", "social", "play"]
 ## SHOPPING (founder 2026-10-24: "people in the town have real activities. perhaps some entering the stores and leaving. buying things").
@@ -171,6 +175,7 @@ func build(parent: Node3D, seed_value: int = 4101) -> int:
 		p.drink_seed = absi(int(p.id.hash())) % 100003 + 7919
 		p.profile = PROFILES[p.id].duplicate(true)
 		p.folk = Ep2TownFolk.new()
+		p.folk.ground_fn = Ep2GoldTown.ground_y
 		p.folk.name = "Person_" + p.id
 		p.folk.clip_blend = 0.18
 		p.folk.looping_clips.assign(LOOPING_CLIPS)
@@ -614,7 +619,17 @@ func _arrive(p: Person) -> void:
 		p.timer *= 1.0 + float(p.profile["rest"])
 	elif p.activity == "work": clip = "Inspect"
 	elif p.activity == "play" and _has_clip(p, "Play"): clip = "Play"
+	if clip == "Rest" and p.id in REST_SITTERS and p.destination not in ["rest_south", "rest_north"]:
+		clip = "Observe"                                 # no bench at this spot: they wait on their feet, never sit on the air
 	p.folk.hold_clip(clip)
+	if clip == "Rest" and p.id in REST_SITTERS:
+		var seat: Vector2 = Ep2GoldTown.REST_BENCHES[0 if p.destination == "rest_south" else 1]
+		p.timer += _pos(p).distance_to(seat) / maxf(p.speed, 0.1)
+		p.folk.walk_to(Vector3(seat.x, 0.0, seat.y), p.speed)       # the seated clip only plays once he has stopped, on the bench
+		p.folk.arrived.connect(func() -> void:
+			if p.activity == "rest":                     # looking out over the street, the bench's back behind them
+				p.folk.face_yaw(PI * 0.5 if seat.x < 0.0 else -PI * 0.5), CONNECT_ONE_SHOT)
+		return
 	if not p.destination.is_empty():
 		var target: Vector2 = PLACES[p.destination]
 		# Face the institution/horse, rather than staring into the last path segment.

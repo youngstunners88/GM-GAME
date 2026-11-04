@@ -37,6 +37,9 @@ var walk_clip_speed: float = 0.0
 ## The procedural stride lift on top of rigged clips; mocap walks carry their own bob, so the Meshy cast turns it off.
 var procedural_bob: bool = true
 var _floor_y: float = 0.0
+## What the boots stand on where this person is (Ep2GoldTown.ground_y in the town). Off when `use_height` flies an authored route.
+var ground_fn: Callable = Callable()
+const GROUND_FOLLOW := 3.0                           # m/s: boards and steps are taken as a step up, never a snap
 ## How fast the body swings into the travel heading while walking (per second, a lerp rate). Standing keeps the old 7.
 const WALK_TURN_RATE := 14.0
 
@@ -278,7 +281,7 @@ func stop() -> void:
 
 ## Put him at `p` at once (with its height when `use_height` is on: the Armory gallery is 3.8 m up).
 func place(p: Vector3) -> void:
-	_floor_y = p.y if use_height else 0.0
+	_floor_y = p.y if use_height else (float(ground_fn.call(p)) if ground_fn.is_valid() else 0.0)
 	position = Vector3(p.x, _floor_y, p.z)
 	_walking = false
 	_path = []
@@ -342,7 +345,10 @@ func step(delta: float) -> void:
 			_phase += delta * _speed * 4.6
 	# walking: a quick turn into the travel heading (time constant ~0.07 s, a pivot rather than a moonwalk); standing: the gentle settle
 	rotation.y = lerp_angle(rotation.y, facing, clampf((WALK_TURN_RATE if moving else 7.0) * delta, 0.0, 1.0))
+	if ground_fn.is_valid() and not use_height:
+		_floor_y = move_toward(_floor_y, float(ground_fn.call(position)), GROUND_FOLLOW * delta)
 	if model == null:
+		position.y = _floor_y
 		return
 	_kick = maxf(0.0, _kick - delta * 6.0)
 	if dead:
@@ -350,6 +356,7 @@ func step(delta: float) -> void:
 		var k: float = _fall * _fall * (3.0 - 2.0 * _fall)
 		model.rotation = Vector3(-1.45 * k, 0.0, 0.0)
 		model.position.y = 0.0 + 0.16 * k
+		position.y = _floor_y
 		return
 	if _rigged:
 		# the clips carry the body: only the stride lift and a shot's recoil ride on top
@@ -363,6 +370,6 @@ func step(delta: float) -> void:
 		position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving and not use_height and procedural_bob else 0.0)
 		return
 	model.rotation = Vector3(-0.08 * _kick, 0.0, (0.035 * sin(_phase) if moving else 0.0))
-	position.y = (absf(sin(_phase)) * 0.035) if moving else 0.0
+	position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving else 0.0)
 	var breath: float = 1.0 + 0.004 * sin(_t * 2.0)
 	model.scale = Vector3(model.scale.x, absf(model.scale.x) * breath, model.scale.z)

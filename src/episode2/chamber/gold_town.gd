@@ -466,6 +466,7 @@ func _step_people_core() -> void:
 	_opp = Ep2TownFolk.new()
 	_opp.name = "Stranger"
 	_visuals.add_child(_opp)
+	_opp.ground_fn = Ep2GoldTown.ground_y
 	_opp.setup(COWBOY_MODEL, COWBOY_HEIGHT, Color(0.2, 0.17, 0.15), false)
 	_opp.position = Ep2GoldTown.local_to_world("Bldg_Saloon", OPP_AT_BAR)
 	_face_folk(_opp, Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT + Vector3(0.0, 0.0, -1.5)))
@@ -1091,6 +1092,7 @@ func _build_sheriff() -> void:
 	_sheriff.looping_clips.assign(["Idle", "Walk", "Talk", "Counter"])
 	_sheriff.clip_blend = 0.2
 	_visuals.add_child(_sheriff)
+	_sheriff.ground_fn = Ep2GoldTown.ground_y          # his boots on the porch boards and the steps, not through them
 	_sheriff.setup(SHERIFF_MODEL, SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
 	Ep2GroundedWalk.install(_sheriff)
 	if _sheriff.has_clips():
