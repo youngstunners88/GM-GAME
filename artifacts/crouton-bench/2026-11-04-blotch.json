@@ -1,0 +1,215 @@
+{
+ "day": "2026-11-04",
+ "model": "stealth/crouton-alpha",
+ "runs": 3,
+ "task": "blotch",
+ "score": {
+  "scenes": 6,
+  "agree": 1,
+  "per_scene": [
+   {
+    "scene": "l1_stage",
+    "truth": true,
+    "call": false,
+    "yes": 0,
+    "of": 3,
+    "agree": false
+   },
+   {
+    "scene": "l1_blaze",
+    "truth": true,
+    "call": false,
+    "yes": 0,
+    "of": 3,
+    "agree": false
+   },
+   {
+    "scene": "l2_stage",
+    "truth": true,
+    "call": false,
+    "yes": 0,
+    "of": 3,
+    "agree": false
+   },
+   {
+    "scene": "l2_blaze",
+    "truth": false,
+    "call": false,
+    "yes": 0,
+    "of": 3,
+    "agree": true
+   },
+   {
+    "scene": "l3_stage",
+    "truth": true,
+    "call": false,
+    "yes": 0,
+    "of": 3,
+    "agree": false
+   },
+   {
+    "scene": "l3_blaze",
+    "truth": true,
+    "call": false,
+    "yes": 0,
+    "of": 3,
+    "agree": false
+   }
+  ],
+  "run_accuracy": 0.167,
+  "control_scene_clean": true,
+  "verdict": "uncalibrated: no opinion on ungraded frames (an uncalibrated detector has no opinion)"
+ },
+ "rows": [
+  {
+   "scene": "l1_stage",
+   "votes": [
+    false,
+    false,
+    false
+   ],
+   "raw": [
+    {
+     "blotched": false,
+     "confidence": 0.75,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.85,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.9,
+     "regions": []
+    }
+   ]
+  },
+  {
+   "scene": "l1_blaze",
+   "votes": [
+    false,
+    false,
+    false
+   ],
+   "raw": [
+    {
+     "blotched": false,
+     "confidence": 0.9,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.85,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.9,
+     "regions": []
+    }
+   ]
+  },
+  {
+   "scene": "l2_stage",
+   "votes": [
+    false,
+    false,
+    false
+   ],
+   "raw": [
+    {
+     "blotched": false,
+     "confidence": 0.85,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.92,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.9,
+     "regions": []
+    }
+   ]
+  },
+  {
+   "scene": "l2_blaze",
+   "votes": [
+    false,
+    false,
+    false
+   ],
+   "raw": [
+    {
+     "blotched": false,
+     "confidence": 0.85,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.9,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.9,
+     "regions": []
+    }
+   ]
+  },
+  {
+   "scene": "l3_stage",
+   "votes": [
+    false,
+    false,
+    false
+   ],
+   "raw": [
+    {
+     "blotched": false,
+     "confidence": 0.92,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.92,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.92,
+     "regions": []
+    }
+   ]
+  },
+  {
+   "scene": "l3_blaze",
+   "votes": [
+    false,
+    false,
+    false
+   ],
+   "raw": [
+    {
+     "blotched": false,
+     "confidence": 0.9,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.9,
+     "regions": []
+    },
+    {
+     "blotched": false,
+     "confidence": 0.92,
+     "regions": []
+    }
+   ]
+  }
+ ]
+}

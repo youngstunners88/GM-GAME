@@ -1,0 +1,753 @@
+{
+ "day": "2026-11-04",
+ "model": "stealth/crouton-alpha",
+ "runs": 3,
+ "task": "gd",
+ "score": {
+  "files": 72,
+  "scored": 72,
+  "coverage": 1,
+  "bug_files": 36,
+  "clean_files": 36,
+  "caught": 32,
+  "missed": 4,
+  "false_alarms": 1,
+  "right_clean": 35,
+  "recall": 0.889,
+  "false_alarm_rate": 0.028,
+  "invalid_line_findings": 0,
+  "findings_total": 36,
+  "missed_files": [
+   "variant_infer_bug.gd",
+   "variant_infer_bug.gd",
+   "variant_infer_bug.gd",
+   "timer_before_tree_bug.gd"
+  ],
+  "false_alarm_files": [
+   "missing_delta_clean.gd"
+  ],
+  "verdict": "not eligible: recall below the bar or too many false alarms"
+ },
+ "rows": [
+  {
+   "file": "connect_called_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "connect_called_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "connect_called_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "connect_called_bug.gd",
+   "bug_line": 6,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "button.pressed.connect(_on_pressed()) calls _on_pressed() immediately and passes its void return value instead of a Callable, so connect fails and the handler is never connected; use _on_pressed without parentheses."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "connect_called_bug.gd",
+   "bug_line": 6,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "_on_pressed() is called immediately and its null return value is passed to connect() instead of a Callable; use _on_pressed without parentheses."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "connect_called_bug.gd",
+   "bug_line": 6,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "button.pressed.connect(_on_pressed()) calls _on_pressed() immediately and passes its void return value instead of a Callable, so connect fails at runtime. Use button.pressed.connect(_on_pressed) without parentheses."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_delta_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_delta_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "med",
+     "claim": "Directly modifying position.x bypasses CharacterBody2D collision handling in move_and_slide, which uses velocity; the character will move through obstacles instead of colliding. Set velocity.x = SPEED and call move_and_slide() instead."
+    }
+   ],
+   "reasoning_tokens": 29
+  },
+  {
+   "file": "missing_delta_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_delta_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "med",
+     "claim": "Movement ignores delta and directly modifies position, making speed frame-rate dependent and bypassing CharacterBody2D collision; velocity should be set and move_and_slide used."
+    }
+   ],
+   "reasoning_tokens": 32
+  },
+  {
+   "file": "missing_delta_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "med",
+     "claim": "position.x += SPEED ignores delta, making movement frame-rate dependent (120 px per physics frame instead of per second), and direct position change bypasses CharacterBody2D collision handling in move_and_slide()."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_delta_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "med",
+     "claim": "position.x += SPEED ignores delta and bypasses CharacterBody2D collision via velocity/move_and_slide, making movement frame-rate dependent and able to pass through obstacles; use velocity.x = SPEED with move_and_slide() or multiply by delta."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "node_in_init_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "node_in_init_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "node_in_init_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "node_in_init_bug.gd",
+   "bug_line": 5,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "$Label is accessed in _init() before child nodes are available in the tree, so get_node fails/returns null and label.text on line 7 will crash; use _ready() instead."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "node_in_init_bug.gd",
+   "bug_line": 5,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "$Label is accessed in _init() before child nodes are added to the tree, so label will be null and label.text on line 7 will crash with a null dereference; use _ready() instead."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "node_in_init_bug.gd",
+   "bug_line": 5,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Accessing $Label in _init() fails because child nodes are not yet instantiated/available during initialization, so label will be null and label.text on line 7 will crash; child access should be done in _ready() instead."
+    }
+   ],
+   "reasoning_tokens": 28
+  },
+  {
+   "file": "yield_godot3_clean.gd",
+   "bug_line": null,
+   "nlines": 6,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "yield_godot3_clean.gd",
+   "bug_line": null,
+   "nlines": 6,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "yield_godot3_clean.gd",
+   "bug_line": null,
+   "nlines": 6,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "yield_godot3_bug.gd",
+   "bug_line": 5,
+   "nlines": 6,
+   "findings": [
+    {
+     "line": 5,
+     "severity": "high",
+     "claim": "yield() is Godot 3 syntax removed in Godot 4; it fails to parse in 4.3. Use await get_tree().create_timer(0.2).timeout instead."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "yield_godot3_bug.gd",
+   "bug_line": 5,
+   "nlines": 6,
+   "findings": [
+    {
+     "line": 5,
+     "severity": "high",
+     "claim": "yield() was removed in Godot 4; use 'await get_tree().create_timer(0.2).timeout' instead, otherwise the script fails to parse/run."
+    }
+   ],
+   "reasoning_tokens": 12
+  },
+  {
+   "file": "yield_godot3_bug.gd",
+   "bug_line": 5,
+   "nlines": 6,
+   "findings": [
+    {
+     "line": 5,
+     "severity": "high",
+     "claim": "'yield' was removed in Godot 4 and fails to parse; use 'await get_tree().create_timer(0.2).timeout' instead."
+    }
+   ],
+   "reasoning_tokens": 12
+  },
+  {
+   "file": "off_by_one_clean.gd",
+   "bug_line": null,
+   "nlines": 8,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "off_by_one_clean.gd",
+   "bug_line": null,
+   "nlines": 8,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "off_by_one_clean.gd",
+   "bug_line": null,
+   "nlines": 8,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "off_by_one_bug.gd",
+   "bug_line": 6,
+   "nlines": 8,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Off-by-one bounds check: idx <= items.size() allows idx == items.size(), causing out-of-bounds access to items[idx]; should be idx < items.size()."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "off_by_one_bug.gd",
+   "bug_line": 6,
+   "nlines": 8,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Off-by-one bounds check: idx <= items.size() allows idx == items.size(), causing out-of-bounds access on items[idx]; should be idx < items.size()."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "off_by_one_bug.gd",
+   "bug_line": 6,
+   "nlines": 8,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Off-by-one check uses <= items.size() instead of < items.size(), so idx == size passes and items[idx] accesses out of bounds."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "int_division_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "int_division_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "int_division_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "int_division_bug.gd",
+   "bug_line": 9,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 9,
+     "severity": "med",
+     "claim": "hp / max_hp uses integer division in GDScript, truncating the result (e.g. 30/100 = 0) instead of returning 0.3; cast to float, e.g. float(hp) / max_hp"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "int_division_bug.gd",
+   "bug_line": 9,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 9,
+     "severity": "med",
+     "claim": "hp / max_hp uses integer division, truncating the ratio to 0 for hp < max_hp; cast to float e.g. float(hp) / max_hp."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "int_division_bug.gd",
+   "bug_line": 9,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 9,
+     "severity": "med",
+     "claim": "hp / max_hp performs integer division in GDScript, truncating to 0 when hp < max_hp instead of returning the fractional ratio; cast to float, e.g. float(hp) / max_hp"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "variant_infer_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "variant_infer_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "variant_infer_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "variant_infer_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 27
+  },
+  {
+   "file": "variant_infer_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "variant_infer_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 5
+  },
+  {
+   "file": "missing_arg_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_arg_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_arg_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_arg_bug.gd",
+   "bug_line": 7,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 7,
+     "severity": "high",
+     "claim": "take_damage(amount: int) is called without the required 'amount' argument in _ready(), causing an invalid call error"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_arg_bug.gd",
+   "bug_line": 7,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 7,
+     "severity": "high",
+     "claim": "take_damage(amount: int) is called without the required 'amount' argument in _ready(), causing an invalid call error"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_arg_bug.gd",
+   "bug_line": 7,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 7,
+     "severity": "high",
+     "claim": "take_damage(amount: int) is called without the required 'amount' argument in _ready(), causing an invalid call error"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "erase_while_iterating_clean.gd",
+   "bug_line": null,
+   "nlines": 8,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "erase_while_iterating_clean.gd",
+   "bug_line": null,
+   "nlines": 8,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "erase_while_iterating_clean.gd",
+   "bug_line": null,
+   "nlines": 8,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "erase_while_iterating_bug.gd",
+   "bug_line": 6,
+   "nlines": 8,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "med",
+     "claim": "Modifying 'enemies' with erase() while iterating over it with 'for e in enemies' can skip elements, so dead enemies may not all be removed; iterate over a duplicate or in reverse instead."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "erase_while_iterating_bug.gd",
+   "bug_line": 6,
+   "nlines": 8,
+   "findings": [
+    {
+     "line": 8,
+     "severity": "med",
+     "claim": "Erasing from 'enemies' while iterating over it with 'for e in enemies' mutates the array during iteration, causing the next element to be skipped and dead enemies to be missed; iterate over a duplicate or in reverse instead."
+    }
+   ],
+   "reasoning_tokens": 24
+  },
+  {
+   "file": "erase_while_iterating_bug.gd",
+   "bug_line": 6,
+   "nlines": 8,
+   "findings": [
+    {
+     "line": 8,
+     "severity": "med",
+     "claim": "Modifying enemies with erase() while iterating over it with for e in enemies causes the next element to be skipped; iterate over a duplicate or remove after collecting dead enemies."
+    }
+   ],
+   "reasoning_tokens": 27
+  },
+  {
+   "file": "signal_typo_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "signal_typo_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "signal_typo_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "signal_typo_bug.gd",
+   "bug_line": 9,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 9,
+     "severity": "med",
+     "claim": "emit_signal uses misspelled signal name 'helth_changed' instead of declared 'health_changed', so the signal is never emitted and Godot reports an error"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "signal_typo_bug.gd",
+   "bug_line": 9,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 9,
+     "severity": "high",
+     "claim": "emit_signal uses misspelled signal name 'helth_changed' instead of declared 'health_changed', so the signal is never emitted and Godot reports an error"
+    }
+   ],
+   "reasoning_tokens": 27
+  },
+  {
+   "file": "signal_typo_bug.gd",
+   "bug_line": 9,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 9,
+     "severity": "high",
+     "claim": "emit_signal uses misspelled signal name 'helth_changed' instead of declared 'health_changed', so the signal is never emitted and Godot reports an error."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "timer_before_tree_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "low",
+     "claim": "Timer is created and started but never freed and has no timeout connection, so each call leaks a Timer node and cooldown completion is never handled."
+    }
+   ],
+   "reasoning_tokens": 53
+  },
+  {
+   "file": "timer_before_tree_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "low",
+     "claim": "Timer is created and added as a child but never freed (e.g. no timeout connection to queue_free), leaking a Timer node on each call to start_cooldown()."
+    }
+   ],
+   "reasoning_tokens": 26
+  },
+  {
+   "file": "timer_before_tree_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "low",
+     "claim": "Timer is created and added as a child but never freed and has no timeout handler, so each call leaks a Timer node."
+    }
+   ],
+   "reasoning_tokens": 30
+  },
+  {
+   "file": "timer_before_tree_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "med",
+     "claim": "Timer.start() is called before add_child(t), so the Timer is not inside the scene tree when started and will not process/time out as intended; add the Timer to the tree first, then start it."
+    }
+   ],
+   "reasoning_tokens": 47
+  },
+  {
+   "file": "timer_before_tree_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Timer.start(1.0) is called before add_child(t), so the Timer is not inside the scene tree and start fails / does not run; add_child must come first."
+    }
+   ],
+   "reasoning_tokens": 25
+  },
+  {
+   "file": "timer_before_tree_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 27
+  },
+  {
+   "file": "change_scene_godot3_clean.gd",
+   "bug_line": null,
+   "nlines": 4,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "change_scene_godot3_clean.gd",
+   "bug_line": null,
+   "nlines": 4,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "change_scene_godot3_clean.gd",
+   "bug_line": null,
+   "nlines": 4,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "change_scene_godot3_bug.gd",
+   "bug_line": 4,
+   "nlines": 4,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "high",
+     "claim": "SceneTree.change_scene does not exist in Godot 4.3; use change_scene_to_file() instead, otherwise the call fails at runtime."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "change_scene_godot3_bug.gd",
+   "bug_line": 4,
+   "nlines": 4,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "high",
+     "claim": "SceneTree.change_scene() does not exist in Godot 4.3 and will error at runtime; use change_scene_to_file() instead."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "change_scene_godot3_bug.gd",
+   "bug_line": 4,
+   "nlines": 4,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "high",
+     "claim": "SceneTree.change_scene does not exist in Godot 4.3; use change_scene_to_file() instead, so this call will fail at runtime."
+    }
+   ],
+   "reasoning_tokens": 0
+  }
+ ]
+}
