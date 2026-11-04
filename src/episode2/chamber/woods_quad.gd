@@ -1343,7 +1343,7 @@ func _show_finished() -> void:
 		Beat.DROPOFF:
 			_dropoff_done = true
 			if _hud:
-				_hud.objective = "Go to the CERTIFICATES office. Get the sheriff to sort you a certificate."
+				_hud.objective = "Go to the CERTIFICATES office. Ask about a Miner's License."
 
 
 
@@ -2776,7 +2776,12 @@ func _build_town() -> void:
 
 
 func _build_town_set() -> void:
-	_town_col = Ep2GoldTown.build(_visuals, false)
+	# Founder 2026-11-04: "This bug where Lil Blunt walks to the office to make things appear". He stands in THIS copy of the town from the
+	# drop-off until Inferno has ridden out of sight, so its rooms have to be the real rooms: furniture, lamps, the license wall and the two
+	# men at their marks, already there through the open door (skill ep2-interior-visible-on-approach).
+	_town_col = Ep2GoldTown.build(_visuals, true)
+	GoldTownChamber.build_license_wall(_visuals)
+	GoldTownChamber.build_office_stand_ins(_visuals)
 	_stable_yard = _visuals.find_child("StableYard", true, false) as Ep2StableYard
 	_wire_stable_yard()
 

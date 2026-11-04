@@ -1141,6 +1141,45 @@ func _build_sheriff() -> void:
 	_face_folk(_minister, Ep2GoldTown.local_to_world("Bldg_Certificates", OFFICE_SPOT))
 
 
+## The Sheriff and Mike Dean as the street sees them through the open door, for a copy of the town that is not the running story (the woods'
+## drop-off): the same models, at the same marks, facing the same spot, so the hand-over to this room changes nothing he can see.
+static func build_office_stand_ins(parent: Node3D) -> Array:
+	var out: Array = []
+	if Ep2GoldTown.entry("Bldg_Certificates").is_empty():
+		return out
+	var spot: Vector3 = Ep2GoldTown.local_to_world("Bldg_Certificates", OFFICE_SPOT)
+	var sheriff := Ep2TownFolk.new()
+	sheriff.name = "OfficeSheriff"
+	parent.add_child(sheriff)
+	sheriff.setup(SHERIFF_MODEL, SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
+	sheriff.place(Ep2GoldTown.local_to_world("Bldg_Certificates", SHERIFF_OFFICE_AT))
+	sheriff.hold_clip("Idle")
+	out.append(sheriff)
+	var minister := Ep2TownFolk.new()
+	minister.name = "OfficeMikeDean"
+	minister.use_height = true
+	parent.add_child(minister)
+	minister.setup(Ep2Extras.MINISTER if Ep2Extras.has(Ep2Extras.MINISTER) else MINISTER_MODEL, MINISTER_HEIGHT, Color(0.1, 0.1, 0.12))
+	minister.place(Ep2GoldTown.local_to_world("Bldg_Certificates", MINISTER_DESK) + Vector3(0.0, MINISTER_STEP, 0.0))
+	minister.hold_clip("Idle")
+	out.append(minister)
+	var box := BoxMesh.new()
+	box.size = Vector3(1.1, MINISTER_STEP, 0.9)
+	var step := MeshInstance3D.new()
+	step.name = "OfficeMinisterStep"
+	step.mesh = box
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.32, 0.2, 0.11)
+	wood.roughness = 0.9
+	step.material_override = wood
+	step.position = minister.position - Vector3(0.0, MINISTER_STEP * 0.5, 0.0)
+	parent.add_child(step)
+	for folk in out:
+		(folk as Ep2TownFolk).face_point(spot)
+		(folk as Ep2TownFolk).rotation.y = (folk as Ep2TownFolk).facing
+	return out
+
+
 ## The founder's tumbler reads as WHISKEY (his hideout direction, skill ep2-bull-props-visible): clear glass with a rim light and an
 ## amber measure inside, instead of the raw GLB's baked cream - the same treatment as Inferno's glass in the hideout. `holder` is a
 ## _prop() holder (the tumbler's base on y = 0).
@@ -1952,12 +1991,18 @@ func _minister_steps(lines: Array, wall_line: int) -> Array:
 ## a slight rising diagonal of framed papers beside the counter, each with its tier name, so the ladder reads during the talk.
 ## Procedural (wood frame, paper, a tier-coloured seal, Label3D lettering) so it always shows - no asset, no pack weight.
 func _build_license_wall() -> void:
+	if _visuals != null:
+		build_license_wall(_visuals)
+
+
+## Static so every copy of the town hangs the same wall: the woods' copy is what he sees first from the street (skill ep2-interior-visible-on-approach).
+static func build_license_wall(parent: Node3D) -> void:
 	var e: Array = Ep2GoldTown.entry("Bldg_Certificates")
-	if e.is_empty() or _visuals == null:
+	if e.is_empty():
 		return
 	var wall := Node3D.new()
 	wall.name = "LicenseWall"
-	_visuals.add_child(wall)
+	parent.add_child(wall)
 	var frame_mat := StandardMaterial3D.new()
 	frame_mat.albedo_color = Color(0.24, 0.14, 0.07)
 	frame_mat.roughness = 0.8
@@ -2013,20 +2058,19 @@ func _build_license_wall() -> void:
 			label.position = Vector3(0.0, float(t[1]), 0.02)
 			label.double_sided = false
 			cert.add_child(label)
-	if not _upgrade_license_wall():
+	if not upgrade_license_wall(wall):
 		# the printed certificates arrive with the streamed extras pack: look again twice a second until they are in
 		var t := Timer.new()
 		t.name = "LicenseArtWait"
 		t.wait_time = 0.5
 		t.autostart = true
 		t.timeout.connect(func() -> void:
-			if _upgrade_license_wall(): t.queue_free())
+			if upgrade_license_wall(wall): t.queue_free())
 		wall.add_child(t)
 
 
 ## Swap each placard for its printed certificate once every texture can load. True when the wall shows the printed art.
-func _upgrade_license_wall() -> bool:
-	var wall: Node3D = license_wall()
+static func upgrade_license_wall(wall: Node3D) -> bool:
 	if wall == null:
 		return false
 	if bool(wall.get_meta("printed", false)):
