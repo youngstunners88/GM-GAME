@@ -44,5 +44,5 @@ MCP server needs the FOUNDER to sign in once: `/mcp` -> runpod -> Sign in with R
 3. Report: GPU used, minutes, $ (minutes x $/h), and whether the pod is still running. **Never create, restart, stop or terminate a pod without the
    founder's yes** (money + his data); a pod the founder started himself is his to stop unless he asks.
 4. Use it for: Cycles bakes (high-poly Tripo -> 8-14k-face game mesh + 1K maps), turnaround renders for the reference-match loop, ComfyUI/diffusion jobs,
-   anything over ~10 min on CPU. Do NOT use it for Godot captures (software GL in the container is fine) or for what Muapi/Tripo already sell per call.
+   anything over ~10 min on CPU. Do NOT use it for what Muapi/Tripo already sell per call. Godot gates and captures on a pod go through `ep2-runpod-gate-pod` (the founder's laptop cannot carry them).
 5. The result still lands in the repo through the normal gates (pack budget < 190 MiB, `ep2-reference-match-loop`).
