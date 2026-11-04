@@ -325,17 +325,20 @@ func _on_beat_entered(b: int) -> void:
 			_gesture("Greet", 2.5)
 		Beat.STAGE: _hud.objective = "Check the staged cargo beside Logan [E]." if TouchUi.keys_shown() else "Check the staged cargo beside Logan."
 		Beat.HANDOFF:
+			prebuild_requested.emit("river_cover")          # the ridge builds off screen while he walks the shore trail
 			_hud.objective = "Follow the shore trail to the river overlook."
 			_say("LOGAN: Cargo checked. The depth holds. Follow the outflow to the high ground—the day-88 shipment leaves from here.", 8.5)
 			_gesture("Point", 3.0)
 		Beat.OVERLOOK:
-			_hud.objective = "Day-88 river · Follow the outflow. This lake visit ends at the overlook."
+			_hud.objective = ("Day-88 river · at the overlook, [E] climb to the ridge." if TouchUi.keys_shown()
+				else "Day-88 river · at the overlook, climb to the ridge.")
 			_say("The still-water narrows into the river. Rich and Utah's gear is ready for the run downstream.", 8.0)
 
 func start_rig(_payment: String = "") -> bool:
 	if not has_player_control() or armory_open(): return false
 	if _beat == Beat.OVERLOOK and _staged and _talk_t <= 0 and _player_pos.z > 59:
-		_resolve({"end_session": true, "lake_complete": true, "river_ready": true, "companion": ""})
+		# founder lock 2026-11-04: the lake hands on to the day-88 ridge (river_cover.gd); Logan stays here, Rich and Utah never come
+		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
 		return true
 	if _riding:
 		_dismount()

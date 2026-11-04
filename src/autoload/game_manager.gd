@@ -134,7 +134,7 @@ func valid_resume(record: Dictionary) -> bool:
     if episode != 2 or not record.get("section") is Dictionary: return false
     var section: Dictionary = record.section
     var room: String = SaveSafe.to_str(section.get("room", ""))
-    return SaveSafe.to_int(section.get("segment"), -1) in range(8) and SaveSafe.to_int(section.get("mode"), -1) in [1, 2] and room in ["", "smelting_facility", "miner_shaft", "mine_lift", "woods_quad", "gold_town", "logans_lake"]
+    return SaveSafe.to_int(section.get("segment"), -1) in range(8) and SaveSafe.to_int(section.get("mode"), -1) in [1, 2] and room in ["", "smelting_facility", "miner_shaft", "mine_lift", "woods_quad", "gold_town", "logans_lake", "river_cover"]
 
 func take_episode2_resume() -> Dictionary:
     var record: Dictionary = pending_episode2_resume

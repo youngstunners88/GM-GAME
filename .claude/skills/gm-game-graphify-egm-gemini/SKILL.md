@@ -57,6 +57,6 @@ Skills: `egm:egm-brainstorm`, `egm:egm-draft`, `egm:egm-review`, `egm:egm-review
 ## ElevenLabs keys (learned on the same turn)
 Voices live on different accounts. `elevenlabs-client.mjs` reads `ELEVENLABS_API_KEY` (+ `ELEVENLABS_API_KEY_<n>`) unless
 `ELEVENLABS_KEY_BINDING` names another variable. Measured 2026-11-03: Mike Dean (`CfxYdK3WmF3bmrvyLAiU`) is on
-`ELEVENLABS_OPEN_API`, Inferno (`uWE48TmsTuIjyh2ifoNL`) on `ELEVENLABS_API`. Probe without printing a key:
+`ELEVENLABS_OPEN_API`, Inferno (`uWE48TmsTuIjyh2ifoNL`) on `ELEVENLABS_API`, Utah (`LeIvuXkiWRYkY1ThkAdG`) on `ELEVENLABS` (2026-11-04). Probe without printing a key:
 `curl -s -o /dev/null -w "%{http_code}" -H "xi-api-key: ${!K}" https://api.elevenlabs.io/v1/voices/<id>` (200 = that key owns it), then
 `ELEVENLABS_KEY_BINDING=<K> node scripts/generate-town-audio.mjs --generate --speakers <speaker>`.

@@ -63,6 +63,8 @@ const CHAMBER_SCENES := {
 	"gold_town": preload("res://src/episode2/chamber/gold_town.tscn"),
 	"lake_trail": preload("res://src/episode2/chamber/lake_trail.tscn"),
 	"logans_lake": preload("res://src/episode2/chamber/logans_lake.tscn"),
+	# Logan's overlook -> the day-88 ridge (founder lock 2026-11-04): cover the Shipment down the river to Utah's dock.
+	"river_cover": preload("res://src/episode2/chamber/river_cover.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
 

@@ -34,6 +34,13 @@ var bud_selected: bool = false
 var bud_card: Button
 var bud_use: Button
 var _supply_fingers: Dictionary = {}
+## THE SHIPMENT (founder lock 2026-11-04): logistics, not a gun - once it is bought at Rich & Utah's, Tabs shows the same hero crate the
+## day-88 river carries (Ep2ShipmentCrate), turning slowly in its own little case. `shipment_live` pulses it while the run is on.
+var shipment_tile: SubViewportContainer
+var shipment_live: bool = false
+var _ship_vp: SubViewport
+var _ship_turn: Node3D
+var _ship_source: String = ""
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -56,6 +63,55 @@ func _ready() -> void:
 	bud_use.icon = preload("res://src/episode2/ui/icons/full_hearts.svg")
 	bud_use.expand_icon = true
 	bud_use.add_theme_constant_override("icon_max_width", 54)
+	_build_shipment_tile()
+
+func _build_shipment_tile() -> void:
+	shipment_tile = SubViewportContainer.new()
+	shipment_tile.name = "ShipmentTile"
+	shipment_tile.stretch = true
+	shipment_tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shipment_tile.visible = false
+	add_child(shipment_tile)
+	_ship_vp = SubViewport.new()
+	_ship_vp.own_world_3d = true
+	_ship_vp.transparent_bg = true
+	_ship_vp.size = Vector2i(192, 192)
+	_ship_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	shipment_tile.add_child(_ship_vp)
+	var cam := Camera3D.new()
+	cam.fov = 34.0
+	cam.position = Vector3(0, 0.75, 2.6)
+	cam.rotation.x = -0.22
+	cam.current = true
+	_ship_vp.add_child(cam)
+	var key := DirectionalLight3D.new()
+	key.light_color = Color(1.0, 0.88, 0.70)
+	key.light_energy = 1.7
+	key.rotation = Vector3(-0.7, 0.6, 0)
+	_ship_vp.add_child(key)
+	var env := WorldEnvironment.new()
+	env.environment = Environment.new()
+	env.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.environment.ambient_light_color = Color(0.80, 0.68, 0.52)
+	env.environment.ambient_light_energy = 0.6
+	_ship_vp.add_child(env)
+	_ship_turn = Node3D.new()
+	_ship_turn.name = "Turntable"
+	_ship_vp.add_child(_ship_turn)
+
+## The crate in the tile: (re)built when the streamed model arrives, so Tabs always shows what the river will carry.
+func _sync_shipment_model() -> void:
+	var src: String = Ep2ShipmentCrate.source()
+	if src == _ship_source and _ship_turn.get_child_count() > 0:
+		return
+	for c in _ship_turn.get_children():
+		c.queue_free()
+	_ship_source = src
+	_ship_turn.add_child(Ep2ShipmentCrate.model(1.3))
+
+func shipment_rect() -> Rect2:
+	var side: float = 64.0 if size.x < 650.0 else 120.0
+	return Rect2(Vector2(10.0, 6.0), Vector2(side, side))
 
 func _supply_button(label: String, action: Callable) -> Button:
 	var b := Button.new()
@@ -128,6 +184,16 @@ func _process(_delta: float) -> void:
 	bud_card.add_theme_constant_override("icon_max_width",int(32*supply_scale))
 	bud_use.add_theme_constant_override("icon_max_width",int(54*supply_scale))
 	bud_card.add_theme_font_size_override("font_size",int(15*supply_scale))
+	var owns_shipment: bool = state != null and state.river_gear and visible
+	shipment_tile.visible = owns_shipment
+	_ship_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS if owns_shipment else SubViewport.UPDATE_DISABLED
+	if owns_shipment:
+		_sync_shipment_model()
+		var r: Rect2 = shipment_rect()
+		var pulse: float = 1.0 + (0.08 * sin(Time.get_ticks_msec() * 0.006) if shipment_live else 0.0)
+		shipment_tile.position = r.position + r.size * (1.0 - pulse) * 0.5
+		shipment_tile.size = r.size * pulse
+		_ship_turn.rotation.y = fmod(_ship_turn.rotation.y + _delta * 0.55, TAU)     # a slow Y spin
 	refresh_supplies()
 	queue_redraw()
 
@@ -234,6 +300,11 @@ func _draw() -> void:
 	draw_line(Vector2(mid + 14,line_y),Vector2(mid+minf(270,size.x*.38),line_y),BRASS,1)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid,line_y-5),Vector2(mid+5,line_y),Vector2(mid,line_y+5),Vector2(mid-5,line_y)]),BRASS)
 	_draw_purse(_purse_band(), compact)
+	if state.river_gear and keys:                       # wordless on touch: the turning crate is the label there
+		var sr: Rect2 = shipment_rect()
+		_text("THE SHIPMENT", Vector2(sr.get_center().x, sr.end.y + (10 if compact else 14)), 9 if compact else 12, BRASS, true)
+		if not compact:
+			_text("DAY-88 LIVE" if shipment_live else "DAY-88 CARGO", Vector2(sr.get_center().x, sr.end.y + 29), 10, PAPER, true)
 	_draw_ledger(_ledger_band(), compact)
 	for i in Ep2ArmoryState.IDS.size():
 		var id: String = Ep2ArmoryState.IDS[i]

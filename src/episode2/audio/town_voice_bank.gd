@@ -1217,6 +1217,14 @@ const LINES: Dictionary = {
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_minister2_14.ogg"
+	},
+	"river_utah_dock": {
+		"speaker": "utah",
+		"text": "Got her! Day-eighty-eight's in, Lil Blunt. Clean shooting up there.",
+		"seconds": 4.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/river_utah_dock.ogg"
 	}
 }
 const GREETINGS: Dictionary = {

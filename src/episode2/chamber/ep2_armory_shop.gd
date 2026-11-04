@@ -159,9 +159,7 @@ func _showcase_model(key: String) -> Node3D:
 	if Ep2ArmoryGunView.has_view(key):
 		return Ep2ArmoryGunView.model(key)
 	if key == Ep2ArmoryState.GATE_ITEM:
-		if Ep2Extras.has(Ep2Extras.SHIPMENT):
-			return (load(Ep2Extras.SHIPMENT) as PackedScene).instantiate() as Node3D
-		return _water_gear_model()
+		return Ep2ShipmentCrate.model()                    # the same hero crate Tabs spins and the day-88 river carries
 	var path: String = ""
 	match key:
 		Ep2ArmoryState.WIN:

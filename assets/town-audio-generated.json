@@ -2218,5 +2218,17 @@
     "model_id": "eleven_multilingual_v2",
     "seconds": 12.905,
     "start_seconds": 0
+  },
+  "river_utah_dock": {
+    "source_hash": "0cae8191a6c176994f77429f3453cb5bc818801500c9556e76dacb7c96de816e",
+    "processing_version": 2,
+    "sha256": "6046e8a4b24c4552c25ef2a3e83d359320c2358d2344496cc2b6466bd040ca57",
+    "bytes": 25334,
+    "text": "Got her! Day-eighty-eight's in, Lil Blunt. Clean shooting up there.",
+    "speaker": "utah",
+    "voice_id": "LeIvuXkiWRYkY1ThkAdG",
+    "model_id": "eleven_v4",
+    "seconds": 4.705,
+    "start_seconds": 0
   }
 }

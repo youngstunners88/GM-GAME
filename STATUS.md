@@ -1,5 +1,15 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-04 — The day-88 river cover stage — IN CODE, gate-tested (27 checks + 835 regression), real-renderer captures; shipping, NOT founder-verified, not tried on a real phone.**
+- **The ridge:** out of Logan's Lake, [E] at his overlook climbs to the ridge (Logan stays at his lake; Rich and Utah are never there). Cross the **DAY 88** cairn, stand on the first overlook and look down at the launch pool: **the Shipment you bought goes into the water** and drifts downstream. A red pennant makes it easy to spot from the ridge.
+- **Three gates:** Launch pool (2 bears), the Bend and its rapids (4, slowest and most exposed), and the Dock approach (3). Bears come off the banks, swim at the crate and try to tip it. You cover it from the ridge with the Sharps, which drops a bear in one shot. Between gates the crate waits in an eddy while you drop to the next ledge, with one bear on the path each time.
+- **Fail:** if the crate tips or you're downed, you go back to that gate's overlook with full hearts and the ammo you had. Nothing is bought again.
+- **Prerequisites:** the run needs both the Sharps and the Shipment from Rich & Utah. Without them it doesn't start and says what to buy; no free crate.
+- **Dock:** Utah walks out once the dock approach is clear, the crane takes the crate, and he says one line (recorded in his voice). That ends the slice; train, auction and Fort Knox are next and unchanged.
+- **Tabs:** the Shipment now shows in Tabs as the same crate, turning slowly, and it pulses while the run is live.
+- **Not done:** the founder's hard-refresh run (ridge to dock); the terrain is simple shapes (rock strip, cone pines) and could get a Blender/Meshy art pass next.
+- Captures: `docs/episode2-quality/day88-river-20261104/`. Lock: `docs/founder-feedback/2026-11-04_day88_river_cover.md`.
+
 **2026-11-03 (evening) — Your follow-ups: the lake-route wall, the tree in Inferno's road, the certificates moved and printed — IN CODE, gate-tested, real-renderer captures; shipping, NOT founder-verified.**
 - **Invisible wall on the way to Logan's Lake:** fixed. The trail only took the horse when he was within 2 m of the road's middle, and the road is 5.8 m wide. Riding on its edge, he ran into an invisible bound about 120 m out and stopped. Now anywhere on the road works, and so does riding beside it. A test reproduces the old stop (stuck at 128 m) and passes the new ride.
 - **Tree in the road as Inferno nears Dude's ranch:** two pines moved on 2026-11-02 had landed 1–2 m from his road. They now stand at least 10 m from every road. A test checks it, and there is a before/after capture.
