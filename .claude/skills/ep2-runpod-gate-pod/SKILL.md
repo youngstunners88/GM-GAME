@@ -35,6 +35,7 @@ NOSYNC=1 tools/ep2_runpod/gate_pod.sh test ...                  # leave the pod'
 - A new `class_name` is invisible until `import` has run: "not declared in the current scope" means re-import, not a code bug.
 - A shot scene must take `out=<dir>` in its user args and write PNGs there, as the scenes in `tools/ep2_shots/` do.
 - Captures use `gl_compatibility` because the web build does. Forward+ on the pod's real GPU proves nothing about the player's view.
+- A test that hits a SCRIPT ERROR does not quit: Godot sits until the 320 s timeout, so a suite that "hangs" is usually a script error. Read its log.
 - The pod is not the gate: push and read the CI run. The local pause tap-target difference may also show here.
 
 ## Money

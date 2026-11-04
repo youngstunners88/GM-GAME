@@ -41,7 +41,7 @@ setup)
 	remote "bash -s" <<EOF
 set -e
 apt-get update -qq >/dev/null 2>&1 || true
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libgl1 libglx-mesa0 mesa-vulkan-drivers libvulkan1 vulkan-tools mesa-utils libxcursor1 libxinerama1 libxrandr2 libxi6 libasound2t64 libpulse0 rsync tmux imagemagick jq unzip >/dev/null 2>&1
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libgl1 libglx-mesa0 mesa-vulkan-drivers libvulkan1 vulkan-tools mesa-utils libxcursor1 libxinerama1 libxrandr2 libxi6 libasound2t64 libpulse0 rsync tmux imagemagick jq unzip nodejs >/dev/null 2>&1
 [ -d $REPO/.git ] || git clone -q --depth 1 --branch "$ref" https://github.com/youngstunners88/GM-GAME.git $REPO
 cd $REPO
 git config core.fileMode false
