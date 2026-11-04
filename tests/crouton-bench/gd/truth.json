@@ -1,0 +1,122 @@
+{
+ "connect_called_clean.gd": {
+  "bug_line": null,
+  "family": "connect_called",
+  "why": "clean control"
+ },
+ "connect_called_bug.gd": {
+  "bug_line": 6,
+  "family": "connect_called",
+  "why": "calls the handler immediately and connects its return value (null) instead of the Callable"
+ },
+ "missing_delta_clean.gd": {
+  "bug_line": null,
+  "family": "missing_delta",
+  "why": "clean control"
+ },
+ "missing_delta_bug.gd": {
+  "bug_line": 6,
+  "family": "missing_delta",
+  "why": "movement not scaled by delta: speed depends on the physics tick rate"
+ },
+ "node_in_init_clean.gd": {
+  "bug_line": null,
+  "family": "node_in_init",
+  "why": "clean control"
+ },
+ "node_in_init_bug.gd": {
+  "bug_line": 5,
+  "family": "node_in_init",
+  "why": "$Label is resolved in _init, before the node is in the tree: label is null and .text crashes"
+ },
+ "yield_godot3_clean.gd": {
+  "bug_line": null,
+  "family": "yield_godot3",
+  "why": "clean control"
+ },
+ "yield_godot3_bug.gd": {
+  "bug_line": 5,
+  "family": "yield_godot3",
+  "why": "yield() is Godot 3 syntax; Godot 4 uses await and this does not parse"
+ },
+ "off_by_one_clean.gd": {
+  "bug_line": null,
+  "family": "off_by_one",
+  "why": "clean control"
+ },
+ "off_by_one_bug.gd": {
+  "bug_line": 6,
+  "family": "off_by_one",
+  "why": "off by one: idx == size() passes the guard and reads past the end"
+ },
+ "int_division_clean.gd": {
+  "bug_line": null,
+  "family": "int_division",
+  "why": "clean control"
+ },
+ "int_division_bug.gd": {
+  "bug_line": 9,
+  "family": "int_division",
+  "why": "integer division: 30 / 100 is 0, so the health bar ratio is always 0 until full"
+ },
+ "variant_infer_clean.gd": {
+  "bug_line": null,
+  "family": "variant_infer",
+  "why": "clean control"
+ },
+ "variant_infer_bug.gd": {
+  "bug_line": 6,
+  "family": "variant_infer",
+  "why": ":= infers from a Variant return, which Godot 4.3 treats as a hard error (the repo's export gate rejects it)"
+ },
+ "missing_arg_clean.gd": {
+  "bug_line": null,
+  "family": "missing_arg",
+  "why": "clean control"
+ },
+ "missing_arg_bug.gd": {
+  "bug_line": 7,
+  "family": "missing_arg",
+  "why": "take_damage() is called without its required argument"
+ },
+ "erase_while_iterating_clean.gd": {
+  "bug_line": null,
+  "family": "erase_while_iterating",
+  "why": "clean control"
+ },
+ "erase_while_iterating_bug.gd": {
+  "bug_line": 6,
+  "family": "erase_while_iterating",
+  "why": "erasing from the array being iterated skips the element after each removal"
+ },
+ "signal_typo_clean.gd": {
+  "bug_line": null,
+  "family": "signal_typo",
+  "why": "clean control"
+ },
+ "signal_typo_bug.gd": {
+  "bug_line": 9,
+  "family": "signal_typo",
+  "why": "the signal name is misspelled, so nothing listening to health_changed is ever notified (and Godot logs an error)"
+ },
+ "timer_before_tree_clean.gd": {
+  "bug_line": null,
+  "family": "timer_before_tree",
+  "why": "clean control"
+ },
+ "timer_before_tree_bug.gd": {
+  "bug_line": 6,
+  "family": "timer_before_tree",
+  "why": "Timer.start() before the timer is in the tree fails (\"Timer was not added to the SceneTree\")"
+ },
+ "change_scene_godot3_clean.gd": {
+  "bug_line": null,
+  "family": "change_scene_godot3",
+  "why": "clean control"
+ },
+ "change_scene_godot3_bug.gd": {
+  "bug_line": 4,
+  "family": "change_scene_godot3",
+  "why": "change_scene() was removed in Godot 4; it is change_scene_to_file()"
+ }
+}

@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-04 (tooling, no gameplay change) — Crouton lane: a free second reader for bulk work, measured before trusted — IN CODE, unit-tested (11), benchmarked live; nothing in the game or the ship path uses it.**
+- **What it is:** `stealth/crouton-alpha` on OpenRouter, $0, 1M context, images in. An anonymous preview whose provider may keep prompts, so the lane refuses anything private (keys, `0x` wallet addresses, `config.json`, `lil-blunt-icp/`, the vault). It only ever produces leads that Claude verifies; it never decides a ship and never says "fixed".
+- **Free only, enforced:** the catalogue must say $0 each day, and one call that reports a cost writes `.farm/crouton.tripped` and refuses everything after. Call template fixed: reasoning effort by job type and a 4000-token floor (a 400-token budget returned an empty answer).
+- **Measured today (`node scripts/crouton-bench.mjs`):** GDScript review on 12 paired known-bug fixtures, 3 runs each: found 32 of 36 bugs, 1 false alarm in 36, invented no lines; **not eligible** (recall 0.889, the bar is 0.9), blind to `:=` inference from a Variant. Blotch triage on the six graded frames: **agreed with your matrix on 1 of 6 and called every frame clean, so it must not be used for blotches** (that stays `blotch-analyze.py`).
+- **Not done:** no real regressions added to the fixtures yet; no CI step (a stealth preview must not gate a build); not wired into any gameplay or export path on purpose.
+- Skill `crouton-lane`; run `node --test tests/crouton_lane_test.mjs`. Reports: `artifacts/crouton-bench/`.
+
 **2026-11-04 — The day-88 river cover stage — IN CODE, gate-tested (27 checks + 835 regression), real-renderer captures; shipping, NOT founder-verified, not tried on a real phone.**
 - **The ridge:** out of Logan's Lake, [E] at his overlook climbs to the ridge (Logan stays at his lake; Rich and Utah are never there). Cross the **DAY 88** cairn, stand on the first overlook and look down at the launch pool: **the Shipment you bought goes into the water** and drifts downstream. A red pennant makes it easy to spot from the ridge.
 - **Three gates:** Launch pool (2 bears), the Bend and its rapids (4, slowest and most exposed), and the Dock approach (3). Bears come off the banks, swim at the crate and try to tip it. You cover it from the ridge with the Sharps, which drops a bear in one shot. Between gates the crate waits in an eddy while you drop to the next ledge, with one bear on the path each time.

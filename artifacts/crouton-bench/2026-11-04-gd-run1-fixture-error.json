@@ -1,0 +1,280 @@
+{
+ "day": "2026-11-04",
+ "model": "stealth/crouton-alpha",
+ "runs": 1,
+ "task": "gd",
+ "score": {
+  "files": 24,
+  "scored": 24,
+  "coverage": 1,
+  "bug_files": 12,
+  "clean_files": 12,
+  "caught": 11,
+  "missed": 1,
+  "false_alarms": 1,
+  "right_clean": 11,
+  "recall": 0.917,
+  "false_alarm_rate": 0.083,
+  "invalid_line_findings": 0,
+  "findings_total": 14,
+  "missed_files": [
+   "variant_infer_bug.gd"
+  ],
+  "false_alarm_files": [
+   "yield_godot3_clean.gd"
+  ],
+  "verdict": "eligible as a triage second reader (every finding is still verified by Claude against the real file)"
+ },
+ "rows": [
+  {
+   "file": "connect_called_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "connect_called_bug.gd",
+   "bug_line": 6,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "button.pressed.connect(_on_pressed()) calls _on_pressed() immediately and passes its void/null return value to connect() instead of a Callable, causing an error and failing to connect the signal; use _on_pressed without parentheses."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_delta_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_delta_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "med",
+     "claim": "position.x += SPEED ignores delta, making movement frame-rate dependent (120 px per physics frame instead of 120 px/s), and directly setting position bypasses CharacterBody2D collision handled by move_and_slide(); velocity should be set and multiplied by delta via move_and_slide()."
+    }
+   ],
+   "reasoning_tokens": 32
+  },
+  {
+   "file": "node_in_init_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "node_in_init_bug.gd",
+   "bug_line": 5,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "$Label is accessed in _init() before child nodes are instantiated/added, so label will be null and label.text on line 7 will crash with a null dereference; use _ready() or @onready instead."
+    }
+   ],
+   "reasoning_tokens": 23
+  },
+  {
+   "file": "yield_godot3_clean.gd",
+   "bug_line": null,
+   "nlines": 6,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "high",
+     "claim": "Node has no 'modulate' property (that's CanvasItem); assigning it errors at runtime. Extend a CanvasItem-derived class such as Node2D or Control instead."
+    },
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Node has no 'modulate' property (that's CanvasItem); assigning it errors at runtime. Extend a CanvasItem-derived class such as Node2D or Control instead."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "yield_godot3_bug.gd",
+   "bug_line": 5,
+   "nlines": 6,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "high",
+     "claim": "Node has no 'modulate' property; 'modulate' is on CanvasItem, so this assignment fails at runtime."
+    },
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Node has no 'modulate' property; 'modulate' is on CanvasItem, so this assignment fails at runtime."
+    }
+   ],
+   "reasoning_tokens": 43
+  },
+  {
+   "file": "off_by_one_clean.gd",
+   "bug_line": null,
+   "nlines": 8,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "off_by_one_bug.gd",
+   "bug_line": 6,
+   "nlines": 8,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Off-by-one: idx <= items.size() allows idx == items.size(), causing out-of-bounds access to items[idx]; should be idx < items.size()."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "int_division_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "int_division_bug.gd",
+   "bug_line": 9,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 9,
+     "severity": "med",
+     "claim": "hp / max_hp performs integer division because both operands are int, truncating the result (e.g. 30/100 = 0) instead of returning the float ratio; use float(hp) / max_hp"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "variant_infer_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "variant_infer_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_arg_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "missing_arg_bug.gd",
+   "bug_line": 7,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 7,
+     "severity": "high",
+     "claim": "take_damage() is called without the required 'amount' argument, causing an invalid call error"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "erase_while_iterating_clean.gd",
+   "bug_line": null,
+   "nlines": 8,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "erase_while_iterating_bug.gd",
+   "bug_line": 6,
+   "nlines": 8,
+   "findings": [
+    {
+     "line": 8,
+     "severity": "med",
+     "claim": "Erasing from 'enemies' while iterating over it with 'for e in enemies' shifts subsequent elements and causes the next enemy to be skipped, so consecutive dead enemies may not all be pruned. Iterate over a copy or iterate backwards."
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "signal_typo_clean.gd",
+   "bug_line": null,
+   "nlines": 9,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "signal_typo_bug.gd",
+   "bug_line": 9,
+   "nlines": 9,
+   "findings": [
+    {
+     "line": 9,
+     "severity": "high",
+     "claim": "emit_signal uses misspelled signal name 'helth_changed' instead of declared 'health_changed', so the signal is never emitted and Godot reports an error"
+    }
+   ],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "timer_before_tree_clean.gd",
+   "bug_line": null,
+   "nlines": 7,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "timer_before_tree_bug.gd",
+   "bug_line": 6,
+   "nlines": 7,
+   "findings": [
+    {
+     "line": 6,
+     "severity": "high",
+     "claim": "Timer.start(1.0) is called before add_child(t), so the Timer is not inside the scene tree and cannot start/fire correctly; add_child(t) must precede start()."
+    }
+   ],
+   "reasoning_tokens": 32
+  },
+  {
+   "file": "change_scene_godot3_clean.gd",
+   "bug_line": null,
+   "nlines": 4,
+   "findings": [],
+   "reasoning_tokens": 0
+  },
+  {
+   "file": "change_scene_godot3_bug.gd",
+   "bug_line": 4,
+   "nlines": 4,
+   "findings": [
+    {
+     "line": 4,
+     "severity": "high",
+     "claim": "SceneTree.change_scene does not exist in Godot 4.3; calling it will fail with invalid call. Use change_scene_to_file instead."
+    }
+   ],
+   "reasoning_tokens": 0
+  }
+ ]
+}
