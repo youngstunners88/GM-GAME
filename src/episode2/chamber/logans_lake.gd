@@ -44,6 +44,7 @@ const HORSE_GONE_LINE := "LOGAN: You walked in. They shot your horse out from un
 var _logan_draw_t: float = -1.0
 var _logan_fired: bool = false
 var _horse_line_said: bool = false
+const WALK_ON_Z := 63.4                            # the top of the overlook path (the bank clamps him at 64)
 const HORSE_WALK := 2.2                           # m/s, a brisk walk to the water (about 9 s from the shore end of the trail)
 const HORSE_CLIP_SPEED := 1.9                     # ground m/s of horse_walk at speed_scale 1 (same clip as the trail)
 const HORSE_REACH := 3.6                          # how close E mounts him (he drinks just past the bank path's edge, x = -4.1)
@@ -441,6 +442,9 @@ func _tick(delta: float) -> void:
 		_skiff.advance(delta, _staged and _talk_t <= 0.0)
 	if _beat == Beat.HANDOFF and _player_pos.z > 59:
 		_advance_to(Beat.OVERLOOK)
+	# walking on up the path is enough: the ridge continues from here, [E] only says so sooner
+	if _beat == Beat.OVERLOOK and _staged and _talk_t <= 0 and _player_pos.z >= WALK_ON_Z and not _resolved and has_player_control():
+		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
 
 func _collide(p: Vector3) -> Vector3:
 	if Ep2LoganCabin.YARD.has_point(Vector2(p.x, p.z)) or (_player_pos.x < -11.5 and p.x < -11.5):
@@ -508,6 +512,12 @@ func _tick_logan_draw(delta: float) -> void:
 
 
 func logan_is_drawing() -> bool: return _logan_draw_t >= 0.0
+
+## The ridge goes on from exactly here (river_cover.gd adopt_lake): where he stands, the way he looks.
+func get_handoff() -> Dictionary:
+	var result: Dictionary = super.get_handoff()
+	result["ridge_from"] = _player_pos
+	return result
 
 func staging_complete() -> bool: return _staged
 func staging_count() -> int: return _stage_calls

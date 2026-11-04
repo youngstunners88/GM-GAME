@@ -299,7 +299,11 @@ func _enter_chamber_chained(segment: int) -> void:
 			built_vp.queue_free()
 	else:
 		add_child(c)
+		if c is RiverCoverChamber:
+			c.handoff = gaze                                # not prebuilt in time: the ridge still continues his walk
 		c.setup(0, [], 0)
+	if c is RiverCoverChamber and old is LogansLakeChamber:
+		c.adopt_lake(old)                                  # the lake he just walked out of stays behind him
 	if adopt_town:
 		var woods: Node3D = world_routes.rooms.get("woods_quad",{}).get("node",null)
 		c.adopt_departure(old,woods)

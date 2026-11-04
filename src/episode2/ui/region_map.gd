@@ -28,7 +28,7 @@ func _ready() -> void:
  corner_marker = TextureRect.new()
  corner_marker.texture = preload("res://src/assets/art/badge_lilblunt.png")
  corner_marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
- corner_marker.size = Vector2(20,20)
+ corner_marker.size = Vector2(17,17)
  corner_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
  corner.add_child(corner_marker)
  key_hint = Label.new()
@@ -53,7 +53,7 @@ func _ready() -> void:
  marker.texture = preload("res://src/assets/art/badge_lilblunt.png")
  marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
  marker.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
- marker.size = Vector2(44,44)
+ marker.size = Vector2(38,38)
  marker.tooltip_text = "Lil Blunt • You are here"
  marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
  paper.add_child(marker)

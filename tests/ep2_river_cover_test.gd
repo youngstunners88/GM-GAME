@@ -33,6 +33,7 @@ func _room(st: Ep2ArmoryState) -> RiverCoverChamber:
 		return null
 	add_child(c)
 	c.set_physics_process(false)
+	c.debug_no_ranged = true                         # _test_ranged_threat turns their fire on: these tests drive the crate and the swimmers
 	c.bind_armory(st)
 	c.setup(0, [], 0)
 	return c
@@ -68,10 +69,13 @@ func _kill_river_bears(c: RiverCoverChamber) -> void:
 	for b in c.get_bears():
 		if not bool(b["ridge"]):
 			c.damage_bear(b, 99)
+	for m in c.get_raiders():
+		c.damage_raider(m)
 
 
 func _wave_out(c: RiverCoverChamber, n: int) -> void:
-	for i in 40:                                     # until the whole wave has come off the banks (3 s apart)
+	for i in 80:                                     # until the whole wave has come off the banks (3 s apart)
+		c._crate_board = 0.0                         # this helper only counts the wave: boarding has its own test below
 		_advance(c, 0.5)
 		var river: int = 0
 		for b in c.get_bears():
@@ -85,6 +89,8 @@ func _ready() -> void:
 	_test_full_run()
 	_test_tipped_and_downed()
 	_test_lake_is_logans_alone()
+	_test_continues_the_walk()
+	_test_ranged_threat()
 	print("RIVER_COVER: %s" % ("ALL PASS" if failures == 0 else "%d FAIL" % failures))
 	get_tree().quit(1 if failures else 0)
 
@@ -134,7 +140,7 @@ func _test_full_run() -> void:
 	_advance(c, 1.0)
 	check("crossing the DAY-88 marker arms the run (hold the overlook)", c.get_beat_name() == "OVERLOOK" and not c.is_launched(), c.get_beat_name())
 	_stand(c, RiverCoverChamber.OVERLOOKS[0])
-	_look_at(c, Vector3(80, 0, 0))
+	_look_at(c, Vector3(-80, 0, 0))
 	_advance(c, 1.0)
 	check("...looking away from the pool does not launch it", not c.is_launched())
 	_look_at(c, c.river_point(c.river_s_of(RiverCoverChamber.LAUNCH_POINT)))
@@ -144,9 +150,10 @@ func _test_full_run() -> void:
 	var s0: float = c.crate_s()
 	_advance(c, 3.0)
 	check("he can see it move: the crate drifts downstream", c.crate_s() > s0 + 1.0, "%.1f -> %.1f" % [s0, c.crate_s()])
-	# gate 1: two bears, then the eddy waits for him on the bend ledge
-	_wave_out(c, 2)
-	check("gate 1 brings its wave off the banks (2 bears)", c.get_bears().size() == 2, str(c.get_bears().size()))
+	# gate 1: four swimmers and a bow bear on the far bank, then the eddy waits for him on the bend ledge
+	_wave_out(c, 5)
+	check("gate 1 brings its wave off the banks (4 swimmers, 1 archer)", c.get_bears().size() == 5, str(c.get_bears().size()))
+	check("...and a raft of Hammer's men comes down behind the crate", c.get_rafts().size() == 1 and c.get_raiders().size() == 2)
 	_kill_river_bears(c)
 	_advance(c, 70.0)
 	var eddy1: float = c.river_s_of(RiverCoverChamber.EDDY_1)
@@ -161,11 +168,11 @@ func _test_full_run() -> void:
 	_stand(c, RiverCoverChamber.OVERLOOKS[1])
 	_advance(c, 0.5)
 	check("on the bend ledge overlook the crate moves on: GATE 2/3 THE BEND", c.get_gate() == 1 and "GATE 2/3" in str(c.get_hud().objective))
-	_wave_out(c, 6)
+	_wave_out(c, 14)
 	var river_bears: int = 0
 	for b in c.get_bears():
 		if not bool(b["ridge"]): river_bears += 1
-	check("the bend is the densest gate (4 more bears)", river_bears == 6, str(river_bears))
+	check("the bend is the densest gate (7 more swimmers, 2 archers)", river_bears == 14, str(river_bears))
 	_kill_river_bears(c)
 	_advance(c, 70.0)
 	for b in c.get_bears():
@@ -174,7 +181,7 @@ func _test_full_run() -> void:
 	_stand(c, RiverCoverChamber.OVERLOOKS[2])
 	_advance(c, 0.5)
 	check("on the dock ledge: GATE 3/3 DOCK APPROACH", c.get_gate() == 2 and "GATE 3/3" in str(c.get_hud().objective))
-	_wave_out(c, 9)
+	_wave_out(c, 22)
 	_kill_river_bears(c)
 	_advance(c, 60.0)
 	check("the dock approach clear, Utah walks out onto the lower dock", c.utah_visible() and c.get_beat_name() in ["DOCK", "DONE"])
@@ -201,7 +208,7 @@ func _test_tipped_and_downed() -> void:
 	# downed by a ridge bear: the same rule
 	c = _room(_armory(true, true))
 	_arm_and_launch(c)
-	_wave_out(c, 2)
+	_wave_out(c, 5)
 	_kill_river_bears(c)
 	_advance(c, 70.0)
 	var downs: int = c.get_downs()
@@ -220,3 +227,124 @@ func _test_lake_is_logans_alone() -> void:
 	lake.setup(0, [], 0)
 	check("Logan's Lake: never Rich, never Utah", lake.find_child("Rich", true, false) == null and lake.find_child("Utah", true, false) == null)
 	lake.free()
+
+
+## Founder 2026-11-04: "must literally continue from when Lil Blunt is walking forward up the ridge ... Right now the stage inverts after pressing E".
+func _test_continues_the_walk() -> void:
+	var from: Vector3 = Vector3(-8.0, 6.0, 62.0)                      # on Logan's overlook path, the moment he goes on
+	var c: RiverCoverChamber = RIVER.instantiate() as RiverCoverChamber
+	c.handoff = {"yaw": 0.31, "pitch": -0.1, "ridge_from": from}
+	add_child(c)
+	c.set_physics_process(false)
+	c.bind_armory(_armory(true, true))
+	c.setup(0, [], 0)
+	check("the view is exactly the one he had: no turn at the cut", is_equal_approx(c.get_look_yaw(), 0.31), str(c.get_look_yaw()))
+	check("he is where the path was: the same point, moved by the room's offset", c._player_pos.distance_to(from + RiverCoverChamber.LAKE_OFFSET) < 0.8, str(c._player_pos))
+	check("the first stretch of the ridge runs the way he was walking (+z)", ((RiverCoverChamber.RIDGE_POINTS[1] as Vector3) - (RiverCoverChamber.RIDGE_POINTS[0] as Vector3)).normalized().z > 0.9)
+	# the outflow is on his LEFT at the lake (x = flow_center, he is at x = -8, walking +z): the river must stay on his left here, at every stretch of the run
+	for i in range(0, RiverCoverChamber.RIDGE_POINTS.size() - 1, 2):
+		var a: Vector3 = RiverCoverChamber.RIDGE_POINTS[i]
+		var b: Vector3 = RiverCoverChamber.RIDGE_POINTS[i + 1]
+		var fwd: Vector3 = (b - a).normalized()
+		var left := Vector3(fwd.z, 0, -fwd.x)
+		var river: Vector3 = c.river_point(c.river_s_of(Vector2(a.x, a.z)))
+		check("ridge stretch %d: the river is on his left" % i, (river - a).dot(left) > 5.0, str((river - a).dot(left)))
+	var dock_dir: float = RiverCoverChamber.RIVER_POINTS[-1].x - RiverCoverChamber.RIVER_POINTS[12].x
+	check("past the dock the river curves to his right (the founder's geography, towards the train)", dock_dir < -100.0, str(dock_dir))
+	# the ridge's path stands above the lake's hills that come with him (a path under the ground would be a wall)
+	var under: Array = []
+	var s: float = 0.0
+	while s < 180.0:
+		var z: float = (RiverCoverChamber.RIDGE_POINTS[0] as Vector3).z + s
+		var p: Vector3 = c.ridge_nearest(Vector3(-30, 0, z))[0]
+		var lake_x: float = p.x - RiverCoverChamber.LAKE_OFFSET.x
+		var lake_z: float = p.z - RiverCoverChamber.LAKE_OFFSET.z
+		if lake_z < RiverCoverChamber.LAKE_CLIP_Z and Ep2LakeLandform.terrain_height(lake_x, lake_z) + RiverCoverChamber.LAKE_OFFSET.y > p.y + 0.3:
+			under.append("z %.0f: %.1f over %.1f" % [z, Ep2LakeLandform.terrain_height(lake_x, lake_z), p.y])
+		s += 6.0
+	check("the climb never runs under the lake's hills", under.is_empty(), str(under))
+	c.free()
+
+
+## Founder 2026-11-04: "Some bears are archers ... some of hammer's men on rafts ... Some of his men must even fire at Lil Blunt." They reach him, and moving is always an answer.
+func _test_ranged_threat() -> void:
+	var st := _armory(true, true)
+	var c := _room(st)
+	c.debug_no_ranged = false
+	_arm_and_launch(c)
+	_look_at(c, c.river_point(c.river_s_of(RiverCoverChamber.LAUNCH_POINT)))
+	_advance(c, 1.0)
+	check("the run is live", c.is_launched())
+	var archer: Dictionary = {}
+	for b in c.get_bears():
+		if str(b["state"]) == "archer":
+			archer = b
+	check("an archer stands on the far bank", not archer.is_empty())
+	var reach: float = (archer["actor"] as Node3D).position.distance_to(c._player_pos)
+	check("...well out of a swipe: he has the reach (%.0f m)" % reach, reach > 35.0)
+	var saw_draw: bool = false
+	var saw_arrow: bool = false
+	for i in 240:
+		c._invuln = 0.0
+		_advance(c, 0.05)
+		saw_draw = saw_draw or float(archer["draw"]) >= 0.0
+		saw_arrow = saw_arrow or not c.get_arrows().is_empty()
+		if saw_arrow:
+			break
+	check("he draws in plain view before he looses (the warning)", saw_draw)
+	check("the arrow flies", saw_arrow)
+	# stand still: it lands. step aside: it misses
+	var ar: Dictionary = c.get_arrows()[0]
+	ar["true"] = true                                # the arrow that would hit him if he stayed
+	c._player_pos += Vector3(0, 0, 4.0)
+	var before: int = c.get_health()
+	var hits_from_man: bool = false
+	for i in 80:
+		c._invuln = 1.0                              # only this arrow is on trial here, not the raft's guns
+		_advance(c, 0.05)
+		if c.get_arrows().find(ar) < 0:
+			break
+	check("stepping aside dodges the arrow: no unavoidable damage", c.get_health() >= before, "%d -> %d" % [before, c.get_health()])
+	# standing still under fire is survivable for a while: he has time to shoot back
+	var survive := _room(_armory(true, true))
+	survive.debug_no_ranged = false
+	_arm_and_launch(survive)
+	_look_at(survive, survive.river_point(survive.river_s_of(RiverCoverChamber.LAUNCH_POINT)))
+	_advance(survive, 1.0)
+	survive._crate_board = 0.0
+	var t: float = 0.0
+	while survive.get_downs() == 0 and t < 25.0:
+		survive._crate_board = 0.0
+		for b in survive.get_bears():
+			if str(b["state"]) in ["swim", "board", "bank"]:
+				survive.damage_bear(b, 99)               # only the ranged fire is on trial
+		_advance(survive, 0.5)
+		t += 0.5
+	check("standing still on the overlook under fire he lasts at least 12 s (time to answer)", t >= 12.0, "%.1f s" % t)
+	survive.free()
+	# the raft comes up, its men fire, and it drains the crate until they are dead
+	var saw_tell: bool = false
+	var hooked: bool = false
+	for i in 900:
+		_advance(c, 0.1)
+		for m in c.get_raiders():
+			saw_tell = saw_tell or str(m["state"]) == "tell"
+		for r in c.get_rafts():
+			hooked = hooked or bool(r["hooked"])
+		c._health = 3
+		c._crate_board = 0.0
+		if saw_tell and hooked:
+			break
+	check("Hammer's men raise a gun on him from the raft", saw_tell)
+	check("the raft reaches the shipment and hooks it", hooked)
+	for m in c.get_raiders():
+		c.damage_raider(m)
+	_advance(c, 0.5)
+	check("with its men down the raft lets go", not bool(c.get_rafts()[0]["hooked"]))
+	check("a retry clears the rafts and arrows, then the gate brings them again", _retry_clears(c))
+	c.free()
+
+
+func _retry_clears(c: RiverCoverChamber) -> bool:
+	c._package_lost()
+	return c.get_arrows().is_empty() and c.get_rafts().size() == 1 and c.get_raiders().size() == 2 and c.get_bears().size() == 1
