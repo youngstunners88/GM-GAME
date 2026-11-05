@@ -463,8 +463,50 @@ func _on_player_shot() -> void:
 	if _logan != null and _logan_draw_t < 0.0 and _bullet_hits_logan():
 		_logan_draws()
 		return
+	if _horse != null and _horse.visible and _bullet_hits_horse():
+		_wound_lake_horse()
+		return
 	if _player_pos.distance_to(LOGAN_MARK) < 35:
 		_hud.toast("LOGAN: Easy. Keep the staging bank secure.", 2.5)
+
+
+func _bullet_hits_horse() -> bool:
+	var eye: Vector3 = _player_pos + Vector3(0, eye_height, 0)
+	var cp: float = cos(_look_pitch)
+	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
+	var feet: Vector3 = _horse.global_position
+	return WoodsQuadChamber._ray_capsule(eye, dir, feet + Vector3(0, 0.45, 0), feet + Vector3(0, 1.55, 0), 0.58) >= 0.0
+
+
+## Dude's horse is a creature here too. A shot wounds it through the same travelling state as the trail, and the third puts it
+## down: it falls, disappears from the lake, and Lil Blunt simply walks. Dude's patches it up on the road back, so this is never
+## a dead end.
+func _wound_lake_horse() -> void:
+	armory.wound_horse()
+	_horse_whinny()
+	if armory.horse_is_down():
+		_horse_state = "gone"
+		_horse.visible = false
+		if _riding:
+			_riding = false
+			walk_speed = _foot_speed
+			eye_height = FPS_EYE_HEIGHT
+	else:
+		_horse_state = "hurt"
+		_set_horse_clip("horse_stand", 0.6)
+
+
+func _horse_whinny() -> void:
+	var path := "res://src/episode2/extras/audio/town/horse_whinny.ogg"
+	if not ResourceLoader.exists(path):
+		return
+	var p := AudioStreamPlayer.new()
+	p.bus = "SFX"
+	p.stream = load(path) as AudioStream
+	p.volume_db = -3.0
+	add_child(p)
+	p.play()
+	p.finished.connect(p.queue_free)
 
 
 func _bullet_hits_logan() -> bool:

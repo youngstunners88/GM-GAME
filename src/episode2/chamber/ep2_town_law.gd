@@ -343,11 +343,17 @@ func _wound_story(hit: Dictionary, direction: Vector3) -> void:
 
 func _hit_horse(hit: Dictionary, direction: Vector3) -> void:
 	var horse: Node3D = hit["node"]
+	var health := horse.get_node_or_null("CreatureHealth") as Ep2CreatureHealth
+	if health != null and not health.is_alive():
+		_blood_spurt(hit["point"], direction, 0.38)             # a body already down: no second fine, no second death
+		_blood_stain(horse, hit["point"], -direction, 0.24)
+		return
 	horse.set_meta("law_wounded", true)
 	horse_hits += 1
 	_bill_horses += 1
-	_blood_spurt(hit["point"], direction, 0.52)
-	_blood_stain(horse, hit["point"], -direction, 0.40)
+	var killed: bool = health.take_hit(1, hit["point"]) if health != null else false
+	_blood_spurt(hit["point"], direction, 0.72 if killed else 0.52)
+	_blood_stain(horse, hit["point"], -direction, 0.46 if killed else 0.40)
 	_note_offence()
 
 

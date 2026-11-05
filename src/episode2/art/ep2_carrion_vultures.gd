@@ -2,9 +2,14 @@ class_name Ep2CarrionVultures
 extends Node3D
 ## VULTURES AT THE CARCASSES (founder 2026-11-02): on the road to Logan's Lake what Lil Blunt leaves dead draws the birds, and not at once. A while
 ## after a death, and only while he is well away from the body, one or two turkey vultures spiral down, land beside it and hop and peck. They lift
-## off if he rides close or fires near them, and come back later once he has gone. Scenery only: they never touch play.
+## off if he rides close or fires near them, and come back later once he has gone. A bird can also be shot out of the air or off the carcass:
+## one hit leaves it labouring, the second folds it and drops it on the ground.
 ##
-## The room reports the deaths (add_body) and shots (notify_shot) and drives step(); this node owns the birds. Seeded, so tests can drive it.
+## The room reports the deaths (add_body), shots that pass near (notify_shot) and the actual shot ray (shoot); this node owns the birds.
+## Seeded, so tests can drive it.
+
+signal bird_hit(at: Vector3, killed: bool)
+signal bird_down(at: Vector3)
 
 const DELAY_MIN := 20.0                   # seconds from a death to the first bird
 const DELAY_MAX := 40.0
@@ -17,9 +22,11 @@ const DESCEND_S := 9.0
 const FLEE_S := 7.0
 const DESCEND_FROM := 28.0                # height the spiral starts at (the flock's own thermal)
 const BIRD_SCALE := 1.25
+const HIT_RADIUS := 0.62
+const DOWN_SECONDS := 5.5
 
 var bodies: Array = []                    # [{pos, radius, wait, birds}]
-var birds: Array = []                     # [{node, wings, neck, body, state, t, phase, spot, from}]
+var birds: Array = []                     # [{node, wings, neck, body, health, state, t, phase, spot, from, wounded, down_t}]
 var _rng := RandomNumberGenerator.new()
 var _feather: StandardMaterial3D = null
 var _skin: StandardMaterial3D = null
@@ -47,7 +54,7 @@ func clear() -> void:
 func feeders() -> int:
 	var n: int = 0
 	for b in birds:
-		if str(b["state"]) != "flee":
+		if str(b["state"]) in ["descend", "feed"]:
 			n += 1
 	return n
 
@@ -61,16 +68,71 @@ func feeding() -> int:
 	return n
 
 
-## He fired along this ray: any bird it passes close to lifts off, with the others at its body.
+func alive_count() -> int:
+	var n: int = 0
+	for b in birds:
+		if str(b["state"]) != "down":
+			n += 1
+	return n
+
+
+## He fired along this ray: any bird it passes close to lifts off, with the others at its body. This is the near-miss scare;
+## `shoot()` is the ray that actually wounds or kills one.
 func notify_shot(eye: Vector3, dir: Vector3) -> void:
 	var d: Vector3 = dir.normalized()
 	for b in birds:
-		if str(b["state"]) == "flee":
+		if str(b["state"]) in ["flee", "down"]:
 			continue
 		var p: Vector3 = (b["node"] as Node3D).global_position
 		var along: float = maxf((p - eye).dot(d), 0.0)
 		if (eye + d * along).distance_to(p) < SCARE_SHOT:
 			_scare(int(b["body"]))
+
+
+## The actual shot ray. Returns the hit distance, or -1. A wounded bird labours away; a killed bird drops where it was hit.
+func shoot(eye: Vector3, dir: Vector3) -> float:
+	var d: Vector3 = dir.normalized()
+	var best: int = -1
+	var best_t: float = INF
+	for i in birds.size():
+		var b: Dictionary = birds[i]
+		if str(b["state"]) == "down":
+			continue
+		var at: Vector3 = (b["node"] as Node3D).global_position + Vector3(0.0, 0.30, 0.0)
+		var t: float = _ray_sphere(eye, d, at, HIT_RADIUS)
+		if t >= 0.0 and t < best_t:
+			best_t = t
+			best = i
+	if best < 0:
+		return -1.0
+	var b: Dictionary = birds[best]
+	var at2: Vector3 = (b["node"] as Node3D).global_position
+	var health: Ep2CreatureHealth = b["health"]
+	var killed: bool = health.take_hit(1, at2)
+	if killed:
+		b["state"] = "down"
+		b["down_t"] = 0.0
+		b["from"] = (b["node"] as Node3D).position
+		_fold(b)
+		bird_hit.emit(at2, true)
+		bird_down.emit(at2)
+	else:
+		b["wounded"] = true
+		_scare(int(b["body"]))
+		bird_hit.emit(at2, false)
+	return best_t
+
+
+## True when a bird is under the ray (the HUD sight turns red).
+func under_sight(eye: Vector3, dir: Vector3) -> bool:
+	var d: Vector3 = dir.normalized()
+	for b in birds:
+		if str(b["state"]) == "down":
+			continue
+		var at: Vector3 = (b["node"] as Node3D).global_position + Vector3(0.0, 0.30, 0.0)
+		if _ray_sphere(eye, d, at, HIT_RADIUS) >= 0.0:
+			return true
+	return false
 
 
 func step(delta: float, player: Vector3) -> void:
@@ -88,7 +150,8 @@ func step(delta: float, player: Vector3) -> void:
 				_send_bird(i)
 	for j in range(birds.size() - 1, -1, -1):
 		var b: Dictionary = birds[j]
-		b["t"] = float(b["t"]) + delta
+		if str(b["state"]) != "down":
+			b["t"] = float(b["t"]) + delta
 		match str(b["state"]):
 			"descend":
 				_fly_down(b)
@@ -98,12 +161,16 @@ func step(delta: float, player: Vector3) -> void:
 				if _fly_off(b):
 					(b["node"] as Node3D).queue_free()
 					birds.remove_at(j)
+			"down":
+				if _fall_dead(b, delta):
+					(b["node"] as Node3D).queue_free()
+					birds.remove_at(j)
 
 
 func _scare(index: int) -> void:
 	var body: Dictionary = bodies[index]
 	for b in birds:
-		if int(b["body"]) == index and str(b["state"]) != "flee":
+		if int(b["body"]) == index and str(b["state"]) not in ["flee", "down"]:
 			b["state"] = "flee"
 			b["t"] = 0.0
 			b["from"] = (b["node"] as Node3D).position
@@ -118,8 +185,13 @@ func _send_bird(index: int) -> void:
 	var spot: Vector3 = (body["pos"] as Vector3) + Vector3(cos(a), 0.0, sin(a)) * float(body["radius"])
 	var node: Node3D = _make_bird()
 	add_child(node)
+	var health := Ep2CreatureHealth.new()
+	health.name = "CreatureHealth"
+	health.configure(2)                # a wing hit is survivable; a second brings it down
+	node.add_child(health)
 	var b: Dictionary = {"node": node, "wings": [node.get_node("WingL"), node.get_node("WingR")], "neck": node.get_node("Neck"), "body": index,
-		"state": "descend", "t": 0.0, "phase": _rng.randf_range(0.0, TAU), "spot": spot, "centre": body["pos"], "from": spot}
+		"health": health, "state": "descend", "t": 0.0, "phase": _rng.randf_range(0.0, TAU), "spot": spot, "centre": body["pos"],
+		"from": spot, "wounded": false, "down_t": 0.0}
 	birds.append(b)
 	body["birds"] = int(body["birds"]) + 1
 	_set_wings(b, true)
@@ -154,15 +226,61 @@ func _eat(b: Dictionary) -> void:
 	node.position = (b["spot"] as Vector3) + Vector3(0.0, 0.16 * sin(minf(hop / 0.3, 1.0) * PI), 0.0)
 
 
-## Up and out in a widening climb. True when it has gone.
+## Up and out in a widening climb. True when it has gone. A wounded bird climbs lower and slower.
 func _fly_off(b: Dictionary) -> bool:
-	var k: float = clampf(float(b["t"]) / FLEE_S, 0.0, 1.0)
+	var wounded: bool = bool(b.get("wounded", false))
+	var k: float = clampf(float(b["t"]) / (FLEE_S * (1.65 if wounded else 1.0)), 0.0, 1.0)
 	var a: float = float(b["phase"]) + k * TAU * 1.2
 	var node: Node3D = b["node"]
-	node.position = (b["from"] as Vector3) + Vector3(cos(a) * k * 22.0, k * k * DESCEND_FROM * 1.4, sin(a) * k * 22.0)
-	node.rotation = Vector3(-0.3 * (1.0 - k), -a, 0.2)
-	_flap(b, 1.0)
+	var climb: float = k * k * DESCEND_FROM * (0.55 if wounded else 1.4)
+	node.position = (b["from"] as Vector3) + Vector3(cos(a) * k * 22.0, climb, sin(a) * k * 22.0)
+	node.rotation = Vector3(-0.3 * (1.0 - k), -a, 0.2 + (0.18 * sin(float(b["t"]) * 4.0) if wounded else 0.0))
+	_flap(b, 1.0 if not wounded else 0.55)
 	return k >= 1.0
+
+
+## A killed bird: wings folded, gravity takes it to the ground, then it lies there for DOWN_SECONDS.
+func _fall_dead(b: Dictionary, delta: float) -> bool:
+	var node: Node3D = b["node"]
+	var dt: float = float(b["down_t"]) + delta
+	b["down_t"] = dt
+	var from: Vector3 = b["from"] as Vector3
+	if not bool(b.get("settled", false)):
+		var vy: float = float(b.get("vy", 0.0)) - 9.4 * delta
+		b["vy"] = vy
+		node.position.y = maxf(0.12, float(node.position.y) + vy * delta)
+		node.rotation.x += delta * 2.2
+		node.rotation.z += delta * 1.5
+		if float(node.position.y) <= 0.13:
+			b["settled"] = true
+			node.position.y = 0.12
+			node.rotation = Vector3(-0.12, node.rotation.y, 1.35)
+	else:
+		node.position = from.lerp(Vector3(from.x, 0.12, from.z), 1.0)
+	return dt >= DOWN_SECONDS
+
+
+func _fold(b: Dictionary) -> void:
+	var wings: Array = b["wings"]
+	for i in 2:
+		var w: Node3D = wings[i]
+		var side: float = -1.0 if i == 0 else 1.0
+		w.rotation = Vector3(0.0, side * -1.25, side * -0.2)
+		w.scale = Vector3.ONE * 0.48
+
+
+func _ray_sphere(eye: Vector3, dir: Vector3, centre: Vector3, radius: float) -> float:
+	var oc: Vector3 = eye - centre
+	var b: float = oc.dot(dir)
+	var c: float = oc.length_squared() - radius * radius
+	var disc: float = b * b - c
+	if disc < 0.0:
+		return -1.0
+	var root: float = sqrt(disc)
+	var t: float = -b - root
+	if t < 0.02:
+		t = -b + root
+	return t if t >= 0.02 else -1.0
 
 
 func _flap(b: Dictionary, amount: float) -> void:
