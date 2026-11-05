@@ -23,6 +23,13 @@ Gate: `tests/ep2_wildlife_combat_test.tscn` (count pinned, in CI). Shots: `tools
 - `Ep2TownLaw` targets horses through `Ep2CreatureHealth.HORSE_GROUP`. A name match alone catches the model's inner `HorseRig`, which has no health, so the horse can never die.
 - The flock is silent until the room sets `listener`, because rooms are prebuilt behind the current one.
 
+## Known gaps
+
+- A chasing bandit's horse has no hit capsule: bullets pass through it (`_bandit_ray_hit` covers only the rider above the saddle).
+- The road cart's donkey (`Ep2RoadCart`) and the woods songbirds (`Ep2Wildlife`) have no shot path. The donkey also carries the farmer's journey, so killing it is a story decision.
+- Town and yard horse deaths are not saved: a reload restores them. Lil Blunt's own mount does persist.
+- The fallen trail horse's saddle is still the old boxy prop, which looks crude from behind.
+
 ## Not tested
 
 Audio was checked by loudness and spectrograms, not by ear. The motion was judged from stills and measured stride numbers, not watched in play.

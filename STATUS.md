@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-05 - Wildlife and creature combat - PUSHED, deploying; not yet confirmed live, not founder-verified, not tried on a real phone.**
+**2026-11-05 - Wildlife and creature combat - LIVE on itch (build `2026-11-05-6cdc135`, confirmed from the public page); NOT founder-verified, not tried on a real phone.**
 
 | What you asked for | State | What changed |
 |---|---|---|
@@ -8,10 +8,12 @@
 | Bison | **Motion improved, model kept** | Your bison model looked right up close, so no credits were spent on it. Each animal now has its own stride, rises and lands hard, lurches when hit, and ploughs on before it falls. Survivors run off instead of galloping on the spot. |
 | Stampede | **Done** | Still once per run, shoot or dodge. Nothing on screen warns you any more, except "TRAMPLED!" when you are hit. Standing still is safe: the herd crosses and the ride goes on. |
 | Stampede and bird sound | **Done** | Rumble, many hooves, rising as they near, a whoosh on a close pass, a heavy bison hit, light wings and cries. The music dips and always comes back. These sounds are generated, not recordings. |
-| Horses | **Done** | Every horse can be wounded and killed. A dead horse falls on its side and blocks nothing. If yours dies you are on foot, and Dude patches it up. Remounting at Logan's Lake still works. |
+| Horses | **Mostly done** | Town, stable and lake horses and your own can be wounded and killed. A dead horse falls on its side and blocks nothing. If yours dies you are on foot, and Dude patches it up. Remounting at Logan's Lake still works. **Not yet:** bullets pass through the chasing bandits' horses, and a town or stable horse you killed is back after a reload. |
+| Other animals | **Not done** | The road cart's donkey and the small songbirds in the woods cannot be shot yet. Bears keep their own system and can already be killed. |
 | People | **Not changed** | Rich, Utah, Logan, Mike Dean and the townsfolk stay on their own systems. |
 
 - **Credits:** 0 Tripo, 0 Meshy.
+- **Please check:** the sounds and the running have only been checked by measurements and still pictures, not by ear or in play. Your hard-refresh test of the trail, the stampede and a kill is the real verdict.
 - **Details:** `design/ep2/wildlife/WILDLIFE_COMBAT.md`. Pictures: `docs/captures/wildlife-combat/`.
 
 ---
