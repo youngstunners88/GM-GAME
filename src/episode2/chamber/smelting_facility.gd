@@ -812,7 +812,7 @@ func set_move_input(v: Vector2, run: bool = false) -> void:
 func look(relative: Vector2) -> void:
 	if not has_player_control():
 		return
-	var k: float = LOOK_SENSITIVITY * lerpf(1.0, ADS_LOOK_SCALE, _gun.ads)
+	var k: float = LOOK_SENSITIVITY * lerpf(1.0, ADS_LOOK_SCALE, _gun.ads) * Ep2ArmoryState.aimed_look_scale(armory, _gun.ads, FPS_ADS_FOV)
 	_look_yaw -= relative.x * k
 	_look_pitch = clampf(_look_pitch - relative.y * k, LOOK_PITCH_MIN, LOOK_PITCH_MAX)
 	_look_delta += relative
@@ -1203,7 +1203,7 @@ func _fps_camera(delta: float) -> void:
 	var ads_k: float = _gun.ads * _gun.ads * (3.0 - 2.0 * _gun.ads)        # smoothstep: eases in and out
 	# during the demonstration the view widens so Inferno (beside you) AND the targets are both in frame
 	_fov_extra = lerpf(_fov_extra, 14.0 if _lesson == Lesson.DEMO else 0.0, 1.0 - exp(-delta * 3.0))
-	_camera.fov = lerpf(FPS_FOV + _fov_extra, FPS_ADS_FOV, ads_k)
+	_camera.fov = Ep2ArmoryState.aimed_fov(armory, ads_k, FPS_FOV + _fov_extra, FPS_ADS_FOV)
 
 
 func _distance_to_bull() -> float:
@@ -2651,6 +2651,7 @@ func _push_hud(_delta: float) -> void:
 		return
 	_hud_ctl.spread_deg = _gun.spread_deg(_moving, _player_pos.y > 0.05)
 	_hud_ctl.ads = _gun.ads
+	_hud_ctl.scope = _armory_view.scope_k() if _armory_view != null else 0.0
 	_hud_ctl.set_ammo(_gun.rounds, _gun.reserve, _gun.capacity)
 	_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
 	_hud_ctl.show_ammo = _has_winchester and (_lesson == Lesson.OFF or _lesson >= Lesson.LOAD)

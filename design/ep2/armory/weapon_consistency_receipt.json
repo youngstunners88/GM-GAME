@@ -1,0 +1,134 @@
+{
+ "ads-borchardt_c93": {
+  "gun_source": "gun frame",
+  "gun": {
+   "x0": 558,
+   "x1": 724,
+   "y0": 395,
+   "y1": 719,
+   "w": 166,
+   "h": 324,
+   "diag": 364.0,
+   "area": 36299
+  },
+  "whole": {
+   "x0": 482,
+   "x1": 810,
+   "y0": 398,
+   "y1": 719,
+   "w": 328,
+   "h": 321,
+   "diag": 458.9,
+   "area": 67754
+  },
+  "arm_in_centre_third": 0.0,
+  "gun_in_centre_third": 0.1
+ },
+ "ads-remington_1875_gold": {
+  "gun_source": "gun frame",
+  "gun": {
+   "x0": 554,
+   "x1": 696,
+   "y0": 381,
+   "y1": 719,
+   "w": 142,
+   "h": 338,
+   "diag": 366.6,
+   "area": 31482
+  },
+  "whole": {
+   "x0": 479,
+   "x1": 809,
+   "y0": 385,
+   "y1": 719,
+   "w": 330,
+   "h": 334,
+   "diag": 469.5,
+   "area": 64617
+  },
+  "arm_in_centre_third": 0.0037,
+  "gun_in_centre_third": 0.0846
+ },
+ "ads-sharps_buffalo": {
+  "gun_source": "gun frame",
+  "gun": null,
+  "whole": null,
+  "arm_in_centre_third": 0.0,
+  "gun_in_centre_third": 0.0
+ },
+ "hip-borchardt_c93": {
+  "gun_source": "gun frame",
+  "gun": {
+   "x0": 739,
+   "x1": 1083,
+   "y0": 407,
+   "y1": 704,
+   "w": 344,
+   "h": 297,
+   "diag": 454.5,
+   "area": 48868
+  },
+  "whole": {
+   "x0": 742,
+   "x1": 1164,
+   "y0": 410,
+   "y1": 719,
+   "w": 422,
+   "h": 309,
+   "diag": 523.0,
+   "area": 83259
+  },
+  "arm_in_centre_third": 0.0,
+  "gun_in_centre_third": 0.0447
+ },
+ "hip-remington_1875_gold": {
+  "gun_source": "gun frame",
+  "gun": {
+   "x0": 705,
+   "x1": 1002,
+   "y0": 394,
+   "y1": 719,
+   "w": 297,
+   "h": 325,
+   "diag": 440.3,
+   "area": 45366
+  },
+  "whole": {
+   "x0": 707,
+   "x1": 1168,
+   "y0": 397,
+   "y1": 719,
+   "w": 461,
+   "h": 322,
+   "diag": 562.3,
+   "area": 74818
+  },
+  "arm_in_centre_third": 0.0003,
+  "gun_in_centre_third": 0.0956
+ },
+ "hip-sharps_buffalo": {
+  "gun_source": "gun frame",
+  "gun": {
+   "x0": 656,
+   "x1": 1079,
+   "y0": 454,
+   "y1": 719,
+   "w": 423,
+   "h": 265,
+   "diag": 499.2,
+   "area": 43440
+  },
+  "whole": {
+   "x0": 657,
+   "x1": 1078,
+   "y0": 455,
+   "y1": 719,
+   "w": 421,
+   "h": 264,
+   "diag": 496.9,
+   "area": 58670
+  },
+  "arm_in_centre_third": 0.0,
+  "gun_in_centre_third": 0.0181
+ }
+}

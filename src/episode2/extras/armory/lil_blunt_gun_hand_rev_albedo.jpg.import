@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://capsowswok4dh"
-path="res://.godot/imported/borchardt_c93_Image_1.jpg-68540561f802ccccc4c85b1632a3e29d.ctex"
+uid="uid://d3wi2xdd5bnb"
+path="res://.godot/imported/lil_blunt_gun_hand_rev_albedo.jpg-b29e5726eb8ca989c957888a29b25cc5.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "8733ba1b58073e1be92b97ea4cf43881"
+"md5": "269e8d16f5264c770649217c3c061fa1"
 }
 
 [deps]
 
-source_file="res://src/episode2/extras/armory/borchardt_c93_Image_1.jpg"
-dest_files=["res://.godot/imported/borchardt_c93_Image_1.jpg-68540561f802ccccc4c85b1632a3e29d.ctex"]
+source_file="res://src/episode2/extras/armory/lil_blunt_gun_hand_rev_albedo.jpg"
+dest_files=["res://.godot/imported/lil_blunt_gun_hand_rev_albedo.jpg-b29e5726eb8ca989c957888a29b25cc5.ctex"]
 
 [params]
 

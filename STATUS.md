@@ -1,5 +1,20 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-05 - Borchardt size and Sharps scope - PUSHED, deploying; not yet confirmed live, not founder-verified, not tried on a real phone.**
+
+| Your note | State | What it was |
+|---|---|---|
+| Borchardt far too small | **Fixed, one number not met** | The old model baked a tiny hand onto the gun. It now sits in the Golden Remington's own glove and arm at the Remington's size. Aimed length is within 4.1% of the Remington. Height over the barrel is not close (14 px vs 55 px), because a C93 has a low flat top. See `docs/captures/weapon-consistency/AB_ads_remington_borchardt.png`. |
+| The stranger's pistol | **Same new gun** | He draws and drops the new pistol at real size. Searching him still gives you the gun. |
+| Sharps blocks the view | **Fixed** | It has a long period telescopic sight. Fully aimed, the rifle clears and you look through a round lens with hairlines, about 2.2x closer than normal aiming. |
+| Sharps tabs and shop | **Updated** | Tab model, weapon card, shop note ("TELESCOPIC SIGHT"), Rich's case rifle and the rifle in his hand. Still nine tabs. |
+| Rich's line | **Not changed** | He still says "a tang sight". It is voiced and this machine has no ElevenLabs key, so it needs a new take. |
+
+- **Tripo:** 110 of the 400 credits used, 390 left. The Sharps generation (50 credits) came out with a modern scope, so it was not used: the scope is built onto your own Sharps instead.
+- **Details:** `design/ep2/armory/WEAPON_CONSISTENCY.md`.
+
+---
+
 **2026-11-05 - Your "Shipment and Bears" notes - LIVE on itch (build `2026-11-05-dff3acd`, confirmed from the public page); NOT founder-verified, not tried on a real phone.**
 
 | Your note | State | What it was |

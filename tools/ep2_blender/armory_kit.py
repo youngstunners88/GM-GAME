@@ -172,10 +172,20 @@ def sharps(p, pos=(0.0, 0.0, 0.0), yaw=0.0, pitch=0.0, roll=0.0, scale=1.0):
     p.box("GunSteel", (0.014, 0.060, 0.018), (0.086, -0.024, 0.0))                           # front arm up to the pivot
     p.box("GunSteel", (0.012, 0.030, 0.010), (-0.060, -0.034, 0.0), roll=0.12)               # rear (set) trigger
     p.box("GunSteel", (0.010, 0.024, 0.010), (-0.034, -0.032, 0.0), roll=0.18)               # front (firing) trigger
-    # tang peep sight: a strap on the wrist's top, a vernier staff rising and leaning back, a small aperture disc
+    # tang peep sight, folded down flat under the telescopic sight: a strap on the wrist's top and the staff lying back along it
     p.box("Brass", (0.060, 0.008, 0.016), (-0.130, 0.049, 0))
-    p.box("Brass", (0.010, 0.074, 0.008), (-0.134, 0.088, 0), roll=-0.20)
-    p.cyl("Brass", 0.018, 0.018, 0.006, (-0.140, 0.121, 0), "x", 10)
+    p.box("Brass", (0.074, 0.006, 0.008), (-0.150, 0.055, 0))
+    # the telescopic sight (founder 2026-11-05; the first-person rifle's is tools/ep2_forge/build_scoped_sharps.py): a long thin tube of the 1870s, flared eyepiece, brass collars,
+    # two raised ring mounts and no rail. Its axis clears the hammer spur (y 0.082).
+    SCOPE_Y = 0.112
+    p.cyl("GunSteel", 0.011, 0.011, 0.56, (0.09, SCOPE_Y, 0), "x", 14)
+    p.cyl("GunSteel", 0.0185, 0.0185, 0.05, (-0.165, SCOPE_Y, 0), "x", 14)
+    p.cyl("GunSteel", 0.0165, 0.0165, 0.05, (0.345, SCOPE_Y, 0), "x", 14)
+    p.cyl("Brass", 0.0195, 0.0195, 0.008, (-0.138, SCOPE_Y, 0), "x", 14)
+    p.cyl("Brass", 0.0175, 0.0175, 0.008, (0.318, SCOPE_Y, 0), "x", 14)
+    for mount_x, foot_y in ((0.06, 0.067), (0.27, 0.045)):
+        p.cyl("Brass", 0.015, 0.015, 0.016, (mount_x, SCOPE_Y, 0), "x", 12)
+        p.box("Brass", (0.014, SCOPE_Y - 0.011 - foot_y, 0.009), (mount_x, (SCOPE_Y - 0.011 + foot_y) * 0.5, 0))
     # barrel: heavy 30 in octagonal (8 sides), a short walnut forearm with a steel tip, a barrel band, bare steel to the globe sight
     p.cyl("GunSteel", 0.0185, 0.0165, 0.76, (0.47, 0.026, 0), "x", 8)
     p.box("GunWood", (0.25, 0.044, 0.042), (0.215, 0.0, 0))                                  # forearm

@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cw834fsom8c0r"
-path="res://.godot/imported/borchardt_c93_Image_2.jpg-0987d728855089c688e848e2539ea9c1.ctex"
+uid="uid://ww602vhqv1c5"
+path="res://.godot/imported/borchardt_c93_NormalGL_d912cc5a-9712-43a6-ba66-a6111644973b.jpg-95c6957a0c11abc9be6aca9bae9736e2.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "12aec34a3cc3447680d4089268f35b72"
+"md5": "8450e57f3a5f3552040bb9dc00152f8c"
 }
 
 [deps]
 
-source_file="res://src/episode2/extras/armory/borchardt_c93_Image_2.jpg"
-dest_files=["res://.godot/imported/borchardt_c93_Image_2.jpg-0987d728855089c688e848e2539ea9c1.ctex"]
+source_file="res://src/episode2/extras/armory/borchardt_c93_NormalGL_d912cc5a-9712-43a6-ba66-a6111644973b.jpg"
+dest_files=["res://.godot/imported/borchardt_c93_NormalGL_d912cc5a-9712-43a6-ba66-a6111644973b.jpg-95c6957a0c11abc9be6aca9bae9736e2.ctex"]
 
 [params]
 

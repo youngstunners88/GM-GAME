@@ -46,10 +46,13 @@ var ads: float = 0.0
 ## the crosshair sight must turn red with expression when it lands on targets"). The room pushes `on_target` each frame from its own hit
 ## test (a living hostile under the centre of the view); `_lock_k` eases it in and out so the change reads as a reaction, not a flicker.
 var on_target: bool = false
+## 0..1: the Sharps' telescopic sight is up (Ep2Viewmodel.scope_k). The normal sight goes and the lens is drawn.
+var scope: float = 0.0
 var _lock_k: float = 0.0
 var _lock_t: float = 0.0
 const AIM_COLOR := Color(1.0, 0.94, 0.62)
 const LOCK_COLOR := Color(1.0, 0.16, 0.12)
+const SCOPE_LENS := 0.46                     # the lens radius, of the short side of the screen
 var rounds: int = 0
 var reserve: int = 0
 var mag: int = 4
@@ -216,7 +219,7 @@ func _build_armory() -> void:
 func _update_armory() -> void:
 	if _quick == null:
 		return
-	_quick.visible = armory != null and show_ammo and not armory_open
+	_quick.visible = armory != null and show_ammo and not armory_open and scope <= 0.0       # nothing is written or sits on the lens
 	if armory == null:
 		return
 	_hold_button.disabled = not armory_enabled
@@ -440,7 +443,9 @@ func _draw() -> void:
 	var beat: float = Time.get_ticks_msec() * 0.001
 	# --- crosshair ---------------------------------------------------------------------------------------
 	var gap: float = 5.0 + spread_deg * 5.2 * (1.0 - ads * 0.8)
-	if show_crosshair:
+	if scope > 0.0:
+		_draw_scope(c)
+	if show_crosshair and scope < 1.0:
 		_draw_sight(c, gap)
 	# --- hurt flash + hearts ------------------------------------------------------------------------------
 	if _hurt_t > 0.0:
@@ -458,7 +463,7 @@ func _draw() -> void:
 	# --- ammo (bottom right) ------------------------------------------------------------------------------
 	if show_ammo and _font:
 		var base := Vector2(size.x - 40.0, size.y - 42.0)
-		if armory != null and armory.owns(armory.equipped):
+		if armory != null and armory.owns(armory.equipped) and scope < 0.5:
 			var bow_drawing: bool = armory.active_gun() is Ep2Bow and (armory.active_gun() as Ep2Bow).drawing
 			if wordless:
 				# no status words: a cylinder turning while the gun reloads, a burst while the bow is drawn; nothing when idle
@@ -501,7 +506,9 @@ func _draw() -> void:
 				drawn_texts.append(t)
 				draw_string(_font, Vector2(base.x - 170.0, base.y + 30.0), t, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.032), Color(1.0, 0.45, 0.3))
 	# --- objective (top left) -----------------------------------------------------------------------------
-	if wordless and lesson_token != Token.NONE:
+	if scope >= 0.5:
+		pass                                       # the objective comes back when the lens comes down
+	elif wordless and lesson_token != Token.NONE:
 		_draw_lesson_path(beat)
 	elif objective != "" and _font:
 		var fs: int = int(h * 0.036)
@@ -516,7 +523,9 @@ func _draw() -> void:
 		drawn_texts.append(objective)
 		draw_string(_font, pos, objective, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, WHITE)
 	# --- toast (centre, lower) ----------------------------------------------------------------------------
-	if wordless and _toast_t > 0.0 and toast_text != "":
+	if scope >= 0.5:
+		pass
+	elif wordless and _toast_t > 0.0 and toast_text != "":
 		# icon or nothing: a toast's words are instructions / status text
 		if toast_token != Token.NONE:
 			var ta: float = clampf(_toast_t / 0.4, 0.0, 1.0)
@@ -675,6 +684,28 @@ func _draw_sight(c: Vector2, gap: float) -> void:
 			for e in [Vector2(-q.x, 0.0), Vector2(0.0, -q.y)]:
 				draw_line(corner + Vector2(1, 1), corner + e * arm + Vector2(1, 1), Color(sh, sh.a * k), 3.4 * u)
 				draw_line(corner, corner + e * arm, Color(LOCK_COLOR, k), 2.2 * u)
+
+
+## The telescopic sight: black all round a clean round lens, thin hairlines that stop short of the centre, a centre dot and range ticks below. No words or numbers. On a target it
+## turns red, the same expression as the aimed sight. Sized from the short side of the screen, so a phone in landscape gets the same lens.
+func _draw_scope(c: Vector2) -> void:
+	var lens: float = minf(size.x, size.y) * SCOPE_LENS
+	var u: float = clampf(minf(size.x, size.y) / 720.0, 0.55, 1.8)
+	var k: float = _lock_k * _lock_k * (3.0 - 2.0 * _lock_k)
+	var col: Color = Color(0.03, 0.03, 0.03).lerp(LOCK_COLOR, k)
+	var a: float = scope
+	var reach: float = size.length()
+	draw_arc(c, lens + reach * 0.5, 0.0, TAU, 96, Color(0, 0, 0, a), reach, true)
+	draw_arc(c, lens + 3.0 * u, 0.0, TAU, 96, Color(0.16, 0.13, 0.09, a), 6.0 * u, true)     # the brass-dark rim of the eyepiece
+	var line: float = maxf(1.0, 1.4 * u)
+	var gap: float = 12.0 * u
+	for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+		draw_line(c + d * gap, c + d * lens, Color(col, a), line, true)
+	draw_circle(c, 2.0 * u, Color(col, a))
+	for i in range(1, 4):
+		var at: Vector2 = c + Vector2(0.0, gap + (lens - gap) * 0.22 * float(i))
+		var half: float = (9.0 - float(i) * 1.5) * u
+		draw_line(at - Vector2(half, 0.0), at + Vector2(half, 0.0), Color(col, a), line, true)
 
 
 func _draw_heart(c: Vector2, r: float, full: bool) -> void:

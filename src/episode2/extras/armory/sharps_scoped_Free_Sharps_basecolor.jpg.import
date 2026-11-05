@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dygwoy6cig63w"
-path="res://.godot/imported/borchardt_c93_Image_0.jpg-23ce4e613a69ae3b33aa2395e167d675.ctex"
+uid="uid://do7tipq77jjkp"
+path="res://.godot/imported/sharps_scoped_Free_Sharps_basecolor.jpg-fb51fa67bc067416aa58ff966841bee3.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "54f3aec2f2612ce2d9a5ca423ef7e628"
+"md5": "a05f71e21848cf1fcafd3a72e4350dcb"
 }
 
 [deps]
 
-source_file="res://src/episode2/extras/armory/borchardt_c93_Image_0.jpg"
-dest_files=["res://.godot/imported/borchardt_c93_Image_0.jpg-23ce4e613a69ae3b33aa2395e167d675.ctex"]
+source_file="res://src/episode2/extras/armory/sharps_scoped_Free_Sharps_basecolor.jpg"
+dest_files=["res://.godot/imported/sharps_scoped_Free_Sharps_basecolor.jpg-fb51fa67bc067416aa58ff966841bee3.ctex"]
 
 [params]
 

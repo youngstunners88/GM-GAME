@@ -1007,7 +1007,7 @@ func _fps_camera(_delta: float) -> void:
 	if absf(roll) > 0.0001:
 		_camera.rotate_object_local(Vector3(0.0, 0.0, 1.0), roll)
 	var ads_k: float = ads * ads * (3.0 - 2.0 * ads)
-	_camera.fov = lerpf(FPS_FOV, FPS_ADS_FOV, ads_k)
+	_camera.fov = Ep2ArmoryState.aimed_fov(armory, ads_k, FPS_FOV, FPS_ADS_FOV)
 
 
 # --- per-frame story -------------------------------------------------------------------------------------------------
