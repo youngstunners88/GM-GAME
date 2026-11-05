@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-04 (later) - Your "Shipment and Bears" notes - IN CODE, gate-tested, real-renderer captures; on a branch and a PR, NOT founder-verified, not tried on a real phone.**
+**2026-11-05 - Your "Shipment and Bears" notes - LIVE on itch (build `2026-11-05-dff3acd`, confirmed from the public page); NOT founder-verified, not tried on a real phone.**
 
 | Your note | State | What it was |
 |---|---|---|
@@ -18,7 +18,7 @@
 | Skills | **Done** | `ep2-interior-visible-on-approach`, `ep2-npc-reality-awareness`, plus `ep2-runpod-gate-pod`. |
 
 - **Not done:** the bears in the woods and the runner's archers are unchanged (your stakes note was about this stage). Characters can now tell day from night, but nobody says anything different at night yet, because the game has no night yet.
-- **Tests:** see the PR. Captures: `docs/episode2-quality/shipment-bears-20261104/`. Your notes: `docs/founder-feedback/2026-11-04_shipment_and_bears.md`.
+- **Tests:** see PR #102. Captures: `docs/episode2-quality/shipment-bears-20261104/`. Your notes: `docs/founder-feedback/2026-11-04_shipment_and_bears.md`.
 
 **2026-11-04 — The day-88 river cover stage — IN CODE, gate-tested (27 checks + 835 regression), real-renderer captures; shipping, NOT founder-verified, not tried on a real phone.**
 - **The ridge:** out of Logan's Lake, [E] at his overlook climbs to the ridge (Logan stays at his lake; Rich and Utah are never there). Cross the **DAY 88** cairn, stand on the first overlook and look down at the launch pool: **the Shipment you bought goes into the water** and drifts downstream. A red pennant makes it easy to spot from the ridge.
