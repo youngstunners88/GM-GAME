@@ -1,5 +1,21 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-05 - Wildlife and creature combat - PUSHED, deploying; not yet confirmed live, not founder-verified, not tried on a real phone.**
+
+| What you asked for | State | What changed |
+|---|---|---|
+| Vultures | **Done** | They circle together in one thermal. One shot wounds a bird and it sags out of the circle; a second kills it (one Sharps round is enough) and it falls and lies on the ground. Birds at a carcass work the same way and are now the same model. |
+| Bison | **Motion improved, model kept** | Your bison model looked right up close, so no credits were spent on it. Each animal now has its own stride, rises and lands hard, lurches when hit, and ploughs on before it falls. Survivors run off instead of galloping on the spot. |
+| Stampede | **Done** | Still once per run, shoot or dodge. Nothing on screen warns you any more, except "TRAMPLED!" when you are hit. Standing still is safe: the herd crosses and the ride goes on. |
+| Stampede and bird sound | **Done** | Rumble, many hooves, rising as they near, a whoosh on a close pass, a heavy bison hit, light wings and cries. The music dips and always comes back. These sounds are generated, not recordings. |
+| Horses | **Done** | Every horse can be wounded and killed. A dead horse falls on its side and blocks nothing. If yours dies you are on foot, and Dude patches it up. Remounting at Logan's Lake still works. |
+| People | **Not changed** | Rich, Utah, Logan, Mike Dean and the townsfolk stay on their own systems. |
+
+- **Credits:** 0 Tripo, 0 Meshy.
+- **Details:** `design/ep2/wildlife/WILDLIFE_COMBAT.md`. Pictures: `docs/captures/wildlife-combat/`.
+
+---
+
 **2026-11-05 - Borchardt size and Sharps scope - PUSHED, deploying; not yet confirmed live, not founder-verified, not tried on a real phone.**
 
 | Your note | State | What it was |

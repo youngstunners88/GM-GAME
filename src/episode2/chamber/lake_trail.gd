@@ -1116,7 +1116,8 @@ func _tick_unhorse(delta: float) -> void:
 	if _horse != null:
 		var stumble: float = clampf(t / 0.8, 0.0, 1.0)
 		_horse.rotation.x = -0.13 * sin(stumble * PI)
-		_horse.rotation.z = -0.92 * stumble
+		_horse.rotation.z = LogansLakeChamber.DEAD_ROLL * stumble           # down flat, the same as a horse shot at the lake
+		_horse.position.y = LogansLakeChamber.DEAD_LYING_Y * stumble
 	if t >= UNHORSE_SECONDS:
 		_unhorse_active = false
 		_unhorse_roll = 0.0
@@ -1127,7 +1128,6 @@ func _tick_unhorse(delta: float) -> void:
 			var right := Vector3(-cos(_travel_yaw), 0.0, sin(_travel_yaw))
 			_horse.position += right * 1.25
 			_horse.rotation.x = 0.0
-			_horse.rotation.z = -1.12
 		if _hud != null:
 			_hud.objective = "On foot to Logan's Lake. Hold W to follow the trail." if TouchUi.keys_shown() else "On foot to Logan's Lake. Follow the trail."
 
