@@ -16,3 +16,4 @@ description: Make, change or place the GoldMine town's wanted posters (founder 2
 - Streamed (ADR-0005): images under `src/episode2/extras/town/posters/`; commit their `.import` with `git add -f` in pinned-4.3 format.
 - Engraving tone: equalise inside the figure, `dark ** 1.45 * 0.92` - darker reads as a black blob (first pass did).
 - Proof: `tools/ep2_shots/posters_privy_shot.tscn` (board from the drop-off and close, saloon/certificates porches, jail board).
+- **2026-11-05 supersedes the painted Jack Hammer bill:** the founder's OFFICIAL "Jackhammer Wanted" art is the only Jack Hammer face, and RH is reduced. Go through `ep2-jackhammer-wall-boss` (-> `ep2-official-wanted-rebalance`, `ep2-gatling-wanted-billboard`).
