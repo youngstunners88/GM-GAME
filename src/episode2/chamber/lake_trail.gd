@@ -117,6 +117,7 @@ var _bandits_down: int = 0
 var _first_ambush_said: bool = false
 ## THE BUFFALO STAMPEDE (Ep2Stampede, founder 2026-11-01 "Guns Buff" §5): once per save, between the first ambush and the chasing rider.
 const STAMPEDE_S := 165.0
+const STAMPEDE_MUSIC_DB := -8.0
 var _stampede: Ep2Stampede = null
 var _carrion: Ep2CarrionVultures = null
 var _vultures: Ep2TrailVultures = null
@@ -354,11 +355,6 @@ func _step_horse() -> void:
 	_horse = _horse_instance(_visuals)
 	_horse.name = "DudesHorse"
 	_horse_anim = _find_horse_anim(_horse)
-	var horse_health := Ep2CreatureHealth.new()
-	horse_health.name = "CreatureHealth"
-	horse_health.configure(HORSE_HP_MAX)
-	_horse.add_child(horse_health)
-	_sync_horse_health()
 	var leather: StandardMaterial3D = _plain(Color(0.16, 0.075, 0.035), 0.82)
 	_box(Vector3(0.72, 0.13, 0.76), Vector3(0.0, SADDLE_HEIGHT, -0.15), leather, _horse)
 	_box(Vector3(0.82, 0.07, 0.12), Vector3(0.0, SADDLE_HEIGHT + 0.11, -0.47), leather, _horse)
@@ -843,7 +839,6 @@ func _on_setup() -> void:
 	_health = HEALTH_MAX
 	_horse_hp = HORSE_HP_MAX - armory.horse_wounds   # a horse shot earlier is still shot (a saved run, a later ride)
 	_mounted = bool(handoff.get("horse", true)) and _horse_hp > 0   # Dude's horse (the town hands it over)
-	_sync_horse_health()
 	_ending = false
 	_trail_time = 0.0
 	_rng.seed = 1886
@@ -1050,21 +1045,23 @@ func _tick(delta: float) -> void:
 				_hud.objective = "Bandits! Watch for the rise, the Draw pose and the gun glint. Shoot or outrun them."
 		if not _ending:
 			_tick_bandits(delta)
-			_tick_stampede(delta)
 		if _route_s >= _route_total - 0.001 and not _ending:
 			_begin_shore()
 	if _ending:
 		_tick_shore(delta)
+	_tick_stampede(delta)                         # a herd under way never waits for the room's beats: unhorsed or at the shore, it runs on
 	_update_horse(delta)
 
 
 func _tick_stampede(delta: float) -> void:
 	if _stampede == null:
-		if GameManager.ep2_stampede_done or not _mounted or _route_s < STAMPEDE_S or _route_s > RIDER_START_S - 20.0:
+		if GameManager.ep2_stampede_done or not _mounted or _ending or _unhorse_active or _route_s < STAMPEDE_S or _route_s > RIDER_START_S - 20.0:
 			return
 		_begin_stampede()
-	if _stampede.active:
-		_stampede.step(delta, _player_pos)
+	_stampede.step(delta, _player_pos)
+	if _camera != null:
+		var shake: float = _stampede.ground_shake()
+		_camera.v_offset = sin(_trail_time * 41.0) * 0.016 * shake * shake     # the ground itself, felt through the saddle
 
 
 ## The herd aims at where he WILL be if he keeps riding as he is: holding his pace runs him into it, so he must rein back, push on
@@ -1084,10 +1081,12 @@ func _begin_stampede() -> void:
 		if _carrion != null:
 			_carrion.add_body(at, 1.7))
 	_stampede.finished.connect(func(_killed: int) -> void:
-		GameManager.ep2_stampede_done = true)
+		GameManager.ep2_stampede_done = true
+		AudioManager.duck_for_speech(0.6, STAMPEDE_MUSIC_DB))      # the herd is gone: bring the music back now, not on the clock
 	# No toast, no objective, no banner: the rumble and the dust wall are the only warning (founder: a surprise).
-	# The music steps back under the herd instead of cutting out, then comes back on its own.
-	AudioManager.duck_for_speech(Ep2Stampede.TELEGRAPH + 11.0, -8.0)
+	# The music steps back under the herd instead of cutting out. The duck carries its own timer, so even a herd that is torn down
+	# mid-charge (a failed attempt, leaving the room) can never leave the music muted.
+	AudioManager.duck_for_speech(Ep2Stampede.expected_seconds() + 2.0, STAMPEDE_MUSIC_DB)
 
 
 func _on_trampled() -> void:
@@ -1173,30 +1172,8 @@ func _on_player_shot() -> void:
 		return
 	var eye: Vector3 = _camera.global_position
 	var direction: Vector3 = -_camera.global_transform.basis.z
-	if _vultures != null:
-		var v_before: int = _vultures.alive_count()
-		var v_hit: float = _vultures.shoot(eye, direction)
-		if v_hit >= 0.0:
-			if _hud != null:
-				_hud.hit_marker(_vultures.alive_count() < v_before)
-			return
 	if _carrion != null:
-		var c_before: int = _carrion.alive_count()
-		var c_hit: float = _carrion.shoot(eye, direction)
-		if c_hit >= 0.0:
-			if _hud != null:
-				_hud.hit_marker(_carrion.alive_count() < c_before)
-			return
-		_carrion.notify_shot(eye, direction)
-	if _stampede != null and _stampede.active:
-		var before: int = _stampede.killed
-		var t_hit: float = _stampede.shoot(eye, direction, armory.equipped == Ep2ArmoryState.BUFF)
-		if t_hit >= 0.0:
-			if _hud != null:
-				_hud.hit_marker(_stampede.killed > before)
-			return
-	if _shoot_departure_horse(eye, direction) >= 0.0:
-		return
+		_carrion.notify_shot(eye, direction)     # the near miss: they lift off whatever the round goes on to hit
 	var best: int = -1
 	var best_t: float = 181.0
 	for i in _bandits.size():
@@ -1207,6 +1184,11 @@ func _on_player_shot() -> void:
 		if t >= 0.0 and t < best_t:
 			best_t = t
 			best = i
+	# One round, one target: whatever stands first on the line takes it, man or animal.
+	var creature: Dictionary = _creature_on_ray(eye, direction, true)
+	if not creature.is_empty() and float(creature["t"]) < best_t:
+		_hit_creature(creature, eye, direction)
+		return
 	if best >= 0:
 		_drop_bandit(best)
 		if _hud != null:
@@ -1216,17 +1198,8 @@ func _on_player_shot() -> void:
 
 
 func aim_on_target(eye: Vector3, dir: Vector3) -> bool:
-	if _vultures != null and _vultures.under_sight(eye, dir):
-		return true
-	if _carrion != null and _carrion.under_sight(eye, dir):
-		return true
-	if _stampede != null and _stampede.active and _stampede.under_sight(eye, dir):
-		return true
-	if _departure_yard != null:
-		for horse in _departure_yard.horses:
-			if is_instance_valid(horse) and horse.visible and _horse_ray_hit(horse, eye, dir) >= 0.0:
-				return true
-	if _horse != null and _horse.visible and _mounted and _horse_ray_hit(_horse, eye, dir) >= 0.0:
+	# His own horse is under every downward look from the saddle: it can be shot, but it is never what the sight is calling out.
+	if not _creature_on_ray(eye, dir, false).is_empty():
 		return true
 	for b in _bandits:
 		if (b["root"] as Node3D).visible and str(b["state"]) != "dead" and _bandit_ray_hit(b, eye, dir) >= 0.0:
@@ -1234,70 +1207,68 @@ func aim_on_target(eye: Vector3, dir: Vector3) -> bool:
 	return false
 
 
-## A shot at a horse the trail itself owns (Dude's mount and the yard horses behind the start). The player's own horse takes the
-## same three wounds as the trample path; a yard horse carries the shared `Ep2CreatureHealth` and falls where it stands.
-func _shoot_departure_horse(eye: Vector3, dir: Vector3) -> float:
-	var best: Node3D = null
-	var best_t: float = INF
-	if _horse != null and is_instance_valid(_horse) and _horse.visible and _mounted:
-		var t_own: float = _horse_ray_hit(_horse, eye, dir)
-		if t_own >= 0.0:
-			best_t = t_own
-			best = _horse
-	if _departure_yard != null:
-		for horse in _departure_yard.horses:
-			if not is_instance_valid(horse) or not horse.visible:
-				continue
-			var health := horse.get_node_or_null("CreatureHealth") as Ep2CreatureHealth
-			if health == null or not health.is_alive():
-				continue
-			var t: float = _horse_ray_hit(horse, eye, dir)
-			if t >= 0.0 and t < best_t:
-				best_t = t
-				best = horse
-	if best == null:
-		return -1.0
-	var point: Vector3 = eye + dir.normalized() * best_t
-	if best == _horse:
-		var before: int = _horse_hp
-		_hurt_horse()
-		if _hud != null:
-			_hud.hit_marker(_horse_hp < before)
-		return best_t
-	var horse_health := best.get_node_or_null("CreatureHealth") as Ep2CreatureHealth
-	var killed: bool = horse_health.take_hit(1, point)
-	_blood(point, dir, best)
+## The nearest animal on the ray: {"kind", "t", "node"}, or empty. Nothing is hurt here.
+func _creature_on_ray(eye: Vector3, dir: Vector3, own_mount: bool) -> Dictionary:
+	var best: Dictionary = {}
+	# filled in place: a GDScript lambda captures its locals by value, so assigning `best` in here would be lost
+	var offer := func(kind: String, t: float, node: Node3D) -> void:
+		if t >= 0.0 and (best.is_empty() or t < float(best["t"])):
+			best["kind"] = kind
+			best["t"] = t
+			best["node"] = node
+	if _vultures != null:
+		offer.call("vulture", _vultures.ray_distance(eye, dir), null)
+	if _carrion != null:
+		offer.call("carrion", _carrion.ray_distance(eye, dir), null)
+	if _stampede != null:
+		offer.call("bison", _stampede.ray_distance(eye, dir), null)
+	if own_mount and _mounted and not _unhorse_active and _horse != null and _horse.visible:
+		# the trail horse's root faces +Z, like every trail actor
+		offer.call("mount", _horse_ray(_horse, _horse.global_transform.basis.z, eye, dir), _horse)
+	if _in_departure_area and is_inside_tree():
+		for node in get_tree().get_nodes_in_group(Ep2CreatureHealth.HORSE_GROUP):
+			var horse: Node3D = node as Node3D
+			if _visuals.is_ancestor_of(horse) and horse.is_visible_in_tree():
+				var health := Ep2CreatureHealth.of(horse)
+				if health != null and health.is_alive():
+					offer.call("town_horse", _horse_ray(horse, horse.global_transform.basis.x, eye, dir), horse)
+	return best
+
+
+## The round lands on the animal `_creature_on_ray` found.
+func _hit_creature(hit: Dictionary, eye: Vector3, dir: Vector3) -> void:
+	var killed: bool = false
+	var buffalo_gun: bool = armory.equipped == Ep2ArmoryState.BUFF
+	match str(hit["kind"]):
+		"vulture":
+			var before: int = _vultures.alive_count()
+			_vultures.shoot(eye, dir, 2 if buffalo_gun else 1)
+			killed = _vultures.alive_count() < before
+		"carrion":
+			var before: int = _carrion.alive_count()
+			_carrion.shoot(eye, dir, 2 if buffalo_gun else 1)
+			killed = _carrion.alive_count() < before
+		"bison":
+			var before: int = _stampede.killed
+			_stampede.shoot(eye, dir, buffalo_gun)
+			killed = _stampede.killed > before
+		"mount":
+			_wound_mount()
+			killed = _horse_hp <= 0
+			_blood(eye + dir * float(hit["t"]), dir, _horse)
+		"town_horse":
+			var horse: Node3D = hit["node"]
+			var point: Vector3 = eye + dir * float(hit["t"])
+			killed = Ep2CreatureHealth.of(horse).take_hit(1, point)
+			_blood(point, dir, horse)
 	if _hud != null:
 		_hud.hit_marker(killed)
-	return best_t
 
 
-func _horse_ray_hit(horse: Node3D, eye: Vector3, direction: Vector3) -> float:
+func _horse_ray(horse: Node3D, long_axis: Vector3, eye: Vector3, dir: Vector3) -> float:
 	var centre: Vector3 = horse.global_position + Vector3(0.0, 1.05, 0.0)
-	var axis: Vector3 = horse.global_transform.basis.x.normalized()
-	var d: Vector3 = direction.normalized()
-	var a: Vector3 = centre - axis * 0.92
-	var b: Vector3 = centre + axis * 0.92
-	return _segment_ray_hit(eye, d, a, b, 0.61)
-
-
-func _segment_ray_hit(eye: Vector3, dir: Vector3, a: Vector3, b: Vector3, radius: float) -> float:
-	var best: float = INF
-	for i in 7:
-		var centre: Vector3 = a.lerp(b, float(i) / 6.0)
-		var oc: Vector3 = eye - centre
-		var bb: float = oc.dot(dir)
-		var c: float = oc.length_squared() - radius * radius
-		var disc: float = bb * bb - c
-		if disc < 0.0:
-			continue
-		var root: float = sqrt(disc)
-		var t: float = -bb - root
-		if t < 0.02:
-			t = -bb + root
-		if t >= 0.02:
-			best = minf(best, t)
-	return best if best < INF else -1.0
+	var axis: Vector3 = long_axis.normalized()
+	return WoodsQuadChamber._ray_capsule(eye, dir, centre - axis * 0.92, centre + axis * 0.92, 0.61)
 
 
 func _bandit_ray_hit(b: Dictionary, eye: Vector3, direction: Vector3) -> float:
@@ -1368,10 +1339,16 @@ func _hurt_player() -> void:
 func _hurt_horse() -> void:
 	if not _mounted or _horse_hp <= 0 or _invuln > 0.0 or _failing or _resolved or debug_invulnerable:
 		return
+	_invuln = 0.8
+	_wound_mount()
+
+
+## One wound to the horse under him, from any source. The third puts it down and leaves him on foot.
+func _wound_mount() -> void:
+	if not _mounted or _horse_hp <= 0:
+		return
 	_horse_hp = maxi(0, _horse_hp - 1)
 	armory.wound_horse()                             # it stays shot beyond this ride: the lake, the road back, the save
-	_sync_horse_health()
-	_invuln = 0.8
 	if _hud != null:
 		_hud.toast("HORSE WOUNDED - %d/3" % _horse_hp, 1.8)
 	if _horse_hp == 0:
@@ -1458,11 +1435,12 @@ func _retry_trail() -> void:
 	if _stampede != null and is_instance_valid(_stampede) and not _stampede.done:
 		_stampede.queue_free()            # a failed attempt meets the herd again; a passed herd never returns
 		_stampede = null
+	if _camera != null:
+		_camera.v_offset = 0.0
 	_rng.seed = 1886 + _attempt * 31
 	_spawn_bandits()
 	_health = HEALTH_MAX
 	_horse_hp = HORSE_HP_MAX
-	_sync_horse_health()
 	_mounted = true
 	_horse_left = false
 	_unhorse_active = false
@@ -1635,19 +1613,6 @@ func respawn_at_dude() -> void:
 ## The horse's three-wound state; zero has already produced the UNHORSE event.
 func get_horse_hp() -> int:
 	return _horse_hp
-
-
-## The trail horse carries the same `Ep2CreatureHealth` family as the vultures and the town horses. `_horse_hp` stays the room's
-## source of truth (the save travels through `armory.horse_wounds`); this only mirrors it so a shot ray can read one interface.
-func _sync_horse_health() -> void:
-	if _horse == null or not is_instance_valid(_horse):
-		return
-	var health := _horse.get_node_or_null("CreatureHealth") as Ep2CreatureHealth
-	if health == null:
-		return
-	health.max_hp = HORSE_HP_MAX
-	health.hp = _horse_hp
-	health.dead = _horse_hp <= 0
 
 
 ## Number of UNHORSE events in this room (retries do not erase the evidence).
@@ -1835,7 +1800,7 @@ func _blend_lake_light() -> void:
 	_sun.light_energy=lerpf(2.3,_lake_reference._sun.light_energy,blend)
 
 func _build_vultures() -> void:
-	var flock := preload("res://src/episode2/art/ep2_trail_vultures.gd").new() as Ep2TrailVultures
+	var flock := Ep2TrailVultures.new()
 	flock.name="CirclingVultures"
 	_visuals.add_child(flock)
 	flock.position = _route_sample(160.0)[0]

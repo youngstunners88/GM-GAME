@@ -168,13 +168,31 @@ func _refresh_horses() -> void:
 	if _visuals == null:
 		return
 	var seen: Dictionary = {}
+	# Every horse that can die is in the group, whatever it is called (Dude's yard has "StableHorse*" and "PaddockWalker").
+	if is_inside_tree():
+		for node in get_tree().get_nodes_in_group(Ep2CreatureHealth.HORSE_GROUP):
+			var horse: Node3D = node as Node3D
+			if _visuals.is_ancestor_of(horse):
+				seen[horse.get_instance_id()] = true
+				_horses.append(horse)
 	for node in _visuals.find_children("Horse*", "Node3D", true, false):
 		var horse: Node3D = node
+		if _inside_grouped_horse(horse):
+			continue                                 # the model's own "HorseRig": the horse is its parent, which holds the health
 		var parent_name: String = String(horse.get_parent().name) if horse.get_parent() != null else ""
 		if parent_name == "TownLife" or "Stable" in parent_name or "Paddock" in parent_name or "Horses" in parent_name:
 			if not seen.has(horse.get_instance_id()):
 				seen[horse.get_instance_id()] = true
 				_horses.append(horse)
+
+
+func _inside_grouped_horse(node: Node) -> bool:
+	var up: Node = node.get_parent()
+	while up != null and up != _visuals:
+		if up.is_in_group(Ep2CreatureHealth.HORSE_GROUP):
+			return true
+		up = up.get_parent()
+	return false
 
 
 ## Resolve one first-person round. In the live draw the opponent is deliberately
@@ -244,7 +262,8 @@ func trace(eye: Vector3, direction: Vector3, in_draw: bool = false) -> Dictionar
 	for horse in _horses:
 		if not is_instance_valid(horse) or not horse.visible:
 			continue
-		var centre: Vector3 = horse.global_position + Vector3(0.0, 1.05, 0.0)
+		# In the horse's own frame, so a body on its side is hit where it lies and the air it used to stand in is empty.
+		var centre: Vector3 = horse.global_transform * Vector3(0.0, 1.05, 0.0)
 		var axis: Vector3 = horse.global_transform.basis.x.normalized()
 		var t: float = _ray_capsule(eye, direction, centre - axis * 0.92, centre + axis * 0.92, 0.61)
 		if t < best_t:
@@ -343,7 +362,7 @@ func _wound_story(hit: Dictionary, direction: Vector3) -> void:
 
 func _hit_horse(hit: Dictionary, direction: Vector3) -> void:
 	var horse: Node3D = hit["node"]
-	var health := horse.get_node_or_null("CreatureHealth") as Ep2CreatureHealth
+	var health := Ep2CreatureHealth.of(horse)
 	if health != null and not health.is_alive():
 		_blood_spurt(hit["point"], direction, 0.38)             # a body already down: no second fine, no second death
 		_blood_stain(horse, hit["point"], -direction, 0.24)

@@ -83,7 +83,6 @@ const CONV_LINES: Dictionary = {
 
 var actors: Array[Ep2TownFolk] = []
 var horses: Array[Node3D] = []
-var _horse_health: Array = []
 var _dead_horses: Dictionary = {}
 var _brains: Array = []
 var _horse_anims: Array = []
@@ -484,18 +483,14 @@ func _build_horses(props: Array) -> void:
 		var phase: float = rng.randf_range(0.0, ap.get_animation(clip).length)
 		ap.seek(phase, true)
 		_horse_anims.append(ap)
-		var health := Ep2CreatureHealth.new()
-		health.name = "CreatureHealth"
-		health.configure(Ep2ArmoryState.HORSE_WOUNDS_MAX)
-		horse.add_child(health)
-		health.died.connect(_on_horse_died.bind(i))
-		_horse_health.append(health)
+		Ep2CreatureHealth.attach(horse, Ep2ArmoryState.HORSE_WOUNDS_MAX).died.connect(_on_horse_died.bind(i))
+		horse.add_to_group(Ep2CreatureHealth.HORSE_GROUP)
 		_solid(horse, 0.95, 1.8, props)
 
 
-## A yard horse took its third wound. It goes down where it stands and stops being a wall: its prop row is pulled out of the
-## town survey, so nothing invisible is left in its place. Dude gets off if it was the horse under him.
-func _on_horse_died(at: Vector3, index: int) -> void:
+## A yard horse took its third wound. It goes down where it stands and stops being a wall: its prop row leaves the town survey and
+## its collider is gone, so nothing invisible is left in its place. Dude gets off if it was the horse under him.
+func _on_horse_died(_at: Vector3, index: int) -> void:
 	if index < 0 or index >= horses.size():
 		return
 	var horse: Node3D = horses[index]
@@ -504,30 +499,28 @@ func _on_horse_died(at: Vector3, index: int) -> void:
 	_dead_horses[horse.get_instance_id()] = true
 	horse.set_meta("law_dead", true)
 	if index < _horse_anims.size():
-		var ap: AnimationPlayer = _horse_anims[index]
-		if ap != null:
-			ap.speed_scale = 0.0
-	horse.rotation = Vector3(0.0, horse.rotation.y, -1.38)
-	horse.position.y = 0.62
-	_remove_solid(horse)
-	if horse.get_node_or_null("HorseVoice") != null:
-		(horse.get_node("HorseVoice") as AudioStreamPlayer3D).stop()
+		(_horse_anims[index] as AnimationPlayer).speed_scale = 0.0
+	# Dude's seat is worked out from this same horse, so he comes off before it starts to go over.
 	if index == 0 and _ride_state in ["mount", "ride", "dismount"]:
-		_dismount_dead_horse(at)
-	if index == 5 and _drink_horse == 5:
-		_drink_horse = 4
+		_dismount_dead_horse(horse)
+	Ep2CreatureHealth.topple(horse, Ep2TownLife.DEAD_ROLL, 0.0, Ep2TownLife.DEAD_LYING_Y)
+	_remove_solid(horse)
+	if index == _drink_horse:
+		_drink_left = 0.0
+		_drink_next = _time + 22.0
 
 
 func _remove_solid(node: Node3D) -> void:
 	for entry in _solids.duplicate():
 		if entry[0] == node:
-			var row: Array = entry[1]
+			_ranch_props.erase(entry[1])
 			_solids.erase(entry)
-			if _ranch_props != null:
-				_ranch_props.erase(row)
+	var body: Node = node.get_node_or_null("YardBody")
+	if body != null:
+		body.queue_free()
 
 
-func _dismount_dead_horse(at: Vector3) -> void:
+func _dismount_dead_horse(horse: Node3D) -> void:
 	_ride_state = ""
 	_ride_next = _time + 30.0
 	_ride_mount_t = 0.0
@@ -536,7 +529,8 @@ func _dismount_dead_horse(at: Vector3) -> void:
 	var dude: Ep2TownFolk = actors[0]
 	dude.stop()
 	dude.hold_clip("idle")
-	dude.position = at + Vector3(1.8, 0.0, 1.1)
+	# Beside the fallen horse on the yard's own ground (the shot's hit point is world space and at body height).
+	dude.position = Vector3(horse.position.x + 1.8, 0.0, horse.position.z + 1.1)
 	dude.facing = 0.0
 	dude.rotation.y = 0.0
 

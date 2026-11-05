@@ -54,6 +54,9 @@ var _passby_start_x: float = 0.0
 var _passby_peak_x: float = 0.0
 var _train_x: float = TRAIN_FROM_X
 var _wait: float = 4.0
+const DEAD_ROLL := 1.46                   # on its side, one shoulder still a little off the ground
+const DEAD_LYING_Y := 0.40
+
 var _walker: Node3D
 var _walker_dir: float = 1.0
 var _t: float = 0.0
@@ -397,11 +400,8 @@ func _register_horse(horse: Node3D) -> void:
 
 
 func _attach_health(horse: Node3D, pool: int) -> void:
-	var health := Ep2CreatureHealth.new()
-	health.name = "CreatureHealth"
-	health.configure(pool)
-	horse.add_child(health)
-	health.died.connect(_on_horse_died.bind(horse))
+	Ep2CreatureHealth.attach(horse, pool).died.connect(_on_horse_died.bind(horse))
+	horse.add_to_group(Ep2CreatureHealth.HORSE_GROUP)
 
 
 ## A town horse took its third wound. It falls where it stands, its prop row leaves the town survey (no invisible barrier), and
@@ -417,11 +417,10 @@ func _on_horse_died(_at: Vector3, horse: Node3D) -> void:
 		if _props != null:
 			_props.erase(row)
 		_horse_rows.erase(id)
-	var ap: AnimationPlayer = horse.find_children("*", "AnimationPlayer", true, false).front() if not horse.find_children("*", "AnimationPlayer", true, false).is_empty() else null
-	if ap != null:
-		ap.stop()
-	horse.rotation = Vector3(0.0, horse.rotation.y, -1.42)
-	horse.position.y = 0.62
+	for ap in horse.find_children("*", "AnimationPlayer", true, false):
+		(ap as AnimationPlayer).pause()
+	# This model's head is +X, so its roll is the X axis (Z would stand it on its nose).
+	Ep2CreatureHealth.topple(horse, DEAD_ROLL, 0.0, DEAD_LYING_Y)
 	if _horse_voices.has(id):
 		var voice: AudioStreamPlayer3D = _horse_voices[id]
 		if is_instance_valid(voice):

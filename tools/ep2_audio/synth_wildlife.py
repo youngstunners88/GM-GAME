@@ -9,8 +9,8 @@ license-clean, deterministic (fixed seeds), regenerated with one command:
 
   vulture_wings.ogg       6.0 s seamless loop: air over a spread wing, a slow soft downbeat, no cartoon screech.
   vulture_cry.ogg         1.4 s one-shot: the turkey vulture's hiss/rasp, low and breathy.
-  stampede_rumble.ogg     8.0 s seamless loop: ground and chest, 30-70 Hz, slow breathing.
-  stampede_hooves.ogg     8.0 s seamless loop: many hooves at ~1.2 strikes each per second, near and far bodies.
+  stampede_rumble.ogg     8.0 s seamless loop: ground and chest, 30-70 Hz, with a growl above 100 Hz for small speakers.
+  stampede_hooves.ogg     8.0 s seamless loop: twelve animals in the four-beat gallop, near and far bodies.
   stampede_pass.ogg       4.2 s one-shot: the herd arrives, passes close, and thins out behind.
   bison_hit.ogg           0.8 s one-shot: a heavy, wet body hit, not a wooden knock.
 
@@ -128,6 +128,10 @@ def stampede_rumble() -> np.ndarray:
     out *= 0.55 + 0.10 * np.sin(2.0 * np.pi * t / 8.0)
     for f, gain in ((31.25, 0.32), (43.75, 0.22), (62.5, 0.12)):
         out += np.sin(2.0 * np.pi * f * t) * gain
+    # The growl above it: a phone or laptop speaker reproduces nothing under about 100 Hz, and the herd must still be felt there.
+    growl = _loop_bed(n, lambda m, r: _biquad_bp(_noise(m, r), 135.0, 0.8), 23)
+    growl /= np.max(np.abs(growl)) + 1e-9
+    out += growl * (0.34 + 0.10 * np.sin(2.0 * np.pi * t * 2.0 / 8.0))
     return out
 
 
@@ -135,19 +139,28 @@ def stampede_hooves() -> np.ndarray:
     n = int(8.0 * SR)
     rng = np.random.default_rng(1934)
     out = np.zeros(n)
-    # Twelve animals at a heavy gallop: about 1.15 strikes each per second, spread across the herd.
-    strikes = int(8.0 * 12.0 * 1.15)
-    for k in range(strikes):
-        at = (k / strikes) * 8.0 + rng.uniform(-0.012, 0.012)
-        ln = int(0.20 * SR)
-        tt = np.arange(ln) / SR
+    # A small bank of strikes, reused: the variety comes from who strikes when, and how near they are.
+    ln = int(0.20 * SR)
+    tt = np.arange(ln) / SR
+    bank = []
+    for _ in range(18):
         f0 = rng.uniform(52.0, 84.0)
         thump = np.sin(2 * np.pi * f0 * tt * (1.0 - 0.55 * tt)) * np.exp(-tt / 0.035)
         click = _biquad_bp(_noise(ln, rng), rng.uniform(900.0, 1900.0), 1.8) * np.exp(-tt / 0.012)
         body = np.sin(2 * np.pi * rng.uniform(115.0, 165.0) * tt) * np.exp(-tt / 0.055) * 0.30
-        grain = thump * 1.0 + click * 0.45 + body
-        near = 0.55 + 0.45 * rng.random()
-        _place(out, grain, at, near * 0.75)
+        bank.append(thump * 1.0 + click * 0.45 + body)
+    # Twelve animals at a heavy gallop. Each keeps its own whole number of strides in the loop (so the seam is exact) and strikes in the
+    # gallop's four-beat cluster: evenly spaced hits would read as one machine-gun roll, not a herd.
+    for _animal in range(12):
+        strides = int(rng.integers(13, 17))
+        period = 8.0 / strides
+        start = rng.uniform(0.0, period)
+        near = 0.45 + 0.55 * rng.random()
+        for s_i in range(strides):
+            for beat, offset in enumerate((0.0, 0.11, 0.34, 0.46)):
+                at = start + s_i * period + offset * period + rng.uniform(-0.006, 0.006)
+                gain = near * (1.0 if beat in (0, 2) else 0.72) * rng.uniform(0.85, 1.1)
+                _place(out, bank[int(rng.integers(0, len(bank)))], at, gain * 0.6)
     # A low bed of the herd itself.
     bed = _loop_bed(n, lambda m, r: _onepole_lp(_noise(m, r), 90.0), 19)
     bed /= np.max(np.abs(bed)) + 1e-9
@@ -207,9 +220,7 @@ def _measure(path: Path) -> tuple[float, float]:
         line = line.strip()
         if line.startswith("I:"):
             lufs = float(line.split()[1])
-        elif line.startswith("Peak:"):
-            peak = float(line.split()[1])
-        elif line.startswith("True peak:") and len(line.split()) > 1:
+        elif line.startswith("Peak:"):      # ebur128's summary: a "True peak:" header, then this line with the value
             peak = float(line.split()[1])
     return lufs, peak
 

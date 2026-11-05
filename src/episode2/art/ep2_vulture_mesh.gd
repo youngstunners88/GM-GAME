@@ -3,155 +3,192 @@ extends RefCounted
 ## The trail's turkey vulture, built from real bird proportions instead of a cross of flat triangles: a long body, a small bare red
 ## head on a short neck, a fan tail, and two shoulder pivots carrying long fingered wings (about 2.5 m tip to tip at scale 1).
 ##
-## The vulture in `ep2_carrion_vultures.gd` and this one now come from the same silhouette. The caller owns motion: `flap()` turns
-## the wing pivots, `fold()` lays them along the body for a fall or a landing, and the returned node keeps named pivots
-## ("WingL", "WingR", "Neck") for the owner to pose.
+## The soaring flock and the birds at the carcasses share this one silhouette. The caller owns motion: `flap()` turns the wing
+## pivots, `fold()` lays them along the body for a landing or a fall, `slump()` drops them for a corpse, `spread()` restores them,
+## and the returned node keeps named pivots ("WingL", "WingR", "Neck") for the owner to pose. Meshes and materials are shared
+## between birds: only the transforms differ.
 
 const FEATHER_COLOR := Color(0.085, 0.070, 0.058)
 const FLIGHT_COLOR := Color(0.17, 0.155, 0.135)
 const SKIN_COLOR := Color(0.34, 0.115, 0.080)
+const GLIDE_DIHEDRAL := 0.24              # the shallow V a turkey vulture soars in
+const STANDING_HEIGHT := 0.17             # root height (at scale 1) that puts the feet on the ground
 
-static func feather_material() -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = FEATHER_COLOR
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED
-	m.roughness = 0.92
+static var _feather: StandardMaterial3D = null
+static var _flight: StandardMaterial3D = null
+static var _skin: StandardMaterial3D = null
+static var _body_mesh: SphereMesh = null
+static var _head_mesh: SphereMesh = null
+static var _beak_mesh: CylinderMesh = null
+static var _leg_mesh: CylinderMesh = null
+static var _wing: ArrayMesh = null
+static var _primaries: ArrayMesh = null
+static var _tail: ArrayMesh = null
+static var _puff_mesh: QuadMesh = null
+
+
+static func _ensure_shared() -> void:
+	if _feather != null:
+		return
+	_feather = StandardMaterial3D.new()
+	_feather.albedo_color = FEATHER_COLOR
+	_feather.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_feather.roughness = 0.92
+	_flight = StandardMaterial3D.new()
+	_flight.albedo_color = FLIGHT_COLOR
+	_flight.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_flight.roughness = 0.95
+	_skin = StandardMaterial3D.new()
+	_skin.albedo_color = SKIN_COLOR
+	_skin.roughness = 0.80
+	_body_mesh = SphereMesh.new()
+	_body_mesh.radius = 0.115
+	_body_mesh.height = 0.62
+	_body_mesh.radial_segments = 12
+	_body_mesh.rings = 7
+	_head_mesh = SphereMesh.new()
+	_head_mesh.radius = 0.062
+	_head_mesh.height = 0.16
+	_head_mesh.radial_segments = 8
+	_head_mesh.rings = 5
+	_beak_mesh = CylinderMesh.new()
+	_beak_mesh.top_radius = 0.0
+	_beak_mesh.bottom_radius = 0.030
+	_beak_mesh.height = 0.13
+	_beak_mesh.radial_segments = 7
+	_leg_mesh = CylinderMesh.new()
+	_leg_mesh.top_radius = 0.012
+	_leg_mesh.bottom_radius = 0.010
+	_leg_mesh.height = 0.17
+	_leg_mesh.radial_segments = 5
+	_wing = wing_mesh()
+	_primaries = primaries_mesh()
+	_tail = tail_mesh()
+
+
+static func _part(mesh: Mesh, material: Material, parent: Node3D, label: String = "") -> MeshInstance3D:
+	var m := MeshInstance3D.new()
+	if label != "":
+		m.name = label
+	m.mesh = mesh
+	m.material_override = material
+	parent.add_child(m)
 	return m
 
 
-static func flight_material() -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = FLIGHT_COLOR
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED
-	m.roughness = 0.95
-	return m
-
-
-static func skin_material() -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = SKIN_COLOR
-	m.roughness = 0.80
-	return m
-
-
-## Build one vulture. `scale` is the whole bird; 1.0 gives a ~2.5 m wingspan.
-static func build(scale: float = 1.0) -> Node3D:
-	var feather := feather_material()
-	var flight := flight_material()
-	var skin := skin_material()
+## Build one vulture. `size` is the whole bird; 1.0 gives a ~2.5 m wingspan.
+static func build(size: float = 1.0) -> Node3D:
+	_ensure_shared()
 	var root := Node3D.new()
 	root.name = "Vulture"
-	root.scale = Vector3.ONE * scale
+	root.scale = Vector3.ONE * size
 
 	# Body: a long ellipsoid, nose toward -Z.
-	var body := MeshInstance3D.new()
-	body.name = "Body"
-	var ball := SphereMesh.new()
-	ball.radius = 0.115
-	ball.height = 0.62
-	ball.radial_segments = 12
-	ball.rings = 7
-	body.mesh = ball
+	var body := _part(_body_mesh, _feather, root, "Body")
 	body.rotation.x = PI * 0.5 - 0.16
 	body.position = Vector3(0.0, 0.02, 0.0)
-	body.material_override = feather
-	root.add_child(body)
 
 	# A short bare neck and the small red head, held a little forward.
 	var neck := Node3D.new()
 	neck.name = "Neck"
 	neck.position = Vector3(0.0, 0.06, -0.25)
 	root.add_child(neck)
-	var head := MeshInstance3D.new()
-	head.name = "Head"
-	var h := SphereMesh.new()
-	h.radius = 0.062
-	h.height = 0.16
-	h.radial_segments = 8
-	h.rings = 5
-	head.mesh = h
-	head.position = Vector3(0.0, 0.0, -0.10)
-	head.material_override = skin
-	neck.add_child(head)
-	var beak := MeshInstance3D.new()
-	beak.name = "Beak"
-	var cone := CylinderMesh.new()
-	cone.top_radius = 0.0
-	cone.bottom_radius = 0.030
-	cone.height = 0.13
-	cone.radial_segments = 7
-	beak.mesh = cone
+	_part(_head_mesh, _skin, neck, "Head").position = Vector3(0.0, 0.0, -0.10)
+	var beak := _part(_beak_mesh, _skin, neck, "Beak")
 	beak.position = Vector3(0.0, -0.012, -0.21)
 	beak.rotation.x = -PI * 0.5
-	beak.material_override = skin
-	neck.add_child(beak)
 
 	# Fan tail, spread enough to read from below.
-	var tail := MeshInstance3D.new()
-	tail.name = "Tail"
-	tail.mesh = tail_mesh()
-	tail.position = Vector3(0.0, 0.0, 0.27)
-	tail.material_override = feather
-	root.add_child(tail)
+	_part(_tail, _feather, root, "Tail").position = Vector3(0.0, 0.0, 0.27)
 
 	for i in 2:
 		var side: float = -1.0 if i == 0 else 1.0
 		var pivot := Node3D.new()
 		pivot.name = "WingL" if i == 0 else "WingR"
 		pivot.position = Vector3(side * 0.075, 0.055, -0.03)
-		pivot.rotation.z = -side * 0.05
 		root.add_child(pivot)
-		var wing := MeshInstance3D.new()
-		wing.name = "Wing"
-		wing.mesh = wing_mesh()
-		wing.scale = Vector3(side, 1.0, 1.0)
-		wing.material_override = feather
-		pivot.add_child(wing)
+		_part(_wing, _feather, pivot, "Wing").scale = Vector3(side, 1.0, 1.0)
 		# The pale trailing primaries are the part that catches the light when he banks.
-		var tips := MeshInstance3D.new()
-		tips.name = "Primaries"
-		tips.mesh = primaries_mesh()
-		tips.scale = Vector3(side, 1.0, 1.0)
-		tips.material_override = flight
-		pivot.add_child(tips)
-		var leg := MeshInstance3D.new()
-		var stick := CylinderMesh.new()
-		stick.top_radius = 0.012
-		stick.bottom_radius = 0.010
-		stick.height = 0.17
-		stick.radial_segments = 5
-		leg.mesh = stick
-		leg.material_override = skin
+		_part(_primaries, _flight, pivot, "Primaries").scale = Vector3(side, 1.0, 1.0)
+		var leg := _part(_leg_mesh, _skin, root)
 		leg.position = Vector3(side * 0.045, -0.075, 0.10)
 		leg.rotation.x = 0.5
-		root.add_child(leg)
+	flap(root, 0.0, 0.0)
 	return root
 
 
-## A slow soaring flap. `amount` 0 = wings locked in the glide, 1 = a full downbeat.
-static func flap(node: Node3D, phase: float, amount: float, bank: float = 0.0) -> void:
+## A slow soaring flap. `amount` 0 = wings locked in the glide's shallow V, 1 = a full downbeat.
+static func flap(node: Node3D, phase: float, amount: float) -> void:
 	var left := node.get_node_or_null("WingL") as Node3D
 	var right := node.get_node_or_null("WingR") as Node3D
 	if left == null or right == null:
 		return
-	var beat: float = sin(phase) * 0.52 * amount
-	var dihedral: float = 0.10 + 0.16 * (1.0 - amount)
-	left.rotation.z = dihedral + beat
-	right.rotation.z = -dihedral - beat
-	left.rotation.x = -0.04 * amount + bank * 0.10
-	right.rotation.x = -0.04 * amount + bank * 0.10
+	# The left wing's tip is at -X, so a positive Z turn drops it: a raised tip is the negative turn on the left.
+	var lift: float = GLIDE_DIHEDRAL * (1.0 - amount * 0.6) + sin(phase) * 0.52 * amount
+	left.rotation = Vector3(0.0, 0.0, -lift)
+	right.rotation = Vector3(0.0, 0.0, lift)
 
 
-## Wings laid back along the body: a fall, a landing, or a corpse.
+## Open wings again after `fold()` or `slump()`.
+static func spread(node: Node3D) -> void:
+	for pivot in [node.get_node_or_null("WingL"), node.get_node_or_null("WingR")]:
+		if pivot != null:
+			(pivot as Node3D).scale = Vector3.ONE
+	flap(node, 0.0, 0.0)
+
+
+## Wings laid back along the body: a landing or a fall.
 static func fold(node: Node3D) -> void:
+	_pose_wings(node, 1.22, -0.14, Vector3(0.52, 1.0, 0.72))
+
+
+## A corpse: the wings have dropped half open and lie slack.
+static func slump(node: Node3D) -> void:
+	_pose_wings(node, 0.34, 0.11, Vector3(0.82, 1.0, 1.0))
+
+
+static func _pose_wings(node: Node3D, sweep_back: float, droop_z: float, wing_scale: Vector3) -> void:
 	var left := node.get_node_or_null("WingL") as Node3D
 	var right := node.get_node_or_null("WingR") as Node3D
 	if left == null or right == null:
 		return
-	left.rotation = Vector3(0.0, -0.18, 0.10)
-	right.rotation = Vector3(0.0, 0.18, -0.10)
-	left.scale = Vector3(0.56, 1.0, 1.0)
-	right.scale = Vector3(0.56, 1.0, 1.0)
+	left.rotation = Vector3(0.0, sweep_back, droop_z)
+	right.rotation = Vector3(0.0, -sweep_back, -droop_z)
+	left.scale = wing_scale
+	right.scale = wing_scale
+
+
+## A burst of dark loose feathers where a round struck. It frees itself.
+static func feather_puff(parent: Node3D, at: Vector3, amount: int = 14) -> void:
+	_ensure_shared()
+	if _puff_mesh == null:
+		var flake := StandardMaterial3D.new()
+		flake.albedo_color = FLIGHT_COLOR
+		flake.cull_mode = BaseMaterial3D.CULL_DISABLED
+		flake.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+		_puff_mesh = QuadMesh.new()
+		_puff_mesh.size = Vector2(0.09, 0.17)
+		_puff_mesh.material = flake
+	var p := CPUParticles3D.new()
+	p.name = "Feathers"
+	p.mesh = _puff_mesh
+	p.amount = amount
+	p.one_shot = true
+	p.explosiveness = 0.95
+	p.lifetime = 2.2
+	p.direction = Vector3.UP
+	p.spread = 180.0
+	p.initial_velocity_min = 0.8
+	p.initial_velocity_max = 3.0
+	p.gravity = Vector3(0.0, -1.5, 0.0)
+	p.damping_min = 1.2
+	p.damping_max = 2.2
+	p.angular_velocity_min = -220.0
+	p.angular_velocity_max = 220.0
+	parent.add_child(p)
+	p.global_position = at
+	p.emitting = true
+	p.create_tween().tween_callback(p.queue_free).set_delay(2.6)
 
 
 static func wing_mesh() -> ArrayMesh:

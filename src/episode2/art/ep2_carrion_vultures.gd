@@ -22,15 +22,16 @@ const DESCEND_S := 9.0
 const FLEE_S := 7.0
 const DESCEND_FROM := 28.0                # height the spiral starts at (the flock's own thermal)
 const BIRD_SCALE := 1.25
+const HP := 2                             # a wing hit is survivable; a second brings it down
 const HIT_RADIUS := 0.62
-const DOWN_SECONDS := 5.5
+const DOWN_SECONDS := 14.0
+const CRY := "res://src/episode2/extras/audio/trail/vulture_cry.ogg"
+const CRY_FALLBACK := "res://src/assets/sounds/ep2_bird_call_1.mp3"
 
 var bodies: Array = []                    # [{pos, radius, wait, birds}]
-var birds: Array = []                     # [{node, wings, neck, body, health, state, t, phase, spot, from, wounded, down_t}]
+var birds: Array = []                     # [{node, model, neck, body, health, state, t, phase, spot, centre, from, wounded, down_t}]
 var _rng := RandomNumberGenerator.new()
-var _feather: StandardMaterial3D = null
-var _skin: StandardMaterial3D = null
-var _wing: ArrayMesh = null
+var _cry: AudioStreamPlayer3D = null
 
 
 func _init() -> void:
@@ -89,50 +90,72 @@ func notify_shot(eye: Vector3, dir: Vector3) -> void:
 			_scare(int(b["body"]))
 
 
-## The actual shot ray. Returns the hit distance, or -1. A wounded bird labours away; a killed bird drops where it was hit.
-func shoot(eye: Vector3, dir: Vector3) -> float:
-	var d: Vector3 = dir.normalized()
-	var best: int = -1
-	var best_t: float = INF
-	for i in birds.size():
-		var b: Dictionary = birds[i]
-		if str(b["state"]) == "down":
-			continue
-		var at: Vector3 = (b["node"] as Node3D).global_position + Vector3(0.0, 0.30, 0.0)
-		var t: float = _ray_sphere(eye, d, at, HIT_RADIUS)
-		if t >= 0.0 and t < best_t:
-			best_t = t
-			best = i
+## Distance along the ray to the nearest bird that can still be hit, or -1. Hits nothing.
+func ray_distance(eye: Vector3, dir: Vector3) -> float:
+	return _nearest(eye, dir.normalized())[1]
+
+
+## The actual shot ray. `damage` is the round's weight (a buffalo gun kills outright). Returns the hit distance, or -1. A wounded bird
+## labours away; a killed bird drops where it was hit, and the others at that body lift off.
+func shoot(eye: Vector3, dir: Vector3, damage: int = 1) -> float:
+	var near: Array = _nearest(eye, dir.normalized())
+	var best: int = near[0]
 	if best < 0:
 		return -1.0
 	var b: Dictionary = birds[best]
-	var at2: Vector3 = (b["node"] as Node3D).global_position
+	var at: Vector3 = (b["node"] as Node3D).global_position
 	var health: Ep2CreatureHealth = b["health"]
-	var killed: bool = health.take_hit(1, at2)
-	if killed:
+	Ep2VultureMesh.feather_puff(self, at + Vector3(0.0, 0.3, 0.0), 22 if health.hp <= damage else 12)
+	if health.take_hit(damage, at):
 		b["state"] = "down"
 		b["down_t"] = 0.0
-		b["from"] = (b["node"] as Node3D).position
-		_fold(b)
-		bird_hit.emit(at2, true)
-		bird_down.emit(at2)
+		Ep2VultureMesh.fold(b["model"])
+		bodies[int(b["body"])]["birds"] = maxi(0, int(bodies[int(b["body"])]["birds"]) - 1)
+		_scare(int(b["body"]))
+		bird_hit.emit(at, true)
+		bird_down.emit(at)
 	else:
 		b["wounded"] = true
 		_scare(int(b["body"]))
-		bird_hit.emit(at2, false)
-	return best_t
+		_call_from(at)
+		bird_hit.emit(at, false)
+	return near[1]
 
 
 ## True when a bird is under the ray (the HUD sight turns red).
 func under_sight(eye: Vector3, dir: Vector3) -> bool:
-	var d: Vector3 = dir.normalized()
-	for b in birds:
-		if str(b["state"]) == "down":
+	return ray_distance(eye, dir) >= 0.0
+
+
+## [index, distance] of the nearest bird on the ray that is not already down.
+func _nearest(eye: Vector3, d: Vector3) -> Array:
+	var best: int = -1
+	var best_t: float = -1.0
+	for i in birds.size():
+		if str(birds[i]["state"]) == "down":
 			continue
-		var at: Vector3 = (b["node"] as Node3D).global_position + Vector3(0.0, 0.30, 0.0)
-		if _ray_sphere(eye, d, at, HIT_RADIUS) >= 0.0:
-			return true
-	return false
+		var at: Vector3 = (birds[i]["node"] as Node3D).global_position + Vector3(0.0, 0.30, 0.0)
+		var t: float = _ray_sphere(eye, d, at, HIT_RADIUS)
+		if t >= 0.0 and (best < 0 or t < best_t):
+			best_t = t
+			best = i
+	return [best, best_t]
+
+
+func _call_from(at: Vector3) -> void:
+	if _cry == null:
+		_cry = AudioStreamPlayer3D.new()
+		_cry.name = "VultureCry"
+		_cry.bus = "SFX"
+		_cry.unit_size = 22.0
+		_cry.max_distance = 150.0
+		_cry.volume_db = -14.0
+		add_child(_cry)
+		var path: String = CRY if ResourceLoader.exists(CRY) else CRY_FALLBACK
+		_cry.stream = load(path) as AudioStream if ResourceLoader.exists(path) else null
+	if _cry.stream != null:
+		_cry.global_position = at
+		_cry.play()
 
 
 func step(delta: float, player: Vector3) -> void:
@@ -185,13 +208,9 @@ func _send_bird(index: int) -> void:
 	var spot: Vector3 = (body["pos"] as Vector3) + Vector3(cos(a), 0.0, sin(a)) * float(body["radius"])
 	var node: Node3D = _make_bird()
 	add_child(node)
-	var health := Ep2CreatureHealth.new()
-	health.name = "CreatureHealth"
-	health.configure(2)                # a wing hit is survivable; a second brings it down
-	node.add_child(health)
-	var b: Dictionary = {"node": node, "wings": [node.get_node("WingL"), node.get_node("WingR")], "neck": node.get_node("Neck"), "body": index,
-		"health": health, "state": "descend", "t": 0.0, "phase": _rng.randf_range(0.0, TAU), "spot": spot, "centre": body["pos"],
-		"from": spot, "wounded": false, "down_t": 0.0}
+	var b: Dictionary = {"node": node, "model": node.get_node("Model"), "neck": node.get_node("Model/Neck"), "body": index,
+		"health": Ep2CreatureHealth.attach(node, HP), "state": "descend", "t": 0.0, "phase": _rng.randf_range(0.0, TAU), "spot": spot,
+		"centre": body["pos"], "from": spot, "wounded": false, "down_t": 0.0}
 	birds.append(b)
 	body["birds"] = int(body["birds"]) + 1
 	_set_wings(b, true)
@@ -239,34 +258,24 @@ func _fly_off(b: Dictionary) -> bool:
 	return k >= 1.0
 
 
-## A killed bird: wings folded, gravity takes it to the ground, then it lies there for DOWN_SECONDS.
+## A killed bird: wings folded, gravity takes it to the ground beside the body it came for, then it lies there for DOWN_SECONDS.
 func _fall_dead(b: Dictionary, delta: float) -> bool:
 	var node: Node3D = b["node"]
 	var dt: float = float(b["down_t"]) + delta
 	b["down_t"] = dt
-	var from: Vector3 = b["from"] as Vector3
 	if not bool(b.get("settled", false)):
+		var ground: float = (b["spot"] as Vector3).y
 		var vy: float = float(b.get("vy", 0.0)) - 9.4 * delta
 		b["vy"] = vy
-		node.position.y = maxf(0.12, float(node.position.y) + vy * delta)
+		node.position.y = maxf(ground, node.position.y + vy * delta)
 		node.rotation.x += delta * 2.2
 		node.rotation.z += delta * 1.5
-		if float(node.position.y) <= 0.13:
+		if node.position.y <= ground:
 			b["settled"] = true
-			node.position.y = 0.12
-			node.rotation = Vector3(-0.12, node.rotation.y, 1.35)
-	else:
-		node.position = from.lerp(Vector3(from.x, 0.12, from.z), 1.0)
-	return dt >= DOWN_SECONDS
-
-
-func _fold(b: Dictionary) -> void:
-	var wings: Array = b["wings"]
-	for i in 2:
-		var w: Node3D = wings[i]
-		var side: float = -1.0 if i == 0 else 1.0
-		w.rotation = Vector3(0.0, side * -1.25, side * -0.2)
-		w.scale = Vector3.ONE * 0.48
+			node.rotation = Vector3(-0.08, node.rotation.y, 0.26)
+			Ep2VultureMesh.slump(b["model"])
+			b["down_t"] = 0.0
+	return bool(b.get("settled", false)) and dt >= DOWN_SECONDS
 
 
 func _ray_sphere(eye: Vector3, dir: Vector3, centre: Vector3, radius: float) -> float:
@@ -284,92 +293,23 @@ func _ray_sphere(eye: Vector3, dir: Vector3, centre: Vector3, radius: float) -> 
 
 
 func _flap(b: Dictionary, amount: float) -> void:
-	var f: float = sin(float(b["t"]) * 7.0 + float(b["phase"])) * 0.32 * amount
-	var wings: Array = b["wings"]
-	(wings[0] as Node3D).rotation.z = f
-	(wings[1] as Node3D).rotation.z = -f
+	Ep2VultureMesh.flap(b["model"], float(b["t"]) * 7.0 + float(b["phase"]), amount * 0.62)
 
 
 ## Spread for the air, folded back along the body on the ground.
 func _set_wings(b: Dictionary, open: bool) -> void:
-	var wings: Array = b["wings"]
-	for i in 2:
-		var w: Node3D = wings[i]
-		var side: float = -1.0 if i == 0 else 1.0
-		w.rotation = Vector3.ZERO if open else Vector3(0.1, side * -1.35, side * -0.3)
-		w.scale = Vector3.ONE if open else Vector3.ONE * 0.5
-		w.position = Vector3(0.0, 0.34 if open else 0.38, 0.0)
+	if open:
+		Ep2VultureMesh.spread(b["model"])
+	else:
+		Ep2VultureMesh.fold(b["model"])
 
 
+## The trail's one vulture (`Ep2VultureMesh`), standing on the root so `position` is the ground under its feet.
 func _make_bird() -> Node3D:
-	if _feather == null:
-		_feather = StandardMaterial3D.new()
-		_feather.albedo_color = Color(0.09, 0.075, 0.06)
-		_feather.cull_mode = BaseMaterial3D.CULL_DISABLED
-		_skin = StandardMaterial3D.new()
-		_skin.albedo_color = Color(0.32, 0.11, 0.08)
-		_wing = _wing_mesh()
 	var root := Node3D.new()
 	root.name = "Vulture"
-	root.scale = Vector3.ONE * BIRD_SCALE
-	var body := MeshInstance3D.new()
-	var ball := SphereMesh.new()
-	ball.radius = 0.13
-	ball.height = 0.56
-	ball.radial_segments = 10
-	ball.rings = 5
-	body.mesh = ball
-	body.rotation.x = PI * 0.5 - 0.25
-	body.position.y = 0.34
-	body.material_override = _feather
-	root.add_child(body)
-	for i in 2:
-		var side: float = -1.0 if i == 0 else 1.0
-		var w := MeshInstance3D.new()
-		w.name = "WingL" if i == 0 else "WingR"
-		w.mesh = _wing
-		w.material_override = _feather
-		w.scale = Vector3(side, 1.0, 1.0)
-		root.add_child(w)
-		var leg := MeshInstance3D.new()
-		var stick := CylinderMesh.new()
-		stick.top_radius = 0.014
-		stick.bottom_radius = 0.012
-		stick.height = 0.24
-		stick.radial_segments = 5
-		leg.mesh = stick
-		leg.material_override = _skin
-		leg.position = Vector3(side * 0.06, 0.12, 0.02)
-		root.add_child(leg)
-	var neck := Node3D.new()
-	neck.name = "Neck"
-	neck.position = Vector3(0.0, 0.42, -0.2)
-	root.add_child(neck)
-	var head := MeshInstance3D.new()
-	var h := SphereMesh.new()
-	h.radius = 0.06
-	h.height = 0.15
-	h.radial_segments = 8
-	h.rings = 4
-	head.mesh = h
-	head.position = Vector3(0.0, -0.02, -0.14)
-	head.material_override = _skin
-	neck.add_child(head)
+	var model := Ep2VultureMesh.build(BIRD_SCALE)
+	model.name = "Model"
+	model.position.y = Ep2VultureMesh.STANDING_HEIGHT * BIRD_SCALE
+	root.add_child(model)
 	return root
-
-
-## One long fingered wing, shoulder at the origin, spread along +X.
-static func _wing_mesh() -> ArrayMesh:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var tris: Array = [
-		[Vector3(0, 0, -0.2), Vector3(1.0, 0.06, 0.08), Vector3(0.6, 0, 0.36)],
-		[Vector3(0, 0, -0.2), Vector3(0.6, 0, 0.36), Vector3(0, 0, 0.28)],
-	]
-	for j in 5:
-		tris.append([Vector3(0.75, 0, 0.12 + j * 0.045), Vector3(1.18 - j * 0.05, 0, 0.26 + j * 0.08), Vector3(0.66, 0, 0.17 + j * 0.045)])
-	for tri in tris:
-		for v in tri:
-			st.set_normal(Vector3.UP)
-			st.add_vertex(v)
-	return st.commit()
