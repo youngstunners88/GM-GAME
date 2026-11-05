@@ -219,6 +219,12 @@ func _begin() -> void:
 			var progress: float = clampf(room._route_s / maxf(1.0,room._route_total),0,.9999)*4.0
 			var index: int = int(progress)
 			return stops[index].lerp(stops[index+1],progress-index)/Vector2(1600,1000)
+		if room is RiverCoverChamber:
+			# down the high ridge from the lake's south shore, the river on his left, to the Day-88 dock
+			var ridge: Array[Vector2] = [Vector2(1130,488),Vector2(1130,540),Vector2(1175,600),Vector2(1155,665),Vector2(1225,735),Vector2(1240,825)]
+			var along: float = clampf(room.ridge_progress(),0,.9999)*(ridge.size()-1)
+			var at: int = int(along)
+			return ridge[at].lerp(ridge[at+1],along-at)/Vector2(1600,1000)
 		if room is GoldTownChamber:
 			var pos: Vector3 = room.get_player_position()
 			if pos.z < 1300: return Vector2(.23,.42)

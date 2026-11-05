@@ -26,7 +26,7 @@ func _ready() -> void:
 	c.bind_armory(st)
 	c.setup(0, [], 0)
 	run(0.3)
-	await shot("01_marker", c.ridge_nearest(RiverCoverChamber.MARKER + Vector3(0, 0, -9))[0], RiverCoverChamber.MARKER + Vector3(2.2, 1.8, 0))
+	await shot("01_marker", c.ridge_nearest(RiverCoverChamber.MARKER + Vector3(0, 0, -9))[0], RiverCoverChamber.MARKER + Vector3(-2.2, 1.8, 0))
 	var pool: Vector3 = c.river_point(c.river_s_of(RiverCoverChamber.LAUNCH_POINT))
 	await shot("02_overlook_launch_pool", RiverCoverChamber.OVERLOOKS[0], pool)
 	c._player_pos = RiverCoverChamber.OVERLOOKS[0]

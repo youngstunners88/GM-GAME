@@ -13,4 +13,5 @@ void fragment(){
  vec3 dry=texture(sand,world.xz*.12).rgb*vec3(.74,.61,.43);
  vec3 green=texture(forest,world.xz*.20).rgb*vec3(.62,.86,.45);
  ALBEDO=mix(dry,green,blend);ROUGHNESS=.98;
+ SPECULAR=mix(.5,.06,blend);
 }

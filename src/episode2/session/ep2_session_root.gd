@@ -299,7 +299,11 @@ func _enter_chamber_chained(segment: int) -> void:
 			built_vp.queue_free()
 	else:
 		add_child(c)
+		if c is RiverCoverChamber:
+			c.handoff = gaze                                # not prebuilt in time: the ridge still continues his walk
 		c.setup(0, [], 0)
+	if c is RiverCoverChamber and old is LogansLakeChamber:
+		c.adopt_lake(old)                                  # the lake he just walked out of stays behind him
 	if adopt_town:
 		var woods: Node3D = world_routes.rooms.get("woods_quad",{}).get("node",null)
 		c.adopt_departure(old,woods)
@@ -517,6 +521,9 @@ func _on_chamber_cleared(result: Dictionary) -> void:
 
 	chamber_committed.emit(owner_segment, result)
 	var next_chamber: String = str(result.get("next_chamber", ""))
+	if bool(result.get("respawn_at_dude", false)):
+		_respawn_at_dude(owner_segment)
+		return
 	if bool(result.get("end_session", false)):
 		_chain_id = ""
 		_chain_n = 0
@@ -536,6 +543,22 @@ func _on_chamber_cleared(result: Dictionary) -> void:
 	_chain_n = 0
 	_chamber_segment = -1
 	_advance_segment()
+
+## Logan shot him: back to the start of the ride, at Dude's, in the saddle. The trail he rode is usually parked and comes back as it was; if this run was
+## loaded at the lake, one is built. Either way the trail's own restart puts him at its first metre with the horse patched up.
+func _respawn_at_dude(owner_segment: int) -> void:
+	var was_parked: bool = world_routes.rooms.has("lake_trail")
+	if was_parked:
+		world_routes.travel(self, "lake_trail", Vector3.ZERO)
+	else:
+		_chain_id = "lake_trail"
+		_chamber_segment = -1
+		_enter_chamber_chained(owner_segment)
+	(_active as LakeTrailChamber).respawn_at_dude()
+	_chain_n += 1                                      # the ride's rooms clear again on a new key: nothing is paid twice, nothing is swallowed
+	_chamber_segment = owner_segment
+	capture_section_checkpoint()
+
 
 func _on_chamber_failed() -> void:
 	_chamber_segment = -1

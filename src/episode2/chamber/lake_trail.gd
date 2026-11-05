@@ -250,6 +250,8 @@ func _step_ground() -> void:
 	if ResourceLoader.exists(Ep2LakeLandscape.FLOOR):
 		_sand_material.set_shader_parameter("forest",load(Ep2LakeLandscape.FLOOR))
 		_sand_material.set_shader_parameter("has_forest",true)
+		var start: Vector3 = lake_transform().affine_inverse() * _route_pts[0]
+		_sand_material.set_shader_parameter("approach_dir",(Vector2(start.x, start.z) - Vector2(Ep2LakeLandform.CENTER_X, 20.0)).normalized())
 	ground.material_override = _sand_material
 	ground.position = Vector3(170.0, -0.012, -140.0)
 	_visuals.add_child(ground)
@@ -833,8 +835,8 @@ func _on_setup() -> void:
 	_armory_snapshot = armory.snapshot()
 	_beat = Beat.RIDE
 	_health = HEALTH_MAX
-	_horse_hp = HORSE_HP_MAX
-	_mounted = bool(handoff.get("horse", true))      # Dude's horse (the town hands it over); never without one in the story
+	_horse_hp = HORSE_HP_MAX - armory.horse_wounds   # a horse shot earlier is still shot (a saved run, a later ride)
+	_mounted = bool(handoff.get("horse", true)) and _horse_hp > 0   # Dude's horse (the town hands it over)
 	_ending = false
 	_trail_time = 0.0
 	_rng.seed = 1886
@@ -864,8 +866,21 @@ func has_player_control() -> bool:
 	return _running and not _resolved and not _show_blocks_control and not _failing and not _unhorse_active and not armory_open()
 
 
+## Back at Dude's on foot with a shot horse: he patches it up and it is under him again.
+func _dude_treats_horse() -> void:
+	if armory.horse_is_sound() or _departure_yard == null:
+		return
+	if _player_pos.distance_to(_departure_yard.dude_position()) > GoldTownChamber.DUDE_TREATS_WITHIN:
+		return
+	armory.treat_horse()
+	set_return_mounted(true)
+	if _hud != null:
+		_hud.toast("DUDE PATCHES UP THE HORSE", 2.6)
+
+
 func _move_player(delta: float) -> void:
 	if _in_departure_area and not _ending and not _failing and not _unhorse_active:
+		_dude_treats_horse()
 		_move_departure_area(delta)
 		return
 	if _ending or _failing or _unhorse_active:
@@ -1124,7 +1139,8 @@ func _begin_shore() -> void:
 		_set_horse_clip("horse_graze", 0.85)
 	_say_trail_line("trail_lb_lake")
 	if _hud != null:
-		_hud.objective = "Logan's Lake. The horse drinks; Logan waits at the shore." if _mounted else "Logan's Lake. You made it on foot; Logan waits at the shore."
+		_hud.objective = ("Logan's Lake. You made it on foot; Logan waits at the shore." if not _mounted else
+			("Logan's Lake. The horse drinks; Logan waits at the shore." if armory.horse_is_sound() else "Logan's Lake. The horse is shot and will not drink; Logan waits at the shore."))
 
 
 func _tick_shore(delta: float) -> void:
@@ -1255,6 +1271,7 @@ func _hurt_horse() -> void:
 	if not _mounted or _horse_hp <= 0 or _invuln > 0.0 or _failing or _resolved or debug_invulnerable:
 		return
 	_horse_hp = maxi(0, _horse_hp - 1)
+	armory.wound_horse()                             # it stays shot beyond this ride: the lake, the road back, the save
 	_invuln = 0.8
 	if _hud != null:
 		_hud.toast("HORSE WOUNDED - %d/3" % _horse_hp, 1.8)
@@ -1321,6 +1338,7 @@ func _tick_fail(delta: float) -> void:
 func _retry_trail() -> void:
 	if not _armory_snapshot.is_empty():
 		armory.restore(_armory_snapshot)
+	armory.treat_horse()                             # back at Dude's: he patches the horse up or swaps it, "fresh horse, fresh attempt"
 	_attempt += 1
 	for flash in _flashes:
 		if is_instance_valid(flash[0]):
@@ -1392,8 +1410,11 @@ func _say_trail_line(id: String) -> void:
 
 func _bandit_bark(index: int) -> void:
 	var b: Dictionary = _bandits[index]
-	var bark_index: int = (index + int(b["shots"])) % BANDIT_BARKS.size()
-	var id: String = str(BANDIT_BARKS[bark_index])
+	# Hammer's men see what has happened: nobody calls to shoot a horse already shot, or to take him off a horse he has lost (skill ep2-npc-reality-awareness)
+	var barks: Array = Ep2WorldFacts.fitting(BANDIT_BARKS, Ep2WorldFacts.now(armory, _mounted, _sun))
+	if barks.is_empty():
+		return
+	var id: String = str(barks[(index + int(b["shots"])) % barks.size()])
 	if _bandit_voice != null and _bandit_voice.playing: return
 	var stream: AudioStream = Ep2TownVoiceBank.stream(id)
 	if stream == null: return
@@ -1474,7 +1495,7 @@ func set_return_mounted(on: bool) -> void:
 	_unhorse_roll = 0.0
 	_horse_left = not on
 	if on:
-		_horse_hp = maxi(_horse_hp, 1)
+		_horse_hp = HORSE_HP_MAX - armory.horse_wounds
 		eye_height = MOUNTED_EYE
 	else:
 		eye_height = FPS_EYE_HEIGHT
@@ -1496,6 +1517,17 @@ func is_unhorsing() -> bool:
 ## Whether he still has Dude's horse beneath him.
 func is_mounted() -> bool:
 	return _mounted
+
+
+## Logan shot him: "you start all over from Dude on the horse" (founder 2026-11-04). The whole ride again from Dude's end of the trail, the horse
+## patched up (Dude's care is what clears a wound), hearts full. The trail's own retry does exactly that.
+func respawn_at_dude() -> void:
+	_failing = false
+	_resolved = false
+	_retry_trail()
+	if _hud != null:
+		_hud.objective = "Dude patched you up and put you back on the horse. Ride to Logan's Lake, and leave Logan's back alone."
+		_hud.toast("BACK AT DUDE'S", 2.0)
 
 
 ## The horse's three-wound state; zero has already produced the UNHORSE event.

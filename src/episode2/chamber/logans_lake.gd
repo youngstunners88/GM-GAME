@@ -37,6 +37,14 @@ var _cabin := Ep2LoganCabin.new()
 const HORSE_MODEL := "res://src/episode2/assets/town/horse.glb"
 const HORSE_DRINK := Vector3(-0.7, 0, 5.0)        # forefeet on the bank, muzzle over the shallows beside Logan's landing
 const HORSE_DRINK_YAW := PI * 0.5                 # facing +X: the water
+const LOGAN_DRAW_TIME := 0.55                      # gun up to the shot: too fast to answer, long enough to see the gold
+const LOGAN_DOWN_TIME := 1.15
+const HORSE_SHOT_LINE := "LOGAN: That horse is shot. It won't drink like that. Dude's the man to see."
+const HORSE_GONE_LINE := "LOGAN: You walked in. They shot your horse out from under you, then. Dude can find you another."
+var _logan_draw_t: float = -1.0
+var _logan_fired: bool = false
+var _horse_line_said: bool = false
+const WALK_ON_Z := 63.4                            # the top of the overlook path (the bank clamps him at 64)
 const HORSE_WALK := 2.2                           # m/s, a brisk walk to the water (about 9 s from the shore end of the trail)
 const HORSE_CLIP_SPEED := 1.9                     # ground m/s of horse_walk at speed_scale 1 (same clip as the trail)
 const HORSE_REACH := 3.6                          # how close E mounts him (he drinks just past the bank path's edge, x = -4.1)
@@ -260,7 +268,15 @@ func _on_setup() -> void:
 	# Ridden in: he stops where Lil Blunt slid off (the trail's dismount stepped him 1.3 m to the right) and walks to the water.
 	# On foot (UNHORSE on the trail): Dude's horse found the water first and is already drinking - never strand him at the lake.
 	var slid_off_at: Vector3 = _player_pos - Vector3(1.3, 0, 0)
-	if bool(handoff.get("arrived_mounted", false)) and slid_off_at.distance_to(HORSE_DRINK) < 40.0:
+	_logan_draw_t = -1.0
+	if armory.horse_is_down():
+		_horse_state = "gone"                       # shot out from under him on the trail: there is no horse at the lake to water or ride
+		_horse.visible = false
+	elif not armory.horse_is_sound():
+		_place_horse(slid_off_at, _look_yaw)        # it carried him here, shot, and stands where he got down: it will not drink, and it cannot be ridden
+		_horse_state = "hurt"
+		_set_horse_clip("horse_stand", 0.6)
+	elif bool(handoff.get("arrived_mounted", false)) and slid_off_at.distance_to(HORSE_DRINK) < 40.0:
 		_place_horse(slid_off_at, _look_yaw)
 		_horse_state = "lead"
 	else:
@@ -323,7 +339,11 @@ func _on_beat_entered(b: int) -> void:
 			_hud.objective = "Investigate the depth. Listen to Logan."
 			_say(LINES[0], 6.5)
 			_gesture("Greet", 2.5)
-		Beat.STAGE: _hud.objective = "Check the staged cargo beside Logan [E]." if TouchUi.keys_shown() else "Check the staged cargo beside Logan."
+		Beat.STAGE:
+			_hud.objective = "Check the staged cargo beside Logan [E]." if TouchUi.keys_shown() else "Check the staged cargo beside Logan."
+			if not armory.horse_is_sound() and not _horse_line_said:
+				_horse_line_said = true                    # Logan can see what came up that trail: he says so, and nobody offers it water
+				_say(HORSE_GONE_LINE if armory.horse_is_down() else HORSE_SHOT_LINE, 5.0)
 		Beat.HANDOFF:
 			prebuild_requested.emit("river_cover")          # the ridge builds off screen while he walks the shore trail
 			_hud.objective = "Follow the shore trail to the river overlook."
@@ -365,6 +385,9 @@ func start_rig(_payment: String = "") -> bool:
 	return false
 
 func _tick(delta: float) -> void:
+	if _logan_draw_t >= 0.0:
+		_tick_logan_draw(delta)
+		return
 	_tick_horse(delta)
 	_landscape.refresh_streamed()
 	_build_cabin()
@@ -406,6 +429,8 @@ func _tick(delta: float) -> void:
 		prompt = "Dismount [E]"
 	elif can_mount_horse():
 		prompt = "Mount the horse [E]"
+	elif _horse_state == "hurt" and Vector2(_player_pos.x - _horse.position.x, _player_pos.z - _horse.position.z).length() < HORSE_REACH:
+		prompt = "The horse is shot: it needs Dude, not water"
 	if prompt != "" and not TouchUi.keys_shown():
 		prompt = prompt.replace(" [E]", "")
 	_hud.set_search_prompt(prompt)
@@ -417,6 +442,9 @@ func _tick(delta: float) -> void:
 		_skiff.advance(delta, _staged and _talk_t <= 0.0)
 	if _beat == Beat.HANDOFF and _player_pos.z > 59:
 		_advance_to(Beat.OVERLOOK)
+	# walking on up the path is enough: the ridge continues from here, [E] only says so sooner
+	if _beat == Beat.OVERLOOK and _staged and _talk_t <= 0 and _player_pos.z >= WALK_ON_Z and not _resolved and has_player_control():
+		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
 
 func _collide(p: Vector3) -> Vector3:
 	if Ep2LoganCabin.YARD.has_point(Vector2(p.x, p.z)) or (_player_pos.x < -11.5 and p.x < -11.5):
@@ -432,8 +460,64 @@ func _collide(p: Vector3) -> Vector3:
 	return q
 
 func _on_player_shot() -> void:
+	if _logan != null and _logan_draw_t < 0.0 and _bullet_hits_logan():
+		_logan_draws()
+		return
 	if _player_pos.distance_to(LOGAN_MARK) < 35:
 		_hud.toast("LOGAN: Easy. Keep the staging bank secure.", 2.5)
+
+
+func _bullet_hits_logan() -> bool:
+	var eye: Vector3 = _player_pos + Vector3(0, eye_height, 0)
+	var cp: float = cos(_look_pitch)
+	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
+	var feet: Vector3 = _logan.global_position
+	return WoodsQuadChamber._ray_capsule(eye, dir, feet + Vector3(0, 0.3, 0), feet + Vector3(0, 1.7, 0), 0.42) >= 0.0
+
+
+## FOUNDER'S RULE 2026-11-04: "if you try to shoot Logan. He pulls out a golden revolver, The same Remington that Lil Blunt has that Rich sells and shoots
+## you dead and you start all over from Dude on the horse." No fight and no second chance: the story takes the controls, he turns, the gold gun comes up
+## on the Point clip, one shot, and the session goes back to Dude's.
+func _logan_draws() -> void:
+	_logan_draw_t = 0.0
+	_logan_fired = false
+	_show_blocks_control = true
+	_move_input = Vector2.ZERO
+	set_aim(false)
+	_logan.face_point(_player_pos)
+	_logan.hold_clip("Point")
+	var gun: Node3D = (load(Ep2ArmoryShop.REMINGTON_MODEL) as PackedScene).instantiate() as Node3D
+	gun.name = "GoldenRemington"
+	if not _logan.attach_prop(gun, "RightHand", Vector3(0.0, 0.08, 0.03), Vector3(0.0, 90.0, 0.0)):
+		_logan.add_child(gun)
+		gun.position = Vector3(-0.22, 1.42, 0.5)
+	_hud.speech("LOGAN: Wrong water to start a fight.", 1.6, false)
+
+
+func _tick_logan_draw(delta: float) -> void:
+	_logan_draw_t += delta
+	var to_logan: Vector3 = _logan.global_position + Vector3(0, 1.5, 0) - (_player_pos + Vector3(0, eye_height, 0))
+	_look_yaw = lerp_angle(_look_yaw, atan2(to_logan.x, to_logan.z), clampf(delta * 5.0, 0.0, 1.0))
+	if not _logan_fired and _logan_draw_t >= LOGAN_DRAW_TIME:
+		_logan_fired = true
+		_sfx("ep2_revolver_blast_1")
+		_hud.hurt()
+		_hud.fade_to(1.0, 0.5)
+		_hud.toast("LOGAN DOES NOT MISS", 1.6)
+	if _logan_fired:
+		_look_pitch = move_toward(_look_pitch, 0.9, delta * 1.4)     # he goes over backwards, looking at the sky
+		eye_height = move_toward(eye_height, 0.35, delta * 2.2)
+	if _logan_draw_t >= LOGAN_DRAW_TIME + LOGAN_DOWN_TIME and not _resolved:
+		_resolve({"respawn_at_dude": true, "logan_shot": true, "companion": ""})
+
+
+func logan_is_drawing() -> bool: return _logan_draw_t >= 0.0
+
+## The ridge goes on from exactly here (river_cover.gd adopt_lake): where he stands, the way he looks.
+func get_handoff() -> Dictionary:
+	var result: Dictionary = super.get_handoff()
+	result["ridge_from"] = _player_pos
+	return result
 
 func staging_complete() -> bool: return _staged
 func staging_count() -> int: return _stage_calls
@@ -532,6 +616,8 @@ func _tick_horse(delta: float) -> void:
 				var step: Vector3 = to.normalized() * minf(to.length(), HORSE_WALK * delta)
 				_place_horse(_horse.position + step, lerp_angle(_horse.rotation.y, atan2(to.x, to.z), clampf(delta * 4.0, 0.0, 1.0)))
 				_set_horse_clip("horse_walk", HORSE_WALK / HORSE_CLIP_SPEED)
+		"hurt", "gone":
+			pass
 		"drink":
 			_horse.rotation.y = lerp_angle(_horse.rotation.y, HORSE_DRINK_YAW, clampf(delta * 2.5, 0.0, 1.0))
 			_set_horse_clip("horse_graze", 0.55)
@@ -587,7 +673,7 @@ func _sip() -> void:
 ## E mounts him whenever Logan is not mid-explanation and the horse is beside Lil Blunt.
 func can_mount_horse() -> bool:
 	# not while he is still walking himself down to the water, nor while Logan is explaining
-	if _horse == null or _riding or _horse_state == "lead" or _beat == Beat.INVESTIGATE or not has_player_control():
+	if _horse == null or _riding or _horse_state in ["lead", "hurt", "gone"] or _beat == Beat.INVESTIGATE or not has_player_control():
 		return false
 	return Vector2(_player_pos.x - _horse.position.x, _player_pos.z - _horse.position.z).length() < HORSE_REACH
 
@@ -632,8 +718,21 @@ func get_horse_clip() -> String:
 ## A later visit from the trail (world routes, no fresh setup): ridden in, he is still in the saddle; on foot, the horse stays
 ## wherever he left it at the water.
 func arrive_from_trail(mounted: bool) -> void:
+	if _logan_draw_t >= 0.0:                        # he rides back in after Logan shot him: Logan has put the gun away, and this is a new visit
+		_logan_draw_t = -1.0
+		_show_blocks_control = false
+		eye_height = FPS_EYE_HEIGHT
+		_look_pitch = 0.02
+		if _logan != null:
+			_logan.drop_prop("GoldenRemington")
+			_logan.hold_clip("Idle")
+		_hud.fade_to(0.0, 0.3)
+		_hud.objective = "Logan's Lake · Meet Logan at the shore."
 	if _horse == null:
 		return
+	if armory.horse_is_sound() and _horse_state in ["hurt", "gone"]:     # Dude has seen to it since
+		_horse.visible = true
+		_horse_state = "drink"
 	if mounted:
 		_riding = true
 		_horse_state = "ridden"

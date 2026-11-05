@@ -25,7 +25,7 @@
 			"walked_m": 0
 		},
 		"bob_girl": {
-			"choices": 15,
+			"choices": 21,
 			"memories": {
 
 			},
@@ -40,20 +40,22 @@
 				"social": 0.45,
 				"temperament": "watchful"
 			},
-			"recoveries": 0,
+			"recoveries": 2,
 			"visits": {
-				"market": 2,
-				"notice": 1,
+				"horses": 1,
+				"market": 1,
+				"notice": 3,
 				"office": 1,
-				"rest_south": 2,
+				"rest_north": 1,
+				"rest_south": 3,
+				"saloon": 2,
 				"shop": 3,
-				"water": 5,
-				"yard": 1
+				"water": 3
 			},
-			"walked_m": 440.156482361257
+			"walked_m": 414.275007739663
 		},
 		"boy": {
-			"choices": 23,
+			"choices": 22,
 			"memories": {
 
 			},
@@ -68,23 +70,22 @@
 				"social": 0.74,
 				"temperament": "energetic"
 			},
-			"recoveries": 1,
+			"recoveries": 2,
 			"visits": {
-				"horses": 2,
-				"market": 4,
+				"horses": 4,
+				"market": 2,
 				"notice": 2,
 				"office": 1,
-				"rest_north": 2,
-				"rest_south": 2,
+				"rest_north": 1,
+				"rest_south": 3,
 				"saloon": 2,
-				"shop": 3,
 				"water": 3,
-				"yard": 1
+				"yard": 2
 			},
-			"walked_m": 396.559411574155
+			"walked_m": 470.664589427412
 		},
 		"braided_girl": {
-			"choices": 20,
+			"choices": 19,
 			"memories": {
 
 			},
@@ -99,22 +100,21 @@
 				"social": 0.58,
 				"temperament": "inquisitive"
 			},
-			"recoveries": 1,
+			"recoveries": 0,
 			"visits": {
-				"horses": 2,
-				"market": 1,
+				"horses": 1,
+				"market": 3,
 				"notice": 3,
-				"office": 2,
-				"rest_north": 3,
-				"rest_south": 2,
-				"saloon": 1,
-				"shop": 3,
-				"water": 1
+				"rest_north": 2,
+				"rest_south": 1,
+				"shop": 5,
+				"water": 1,
+				"yard": 2
 			},
-			"walked_m": 426.059512861073
+			"walked_m": 389.402717672288
 		},
 		"clerk": {
-			"choices": 14,
+			"choices": 13,
 			"memories": {
 
 			},
@@ -131,16 +131,18 @@
 			},
 			"recoveries": 0,
 			"visits": {
-				"notice": 3,
+				"horses": 1,
+				"market": 1,
+				"notice": 2,
 				"office": 2,
-				"rest_north": 1,
-				"saloon": 4,
-				"shop": 3
+				"saloon": 3,
+				"shop": 3,
+				"yard": 1
 			},
-			"walked_m": 256.554526008666
+			"walked_m": 252.35372184962
 		},
 		"dressmaker": {
-			"choices": 17,
+			"choices": 20,
 			"memories": {
 
 			},
@@ -155,18 +157,19 @@
 				"social": 0.67,
 				"temperament": "busy"
 			},
-			"recoveries": 2,
+			"recoveries": 1,
 			"visits": {
 				"horses": 1,
-				"market": 3,
-				"office": 3,
+				"market": 2,
+				"notice": 2,
+				"office": 5,
 				"rest_north": 1,
 				"rest_south": 1,
 				"saloon": 1,
-				"shop": 3,
+				"shop": 4,
 				"yard": 1
 			},
-			"walked_m": 334.142859358341
+			"walked_m": 371.202185817063
 		},
 		"grandfather": {
 			"choices": 0,
@@ -191,7 +194,7 @@
 			"walked_m": 0
 		},
 		"grandma": {
-			"choices": 11,
+			"choices": 9,
 			"memories": {
 
 			},
@@ -209,15 +212,14 @@
 			"recoveries": 0,
 			"visits": {
 				"horses": 1,
-				"market": 2,
-				"office": 1,
+				"notice": 1,
 				"rest_north": 2,
-				"rest_south": 1,
+				"rest_south": 2,
 				"saloon": 1,
 				"shop": 1,
 				"yard": 1
 			},
-			"walked_m": 305.232864007354
+			"walked_m": 301.716425035149
 		},
 		"grandmother": {
 			"choices": 0,
@@ -257,18 +259,18 @@
 				"social": 0.78,
 				"temperament": "outgoing"
 			},
-			"recoveries": 1,
+			"recoveries": 0,
 			"visits": {
-				"horses": 2,
-				"market": 3,
-				"notice": 2,
+				"horses": 1,
+				"market": 5,
 				"office": 1,
 				"rest_north": 2,
-				"saloon": 2,
-				"shop": 3,
-				"water": 1
+				"rest_south": 1,
+				"saloon": 3,
+				"shop": 2,
+				"water": 2
 			},
-			"walked_m": 245.365265186876
+			"walked_m": 315.476330637932
 		},
 		"oldtimer": {
 			"choices": 0,
@@ -308,19 +310,18 @@
 				"social": 0.54,
 				"temperament": "practical"
 			},
-			"recoveries": 1,
+			"recoveries": 2,
 			"visits": {
-				"horses": 4,
+				"horses": 3,
 				"market": 2,
-				"notice": 2,
+				"office": 2,
 				"rest_north": 2,
-				"rest_south": 2,
-				"saloon": 1,
+				"saloon": 2,
 				"shop": 2,
-				"water": 4,
-				"yard": 1
+				"water": 5,
+				"yard": 2
 			},
-			"walked_m": 409.040296379477
+			"walked_m": 400.79188779369
 		},
 		"youth": {
 			"choices": 23,
@@ -341,16 +342,16 @@
 			"recoveries": 2,
 			"visits": {
 				"horses": 2,
-				"market": 3,
-				"notice": 4,
-				"office": 1,
-				"rest_north": 1,
-				"rest_south": 1,
-				"saloon": 1,
+				"market": 4,
+				"notice": 2,
+				"office": 2,
+				"rest_north": 2,
+				"rest_south": 2,
 				"shop": 3,
-				"yard": 4
+				"water": 2,
+				"yard": 2
 			},
-			"walked_m": 439.636661496013
+			"walked_m": 433.148377228528
 		}
 	}
 }

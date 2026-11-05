@@ -40,7 +40,8 @@ func build_ground(parent: Node3D) -> void:
 	var m := ShaderMaterial.new()
 	m.shader = load("res://src/episode2/art/lake_ground.gdshader")
 	m.set_shader_parameter("forest_floor", load(FLOOR))
-	m.set_shader_parameter("gravel_tex", load("res://src/episode2/assets/town/tex_desert.jpg"))
+	# Founder 2026-11-04: "There mustn't be desert sand by the edge of the water". This was the desert's own texture, on every wet edge and slope.
+	m.set_shader_parameter("gravel_tex", load("res://src/episode2/assets/textures/tex_gravel.jpg"))
 	m.set_shader_parameter("gravel_normal", load(BARK_N))
 	mi.material_override = m
 	root.add_child(mi)

@@ -47,7 +47,8 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  room.reparent(session)
  entry.viewport.queue_free()
  room.process_mode = Node.PROCESS_MODE_INHERIT
- var continuing_story: bool = room is GoldTownChamber and room._beat not in [room.Beat.GEARED, room.Beat.DONE]
+ # An unfinished lake too: Logan's rule sends him back to Dude's mid-visit, and his story at the shore has to go on when he rides in again.
+ var continuing_story: bool = (room is GoldTownChamber and room._beat not in [room.Beat.GEARED, room.Beat.DONE]) or room is LogansLakeChamber
  room._world_revisit = not continuing_story
  if room is Ep2Interlude: room._mounted_transport=mounted and id in ["woods_quad","gold_town"]
  room._resolved=false;room._running=true

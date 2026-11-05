@@ -265,6 +265,34 @@ static func shop_floor_y(piece: String, world: Vector3) -> float:
 	return 0.0
 
 
+## The buildings whose kit front carries a porch (build_town_kit.py building(): boards w + 0.4 wide and PORCH_DEPTH deep, two steps 1.8 m wide).
+const REST_BENCHES: Array = [Vector2(-5.2, 1401.0), Vector2(5.2, 1444.2)]
+const PORCH_PIECES: Array = ["Bldg_Certificates", "Bldg_Saloon", "Bldg_A", "Bldg_B", "Bldg_C", "Bldg_D", "Bldg_E", "Bldg_F"]
+const PORCH_STEP_DEPTH := 0.8
+const PORCH_STEP_HALF := 0.9
+
+
+## What a pair of boots stands on at this world point (founder 2026-11-04: "the way the sheriff stands on the actual platform"): the porch
+## boards, the two steps up to them, a room's plank floor, else the street. Everyone in the town stands on this.
+static func ground_y(world: Vector3) -> float:
+	for piece in PORCH_PIECES:
+		var e: Array = entry(str(piece))
+		if e.is_empty():
+			continue
+		var l: Vector3 = building_xform(e).affine_inverse() * world
+		var fp: Array = FOOTPRINT.get(str(piece), [8.0, 9.0, 0.0])
+		var half: float = float(fp[0]) * 0.5
+		if l.z >= PORCH_DEPTH + PORCH_STEP_DEPTH or l.z <= -float(fp[1]) or absf(l.x) > half + 0.2:
+			continue
+		if l.z < 0.0:
+			return 0.06 if absf(l.x) <= half else 0.0     # the room's plank floor
+		if l.z <= PORCH_DEPTH:
+			return PORCH_Y
+		if absf(l.x) <= PORCH_STEP_HALF:
+			return PORCH_Y * (1.0 - (l.z - PORCH_DEPTH) / PORCH_STEP_DEPTH)
+	return 0.0
+
+
 ## The Colt Gatling's post in the Armory's front yard (founder 2026-10-20, skill ep2-armory-guns), in Bldg_Armory's LOCAL frame (x along the front, +z out
 ## into the yard). The Armory faces -z (yaw PI), so local +x is world -x: at rest the bore points west over open ground, away from the street. The gun
 ## is NOT FOR SALE; the plates and bales are the firing yard it is demonstrated on.
@@ -374,6 +402,8 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		["Trough", Vector3(6.2, 0.0, 1420.5), PI * 0.5], ["Wagon", Vector3(4.2, 0.0, 1452.0), 0.2], ["Wagon", Vector3(-3.6, 0.0, 1463.0), -2.9],
 		["LampPost", Vector3(-6.8, 0.0, 1409.0), 0.0], ["LampPost", Vector3(6.8, 0.0, 1424.0), PI], ["LampPost", Vector3(-6.8, 0.0, 1434.0), 0.0],
 		["Bench", Vector3(-7.6, 0.44, 1423.0), PI * 0.5], ["Bench", Vector3(7.6, 0.44, 1446.0), -PI * 0.5],
+		# the street benches the elders sit on (Ep2TownPeople REST_SITTERS, PLACES bench_south / bench_north)
+		["Bench", Vector3(REST_BENCHES[0].x, 0.0, REST_BENCHES[0].y), PI * 0.5], ["Bench", Vector3(REST_BENCHES[1].x, 0.0, REST_BENCHES[1].y), -PI * 0.5],
 		# the armory lane, off the left row past the STATS block: a lamp, and river gear staged at the lean-to
 		["LampPost", Vector3(-10.0, 0.0, 1450.0), 0.0],
 		# the jailhouse yard (south edge of town, west of the road): a lamp, a hitching rail and a bench by the door
@@ -388,6 +418,8 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		var n: Node3D = s.duplicate() as Node3D
 		n.transform = Transform3D(Basis(Vector3.UP, float(d[2])), d[1])
 		root.add_child(n)
+		if Vector2((d[1] as Vector3).x, (d[1] as Vector3).z) in REST_BENCHES:
+			continue                                     # someone sits ON these: a walk-around footprint would push the seat off the street graph
 		props.append([Vector2((d[1] as Vector3).x, (d[1] as Vector3).z), 1.6 if str(d[0]) == "Wagon" else 0.7])
 	for bp in [Vector3(-6.9, 0.0, 1427.5), Vector3(-7.3, 0.0, 1428.3), Vector3(7.0, 0.0, 1433.0), Vector3(6.6, 0.0, 1443.6), Vector3(-7.0, 0.0, 1450.0)]:
 		_glb(root, BARREL, bp, bp.x * 0.7, 1.0)

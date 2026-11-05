@@ -1,5 +1,25 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-04 (later) - Your "Shipment and Bears" notes - IN CODE, gate-tested, real-renderer captures; on a branch and a PR, NOT founder-verified, not tried on a real phone.**
+
+| Your note | State | What it was |
+|---|---|---|
+| Certificate office contents must be visible | **Fixed** | After Inferno drops you off you are still in the woods' copy of the town, and that copy had empty rooms. It now has the real furniture, lamps, certificates, the Sheriff and Mike Dean, so the office looks the same from the street and after you go in. |
+| The Sheriff on the platform; everyone in town | **Fixed** | Everyone walked at street height through the porch boards. They now stand on the boards, the steps and the room floors. A check runs the whole town for 4 minutes and tests every person's feet. |
+| Women sitting in mid-air | **Fixed** | Four elders (Grandma and the Grandmother among them) have a seated rest pose, and it played in the open street. They now walk to a real bench, and sit nowhere else. |
+| Desert sand at the lake | **Fixed** | Three causes: the lake's ground used the desert's texture at the water's edge, the grass glared pale toward the low sun and read as sand dunes, and the road stayed sand to the shore. The ride now goes desert, scrub, grass, wooded shore, and the road turns to dirt after the first ambush. |
+| Shoot Logan and he kills you | **Fixed** | He draws the golden Remington, one shot, and you start again from Dude on the horse. A shot that misses him is still only a warning. |
+| A shot horse carries through | **Fixed** | Its wounds survive rooms and saves. Shot, it will not drink or carry you. Shot out from under you, it is not at the lake. Dude patches it up when you walk up to him. |
+| Stop saying "shoot the horse" once it is shot | **Fixed** | Hammer's men no longer say it, and Logan mentions the shot horse. **His two new lines are text only: there is no ElevenLabs key on this machine.** |
+| The ridge continues forward, no inversion | **Fixed** | The stage was mirrored, with the river on the wrong side and the view turned. It now carries on from the path you are walking, same view, river on your left, Logan's Lake behind you. Walking on is enough; E just does it sooner. |
+| Map adjusted, smaller logo | **Fixed** | The river curves right under the town past Rich & Utah with the railway alongside; High Ridge and the Day-88 dock are marked; the logo is about 15% smaller. |
+| Better stage | **Better, still simple** | Grass ridge, rope rail, plank steps, the lake's real firs, the railway in the distance. It could still use a real art pass. |
+| More bears, archers, Hammer's men on rafts | **Fixed on the ridge stage** | About twice the swimmers, bow bears on the far bank, rafts whose men fire at you and hook the Shipment to drain it. Each shooter gives a visible warning and moving dodges it. |
+| Skills | **Done** | `ep2-interior-visible-on-approach`, `ep2-npc-reality-awareness`, plus `ep2-runpod-gate-pod`. |
+
+- **Not done:** the bears in the woods and the runner's archers are unchanged (your stakes note was about this stage). Characters can now tell day from night, but nobody says anything different at night yet, because the game has no night yet.
+- **Tests:** see the PR. Captures: `docs/episode2-quality/shipment-bears-20261104/`. Your notes: `docs/founder-feedback/2026-11-04_shipment_and_bears.md`.
+
 **2026-11-04 — The day-88 river cover stage — IN CODE, gate-tested (27 checks + 835 regression), real-renderer captures; shipping, NOT founder-verified, not tried on a real phone.**
 - **The ridge:** out of Logan's Lake, [E] at his overlook climbs to the ridge (Logan stays at his lake; Rich and Utah are never there). Cross the **DAY 88** cairn, stand on the first overlook and look down at the launch pool: **the Shipment you bought goes into the water** and drifts downstream. A red pennant makes it easy to spot from the ridge.
 - **Three gates:** Launch pool (2 bears), the Bend and its rapids (4, slowest and most exposed), and the Dock approach (3). Bears come off the banks, swim at the crate and try to tip it. You cover it from the ridge with the Sharps, which drops a bear in one shot. Between gates the crate waits in an eddy while you drop to the next ledge, with one bear on the path each time.

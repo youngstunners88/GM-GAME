@@ -7,6 +7,8 @@ const POINTS: Array = [
 	Vector2(49,-48),Vector2(70,-82),Vector2(102,-119),Vector2(124,-160),
 	Vector2(164,-193),Vector2(202,-222),Vector2(233,-262),Vector2(260,-300),
 	Vector2(290,-338),Vector2(320,-374)]
+const GREEN_FROM_S := 250.0
+const GREEN_TO_S := 400.0
 const RETURN_POINTS := [Vector3(21,0,-6),Vector3(21,0,30),Vector3(13,0,70),Vector3(13,0,145)]
 
 static func smooth(points: Array,spacing: float) -> PackedVector3Array:
@@ -36,13 +38,21 @@ static func build(parent: Node3D,origin: Vector3=Vector3.ZERO) -> Node3D:
 	mat.shader=load("res://src/episode2/art/lake_road.gdshader")
 	mat.set_shader_parameter("sand_tex",load("res://src/episode2/assets/town/tex_desert.jpg"))
 	mat.set_shader_parameter("gravel_tex",load("res://src/episode2/assets/textures/tex_gravel.jpg"))
+	if ResourceLoader.exists(Ep2LakeLandscape.FLOOR):
+		mat.set_shader_parameter("forest_tex",load(Ep2LakeLandscape.FLOOR))
 	var points: PackedVector3Array=smooth(POINTS,1.5)
 	var arc: Array[float]=[0.0]
 	for i in range(1,points.size()):arc.append(arc[-1]+points[i].distance_to(points[i-1]))
 	var visible_points := PackedVector3Array()
 	for i in points.size():
 		if arc[i]<=arc[-1]-82:visible_points.append(points[i])
-	ribbon(root,visible_points,5.8,mat,.022).name="LakeTrail"
+	# Founder 2026-11-04: "after Hammer's men the land must slowly transition into lush greenery". The road sheds its dust with the land, from the
+	# end of the first ambush (lake_trail BANDIT_SPECS) to the last of the second. The town's return road is the desert's: its own material.
+	var trail_mat: ShaderMaterial=mat.duplicate() as ShaderMaterial
+	var drawn: float=arc[-1]-82.0
+	trail_mat.set_shader_parameter("green_from",GREEN_FROM_S/drawn)
+	trail_mat.set_shader_parameter("green_to",GREEN_TO_S/drawn)
+	ribbon(root,visible_points,5.8,trail_mat,.022).name="LakeTrail"
 	ribbon(root,PackedVector3Array(RETURN_POINTS),5.8,mat,.022).name="TownReturnRoad"
 	return root
 

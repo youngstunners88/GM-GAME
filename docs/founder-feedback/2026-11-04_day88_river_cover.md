@@ -66,3 +66,9 @@ and not a static turret.
 - [ ] FIXED only after the founder's hard-refresh run, ridge to dock
 
 Captures (real renderer, `tools/ep2_shots/river_cover_shot.tscn`): `docs/episode2-quality/day88-river-20261104/`.
+
+## Changed by the founder's notes the same day (`docs/founder-feedback/2026-11-04_shipment_and_bears.md`)
+- **Geography:** the ridge continues the walk out of Logan's overlook, in the lake's own axes (`LAKE_OFFSET`). The river stays on his left, and past the dock it curves right toward the railway. The stage used to be mirrored with the river on his right. The lake, with Logan, comes along behind him (`adopt_lake`).
+- **Waves:** swimmers 4 / 7 / 6, plus far-bank archers 1 / 2 / 2 and Hammer's rafts 1 / 1 / 2 (two men each). A raft hooks the crate and drains it until its men are dead. 9 bear-seconds tip it (was 5).
+- **Fairness:** one gun on him at a time, a visible tell first, moving always dodges, and a man standing still is not hit by every shot. Each gate tops up the Sharps to what the wave needs.
+- **Logan:** he is visible back at his lake from the climb. The "never at the ridge" rule still holds: he does not come up it.
