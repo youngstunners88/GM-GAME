@@ -45,6 +45,9 @@ Logan's Lake and the supplied Logan model: `.claude/skills/ep2-logans-lake/SKILL
 | Task | Go to | Read | Skills |
 |------|-------|------|--------|
 | **Borchardt too small / a gun's first-person size vs the Remington / Sharps telescopic sight, scope zoom, lens, reticle / native Tripo generation** | `design/ep2/armory/WEAPON_CONSISTENCY.md`, `src/episode2/chamber/ep2_armory_gun_view.gd` (`HELD`), `ep2_armory_state.gd` (`aimed_fov`) | `tests/ep2_weapon_consistency_test.gd`, `tools/ep2_shots/weapon_consistency_shot.tscn`, `tools/ep2_shots/sharps_scope_shot.tscn` | `ep2-armory-new-stock`, `ep2-armory-guns` |
+| **"This is stupid" / walks through people or doors / a shot thing does not react / pointless back-and-forth / a character does something no person would** | the system at fault, then its whole family | `.claude/skills/ep2-world-common-sense/SKILL.md` | `ep2-world-common-sense`, `ep2-npc-reality-awareness`, `see-it-yourself` |
+| **Another session, terminal, subagent or model; handing work off; someone else's edits in your tree** | a separate worktree and branch per job | `.claude/skills/parallel-session-build/SKILL.md` | `parallel-session-build` |
+| **Too many worktrees, disk space, stray files, cleaning up** | `scripts/worktree-audit.sh` (read-only) | `.claude/skills/worktree-hygiene/SKILL.md` | `worktree-hygiene`, `token-efficiency` |
 | **Jackhammer is the wall boss 2026-11-05: OFFICIAL Jackhammer Wanted art on every Jack Hammer bill, fewer RH (Rich) posters environment-wide, a big shootable Jackhammer billboard in the Gatling yard** | `docs/founder-feedback/2026-11-05_jackhammer_posters_gatling_billboard.md`, `src/episode2/chamber/ep2_town_posters.gd`, `src/episode2/actors/ep2_gatling_post.gd` | `.claude/skills/ep2-jackhammer-wall-boss/SKILL.md` | `ep2-jackhammer-wall-boss`, `ep2-official-wanted-rebalance`, `ep2-gatling-wanted-billboard` |
 | **Founder's Shipment & Bears notes 2026-11-04: office empty until you walk in, Sheriff/townsfolk on the boards or sitting in mid-air, desert sand at the lake, shooting Logan, a shot horse carrying through, the ridge "inverts", more bears/archers/rafts** | `docs/founder-feedback/2026-11-04_shipment_and_bears.md` | `tests/ep2_interior_visible_test.gd`, `ep2_town_grounding_test.gd`, `ep2_lake_ecotone_test.gd`, `ep2_horse_and_logan_test.gd`, `ep2_river_cover_test.gd` | `ep2-interior-visible-on-approach`, `ep2-npc-reality-awareness` |
 | **"Fire up Runpod" / the gates or captures are too slow on the laptop / a full `--import`** | `tools/ep2_runpod/gate_pod.sh` | `.claude/skills/ep2-runpod-gate-pod/SKILL.md` | `ep2-runpod-gate-pod`, `runpod:pod-deploy` |
@@ -149,6 +152,9 @@ For the founder's sheriff-office/ranch-road pop-in, continuing farmer journey an
   in iframes, and on some mobile browsers. This was the root cause of the
   "game sometimes doesn't play" bug — never regress it.
 - Full pipeline, page setup, and verification gates: `/itch-deploy` skill.
+
+## ⭐ COMMON-SENSE RULE (founder, 2026-11-05)
+A brief describes what is special; everything it leaves out still behaves as in the real world. People do not walk through each other, doors open, nobody walks away and straight back, and a shot man falls off his raft. **Before building or calling done any character, route, door, vehicle, enemy, hit reaction or cutscene, apply `.claude/skills/ep2-world-common-sense/SKILL.md`.** Never ask the founder to spell out common sense.
 
 ## ⭐ PARALLEL-SESSION RULE (only master is live)
 Several sessions build different parts of the game at once, each on its own branch.

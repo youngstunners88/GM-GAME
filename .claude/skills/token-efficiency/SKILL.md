@@ -27,6 +27,13 @@ description: Spend fewer tokens on this repo without losing quality - what actua
 7. **Replies short** (founder rule). No recaps of what the tools already showed.
 8. Heavy compute (Cycles bakes, 4K textures) -> the Runpod GPU (`ep2-cloud-gpu-runpod`), not minutes of container time you babysit.
 
+## Sessions and worktrees burn tokens too (2026-11-05)
+- A new session or subagent re-reads its context from cold. Start one only when the job is big and separate enough to pay for it (`parallel-session-build`).
+- A noisy tree makes every `git status` and diff expensive, and invites accidental commits (`worktree-hygiene`).
+- Before opening a "reference" image, check that it is one: `*_Image_*.jpg` beside a GLB are texture atlases.
+- Combine captures into one sheet, and print only measured numbers from a capture run.
+- Ship once: run the gates that can fail before the full ship, because a failed ship repeats a long gate run.
+
 ## DietCode / ScaleDown (npm `dietcode` 0.5.0, https://docs.scaledown.ai) - evaluated 2026-10-14, NOT installed by the agent
 What it is (read from the package, nothing was executed): Claude Code hooks (`UserPromptSubmit`, `PostToolUse`, `PreCompact`) + a status line + an optional local proxy
 (`dietcode claude`) that rewrites each outgoing request and keeps a running summary of old turns. Compression is done by **Scaledown's cloud API (`api.scaledown.xyz`)**
