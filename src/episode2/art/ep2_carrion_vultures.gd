@@ -273,7 +273,10 @@ func _fall_dead(b: Dictionary, delta: float) -> bool:
 		if node.position.y <= ground:
 			b["settled"] = true
 			node.rotation = Vector3(-0.08, node.rotation.y, 0.26)
-			Ep2VultureMesh.slump(b["model"])
+			var model: Node3D = b["model"]
+			model.rotation.x = 0.0
+			model.position.y = Ep2VultureMesh.LYING_HEIGHT * BIRD_SCALE
+			Ep2VultureMesh.slump(model)
 			b["down_t"] = 0.0
 	return bool(b.get("settled", false)) and dt >= DOWN_SECONDS
 
@@ -296,20 +299,22 @@ func _flap(b: Dictionary, amount: float) -> void:
 	Ep2VultureMesh.flap(b["model"], float(b["t"]) * 7.0 + float(b["phase"]), amount * 0.62)
 
 
-## Spread for the air, folded back along the body on the ground.
+## Spread and level for the air; on the ground it stands chest up with its wings folded back along the body.
 func _set_wings(b: Dictionary, open: bool) -> void:
+	var model: Node3D = b["model"]
+	model.rotation.x = 0.0 if open else Ep2VultureMesh.PERCH_PITCH
 	if open:
-		Ep2VultureMesh.spread(b["model"])
+		Ep2VultureMesh.spread(model)
 	else:
-		Ep2VultureMesh.fold(b["model"])
+		Ep2VultureMesh.fold(model)
 
 
-## The trail's one vulture (`Ep2VultureMesh`), standing on the root so `position` is the ground under its feet.
+## The trail's one vulture (`Ep2VultureMesh`), carried on the root so `position` is the ground under its feet.
 func _make_bird() -> Node3D:
 	var root := Node3D.new()
 	root.name = "Vulture"
 	var model := Ep2VultureMesh.build(BIRD_SCALE)
 	model.name = "Model"
-	model.position.y = Ep2VultureMesh.STANDING_HEIGHT * BIRD_SCALE
+	model.position.y = Ep2VultureMesh.PERCH_HEIGHT * BIRD_SCALE
 	root.add_child(model)
 	return root

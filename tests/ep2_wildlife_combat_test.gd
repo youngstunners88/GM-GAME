@@ -7,7 +7,7 @@ extends Node
 const TRAIL := preload("res://src/episode2/chamber/lake_trail.tscn")
 const LAKE := preload("res://src/episode2/chamber/logans_lake.tscn")
 const TOWN := preload("res://src/episode2/chamber/gold_town.tscn")
-const CHECKS_PINNED := 113
+const CHECKS_PINNED := 114
 
 var _fail: int = 0
 var _count: int = 0

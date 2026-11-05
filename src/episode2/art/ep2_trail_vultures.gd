@@ -27,7 +27,7 @@ const THERMAL_RATE := 0.21                # rad/s of the shared turn
 const BODY_RADIUS := 0.5                  # body and each wing: a bird at 30-60 m is a fair target
 const WING_REACH := 0.85
 const CORPSE_SECONDS := 20.0
-const GROUND_Y := 0.17                    # the trail's desert is the flat y = 0 plane; the flock stands on the route
+const GROUND_Y := 0.11                    # the trail's desert is the flat y = 0 plane, and the flock stands on the route
 const FALL_GRAVITY := 9.4
 const HEAR_RANGE := 165.0
 const WOUND_SAG := 7.0

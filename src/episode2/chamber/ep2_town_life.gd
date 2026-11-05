@@ -55,7 +55,7 @@ var _passby_peak_x: float = 0.0
 var _train_x: float = TRAIN_FROM_X
 var _wait: float = 4.0
 const DEAD_ROLL := 1.46                   # on its side, one shoulder still a little off the ground
-const DEAD_LYING_Y := 0.40
+const DEAD_LYING_Y := 0.27
 
 var _walker: Node3D
 var _walker_dir: float = 1.0

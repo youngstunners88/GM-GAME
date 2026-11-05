@@ -54,7 +54,7 @@ const SADDLE_HEIGHT := 1.28
 var _horse: Node3D
 var _horse_anim: AnimationPlayer
 const DEAD_ROLL := -1.46                          # this actor's root faces +Z, so its roll is the Z axis
-const DEAD_LYING_Y := 0.40
+const DEAD_LYING_Y := 0.27
 var _horse_state: String = "drink"                # lead -> drink; ridden; graze (left where he dismounted); hurt; gone (came down on the trail); dead (shot here)
 var _horse_clip: String = ""
 var _horse_sip_t: float = 2.0

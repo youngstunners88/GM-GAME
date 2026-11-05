@@ -12,7 +12,9 @@ const FEATHER_COLOR := Color(0.085, 0.070, 0.058)
 const FLIGHT_COLOR := Color(0.17, 0.155, 0.135)
 const SKIN_COLOR := Color(0.34, 0.115, 0.080)
 const GLIDE_DIHEDRAL := 0.24              # the shallow V a turkey vulture soars in
-const STANDING_HEIGHT := 0.17             # root height (at scale 1) that puts the feet on the ground
+const PERCH_PITCH := 0.45                 # chest up, tail down: how a bird stands
+const PERCH_HEIGHT := 0.27                # root height (at scale 1) that puts the perched bird's feet on the ground
+const LYING_HEIGHT := 0.09                # root height (at scale 1) of a body flat on the ground
 
 static var _feather: StandardMaterial3D = null
 static var _flight: StandardMaterial3D = null
@@ -24,7 +26,7 @@ static var _leg_mesh: CylinderMesh = null
 static var _wing: ArrayMesh = null
 static var _primaries: ArrayMesh = null
 static var _tail: ArrayMesh = null
-static var _puff_mesh: QuadMesh = null
+static var _flake: ArrayMesh = null
 
 
 static func _ensure_shared() -> void:
@@ -33,11 +35,13 @@ static func _ensure_shared() -> void:
 	_feather = StandardMaterial3D.new()
 	_feather.albedo_color = FEATHER_COLOR
 	_feather.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_feather.roughness = 0.92
+	_feather.roughness = 1.0
+	_feather.specular_mode = BaseMaterial3D.SPECULAR_DISABLED     # a flat wing in the low desert sun otherwise glares tan: feathers do not shine
 	_flight = StandardMaterial3D.new()
 	_flight.albedo_color = FLIGHT_COLOR
 	_flight.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_flight.roughness = 0.95
+	_flight.roughness = 1.0
+	_flight.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	_skin = StandardMaterial3D.new()
 	_skin.albedo_color = SKIN_COLOR
 	_skin.roughness = 0.80
@@ -59,7 +63,7 @@ static func _ensure_shared() -> void:
 	_leg_mesh = CylinderMesh.new()
 	_leg_mesh.top_radius = 0.012
 	_leg_mesh.bottom_radius = 0.010
-	_leg_mesh.height = 0.17
+	_leg_mesh.height = 0.26
 	_leg_mesh.radial_segments = 5
 	_wing = wing_mesh()
 	_primaries = primaries_mesh()
@@ -111,7 +115,7 @@ static func build(size: float = 1.0) -> Node3D:
 		# The pale trailing primaries are the part that catches the light when he banks.
 		_part(_primaries, _flight, pivot, "Primaries").scale = Vector3(side, 1.0, 1.0)
 		var leg := _part(_leg_mesh, _skin, root)
-		leg.position = Vector3(side * 0.045, -0.075, 0.10)
+		leg.position = Vector3(side * 0.045, -0.12, 0.10)
 		leg.rotation.x = 0.5
 	flap(root, 0.0, 0.0)
 	return root
@@ -137,9 +141,9 @@ static func spread(node: Node3D) -> void:
 	flap(node, 0.0, 0.0)
 
 
-## Wings laid back along the body: a landing or a fall.
+## Wings laid back along the body: a landing or a fall. The tips reach the tail and the wing wraps the flank.
 static func fold(node: Node3D) -> void:
-	_pose_wings(node, 1.22, -0.14, Vector3(0.52, 1.0, 0.72))
+	_pose_wings(node, 1.48, -0.10, Vector3(0.44, 1.0, 0.5))
 
 
 ## A corpse: the wings have dropped half open and lie slack.
@@ -161,17 +165,22 @@ static func _pose_wings(node: Node3D, sweep_back: float, droop_z: float, wing_sc
 ## A burst of dark loose feathers where a round struck. It frees itself.
 static func feather_puff(parent: Node3D, at: Vector3, amount: int = 14) -> void:
 	_ensure_shared()
-	if _puff_mesh == null:
-		var flake := StandardMaterial3D.new()
-		flake.albedo_color = FLIGHT_COLOR
-		flake.cull_mode = BaseMaterial3D.CULL_DISABLED
-		flake.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-		_puff_mesh = QuadMesh.new()
-		_puff_mesh.size = Vector2(0.09, 0.17)
-		_puff_mesh.material = flake
+	if _flake == null:
+		var look := StandardMaterial3D.new()
+		look.albedo_color = Color(0.27, 0.235, 0.20)
+		look.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		look.cull_mode = BaseMaterial3D.CULL_DISABLED
+		look.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+		# a slim feather, pointed at both ends: a square quad reads as flying black rectangles
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		_tri(st, Vector3(0.0, 0.085, 0.0), Vector3(-0.022, 0.0, 0.0), Vector3(0.022, 0.0, 0.0))
+		_tri(st, Vector3(0.0, -0.085, 0.0), Vector3(0.022, 0.0, 0.0), Vector3(-0.022, 0.0, 0.0))
+		st.set_material(look)
+		_flake = st.commit()
 	var p := CPUParticles3D.new()
 	p.name = "Feathers"
-	p.mesh = _puff_mesh
+	p.mesh = _flake
 	p.amount = amount
 	p.one_shot = true
 	p.explosiveness = 0.95
