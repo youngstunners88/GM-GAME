@@ -5,6 +5,24 @@
 - Registered hits on Dude, Minister Mike Dean, bartender, sheriff, Utah, the General Store clerk and StableAssistant draw the existing golden Remington; Rich uses his showcase Sharps. Misses and ordinary NPC rules are preserved. The shared woods cast is covered too.
 - Added the missing sheriff/bartender arm rigging while preserving their supplied meshes/materials. Native protected checks: 213 town + 40 woods, repeated encounters included; two full mount cycles pass. All affected regression checks pass. Full local suite passed. Clean-asset export and Chromium boot/streaming passed; final packs are below 190 MiB (main 199,051,680 B; extras 196,763,360 B). Production CI/upload/public BUILD verification remain pending.
 - Evidence: `docs/episode2-quality/npc-motion-20261105/VERIFICATION.md`. Not founder-verified or tested on a real phone.
+**2026-11-06 - Episode 2 common sense: the five things you should never have had to point out - PUSHED, deploying; not yet confirmed live, not founder-verified, not tried on a real phone.**
+
+| Your note | State | What changed |
+|---|---|---|
+| People walk through Mike Dean while he prays | **Built** | The townsfolk now treat the story cast as solid. Mike Dean kneeling gets a praying man's room: walkers go round him with more than a metre to spare, and anyone standing where he kneels steps back. The Sheriff, Inferno, the man on the ground, the parked quad and the Gatling are solid too, and nobody walks between two people talking. |
+| Inferno: whiskey, quad, back to the minister | **Built** | If Lil Blunt is already with Mike Dean when Inferno gets back, Inferno walks over and stops a talking distance away. He says hello, asks what happened (your bird line), and only then says "First whiskey's on me", and they go. Every line is the same, said once. He no longer walks back past the quad. When he leaves after the drinks, he rides his quad out of town (before, it stayed parked outside Rich's for good). |
+| Saloon doors don't swing | **Built** | The batwings are real hinged doors now. They swing open for Lil Blunt and for anyone in town going through either way, stay open until that person is clear, then swing back and settle shut. Before, they were frozen half open. It is one shared door behaviour, used in both copies of the town. |
+| Shot bandits stay on the raft | **Built** | A shot raft man goes over the side backwards, splashes into the river, and the current takes him. The raft carries on without him, and he never shoots or hooks the crate again. |
+| Bullets do nothing to the raft | **Built** | Rafts take hits: splinters, a pale scar on the log, a jolt. At half health one lists with a log working loose. Six hits break it apart (the Sharps counts double): the hook lets go, anyone still aboard goes into the river, and the logs float off. Shooting the two men is still quicker, so the stage is no easier and still winnable. A retry brings a whole raft back. |
+
+- **Also found, not fixed (in the same families):** scripted characters don't step round each other, only round the crowd. A shot trail rider drops through his saddle for one frame before he slides off. The office and shop doorways are open frames with no doors. When Inferno says "Evening, Minister", he turns to face Lil Blunt. A line keeps playing if Lil Blunt walks away mid-line.
+- **Sounds:** the raft hit, break-up and splash are generated here, with no recordings or credits. They were checked by loudness, not by ear.
+- **Credits:** 0 Tripo, 0 Meshy.
+- **Please check:** walk past Mike Dean while he prays, go through the saloon doors, meet Inferno at the body, and shoot a raft and its men at the river. Pictures (sequences, not end poses): `docs/episode2-quality/common-sense-20261106/`.
+
+---
+
+**2026-11-06 - Ridge climb and Utah's dock: texture pass - LIVE on itch (build `2026-11-06-0733403`, confirmed from the public page, streamed pack loads); NOT founder-verified, not tried on a real phone.**
 
 | Your note | State | What changed |
 |---|---|---|

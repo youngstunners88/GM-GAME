@@ -65,6 +65,15 @@ const MAN_HIT_CHANCE := 0.2                  # a revolver from a moving raft at 
 const MAN_RANGE := 90.0
 const SHOOTERS_AT_ONCE := 1                  # one gun on him at a time: he can answer it, and killing the shooters is what stops them
 const RAFT_SPEED := 2.6
+## A raft is a thing in the world, not scenery (ep2-world-common-sense, founder 2026-11-05: "bullets do nothing to the raft"). Its logs
+## take hits like a creature takes wounds (Ep2CreatureHealth): each hit splinters and scars the timber; at half it lists and rides low
+## with an end log working loose; at none the lashings go, the logs drift apart and whoever is still aboard goes into the river. Six
+## hits (the Sharps counts two) is more than its two men take, so shooting the men stays the better answer, and a missed man that hits
+## the raft still counts for something.
+const RAFT_HP := 6
+const RAFT_BOX := AABB(Vector3(-1.25, -0.2, -2.2), Vector3(2.5, 0.42, 4.4))   # the five lashed logs, raft frame
+const WATER_Y := 0.32                        # the water's surface over the river line (the RiverWater ribbon's lift)
+const RIVER_AUDIO := "res://src/episode2/extras/audio/river/"   # tools/ep2_audio/synth_river_hits.py (streamed)
 const RAFT_DRAIN := 0.45                     # a raft's hook on the crate counts this many bears aboard while his men live
 const BOARD_TIME := 9.0                      # bear-seconds aboard that tip the crate (up from 5 with the bigger waves: more bears, the same seconds to answer)
 const BEAR_HEIGHT := 2.2
@@ -111,7 +120,8 @@ var _rng := RandomNumberGenerator.new()
 ## The headless gates drive the bears and the crate on their own; the far-bank archers' and raft men's fire has its own test.
 var debug_no_ranged: bool = false
 var _rafts: Array = []                       # dictionaries: node, s, lateral, men (Array), hooked
-var _raiders: Array = []                     # Hammer's men: folk, raft, state, tell, cool, aim, hp, gun, glint
+var _raiders: Array = []                     # Hammer's men: folk, raft, state, tell, cool, aim, hp, gun, glint (+ fall once overboard)
+var _ray_t: float = INF                      # distance along the last _raider_on_ray / _bear_on_ray / _raft_on_ray hit
 var _arrows: Array = []                      # node, from, to, t, flight
 var _valley: MeshInstance3D
 var _lake_root: Node3D
@@ -1264,10 +1274,14 @@ func _spawn_raft(g: int, i: int, start: float) -> void:
 	root.name = "HammerRaft%d_%d" % [g, i]
 	_visuals.add_child(root)
 	var timber := _mat(Color(0.33, 0.22, 0.12))
+	var logs: Array = []
 	for k in 5:
 		var log := _box(Vector3(0.42, 0.36, 4.4), Vector3(-1.0 + float(k) * 0.5, 0.0, 0.0), timber, root)
 		log.name = "Log%d" % k
-	var raft: Dictionary = {"node": root, "s": maxf(start - 34.0 - 16.0 * float(i), 0.0), "lateral": 2.8 if i % 2 == 0 else -2.8, "men": [], "hooked": false}
+		logs.append(log)
+	var raft: Dictionary = {"node": root, "s": maxf(start - 34.0 - 16.0 * float(i), 0.0), "lateral": 2.8 if i % 2 == 0 else -2.8, "men": [], "hooked": false,
+		"health": Ep2CreatureHealth.attach(root, RAFT_HP), "logs": logs, "broken": false, "jolt": 0.0, "list": 0.0, "draft": 0.0, "hits": 0,
+		"break_t": 0.0}
 	for k in RAFT_MEN:
 		var folk := Ep2TownFolk.new()
 		root.add_child(folk)
@@ -1515,7 +1529,7 @@ func _step_rafts(delta: float) -> void:
 		var node: Node3D = r["node"]
 		if not is_instance_valid(node):
 			continue
-		var alive: bool = _raft_has_men(r)
+		var alive: bool = _raft_has_men(r) and not bool(r["broken"])
 		var goal: float = _crate_s - 3.2
 		if not alive:
 			r["hooked"] = false
@@ -1530,9 +1544,13 @@ func _step_rafts(delta: float) -> void:
 				if _hud != null:
 					_hud.toast("HAMMER'S RAFT IS ON THE SHIPMENT", 2.2)
 		var s: float = float(r["s"])
-		node.position = river_point(s) + river_right(s) * float(r["lateral"]) + Vector3(0, 0.40 + 0.04 * sin(_anim_t * 1.6 + s), 0)
+		r["jolt"] = maxf(0.0, float(r["jolt"]) - delta * 4.0)
+		if bool(r["broken"]):
+			_drift_wreck(r, delta)
+		var sit: float = 0.40 + 0.04 * sin(_anim_t * 1.6 + s) - float(r["draft"]) - 0.05 * float(r["jolt"])
+		node.position = river_point(s) + river_right(s) * float(r["lateral"]) + Vector3(0, sit, 0)
 		var d: Vector3 = river_dir(s)
-		node.rotation.y = atan2(d.x, d.z)
+		node.rotation = Vector3(0.05 * float(r["jolt"]) * sin(_anim_t * 31.0), atan2(d.x, d.z), float(r["list"]) + 0.06 * float(r["jolt"]))
 	for m in _raiders:
 		_step_raider(m, delta)
 
@@ -1541,7 +1559,12 @@ func _step_rafts(delta: float) -> void:
 ## only hits if Lil Blunt stayed put, so moving is always an answer.
 func _step_raider(m: Dictionary, delta: float) -> void:
 	var folk: Ep2TownFolk = m["folk"]
-	if not is_instance_valid(folk) or str(m["state"]) == "dead":
+	if not is_instance_valid(folk):
+		return
+	if m.has("fall"):
+		_step_overboard(m, folk, delta)
+		return
+	if str(m["state"]) == "dead":
 		return
 	folk.step(delta)
 	var at: Vector3 = folk.global_position if folk.is_inside_tree() else folk.position
@@ -1606,6 +1629,7 @@ func _bear_on_ray(eye: Vector3, dir: Vector3) -> Dictionary:
 		if t >= 0.0 and t < best_t:
 			best_t = t
 			best = b
+	_ray_t = best_t if not best.is_empty() else INF
 	return best
 
 
@@ -1620,11 +1644,49 @@ func _raider_on_ray(eye: Vector3, dir: Vector3) -> Dictionary:
 		if t >= 0.0 and t < best_t:
 			best_t = t
 			best = m
+	_ray_t = best_t if not best.is_empty() else INF
 	return best
 
 
+## The raft a bullet meets first (its lashed logs as one box in the raft's frame), or {}. Sets _ray_t; a broken raft is driftwood.
+func _raft_on_ray(eye: Vector3, dir: Vector3) -> Dictionary:
+	var best: Dictionary = {}
+	var best_t: float = 260.0
+	for r in _rafts:
+		var node: Node3D = r["node"]
+		if bool(r["broken"]) or not is_instance_valid(node):
+			continue
+		var inv: Transform3D = (node.global_transform if node.is_inside_tree() else node.transform).affine_inverse()
+		var t: float = _ray_box(inv * eye, (inv.basis * dir).normalized(), RAFT_BOX)
+		if t >= 0.0 and t < best_t:
+			best_t = t
+			best = r
+	_ray_t = best_t if not best.is_empty() else INF
+	return best
+
+
+## Slab test: the distance along a unit ray to where it enters `box`, or -1.
+static func _ray_box(o: Vector3, d: Vector3, box: AABB) -> float:
+	var t0: float = 0.0
+	var t1: float = INF
+	for ax in 3:
+		var lo: float = box.position[ax]
+		var hi: float = box.end[ax]
+		if absf(d[ax]) < 1e-8:
+			if o[ax] < lo or o[ax] > hi:
+				return -1.0
+			continue
+		var a: float = (lo - o[ax]) / d[ax]
+		var b: float = (hi - o[ax]) / d[ax]
+		t0 = maxf(t0, minf(a, b))
+		t1 = minf(t1, maxf(a, b))
+		if t0 > t1:
+			return -1.0
+	return t0
+
+
 func aim_on_target(eye: Vector3, dir: Vector3) -> bool:
-	return not _bear_on_ray(eye, dir).is_empty() or not _raider_on_ray(eye, dir).is_empty()
+	return not _bear_on_ray(eye, dir).is_empty() or not _raider_on_ray(eye, dir).is_empty() or not _raft_on_ray(eye, dir).is_empty()
 
 
 func _on_player_shot() -> void:
@@ -1636,17 +1698,27 @@ func _on_player_shot() -> void:
 			var yaw: float = _look_yaw + deg_to_rad(_rng.randfn(0.0, sigma))
 			var pitch: float = _look_pitch + deg_to_rad(_rng.randfn(0.0, sigma))
 			dir = Vector3(sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch))
+	# the nearest thing on the line takes the bullet: a man, his raft (a man standing behind his raft's logs is covered by them), a bear
 	var man: Dictionary = _raider_on_ray(eye, dir)
-	if not man.is_empty():
+	var man_t: float = _ray_t
+	var raft: Dictionary = _raft_on_ray(eye, dir)
+	var raft_t: float = _ray_t
+	var hit: Dictionary = _bear_on_ray(eye, dir)
+	var bear_t: float = _ray_t
+	# the Sharps drops a bear in one; the lighter guns take two (and a raft's logs count the Sharps double the same way)
+	var dmg: int = 2 if armory.equipped == Ep2ArmoryState.BUFF else 1
+	if not man.is_empty() and man_t <= raft_t and man_t <= bear_t:
 		damage_raider(man)
 		if _hud != null:
 			_hud.hit_marker(true)
 		return
-	var hit: Dictionary = _bear_on_ray(eye, dir)
+	if not raft.is_empty() and raft_t <= bear_t:
+		var broke: bool = damage_raft(raft, dmg, eye + dir * raft_t)
+		if _hud != null:
+			_hud.hit_marker(broke)
+		return
 	if hit.is_empty():
 		return
-	# the Sharps drops a bear in one; the lighter guns take two
-	var dmg: int = 2 if armory.equipped == Ep2ArmoryState.BUFF else 1
 	var killed: bool = damage_bear(hit, dmg)
 	if _hud != null:
 		_hud.hit_marker(killed)
@@ -1666,14 +1738,223 @@ func damage_bear(b: Dictionary, dmg: int) -> bool:
 	return true
 
 
-## One of Hammer's men goes down (any gun): he drops off the raft. Public so the headless gate can drive the rafts without aiming.
+## One of Hammer's men goes down (any gun): he goes over the side into the river and the raft carries on without him - no more shots,
+## no more hold on the crate. Public so the headless gate can drive the rafts without aiming.
 func damage_raider(m: Dictionary) -> void:
 	if str(m["state"]) == "dead":
 		return
 	m["state"] = "dead"
 	(m["glint"] as Node3D).visible = false
+	_overboard(m, 1.0)
+
+
+## A man off his raft: out of the raft's frame and into the world where he stood, then over the nearer side edge (pitched by `kick`:
+## shot, or thrown when the raft breaks up), into the water, carried off by the current and under. He lies as the dead lie.
+func _overboard(m: Dictionary, kick: float) -> void:
 	var folk: Ep2TownFolk = m["folk"]
+	if not is_instance_valid(folk) or m.has("fall"):
+		return
+	var raft: Dictionary = m["raft"]
+	var node: Node3D = raft["node"]
+	var raft_xf: Transform3D = node.transform                         # the raft and the river are both in _visuals' frame
+	var world_xf: Transform3D = raft_xf * folk.transform
+	var side: float = signf(folk.position.x) if absf(folk.position.x) > 0.05 else (1.0 if float(raft["lateral"]) > 0.0 else -1.0)
+	var out: Vector3 = raft_xf.basis * Vector3(side, 0.0, 0.0)
+	out.y = 0.0
+	out = out.normalized() if out.length() > 0.01 else Vector3.RIGHT
+	node.remove_child(folk)
+	_visuals.add_child(folk)
+	folk.transform = world_xf
+	folk.rotation = Vector3(0.0, atan2(-out.x, -out.z), 0.0)       # he goes over backwards, falling away from the logs
+	folk.facing = folk.rotation.y
 	folk.fall_dead()
+	var current: Vector3 = river_dir(float(raft["s"])) * (RAFT_SPEED if _raft_has_men(raft) else 1.4)
+	m["fall"] = {"p": world_xf.origin, "v": out * (1.6 + 0.8 * kick) + Vector3(0.0, 1.5 + 0.6 * kick, 0.0) + current * 0.6,
+		"wet": false, "t": 0.0}
+
+
+func _step_overboard(m: Dictionary, folk: Ep2TownFolk, delta: float) -> void:
+	var f: Dictionary = m["fall"]
+	f["t"] = float(f["t"]) + delta
+	var p: Vector3 = f["p"]
+	var s: float = river_s_of(Vector2(p.x, p.z))
+	var surface: float = river_point(s).y + WATER_Y
+	if not bool(f["wet"]):
+		var v: Vector3 = f["v"]
+		v.y -= 9.8 * delta
+		p += v * delta
+		f["v"] = v
+		if p.y <= surface - 0.12:
+			f["wet"] = true
+			f["t"] = 0.0
+			p.y = surface - 0.12
+			_splash(p, 1.0)
+			_river_sound("body_splash", p)
+	else:
+		# in the river now: the current takes him downstream, he goes under, and he is gone
+		p += river_dir(s) * 1.5 * delta
+		p.y = move_toward(p.y, surface - 1.8, delta * (0.12 if float(f["t"]) < 2.5 else 0.5))
+		if float(f["t"]) > 7.0:
+			folk.visible = false
+	f["p"] = p
+	folk.step(delta)                          # the dead fall (his body laid over), then put back where the water has him
+	folk.position = p
+
+
+## True once a man is off his raft and in the water (the gate's evidence for "he falls off").
+func raider_overboard(m: Dictionary) -> bool:
+	return m.has("fall") and bool((m["fall"] as Dictionary)["wet"])
+
+
+## A bullet into a raft's logs: splinters and a pale scar where it struck, the raft jolts; at half it lists and rides low with an end
+## log working loose; at none it breaks up (_break_raft). True when that hit broke it. Public so the gate can drive it without aiming.
+func damage_raft(r: Dictionary, dmg: int, at: Vector3) -> bool:
+	var health: Ep2CreatureHealth = r["health"]
+	if bool(r["broken"]) or health == null or not health.is_alive():
+		return false
+	var node: Node3D = r["node"]
+	var broke: bool = health.take_hit(dmg, at)
+	r["hits"] = int(r["hits"]) + 1
+	r["jolt"] = 1.0
+	_splinters(at, 1.0)
+	_river_sound("raft_hit", at)
+	if is_instance_valid(node):
+		# fresh pale wood where it struck, on the log it struck (so it goes with that log if the raft comes apart)
+		var inv: Transform3D = (node.global_transform if node.is_inside_tree() else node.transform).affine_inverse()
+		var local: Vector3 = inv * at
+		var log: Node3D = (r["logs"] as Array)[clampi(int(round((local.x + 1.0) / 0.5)), 0, (r["logs"] as Array).size() - 1)]
+		var on_log: Vector3 = log.transform.affine_inverse() * local
+		on_log = Vector3(clampf(on_log.x, -0.2, 0.2), minf(on_log.y, 0.17), clampf(on_log.z, -2.1, 2.1))
+		var scar := _box(Vector3(0.12, 0.05, 0.16), on_log, _mat(Color(0.74, 0.62, 0.44)), log)
+		scar.name = "BulletScar%d" % int(r["hits"])
+	if not broke and health.hp * 2 <= health.max_hp and float(r["draft"]) <= 0.0:
+		r["draft"] = 0.12
+		r["list"] = 0.07 * (1.0 if float(r["lateral"]) > 0.0 else -1.0)
+		var loose: Node3D = (r["logs"] as Array)[4]
+		loose.position += Vector3(0.14, -0.06, 0.25)
+		loose.rotation.y = 0.09
+	if broke:
+		_break_raft(r)
+	return broke
+
+
+## The lashings give: the hook comes off the crate, whoever is still aboard goes into the river, and the logs drift apart with the
+## current and settle low in the water.
+func _break_raft(r: Dictionary) -> void:
+	r["broken"] = true
+	r["hooked"] = false
+	r["break_t"] = 0.0
+	var node: Node3D = r["node"]
+	var at: Vector3 = node.global_position if is_instance_valid(node) and node.is_inside_tree() else (node.position if is_instance_valid(node) else Vector3.ZERO)
+	_splinters(at + Vector3(0, 0.3, 0), 2.2)
+	_splash(at, 1.6)
+	_river_sound("raft_break", at)
+	for m in r["men"]:
+		if str(m["state"]) != "dead":
+			m["state"] = "dead"
+			(m["glint"] as Node3D).visible = false
+			_overboard(m, 0.6)
+	if _hud != null:
+		_hud.toast("HAMMER'S RAFT BREAKS UP", 2.0)
+
+
+func _drift_wreck(r: Dictionary, delta: float) -> void:
+	r["break_t"] = float(r["break_t"]) + delta
+	# loose logs float awash (wood floats) and drift; only long after, well downstream, do they go under and are gone
+	var bt: float = float(r["break_t"])
+	r["draft"] = move_toward(float(r["draft"]), 0.16 if bt < 10.0 else 1.0, delta * (0.25 if bt < 10.0 else 0.18))
+	var logs: Array = r["logs"]
+	for k in logs.size():
+		var log: Node3D = logs[k]
+		var spread: float = float(k) - 2.0
+		log.position.x += spread * 0.16 * delta * maxf(0.0, 1.0 - float(r["break_t"]) / 6.0)
+		log.position.z += sin(float(k) * 2.3) * 0.12 * delta
+		log.rotation.y += (0.05 + 0.03 * float(k % 2)) * spread * delta * 0.4
+		log.rotation.z = 0.15 * sin(_anim_t * 0.9 + float(k))
+	if bt > 16.0 and is_instance_valid(r["node"]):
+		(r["node"] as Node3D).visible = false
+
+
+## One-shot chips of wood off a struck log (or a burst of them as a raft comes apart). World space; frees itself.
+func _splinters(at: Vector3, size: float) -> void:
+	var p := CPUParticles3D.new()
+	p.name = "Splinters"
+	p.one_shot = true
+	p.emitting = false
+	p.amount = int(10 * size)
+	p.lifetime = 0.7
+	p.explosiveness = 0.95
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 70.0
+	p.initial_velocity_min = 1.8 * size
+	p.initial_velocity_max = 3.6 * size
+	p.gravity = Vector3(0, -9.8, 0)
+	p.scale_amount_min = 0.5
+	p.scale_amount_max = 1.2
+	var chip := BoxMesh.new()
+	chip.size = Vector3(0.05, 0.02, 0.09)
+	p.mesh = chip
+	p.material_override = _mat(Color(0.62, 0.48, 0.30))
+	_visuals.add_child(p)
+	p.position = at
+	p.emitting = true
+	if is_inside_tree():
+		get_tree().create_timer(1.6).timeout.connect(p.queue_free)
+
+
+## White water where a body or a broken raft hits the river.
+func _splash(at: Vector3, size: float) -> void:
+	var p := CPUParticles3D.new()
+	p.name = "Splash"
+	p.one_shot = true
+	p.emitting = false
+	p.amount = int(18 * size)
+	p.lifetime = 0.9
+	p.explosiveness = 0.9
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 35.0
+	p.initial_velocity_min = 1.6 * size
+	p.initial_velocity_max = 3.4 * size
+	p.gravity = Vector3(0, -9.8, 0)
+	p.scale_amount_min = 0.6
+	p.scale_amount_max = 1.4
+	var drop := SphereMesh.new()
+	drop.radius = 0.028
+	drop.height = 0.056
+	drop.radial_segments = 6
+	drop.rings = 3
+	p.mesh = drop
+	p.amount = int(28 * size)
+	p.scale_amount_min = 0.4
+	p.scale_amount_max = 1.0
+	var mat := _mat(Color(0.86, 0.92, 0.94, 0.45), 0.2)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	p.material_override = mat
+	_visuals.add_child(p)
+	p.position = at
+	p.emitting = true
+	if is_inside_tree():
+		get_tree().create_timer(1.8).timeout.connect(p.queue_free)
+
+
+## A river one-shot (tools/ep2_audio/synth_river_hits.py, streamed) heard from where it happened; silent before the pack mounts.
+func _river_sound(name: String, at: Vector3) -> void:
+	var path: String = RIVER_AUDIO + name + ".ogg"
+	if not ResourceLoader.exists(path):
+		return
+	var a := AudioStreamPlayer3D.new()
+	a.name = "RiverSfx"
+	a.stream = load(path) as AudioStream
+	a.bus = "SFX"
+	a.unit_size = 18.0
+	a.max_distance = 240.0
+	_visuals.add_child(a)
+	a.position = at
+	if a.is_inside_tree():
+		a.play()
+		a.finished.connect(a.queue_free)
+	else:
+		a.queue_free()
 
 
 func _hurt_player() -> void:
@@ -1716,6 +1997,9 @@ func _retry_gate() -> void:
 		if is_instance_valid(r["node"]):
 			(r["node"] as Node).queue_free()
 	_rafts.clear()
+	for m in _raiders:
+		if is_instance_valid(m["folk"]) and m.has("fall"):
+			(m["folk"] as Node).queue_free()      # the men the river took: out of the world, not left floating into the retry
 	_raiders.clear()
 	for ar in _arrows:
 		if is_instance_valid(ar["node"]):

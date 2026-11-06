@@ -1474,9 +1474,14 @@ func _on_beat_entered(b: int) -> void:
 			# section 4.4: on the way to the bar, the man Lil Blunt shot - and Mike Dean praying by him
 			if _hud:
 				_hud.objective = "Walk with Inferno to the saloon."
-			_body_said = false
-			_bull_task = "to_body"
-			_bull_route([Ep2GoldTown.door_world("Bldg_Armory", 6.0), LANE_MARK, Vector3(-2.2, 0.0, 1450.0), _body_stand()], 1.5)
+			if _body_at_meet:
+				# the body talk already happened where they met: straight on to the bar
+				_body_said = true
+				_bull_task = "at_body"
+			else:
+				_body_said = false
+				_bull_task = "to_body"
+				_bull_route(_bull_way_to(_body_stand()), 1.5)
 		Beat.DRINKS:
 			# section 2 steps 7-9: whiskey at the bar - they really drink - Inferno's pointer to Mike Dean for a real license, then cousin Flux's new kettle
 			if _hud:
@@ -1643,6 +1648,58 @@ func _people_cheer_s() -> float:
 	return Ep2TownPeople.CHEER_S if _people != null and not _people.people.is_empty() else 3.0
 
 
+## The story cast as bodies the crowd keeps clear of (ep2-world-common-sense, founder 2026-11-05: "people walk through Minister Mike Dean
+## while he prays"). Mike Dean kneeling by the fallen stranger gets a praying man's room; anyone the story has standing and talking to
+## Lil Blunt gets room too, and so does the gap between them (nobody walks between two men in conversation). The fallen stranger, the
+## parked quad and the Gatling post are solid. Refreshed every tick, so the circles move with the walkers.
+func _update_keep_clear() -> void:
+	var talking: bool = _show_active
+	for entry in [["minister", _minister], ["sheriff", _sheriff], ["inferno", _bull]]:
+		var id: String = entry[0]
+		var who: Node3D = entry[1]
+		if who == null or not who.visible or (id == "inferno" and _bull_task in ["riding", "riding_off"]):
+			_people.clear_keep_clear(id)
+			_people.clear_keep_clear(id + "_talk")
+			continue
+		var busy: bool = id == "minister" and _minister_task in ["kneeling", "asking"]
+		var walking: bool = bool(who.call("is_walking"))
+		var near_lb: bool = Vector2(who.position.x - _player_pos.x, who.position.z - _player_pos.z).length() < 4.0
+		var in_talk: bool = talking and near_lb and not walking
+		_people.set_keep_clear(id, who.position, Ep2TownPeople.KEEP_BUSY if busy or in_talk else Ep2TownPeople.KEEP_BODY)
+		if in_talk:
+			var mid: Vector3 = (who.position + _player_pos) * 0.5
+			_people.set_keep_clear(id + "_talk", mid, Vector2(who.position.x - mid.x, who.position.z - mid.z).length())
+		else:
+			_people.clear_keep_clear(id + "_talk")
+	if _opp != null and _opp.dead:
+		# he fell backwards from where he stood: his body lies along the line behind him
+		var back: Vector3 = Vector3(-sin(_opp.rotation.y), 0.0, -cos(_opp.rotation.y))
+		_people.set_keep_clear("fallen", _opp.position + back * 0.85, 1.0)
+	else:
+		_people.clear_keep_clear("fallen")
+	if _quad != null and _quad.visible and _quad.is_parked:
+		_people.set_keep_clear("quad", _quad.position, 1.25)
+	else:
+		_people.clear_keep_clear("quad")
+	if _gatling != null:
+		_people.set_keep_clear("gatling", _gatling.position, 0.85)
+
+
+## The town's swinging doors (Ep2SwingDoor: the saloon's batwings) pushed by everyone who goes through: Lil Blunt, the townspeople and
+## the story cast alike.
+func _step_doors(delta: float) -> void:
+	if _town_col.get("doors", []).is_empty():
+		return
+	var bodies: Array = [_player_pos]
+	if _people != null:
+		for q in _people.people:
+			bodies.append(q.folk.position)
+	for who in [_minister, _sheriff, _bull, _bartender, _accomplice, _opp, _rich, _utah]:
+		if who != null and who.visible:
+			bodies.append(who.position)
+	Ep2GoldTown.step_doors(_town_col, delta, bodies)
+
+
 ## Section 4.1: Mike Dean leaves his counter in a panic - round the end of it, out through the door - and runs to Lil Blunt (his rigged
 ## body on its Run clip; the statue simply hurries). _tick_minister carries on: his question, then the walk to the fallen stranger to pray.
 func _minister_runs_out() -> void:
@@ -1739,26 +1796,97 @@ func _tick_bull_back(delta: float) -> void:
 				# the parked quad is solid: nobody walks through it
 				if _town_col.has("props"):
 					(_town_col["props"] as Array).append([Vector2(_quad.position.x, _quad.position.z), 1.25])
-				# he swings off beside the saddle and comes over (to the shop door if Lil Blunt is inside)
+				# he swings off beside the saddle and comes over: to the shop door if Lil Blunt is inside; to the lane side of the fallen
+				# stranger if he has already walked down to Mike Dean (ep2-world-common-sense: he goes where Lil Blunt is, once, and the
+				# talk happens there); else to wherever he stands. Out of the side lane he walks the lane, never through the row's walls.
 				_bull_task = "to_lb"
 				_bull.position = _quad.dismount_spot()
 				_bull.play(BULL_IDLE, 1.0, 0.25)
-				var meet: Vector3 = Ep2GoldTown.door_world("Bldg_Armory", 1.2) if _in_room("Bldg_Armory", -0.5) else _player_pos
-				_bull.walk_to(_stand_off(_bull.position, meet, 2.3), 1.5)
+				var meet: Vector3
+				if _in_room("Bldg_Armory", -0.5):
+					meet = Ep2GoldTown.door_world("Bldg_Armory", 1.2)
+				elif _lb_at_body():
+					meet = _bull_body_spot()
+				else:
+					meet = _stand_off(_bull.position, _player_pos, 2.3)
+				_bull_route(_bull_way_to(meet), 1.5)
 		"to_lb":
-			if not _bull.is_walking() and not _show_active:
+			if not _bull.is_walking() and _bull_path.is_empty() and not _show_active:
 				if _player_pos.distance_to(_bull.position) > 6.5:
 					_bull.face_point(_player_pos)
 					if _hud != null:
-						_hud.objective = "Inferno's back - he's outside Rich's."
+						_hud.objective = "Inferno's back - he's outside Rich's." if _bull.position.distance_to(_quad.position) < 8.0 else "Inferno's back."
 					return
 				_bull_task = "greeted"
 				_bull.face_point(_player_pos)
 				look_toward(_bull.head_world(), 2.4)
-				_start_show(_caption_steps(BULL_BACK_LINES) + [{"do": "call", "fn": release_look}], false)
+				if _lb_at_body() and _bull.position.distance_to(_opp.position) < 4.5:
+					# met at the body (Lil Blunt was already standing with Mike Dean): the same lines, in the order a person would say them
+					# where he stands - hello, what happened here, THEN the whiskey - and no walk back to the quad and down again
+					_body_at_meet = true
+					_bull.face_point(_minister.position if _minister != null else _opp.position)
+					_start_show(_caption_steps([BULL_BACK_LINES[0]]) + [{"do": "call", "fn": _bull_face_minister}]
+						+ _caption_steps(BODY_LINES) + [{"do": "call", "fn": func() -> void: _bull.face_point(_player_pos)}]
+						+ _caption_steps([BULL_BACK_LINES[1]]) + [{"do": "call", "fn": release_look}], false)
+				else:
+					_body_at_meet = false
+					_start_show(_caption_steps(BULL_BACK_LINES) + [{"do": "call", "fn": release_look}], false)
 		"greeted":
 			if not _show_active:
 				_advance_to(Beat.BODY)
+
+
+## Lil Blunt is standing with the fallen stranger (and Mike Dean praying by him): where Inferno's "what happened" belongs.
+func _lb_at_body() -> bool:
+	return _opp != null and _player_pos.distance_to(_opp.position) < BODY_NEAR and not _in_room("Bldg_Armory", -0.5)
+
+
+## Where Inferno stops by the fallen stranger when Lil Blunt is already standing there: by the body, a talking distance from Lil Blunt
+## (never on top of him - Inferno is 2.9 m tall), clear of Mike Dean praying and of the body itself.
+func _bull_body_spot() -> Vector3:
+	var o: Vector3 = _opp.position
+	var best: Vector3 = _body_stand()
+	var best_score: float = -INF
+	for off in [Vector3(-1.5, 0.0, 2.3), Vector3(1.5, 0.0, 2.3), Vector3(-2.4, 0.0, 0.9), Vector3(2.4, 0.0, 0.9), Vector3(0.0, 0.0, 3.0),
+			Vector3(-2.2, 0.0, -1.4), Vector3(2.2, 0.0, -1.4), Vector3(0.0, 0.0, -3.0)]:
+		var spot: Vector3 = o + off
+		var to_lb: float = spot.distance_to(_player_pos)
+		var to_mike: float = spot.distance_to(_minister.position) if _minister != null else 9.0
+		if to_lb < 2.0 or to_mike < 1.8 or to_lb > 5.0:
+			continue
+		var score: float = -absf(to_lb - 2.6) + minf(to_mike, 3.0) * 0.3
+		if score > best_score:
+			best_score = score
+			best = spot
+	return best if best_score > -INF else _stand_off(_body_stand(), _player_pos, 2.4)
+
+
+func _bull_face_minister() -> void:
+	_bull.face_point(_minister.position if _minister != null else _opp.position)
+	look_toward(_opp.position + Vector3(0.0, 0.5, 0.0), 2.2)
+
+
+## Inferno's walk from where he stands to `goal`: down the Armory's side lane first when he is in it (the lane's corner marks, the way
+## the room always walked him), straight across the open street otherwise. Never a mark behind him: a route that starts at Rich's door
+## while he is already in Main Street is the walk back to the quad the founder saw.
+func _bull_way_to(goal: Vector3, from: Vector3 = Vector3.INF) -> Array:
+	var at: Vector3 = _bull.position if from == Vector3.INF else from
+	var way: Array = []
+	var shop: Vector3 = Ep2GoldTown.door_world("Bldg_Armory", 6.0)
+	var in_lane: bool = at.distance_to(shop) < 9.0 or at.distance_to(LANE_MARK) < 4.0
+	var goal_in_lane: bool = goal.distance_to(shop) < 9.0
+	if in_lane and not goal_in_lane:
+		if at.distance_to(LANE_MARK) > 4.0:
+			way.append(shop)
+		way.append(LANE_MARK)
+		way.append(Vector3(-2.2, 0.0, 1450.0))
+	elif goal_in_lane and not in_lane:
+		way.append(Vector3(-2.2, 0.0, 1450.0))
+		way.append(LANE_MARK)
+		if goal.distance_to(LANE_MARK) > 4.0:
+			way.append(shop)
+	way.append(goal)
+	return way
 
 
 ## Where Inferno stops by the fallen stranger: on the lane side of him, the Minister kneeling on the other.
@@ -1767,6 +1895,7 @@ func _body_stand() -> Vector3:
 
 
 var _bull_path: Array = []
+var _body_at_meet: bool = false                      # Inferno met Lil Blunt at the body: the body talk was part of his greeting
 var _bull_speed: float = 1.5
 var _make_way_t: float = 0.0
 var _duck: Ep2DuckModifier = null
@@ -1781,7 +1910,7 @@ func _bull_route(points: Array, speed: float) -> void:
 
 
 func _tick_bull_route() -> void:
-	if _bull == null or _bull_task not in ["to_body", "to_bar", "leaving"]:
+	if _bull == null or _bull_task not in ["to_lb", "to_body", "to_bar", "leaving"]:
 		return
 	_duck_bull()
 	if _bull.is_walking():
@@ -1797,9 +1926,52 @@ func _tick_bull_route() -> void:
 			_bull_task = "at_bar"
 			_bull.face_point(_player_pos)
 		"leaving":
-			_bull_task = ""
-			_bull.visible = false
 			_set_duck(0.0)
+			if _quad != null and _quad.visible:
+				_ride_off()
+			else:
+				_bull_task = ""
+				_bull.visible = false
+
+
+## Inferno back in the saddle and away: the ride in, reversed (the lane, the street's end, the road out of town). The quad stops being
+## a solid thing in the lane, and he is gone once it is out of sight up the road.
+func _ride_off() -> void:
+	_bull_task = "riding_off"
+	if _town_col.has("props"):
+		var props: Array = _town_col["props"]
+		for i in range(props.size() - 1, -1, -1):
+			if (props[i][0] as Vector2).distance_to(Vector2(_quad.position.x, _quad.position.z)) < 0.05:
+				props.remove_at(i)
+	var back: Array = [_quad.position]
+	for i in range(QUAD_RETURN.size() - 1, -1, -1):
+		back.append(QUAD_RETURN[i])
+	_quad.drive(back)
+	if _bull.anim != null and _bull.anim.has_animation(WoodsQuadChamber.BULL_SIT_CLIP):
+		_bull.play(WoodsQuadChamber.BULL_SIT_CLIP, 0.0, 0.0)
+		_bull.anim.seek(WoodsQuadChamber.BULL_SIT_AT, true)
+	_bull.clear_face_goal()
+	_seat_bull()
+
+
+## The ride out: nobody is run down - he waits while Lil Blunt stands in front of the quad, and the street makes way as it did coming in.
+func _tick_ride_off(delta: float) -> void:
+	if _bull_task != "riding_off" or _quad == null:
+		return
+	var ahead: Vector3 = _player_pos - _quad.position
+	var fwd := Vector3(sin(_quad.yaw), 0.0, cos(_quad.yaw))
+	var in_way: bool = ahead.dot(fwd) > -0.5 and ahead.dot(fwd) < 4.5 and absf(ahead.dot(Vector3(fwd.z, 0.0, -fwd.x))) < 1.6
+	if not in_way:
+		_quad.step(delta)
+	_seat_bull()
+	_make_way_t -= delta
+	if _people != null and _make_way_t <= 0.0:
+		_make_way_t = 0.25
+		_people.make_way(_quad.position, Vector2(sin(_quad.yaw), cos(_quad.yaw)), 14.0, 2.0)
+	if _quad.is_parked:
+		_quad.visible = false
+		_bull.visible = false
+		_bull_task = ""
 
 
 ## Section 4.5: a 2.9 m man through the saloon's 2.5 m batwing door - he stoops (Ep2DuckModifier) as he nears the door plane and straightens
@@ -2164,6 +2336,7 @@ func _tick(delta: float) -> void:
 	_tick_people(delta)
 	_tick_minister(delta)
 	_tick_bull_route()
+	_tick_ride_off(delta)
 	if _gatling != null:
 		_gatling.step(delta)
 	if _flash_t > 0.0:
@@ -2283,10 +2456,14 @@ func _tick(delta: float) -> void:
 					+ _caption_steps(INFERNO_LICENSE_LINES) + _caption_steps(FLUX_LINES) + [
 					{"do": "call", "fn": release_look}], false)
 			elif _drinks_said and not _show_active and not is_drinking():
-				# Inferno heads off to his cousin's; the story's next thread is the second visit to Mike Dean
+				# Inferno heads off to his cousin's; the story's next thread is the second visit to Mike Dean. He rode in, so he rides out:
+				# back to his quad outside Rich's and away up the road he came in on (he used to walk off and leave it parked for good)
 				_bull_task = "leaving"
-				_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), Ep2GoldTown.door_world("Bldg_Saloon", 3.0), Vector3(1.5, 0.0, 1470.0),
-					Vector3(16.0, 0.0, 1480.0)], 1.6)
+				var out_door: Vector3 = Ep2GoldTown.door_world("Bldg_Saloon", 3.0)
+				if _quad != null:
+					_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), out_door] + _bull_way_to(_quad.dismount_spot(), out_door), 1.6)
+				else:
+					_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), out_door, Vector3(1.5, 0.0, 1470.0), Vector3(16.0, 0.0, 1480.0)], 1.6)
 				_advance_to(Beat.MINISTER2)
 		Beat.MINISTER2:
 			# the second visit: in at the counter - the license / bond close, then the referral to Dude (steps 9-10)
@@ -2391,7 +2568,9 @@ func _tick_people(delta: float) -> void:
 	# the Armory's two turn to whoever comes in the door of the shop
 	if _people != null:
 		_people.set_context("duel" if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW] else ("quiet" if _beat in [Beat.OFFICE, Beat.WON, Beat.JOB, Beat.BODY, Beat.JAIL] else "normal"))
+		_update_keep_clear()
 		_people.step(delta, _player_pos)
+	_step_doors(delta)
 	if _accomplice != null:
 		_accomplice.step(delta)
 	if _rich_brain != null:

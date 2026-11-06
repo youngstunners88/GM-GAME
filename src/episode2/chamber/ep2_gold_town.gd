@@ -357,6 +357,7 @@ static func door_world(piece: String, out: float = 1.0) -> Vector3:
 static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Dictionary:
 	var walls: Array = []
 	var props: Array = []
+	var doors: Array = []                      # Ep2SwingDoor: the room steps them with every body near a doorway
 	var root := Node3D.new()
 	root.name = "GoldTown"
 	parent.add_child(root)
@@ -387,6 +388,8 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		b.transform = building_xform(e)
 		root.add_child(b)
 		_hang_signs(b)
+		if piece == "Bldg_Saloon":
+			doors.append(_hang_batwings(b, kit))
 		if kit_v2:
 			_collect_trim(b, trims)
 		walls.append_array(_walls_of(piece, building_xform(e)))
@@ -464,7 +467,40 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		a2.free()
 	if jl != null:
 		jl.free()
-	return {"walls": walls, "props": props}
+	return {"walls": walls, "props": props, "doors": doors}
+
+
+## The saloon's batwings as real hinged leaves (Ep2SwingDoor, founder 2026-11-05: "saloon doors don't swing; characters walk straight
+## through them"). The streamed kit baked its pair into the building mesh standing half open, so those triangles are taken out of this
+## copy first; the shipped kit drew an open doorway, and gets the same pair. Same boards, same dark wood and brass as the kit's.
+static func _hang_batwings(saloon: Node3D, kit: Node3D) -> Ep2SwingDoor:
+	var wood: Material = Ep2SwingDoor.find_material(saloon, "DarkWood")
+	var brass: Material = Ep2SwingDoor.find_material(saloon, "Brass")
+	if wood == null:
+		wood = Ep2SwingDoor.find_material(kit, "DarkWood")
+	if brass == null:
+		brass = Ep2SwingDoor.find_material(kit, "Brass")
+	if wood == null:
+		var w := StandardMaterial3D.new()
+		w.albedo_color = Color(0.24, 0.15, 0.09)
+		w.roughness = 0.8
+		wood = w
+	if brass == null:
+		var br := StandardMaterial3D.new()
+		br.albedo_color = Color(0.78, 0.6, 0.28)
+		br.metallic = 0.8
+		br.roughness = 0.35
+		brass = br
+	var hw: float = float(FOOTPRINT["Bldg_Saloon"][2])
+	Ep2SwingDoor.strip_baked_leaves(saloon, AABB(Vector3(-hw + 0.02, 0.7, -0.6), Vector3(2.0 * hw - 0.04, 1.1, 1.2)), ["DarkWood", "Brass"])
+	return Ep2SwingDoor.batwings(saloon, hw, wood, brass)
+
+
+## Every swinging door the town has, stepped with the bodies near it (call from the room's tick).
+static func step_doors(info: Dictionary, delta: float, bodies: Array) -> void:
+	for d in info.get("doors", []):
+		if is_instance_valid(d):
+			(d as Ep2SwingDoor).step(delta, bodies)
 
 
 ## The two-storey Armory scene from the streamed extras (null when they are not loadable yet: the kit's shop is drawn instead).

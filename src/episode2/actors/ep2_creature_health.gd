@@ -1,6 +1,7 @@
 class_name Ep2CreatureHealth
 extends Node
-## One small hit-point component for Episode 2 animals (vultures, bison, town and yard horses).
+## One small hit-point component for Episode 2 animals (vultures, bison, town and yard horses) - and for the few shootable things that
+## are not animals but break the same way: the day-88 river's rafts (river_cover.gd, RAFT_HP) use it as their timber's hit pool.
 ##
 ## The bear brain and the town's people keep their own story systems; this is the shared family for the creatures a bullet can
 ## simply wound and put down. A room attaches it under the creature's root as `CreatureHealth`, calls `take_hit()` from its shot
