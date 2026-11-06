@@ -42,7 +42,13 @@ for v in body.data.vertices:
  for n,(start,d) in segments.items():
   if not n.startswith(side):continue
   t=max(0,min(1,(point-start).dot(d)/d.length_squared));dist.append(((point-start-d*t).length,n))
- dist.sort();chosen=dist[:2];weights=[1/(d*d+.0001) for d,n in chosen];total=sum(weights)
+ dist.sort()
+ # Coat/apron edges beyond the silhouette threshold are still torso, not arms.
+ # Restrict the arm blend to the rest-fitted limb envelope before normalizing.
+ radius=.13 if a.kind=='sheriff' else .07
+ factor*=smooth((radius-dist[0][0])/(radius*.35))
+ if factor<=0:continue
+ chosen=dist[:2];weights=[1/(d*d+.0001) for d,n in chosen];total=sum(weights)
  previous=[(g.group,g.weight) for g in v.groups]
  for idx,w in previous:body.vertex_groups[idx].add([v.index],w*(1-factor),'REPLACE')
  for (_,n),w in zip(chosen,weights):groups[n].add([v.index],factor*w/total,'REPLACE')
