@@ -36,6 +36,17 @@ func _ready() -> void:
 		var f: Ep2TownFolk = cast[id]
 		for encounter in 2:
 			print("ENCOUNTER ", id, " ", encounter)
+			if id == "dude" and encounter == 1:
+				var yard: Ep2StableYard = c._stable_yard
+				f.place(Ep2StableYard.RIDE_MOUNT)
+				yard._begin_mount()
+				for frame in 133: yard._tick_mount(f, 1.0 / 60.0)
+				yard._begin_dismount()
+				yard._tick_dismount(f, 0.5, Vector3.ZERO)
+			var saved_animation: String = f.anim_player().assigned_animation
+			var saved_height: float = f.position.y
+			var saved_speed: float = f.anim_player().get_playing_speed()
+
 			c._player_pos = f.global_position + Vector3(0, 0, -2 if id in ["sheriff", "utah"] else 2)
 			aim(c, c._player_pos + Vector3(0, 10, 0))
 			c._on_player_shot()
@@ -51,12 +62,14 @@ func _ready() -> void:
 			check(id + " controls blocked during draw", not c.has_player_control())
 			for i in 30: c.step(1.0 / 60.0)
 			check(id + " draw precedes firing", not c._law.retaliation.fired)
+			check(id + " reaction keeps actor root height", is_equal_approx(f.position.y, saved_height))
 			for i in 70: c.step(1.0 / 60.0)
 			check(id + " one decisive shot", c._law.retaliation.shots == before + 1)
 			check(id + " bore points toward player dot=" + str(c._law.retaliation.shot_barrel_direction.dot(c._law.retaliation.shot_direction)), c._law.retaliation.shot_barrel_direction.dot(c._law.retaliation.shot_direction) > 0.98)
 			await get_tree().process_frame
 			check(id + " restarts at recorded entry", c._player_pos.is_equal_approx(entry) and not c._resolved)
 			check(id + " state resets for next encounter", not c._law.retaliation.active and c.has_player_control())
+			check(id + " interrupted clip and playback restore " + saved_animation + "/" + str(saved_speed) + " -> " + str(f.anim_player().assigned_animation) + "/" + str(f.anim_player().get_playing_speed()), f.anim_player().assigned_animation == saved_animation and is_equal_approx(f.anim_player().get_playing_speed(), saved_speed))
 			check(id + " narrative and purchases survive", c._beat == c.Beat.GEARED and GameManager.purse_balance("btc") == old_purse)
 	check("ordinary population is preserved", c.get_people() == crowd and crowd.people.size() == original_people)
 	check("story protection does not start arrest", c._law.law_state == "idle" and c._law.person_hits == 0)

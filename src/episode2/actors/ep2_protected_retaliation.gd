@@ -32,6 +32,8 @@ func begin(chamber: Node, id: String, target: Ep2TownFolk) -> bool:
 		"base": folk._base_clip, "clip": folk.current_clip(), "clock": folk.anim_player().callback_mode_process,
 		"eye": host.get("eye_height"), "case_visible": true,
 		"animation_time": folk.anim_player().current_animation_position,
+		"actual_animation": folk.anim_player().assigned_animation, "playing": folk.anim_player().is_playing(),
+		"speed_scale": folk.anim_player().speed_scale, "playing_speed": folk.anim_player().get_playing_speed(),
 		"show_active": host.get("_show_active"), "show_blocks": host.get("_show_blocks_control"), "hold": host.get("_hold"), "case_rifle": null, "chore_props": []}
 	for prop_name in ["HorseBrush", "CarriedHay"]:
 		var prop: Node3D = folk.find_child(prop_name, true, false) as Node3D
@@ -89,7 +91,7 @@ func reset() -> void:
 	if not active: return
 	if is_instance_valid(flash): flash.queue_free()
 	if owned_weapon and is_instance_valid(weapon): folk.drop_prop(str(weapon.name))
-	if weapon != null and weapon.name == "Sharps":
+	if is_instance_valid(weapon) and weapon.name == "Sharps":
 		POSE.install_rifle(folk)
 		if not owned_weapon: weapon.transform = folk.get_meta("sharps_hand_transform")
 	folk.position = saved.position
@@ -101,7 +103,13 @@ func reset() -> void:
 	folk._base_clip = saved.base
 	folk.anim_player().callback_mode_process = saved.clock
 	folk.play_clip(saved.clip)
-	folk.anim_player().seek(float(saved.animation_time), true)
+	var ap: AnimationPlayer = folk.anim_player()
+	if str(saved.actual_animation) != "" and ap.has_animation(saved.actual_animation):
+		ap.speed_scale = float(saved.speed_scale)
+		var custom_speed: float = float(saved.playing_speed) / ap.speed_scale if absf(ap.speed_scale) > 0.0001 else 0.0
+		ap.play(saved.actual_animation, 0.0, custom_speed, custom_speed < 0.0)
+		ap.seek(float(saved.animation_time), true)
+		if not bool(saved.playing): ap.pause()
 	host.set("_show_active", saved.show_active)
 	host.set("_show_blocks_control", saved.show_blocks)
 	host.set("_hold", saved.hold)
@@ -129,7 +137,9 @@ func _draw_remington() -> bool:
 	var hp: Vector3 = sk.get_bone_pose_position(idx.Hips)
 	var start: Dictionary = rot.duplicate()
 	var local: Transform3D = sk.global_transform.affine_inverse() * folk.global_transform
-	var gun_frame := Transform3D(Basis.IDENTITY, Vector3(-0.20, folk.height_m * 0.72, 0.52))
+	sk.force_update_all_bone_transforms()
+	var shoulder: Vector3 = folk.global_transform.affine_inverse() * (sk.global_transform * sk.get_bone_global_pose(idx.RightArm).origin)
+	var gun_frame := Transform3D(Basis.IDENTITY, Vector3(-0.20, shoulder.y - 0.10, 0.52))
 	var target: Vector3 = host.get("_player_pos") + Vector3(0, float(host.get("eye_height")), 0)
 	var heading: float = atan2(target.x - folk.global_position.x, target.z - folk.global_position.z)
 	var aim: Vector3 = Basis(Vector3.UP, heading).inverse() * (target - folk.global_position) - gun_frame.origin
@@ -137,7 +147,7 @@ func _draw_remington() -> bool:
 
 	var G: Callable = func(b: int) -> Transform3D: return SOLVE._global(sk, b, rot, hp, idx.Hips)
 	SOLVE._reach_arm(sk, idx, rot, G, "Right", local * (gun_frame * Vector3(0, -0.055, -0.19)),
-		local * Vector3(-0.43, folk.height_m * 0.61, 0.24), (local.basis * Vector3(0, -0.5, 0.7)).normalized())
+		local * Vector3(-0.43, shoulder.y - 0.30, 0.24), (local.basis * Vector3(0, -0.5, 0.7)).normalized())
 	var hand: Transform3D = sk.global_transform * (G.call(idx.RightHand) as Transform3D)
 	var hold: Transform3D = hand.affine_inverse() * folk.global_transform * gun_frame
 	var anim := Animation.new()
@@ -187,7 +197,10 @@ func step(delta: float) -> void:
 	if not active or not is_instance_valid(folk): return
 	elapsed += delta
 	folk.face_point(host.get("_player_pos"))
+	var root_height: float = folk.position.y
 	folk.step(delta)
+	# Mounted actors keep their seat height while the reaction owns their motion.
+	folk.position.y = root_height
 	folk.anim_player().advance(delta)
 	# Manual simulation must update bone attachments before reading the muzzle.
 	for skeleton in folk.model.find_children("*", "Skeleton3D", true, false):

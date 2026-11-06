@@ -11,11 +11,14 @@ git clone -q --no-hardlinks . "$D" && git -C "$D" checkout -q "$(git rev-parse H
 G=.godot-cache/Godot_v4.3-stable_linux.x86_64
 [ -x "$G" ] || { echo "✗ pinned Godot missing: scripts/bootstrap-godot.sh"; exit 2; }
 mkdir -p "$D/.godot-cache" "$D/.farm"; cp "$G" "$D/.godot-cache/"
-( cd "$D" && bash scripts/ep2-local-export.sh > "$D/.farm/pack-gate.log" 2>&1 )
+if ! ( cd "$D" && bash scripts/ep2-local-export.sh > "$D/.farm/pack-gate.log" 2>&1 ); then
+  echo "✗ fresh export failed (logs retained: $D/.farm/pack-gate.log and export.log)"; exit 1
+fi
 pck="$D/web_verify/game/index.pck"
 [ -f "$pck" ] || { echo "✗ fresh export produced no pck (see $D/.farm/pack-gate.log)"; exit 1; }
 sz=$(stat -c%s "$pck")
+[ "$sz" -gt 0 ] || { echo "✗ fresh export produced an empty pck (logs retained: $D/.farm/)"; exit 1; }
 [ "$sz" -gt "$LIMIT" ] && python3 tools/ep2_forge/pck_report.py "$pck" --top 10   # what is big (run from the real repo, not the clone)
-rm -rf "$D"
+if [ "${PACK_GATE_KEEP:-0}" != "1" ]; then rm -rf "$D"; fi
 if [ "$sz" -gt "$LIMIT" ]; then echo "✗ fresh-import pck $sz B > gate $LIMIT B (CI would fail: $(( sz / 1048576 )) MiB)"; exit 1; fi
 echo "✓ fresh-import pck $sz B (gate $LIMIT, margin $(( LIMIT - sz )) B)"

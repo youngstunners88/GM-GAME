@@ -15,11 +15,11 @@ Baseline: `0acdb2a55c2ffed1aa3dc9cee2ee854b89822f81`. Integrated master: `0e1ee4
 
 ## Evidence
 
-- Protected town: 178 checks, 0 failures, eight entities, two encounters each. Covers misses, registered hits, survival, burst ownership, blocked controls, draw-before-shot, decisive single fire, bore direction, arrival retry and progress preservation.
+- Protected town: 210 checks, 0 failures, eight entities, two encounters each. Covers misses, registered hits, survival, burst ownership, blocked controls, draw-before-shot, decisive single fire, bore direction, root height, exact clip/playback restoration, arrival retry and progress preservation. Dude’s second encounter interrupts a reverse dismount.
 - Protected woods: 32 checks, 0 failures, four entities twice, same failure signal and section restore.
 - Ranch, armory guns, two-storey armory, town law, founder fix document, world routes, save compatibility and script compilation passed after master integration.
 - Two complete mount/ride/dismount cycles: maximum root frame displacement 0.03030 m; maximum yaw step 0.16221 rad; rider/horse forward dot >= 0.99999994. Both end at the same mount mark without offsets. Reproducible gate: `tests/ep2_mount_alignment_test.tscn`.
-- The protected, woods and mount gates are included in the existing CI workflow. The full release suite and fresh web pack gate must pass before publishing.
+- The protected, woods and mount gates are included in the existing CI workflow. The full local release suite passed (three documented pause tap-target geometry differences on this host are tolerated by the existing gate). The fresh export gate now rejects failed exports and empty packs instead of reporting a zero-byte pack as passing. A valid fresh export and public deployment must still be verified before publishing claims.
 - Runtime captures: original armory introduction completed with 23 Gatling rounds and 2 plates; supplied Sharps visible from the player's camera. Final response capture tool: `tools/ep2_shots/protected_npc_shot.tscn`, writes `.farm/protected-npc/` (player view plus firing diagnostic for all eight). Bright/dim Dude lens and staged mount diagnostics are included beside this report.
 
 Not founder-verified; not tested on a physical phone. Native tests and renderer evidence do not alone prove a public deployment. Release/upload/public BUILD verification remains a separate required gate.
