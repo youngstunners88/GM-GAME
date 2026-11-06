@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-06 - Ridge climb and Utah's dock: texture pass - PUSHED, not yet live, not founder-verified, not tried on a real phone.**
+**2026-11-06 - Ridge climb and Utah's dock: texture pass - LIVE on itch (build `2026-11-06-0733403`, confirmed from the public page, streamed pack loads); NOT founder-verified, not tried on a real phone.**
 
 | Your note | State | What changed |
 |---|---|---|
