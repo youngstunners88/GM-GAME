@@ -5,7 +5,8 @@
 - Registered hits on Dude, Minister Mike Dean, bartender, sheriff, Utah, the General Store clerk and StableAssistant draw the existing golden Remington; Rich uses his showcase Sharps. Misses and ordinary NPC rules are preserved. The shared woods cast is covered too.
 - Added the missing sheriff/bartender arm rigging while preserving their supplied meshes/materials. Native protected checks: 213 town + 40 woods, repeated encounters included; two full mount cycles pass. All affected regression checks pass; Rich’s carry/aim/fire contact gate adds 253 checks with <0.2 mm wrist-landmark error. Latest master’s common-sense world fixes are preserved. Full local suite passed. Clean-asset export and Chromium boot/streaming passed; final packs are below 190 MiB (main 199,143,040 B; extras 196,808,288 B). Production CI/upload/public BUILD verification remain pending.
 - Evidence: `docs/episode2-quality/npc-motion-20261105/VERIFICATION.md`. Not founder-verified or tested on a real phone.
-**2026-11-06 - Episode 2 common sense: the five things you should never have had to point out - PUSHED, deploying; not yet confirmed live, not founder-verified, not tried on a real phone.**
+
+**2026-11-06 - Episode 2 common sense: the five things you should never have had to point out - LIVE on itch (build `2026-11-06-df2cdb0`, confirmed from the public page, streamed pack loads); NOT founder-verified, not tried on a real phone.**
 
 | Your note | State | What changed |
 |---|---|---|
