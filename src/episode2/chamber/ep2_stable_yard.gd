@@ -894,7 +894,7 @@ func _begin_dismount() -> void:
 
 func _tick_dismount(dude: Ep2TownFolk, delta: float, player: Vector3) -> void:
 	if player.distance_to(RIDE_MOUNT) < 1.6:
-		dude.anim_player().advance(delta)
+		# Keep pose and root on the same clock while the landing space is occupied.
 		return
 	_ride_mount_t += delta
 	var k: float = clampf(_ride_mount_t / MOUNT_SECONDS, 0.0, 1.0)

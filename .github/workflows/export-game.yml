@@ -506,6 +506,16 @@ jobs:
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_law_test.tscn 2>&1 | tee town-law-tests.log
           grep -q 'EP2_TOWN_LAW: ALL PASS' town-law-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-law-tests.log; then exit 1; fi
+          # Protected founder cast: registered hits, muzzle direction, debounce, and checkpoint retries.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_protected_retaliation_test.tscn 2>&1 | tee protected-npc-tests.log
+          grep -q 'EP2_PROTECTED_RETALIATION: ALL PASS' protected-npc-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' protected-npc-tests.log; then exit 1; fi
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_protected_woods_test.tscn 2>&1 | tee protected-woods-tests.log
+          grep -q 'EP2_PROTECTED_WOODS: ALL PASS' protected-woods-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' protected-woods-tests.log; then exit 1; fi
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_mount_alignment_test.tscn 2>&1 | tee mount-alignment-tests.log
+          grep -q 'EP2_MOUNT_ALIGNMENT: ALL PASS' mount-alignment-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' mount-alignment-tests.log; then exit 1; fi
           # Town feel at 60 fps (fix pack 2026-10-27): nobody walks backwards, the bar has sitters, own drinking rhythms, bumps, the train.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_feel_test.tscn 2>&1 | tee town-feel-tests.log
           grep -q 'EP2_TOWN_FEEL: ALL PASS' town-feel-tests.log

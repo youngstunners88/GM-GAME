@@ -61,17 +61,18 @@ static func install(folk: Ep2TownFolk) -> bool:
 
 
 const SHARPS := "res://src/episode2/extras/armory/showcase/sharps.glb"
-## Measured on the supplied showcase mesh after its 45-degree heading correction.
-const GUN_GRIP := Vector3(0.0, 0.105, -0.37)
-const GUN_SUPPORT := Vector3(0.0, 0.10, 0.02)
-const GUN_MUZZLE := Vector3(0.01, 0.044, 0.80)
-const GUN_SCALE := 0.80
+## Measured on the current scoped showcase mesh after its 45-degree heading correction.
+## Its normalization is 0.8511 of the canonical 1.21 m founder rifle.
+const GUN_GRIP := Vector3(0.0035, 0.1416, -0.2140)
+const GUN_SUPPORT := Vector3(0.0035, 0.1671, 0.0669)
+const GUN_MUZZLE := Vector3(0.0035, 0.2054, 0.5181)
+const GUN_SCALE := 1.175
 
 static func rifle_frame(folk: Ep2TownFolk) -> Transform3D:
 	return Transform3D(Basis(Vector3.RIGHT, -0.05), Vector3(-0.16, folk.height_m * 0.67, 0.28))
 
 
-static func install_rifle(folk: Ep2TownFolk) -> bool:
+static func install_rifle(folk: Ep2TownFolk, target: Vector3 = Vector3.INF) -> bool:
 	var ap: AnimationPlayer = folk.anim_player()
 	if ap == null: return false
 	var sk: Skeleton3D = folk.model.find_children("*", "Skeleton3D", true, false)[0]
@@ -88,6 +89,10 @@ static func install_rifle(folk: Ep2TownFolk) -> bool:
 	var G: Callable = func(b: int) -> Transform3D: return SOLVE._global(sk, b, rot, hp, idx.Hips)
 	var local: Transform3D = sk.global_transform.affine_inverse() * folk.global_transform
 	var gun: Transform3D = rifle_frame(folk)
+	if target.is_finite():
+		var heading: float = atan2(target.x - folk.global_position.x, target.z - folk.global_position.z)
+		var direction: Vector3 = Basis(Vector3.UP, heading).inverse() * (target - folk.global_position) - gun.origin
+		gun.basis = Basis.looking_at(direction.normalized(), Vector3.UP, true)
 	var support: Vector3 = gun * ((GUN_SUPPORT - GUN_GRIP) * GUN_SCALE)
 	for side in ["Left", "Right"]:
 		var palm: Vector3 = support if side == "Left" else gun.origin

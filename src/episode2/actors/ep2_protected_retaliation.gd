@@ -17,6 +17,7 @@ var muzzle: Node3D
 var flash: MeshInstance3D
 var shot_origin := Vector3.ZERO
 var shot_direction := Vector3.ZERO
+var shot_barrel_direction := Vector3.ZERO
 var saved: Dictionary = {}
 var owned_weapon: bool = false
 
@@ -31,20 +32,28 @@ func begin(chamber: Node, id: String, target: Ep2TownFolk) -> bool:
 		"base": folk._base_clip, "clip": folk.current_clip(), "clock": folk.anim_player().callback_mode_process,
 		"eye": host.get("eye_height"), "case_visible": true,
 		"animation_time": folk.anim_player().current_animation_position,
-		"show_active": host.get("_show_active"), "show_blocks": host.get("_show_blocks_control"), "hold": host.get("_hold")}
+		"show_active": host.get("_show_active"), "show_blocks": host.get("_show_blocks_control"), "hold": host.get("_hold"), "case_rifle": null, "chore_props": []}
+	for prop_name in ["HorseBrush", "CarriedHay"]:
+		var prop: Node3D = folk.find_child(prop_name, true, false) as Node3D
+		if prop != null:
+			saved.chore_props.append([prop, prop.visible])
+			prop.visible = false
 	active = true
 	folk.stop()
 	if id == "rich":
 		var case_rifle: Node3D = host.get("_sharps_case")
+		saved.case_rifle = case_rifle
 		if case_rifle != null:
 			saved.case_visible = case_rifle.visible
 			case_rifle.visible = false
+		POSE.install_rifle(folk, host.get("_player_pos") + Vector3(0, float(host.get("eye_height")), 0))
 		weapon = folk.held_prop("Sharps")
 		owned_weapon = weapon == null
 		if weapon == null: weapon = POSE.attach_rifle(folk)
 		if weapon == null:
 			reset()
 			return false
+		weapon.transform = folk.get_meta("sharps_hand_transform")
 		folk.hold_clip("InspectRifle")
 	else:
 		owned_weapon = true
@@ -80,6 +89,9 @@ func reset() -> void:
 	if not active: return
 	if is_instance_valid(flash): flash.queue_free()
 	if owned_weapon and is_instance_valid(weapon): folk.drop_prop(str(weapon.name))
+	if weapon != null and weapon.name == "Sharps":
+		POSE.install_rifle(folk)
+		if not owned_weapon: weapon.transform = folk.get_meta("sharps_hand_transform")
 	folk.position = saved.position
 	folk.rotation = saved.rotation
 	folk.facing = saved.facing
@@ -93,9 +105,11 @@ func reset() -> void:
 	host.set("_show_active", saved.show_active)
 	host.set("_show_blocks_control", saved.show_blocks)
 	host.set("_hold", saved.hold)
+	for row in saved.chore_props:
+		if is_instance_valid(row[0]): row[0].visible = row[1]
 	host.set("eye_height", saved.eye)
-	var case_rifle: Node3D = host.get("_sharps_case")
-	if case_rifle != null: case_rifle.visible = saved.case_visible
+	var case_rifle: Node3D = saved.case_rifle
+	if is_instance_valid(case_rifle): case_rifle.visible = saved.case_visible
 	active = false
 	fired = false
 	elapsed = 0.0
@@ -116,26 +130,43 @@ func _draw_remington() -> bool:
 	var start: Dictionary = rot.duplicate()
 	var local: Transform3D = sk.global_transform.affine_inverse() * folk.global_transform
 	var gun_frame := Transform3D(Basis.IDENTITY, Vector3(-0.20, folk.height_m * 0.72, 0.52))
+	var target: Vector3 = host.get("_player_pos") + Vector3(0, float(host.get("eye_height")), 0)
+	var heading: float = atan2(target.x - folk.global_position.x, target.z - folk.global_position.z)
+	var aim: Vector3 = Basis(Vector3.UP, heading).inverse() * (target - folk.global_position) - gun_frame.origin
+	gun_frame.basis = Basis.looking_at(aim.normalized(), Vector3.UP, true)
+
 	var G: Callable = func(b: int) -> Transform3D: return SOLVE._global(sk, b, rot, hp, idx.Hips)
-	SOLVE._reach_arm(sk, idx, rot, G, "Right", local * (gun_frame.origin - Vector3(0, -0.04, 0.03)),
+	SOLVE._reach_arm(sk, idx, rot, G, "Right", local * (gun_frame * Vector3(0, -0.055, -0.19)),
 		local * Vector3(-0.43, folk.height_m * 0.61, 0.24), (local.basis * Vector3(0, -0.5, 0.7)).normalized())
 	var hand: Transform3D = sk.global_transform * (G.call(idx.RightHand) as Transform3D)
 	var hold: Transform3D = hand.affine_inverse() * folk.global_transform * gun_frame
 	var anim := Animation.new()
 	anim.length = DRAW_SECONDS
 	var path: String = str(ap.get_node(ap.root_node).get_path_to(sk))
-	for name in ["RightArm", "RightForeArm", "RightHand"]:
-		var b: int = idx[name]
+	# Key the full sampled body: a partial arm clip would reset the minister
+	# chest/shoulder rest basis underneath the solved grip during blending.
+	for b in sk.get_bone_count():
 		var track: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 		anim.track_set_path(track, NodePath("%s:%s" % [path, sk.get_bone_name(b)]))
 		anim.rotation_track_insert_key(track, 0.0, start[b])
 		anim.rotation_track_insert_key(track, 0.50, rot[b])
 		anim.rotation_track_insert_key(track, DRAW_SECONDS, rot[b])
+	var hip_track: int = anim.add_track(Animation.TYPE_POSITION_3D)
+	anim.track_set_path(hip_track, NodePath("%s:%s" % [path, sk.get_bone_name(idx.Hips)]))
+	anim.position_track_insert_key(hip_track, 0, hp)
+	anim.position_track_insert_key(hip_track, DRAW_SECONDS, hp)
 	ap.stop()
 	ap.clear_caches()
 	var lib: AnimationLibrary = Ep2TownFolk.own_default_library(ap)
 	if lib.has_animation("ProtectedDraw"): lib.remove_animation("ProtectedDraw")
 	lib.add_animation("ProtectedDraw", anim)
+	# Bind from the evaluated imported rig, including its scale/translation tracks.
+	ap.play("ProtectedDraw", 0.0)
+	ap.seek(0.50, true)
+	ap.advance(0.0)
+	sk.force_update_all_bone_transforms()
+	hand = sk.global_transform * sk.get_bone_global_pose(idx.RightHand)
+	hold = hand.affine_inverse() * folk.global_transform * gun_frame
 	weapon = Ep2RemingtonView.make_held()
 	weapon.name = "GoldenRemington"
 	if not folk.attach_prop(weapon, sk.get_bone_name(idx.RightHand)):
@@ -147,6 +178,8 @@ func _draw_remington() -> bool:
 	mark.position = Vector3(0, 0.055, 0.33)
 	weapon.add_child(mark)
 	folk.hold_clip("ProtectedDraw")
+	ap.seek(0.0, true)
+	ap.advance(0.0)
 	return true
 
 
@@ -156,12 +189,37 @@ func step(delta: float) -> void:
 	folk.face_point(host.get("_player_pos"))
 	folk.step(delta)
 	folk.anim_player().advance(delta)
+	# Manual simulation must update bone attachments before reading the muzzle.
+	for skeleton in folk.model.find_children("*", "Skeleton3D", true, false):
+		(skeleton as Skeleton3D).force_update_all_bone_transforms()
+	# Track the live eye through the final wrist aim (including a falling player).
+	# Rotate the actual wrist, keeping the hand and attached revolver together.
+	if elapsed >= 0.50:
+		var attachment: BoneAttachment3D = weapon.get_parent() as BoneAttachment3D
+		var skeleton: Skeleton3D = attachment.get_parent() as Skeleton3D
+		var bone: int = skeleton.find_bone(attachment.bone_name)
+		var target: Vector3 = host.get("_player_pos") + Vector3(0, float(host.get("eye_height")), 0)
+		for iteration in 2:
+			var wrist: Transform3D = skeleton.global_transform * skeleton.get_bone_global_pose(bone)
+			var barrel: Transform3D = wrist * weapon.transform * muzzle.transform
+			var direction: Vector3 = (target - barrel.origin).normalized()
+			var correction := Quaternion(barrel.basis.z.normalized(), direction)
+			var parent: int = skeleton.get_bone_parent(bone)
+			var parent_frame: Transform3D = skeleton.global_transform * skeleton.get_bone_global_pose(parent)
+			var local_basis: Basis = parent_frame.basis.inverse() * Basis(correction) * wrist.basis
+			skeleton.set_bone_pose_rotation(bone, local_basis.orthonormalized().get_rotation_quaternion())
+			skeleton.force_update_all_bone_transforms()
 	if not fired and elapsed >= DRAW_SECONDS:
 		fired = true
 		shots += 1
-		shot_origin = muzzle.global_position
+		var attachment: BoneAttachment3D = weapon.get_parent() as BoneAttachment3D
+		var skeleton: Skeleton3D = attachment.get_parent() as Skeleton3D
+		var bone: int = skeleton.find_bone(attachment.bone_name)
+		var muzzle_frame: Transform3D = skeleton.global_transform * skeleton.get_bone_global_pose(bone) * weapon.transform * muzzle.transform
+		shot_origin = muzzle_frame.origin
 		var eye: Vector3 = host.get("_player_pos") + Vector3(0, float(host.get("eye_height")), 0)
 		shot_direction = (eye - shot_origin).normalized()
+		shot_barrel_direction = muzzle_frame.basis.z.normalized()
 		flash.visible = true
 		folk.kick()
 		host.call("_sfx", "ep2_revolver_blast_1" if weapon.name == "GoldenRemington" else "ep2_winchester_shot_1")

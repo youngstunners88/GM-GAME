@@ -349,6 +349,8 @@ static func _child_offset(skel: Skeleton3D, i: int) -> Vector3:
 	for child in skel.get_bone_children(i):
 		var offset: Vector3 = skel.get_bone_rest(child).origin
 		if offset.length_squared() > longest.length_squared(): longest = offset
+	# Blender leaf hands retain their bone-local +Y axis even without finger joints.
+	if longest.is_zero_approx() and "hand" in skel.get_bone_name(i).to_lower(): return Vector3.UP
 	return longest.normalized()
 
 

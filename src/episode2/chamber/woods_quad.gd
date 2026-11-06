@@ -182,6 +182,8 @@ var _fern_mat: ShaderMaterial = null
 var _rock_mesh: Mesh = null
 var _wildlife: Ep2Wildlife = null
 var _people: Ep2TownPeople = null                   # the townsfolk: already living in their town while the quad rolls in
+var _protected_trace := Ep2TownLaw.new()
+var _retaliation_entry: Dictionary = {}
 var _stable_yard: Ep2StableYard = null
 var _stable_prompt_shown: bool = false
 signal stable_voice_requested(line_id: String, voice_id: String)
@@ -1542,6 +1544,9 @@ func is_gliding() -> bool:
 # --- per-frame --------------------------------------------------------------------------------------------------------
 
 func _tick(delta: float) -> void:
+	if _protected_trace.retaliation.active:
+		_protected_trace.retaliation.step(delta)
+		return
 	_warn_cd = maxf(0.0, _warn_cd - delta)
 	_stay_cd = maxf(0.0, _stay_cd - delta)
 	_bark_cd = maxf(0.0, _bark_cd - delta)
@@ -2182,6 +2187,12 @@ func _on_player_shot() -> void:
 	var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = _fire_dir()
 	var hit_info: Dictionary = _bear_hit_on_ray(eye, dir, 170.0, true)
+	_protected_trace._people = _people
+	var cast_hit: Dictionary = _protected_trace.trace(eye, dir)
+	var cast_t: float = float(cast_hit.get("t", INF))
+	var bear_t: float = eye.distance_to(hit_info.get("point", eye + dir * 171.0))
+	if str(cast_hit.get("id", "")) in preload("res://src/episode2/actors/ep2_protected_retaliation.gd").ENABLED and cast_t < bear_t and not _ray_tree_blocked(eye, dir, cast_t, 0.0, 0.0):
+		if _protected_trace.retaliation.begin(self, str(cast_hit.id), cast_hit.folk): return
 	var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 	if hit != null:
 		if not hit.is_dead(): hit.set_meta("killed_by", "player")   # Corpse shots never re-award a kill.
@@ -2784,6 +2795,10 @@ func _build_town_set() -> void:
 	GoldTownChamber.build_office_stand_ins(_visuals)
 	_stable_yard = _visuals.find_child("StableYard", true, false) as Ep2StableYard
 	_wire_stable_yard()
+	_protected_trace._build_building_tests()
+	for row in [["dude", "Dude"], ["stable_assistant", "StableAssistant"], ["sheriff", "OfficeSheriff"], ["minister", "OfficeMikeDean"]]:
+		var actor: Ep2TownFolk = _visuals.find_child(row[1], true, false) as Ep2TownFolk
+		if actor != null: _protected_trace._add_cast(row[0], actor, "story", actor.height_m)
 
 
 # It is THEIR town (founder 2026-10-22): the people are out in the street before Lil Blunt arrives, not spawned
@@ -3060,3 +3075,24 @@ func start_rig(_mode: String = "eth") -> bool:
 	if _hud != null:
 		_hud.toast("Recovered bear bow · %d arrows" % count if bool(armory.corpses[str(body.get_meta("corpse_id"))].get("bow", false)) else "Recovered %d bear arrows" % count if count > 0 else "No arrows recovered", 1.8)
 	return true
+
+
+func remember_retaliation_entry() -> void:
+	_retaliation_entry = {"position": _player_pos, "yaw": _look_yaw, "pitch": _look_pitch}
+
+
+func retry_protected_npc() -> void:
+	if not _protected_trace.retaliation.active: return
+	_protected_trace.retaliation.reset()
+	if not _retaliation_entry.is_empty():
+		_player_pos = _retaliation_entry.position
+		_look_yaw = _retaliation_entry.yaw
+		_look_pitch = _retaliation_entry.pitch
+	_move_input = Vector2.ZERO
+	_vel_y = 0.0
+	_running = true
+	_resolved = false
+	remove_meta("protected_npc_defeat")
+	_hud.fade_to(0.0, 0.3)
+	_update_camera(0.0)
+	_sync_visuals()

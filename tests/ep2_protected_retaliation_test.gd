@@ -36,7 +36,7 @@ func _ready() -> void:
 		var f: Ep2TownFolk = cast[id]
 		for encounter in 2:
 			print("ENCOUNTER ", id, " ", encounter)
-			c._player_pos = f.global_position + Vector3(0, 0, 2)
+			c._player_pos = f.global_position + Vector3(0, 0, -2 if id in ["sheriff", "utah"] else 2)
 			aim(c, c._player_pos + Vector3(0, 10, 0))
 			c._on_player_shot()
 			check(id + " missed shot does not retaliate", not c._law.retaliation.active)
@@ -53,6 +53,7 @@ func _ready() -> void:
 			check(id + " draw precedes firing", not c._law.retaliation.fired)
 			for i in 70: c.step(1.0 / 60.0)
 			check(id + " one decisive shot", c._law.retaliation.shots == before + 1)
+			check(id + " bore points toward player dot=" + str(c._law.retaliation.shot_barrel_direction.dot(c._law.retaliation.shot_direction)), c._law.retaliation.shot_barrel_direction.dot(c._law.retaliation.shot_direction) > 0.98)
 			await get_tree().process_frame
 			check(id + " restarts at recorded entry", c._player_pos.is_equal_approx(entry) and not c._resolved)
 			check(id + " state resets for next encounter", not c._law.retaliation.active and c.has_player_control())
@@ -62,4 +63,5 @@ func _ready() -> void:
 	session.queue_free()
 	await get_tree().process_frame
 	print("EP2_PROTECTED_RETALIATION: %d checks, %d failures" % [checks, failures])
+	print("EP2_PROTECTED_RETALIATION: ALL PASS" if failures == 0 else "EP2_PROTECTED_RETALIATION: FAILED")
 	get_tree().quit(1 if failures else 0)

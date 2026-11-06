@@ -1,10 +1,10 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-05 — Character motion and protected retaliation — LOCAL WORK IN PROGRESS, not released.**
-- Utah/Rich rest-aware arm and grounded gait changes, supplied showcase Sharps attachment, Dude lens texture and horse heading/mount changes are implemented locally.
-- Nine affected native checks passed before expanding retaliation to the full roster. User assigned the existing golden Remington to Minister Mike Dean, bartender, sheriff and Utah; Rich retains showcase Sharps. Expanded verification is pending.
-- Actual armory-camera capture completed. Full release gates/export, retaliation aiming proof, woods-copy integration and deployment remain open. Evidence and limitations: `docs/episode2-quality/npc-motion-20261105/VERIFICATION.md`.
-**2026-11-06 - Ridge climb and Utah's dock: texture pass - LIVE on itch (build `2026-11-06-0733403`, confirmed from the public page, streamed pack loads); NOT founder-verified, not tried on a real phone.**
+**2026-11-06 — Character motion and protected retaliation — implemented; release checks running.**
+- Utah and Rich use bounded rig-aware arms and grounded walking; Rich holds the supplied showcase Sharps. Dude has black lens textures and a forward-facing, phased mount/dismount.
+- Registered hits on Dude, Minister Mike Dean, bartender, sheriff, Utah, the General Store clerk and StableAssistant draw the existing golden Remington; Rich uses his showcase Sharps. Misses and ordinary NPC rules are preserved. The shared woods cast is covered too.
+- Added the missing sheriff/bartender arm rigging while preserving their supplied meshes/materials. Native protected checks: 178 town + 32 woods, repeated encounters included; two full mount cycles pass. All affected regression checks pass. Full suite, export bounds and public deployment verification are pending.
+- Evidence: `docs/episode2-quality/npc-motion-20261105/VERIFICATION.md`. Not founder-verified or tested on a real phone.
 
 | Your note | State | What changed |
 |---|---|---|
