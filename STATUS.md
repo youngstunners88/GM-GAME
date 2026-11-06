@@ -1,5 +1,11 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-06 — Day-88 ridge: the Shipment no longer jumps back after a won gate; reload fixed — pushed, NOT founder-verified.**
+- Falling on the way down to the next ledge used to send the crate back to the gate's start and replay the wave. Now the crate keeps waiting in the eddy and you're back on that overlook with full hearts.
+- A real tip or death still sends you back to the current gate only. There is now a warning ("THE SHIPMENT IS GOING OVER") halfway to a tip. Hammer's rafts hook the crate from behind, which made the tip feel random.
+- Reload: R pressed straight after a Sharps shot was ignored during the 1.1 s breech cycle, so it now waits and loads when the breech is ready. The overlook top-up read the wrong counter, so the Sharps could run dry. After a fail the gun is never left mid-reload.
+- Details: `docs/founder-feedback/2026-11-06_day88_shipment_rewind_reload.md`. Test: RIVER_COVER ALL PASS.
+
 **2026-11-06 — Character motion and protected retaliation — LIVE on itch, build `2026-11-06-f628bba`; public BUILD and streamed extras verified.**
 - Utah and Rich use bounded rig-aware arms and grounded walking; Rich holds the supplied showcase Sharps. Dude has black lens textures and a forward-facing, phased mount/dismount.
 - Registered hits on Dude, Minister Mike Dean, bartender, sheriff, Utah, the General Store clerk and StableAssistant draw the existing golden Remington; Rich uses his showcase Sharps. Misses and ordinary NPC rules are preserved. The shared woods cast is covered too.

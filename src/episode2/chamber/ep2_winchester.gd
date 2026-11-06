@@ -44,6 +44,9 @@ var ads: float = 0.0               # 0 = hip, 1 = fully aimed
 var scope_fov: float = 0.0          # above 0 this gun wears a telescopic sight (Ep2ArmoryState.PROFILES)
 var wants_ads: bool = false
 var reloading: bool = false
+## R pressed while the action was still cycling (the Sharps' 1.1 s breech): remembered and started the moment the cycle ends,
+## instead of silently dropped - the day-88 ridge "reload is glitched" report (founder 2026-11-06).
+var reload_queued: bool = false
 var shots_fired: int = 0
 var dry_fires: int = 0
 
@@ -69,6 +72,9 @@ func step(delta: float) -> void:
 	ads = move_toward(ads, target, delta / ADS_TIME)
 	if _cycle > 0.0:
 		_cycle = maxf(0.0, _cycle - delta)
+	if reload_queued and _cycle <= 0.0:
+		reload_queued = false
+		start_reload()
 	if reloading:
 		_reload_t -= delta
 		if _reload_t <= 0.0:
@@ -95,6 +101,7 @@ func trigger() -> int:
 		dry_fires += 1
 		dry_fired.emit()
 		return Shot.EMPTY
+	reload_queued = false
 	if reloading:
 		_stop_reload()              # firing interrupts a shell-by-shell reload, as in Modern Warfare
 	rounds -= 1
@@ -109,7 +116,10 @@ func start_reload() -> bool:
 	if reload_locked:
 		blocked.emit("reload_locked")
 		return false
-	if reloading or rounds >= capacity or reserve <= 0 or _cycle > 0.0:
+	if reloading or rounds >= capacity or reserve <= 0:
+		return false
+	if _cycle > 0.0:
+		reload_queued = true        # starts when the action has cycled
 		return false
 	reloading = true
 	_reload_t = reload_interval
@@ -135,6 +145,7 @@ func _stop_reload() -> void:
 
 
 func cancel_reload() -> void:
+	reload_queued = false
 	_stop_reload()       # only completed shell transactions have spent reserve
 
 

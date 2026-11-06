@@ -88,6 +88,7 @@ func _ready() -> void:
 	_test_prerequisites()
 	_test_full_run()
 	_test_tipped_and_downed()
+	_test_ridge_reload()
 	_test_lake_is_logans_alone()
 	_test_continues_the_walk()
 	_test_ranged_threat()
@@ -213,10 +214,42 @@ func _test_tipped_and_downed() -> void:
 	_advance(c, 70.0)
 	var downs: int = c.get_downs()
 	var on_way_down: Vector3 = c.ridge_nearest(RiverCoverChamber.OVERLOOKS[1] + Vector3(0, 0, -30))[0]
+	var eddy_s: float = c.crate_s()
 	_stand(c, on_way_down)                            # down the path towards the bend ledge, into the ledge bear's range
 	_advance(c, 25.0)                                 # he stands still and lets it at him
+	# founder 2026-11-06: downed AFTER the gate's wave is down must not send the crate back upstream to the launch pool
+	check("downed after the gate is cleared: the crate stays waiting in the eddy, never jumps upstream", c.crate_s() >= eddy_s - 0.01,
+		"eddy %.1f now %.1f" % [eddy_s, c.crate_s()])
 	check("downed on the ridge: back to the current gate's overlook with full hearts, the crate not soft-locked", c.get_downs() > downs
 		and c.get_health() == 3 and c.get_gate() == 0, "downs %d health %d gate %d" % [c.get_downs(), c.get_health(), c.get_gate()])
+	c.free()
+
+
+## Founder 2026-11-06: reload glitched on the ridge. The Sharps holds one round with a 1.1 s breech cycle; R pressed during the cycle
+## was dropped, and the gate resupply read the never-decreasing purchase counter so the reserve could hit 0 with no top-up.
+func _test_ridge_reload() -> void:
+	var st := _armory(true, true)
+	var c := _room(st)
+	_arm_and_launch(c)
+	var sharps: Ep2Winchester = st.firearm(Ep2ArmoryState.BUFF)
+	sharps.rounds = 1
+	sharps.reserve = 3
+	check("ridge: the Sharps fires", sharps.trigger() == Ep2Winchester.Shot.OK)
+	sharps.start_reload()                              # R straight after the shot, while the breech still cycles
+	for i in 240:
+		sharps.step(1.0 / 60.0)
+	check("R during the breech cycle is not dropped: the round is loaded", sharps.rounds == 1 and not sharps.reloading,
+		"rounds %d reloading %s" % [sharps.rounds, sharps.reloading])
+	check("...and he can fire again", sharps.trigger() == Ep2Winchester.Shot.OK)
+	sharps.rounds = 0
+	sharps.reserve = 0
+	st.sniper_rounds = 99                              # boxes bought earlier: must not hide an empty reserve
+	c._resupply(1)
+	check("gate resupply reads the real reserve, not the purchase counter", sharps.reserve > 0, str(sharps.reserve))
+	sharps.start_reload()
+	c._package_lost()                                  # a soft fail mid-reload
+	check("after a soft-fail restore the gun is not left mid-reload", not sharps.reloading and not sharps.reload_queued)
+	check("...and it can be reloaded and fired", (sharps.rounds > 0 or sharps.start_reload()) )
 	c.free()
 
 

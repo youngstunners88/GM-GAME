@@ -111,6 +111,8 @@ var _invuln: float = 0.0
 var _losses: int = 0
 var _downs: int = 0
 var _gate_ammo: Dictionary = {}
+var _gate_cleared: bool = false               # this gate's wave is down: the crate's place in the eddy is banked, a fall never undoes it
+var _tip_warned: bool = false
 var _utah: Ep2TownFolk
 var _utah_t: float = -1.0
 var _dock_t: float = -1.0
@@ -1189,7 +1191,10 @@ func _launch() -> void:
 
 
 func _begin_gate(g: int) -> void:
+	assert(g >= _gate, "day-88 gates only advance")
 	_gate = g
+	_gate_cleared = false
+	_tip_warned = false
 	_gates_passed = maxi(_gates_passed, g + 1)
 	_wave_spawned = false
 	_wave_left = WAVES[g]
@@ -1231,12 +1236,20 @@ func _tick_run(delta: float) -> void:
 		_crate_s = minf(_crate_s + v * delta, _hold_s())
 	if aboard > 0 or drain > 0.0:
 		_crate_board += (float(aboard) + drain) * delta
+		if _crate_board >= BOARD_TIME * 0.5 and not _tip_warned:
+			_tip_warned = true                          # never a silent tip: the rewind has to be something he saw coming
+			if _hud != null:
+				_hud.toast("THE SHIPMENT IS GOING OVER · CLEAR IT!", 2.4)
 		if _crate_board >= BOARD_TIME:
 			_package_lost()
 			return
 	else:
 		_crate_board = maxf(0.0, _crate_board - delta * 0.5)
+		if _crate_board < BOARD_TIME * 0.25:
+			_tip_warned = false
 	# a ground scrape on the way down to the next ledge, once the gate is clear
+	if cleared:
+		_gate_cleared = true
 	if cleared and _gate < 2 and not _ridge_scrapes[_gate]:
 		_ridge_scrapes[_gate] = true
 		_spawn_ridge_bear(_gate)
@@ -1316,9 +1329,12 @@ func _resupply(g: int) -> void:
 	if not armory.sniper_owned:
 		return
 	var need: int = int(WAVES[g]) + int(ARCHERS[g]) + int(RAFTS[g]) * RAFT_MEN + 4
-	if armory.sniper_rounds + armory.firearm(Ep2ArmoryState.BUFF).rounds < need:
-		armory.sniper_rounds = need
-		armory.firearm(Ep2ArmoryState.BUFF).reserve = need
+	# what he can actually still fire: the Sharps' loaded round + its reserve. (`sniper_rounds` only counts boxes bought and never
+	# drops when he shoots, so testing it left the reserve at 0 mid-run and R did nothing - founder 2026-11-06.)
+	var sharps: Ep2Winchester = armory.firearm(Ep2ArmoryState.BUFF)
+	if sharps.reserve + sharps.rounds < need:
+		sharps.reserve = need - sharps.rounds
+		armory.sniper_rounds = maxi(armory.sniper_rounds, need)
 		if _hud != null:
 			_hud.toast("UTAH LEFT ROUNDS AT THE OVERLOOK", 2.2)
 
@@ -1972,6 +1988,7 @@ func _hurt_player() -> void:
 # --- failure: back to the current gate -----------------------------------------------------------------------------------------
 
 func _package_lost() -> void:
+	_log_rewind("tipped board=%.2f aboard=%d rafts=%d" % [_crate_board, _bears_aboard(), _hooked_rafts()])
 	_losses += 1
 	if _hud != null:
 		_hud.toast("THE SHIPMENT TIPPED · BACK TO THE %s OVERLOOK" % GATE_NAMES[_gate], 2.6)
@@ -1979,10 +1996,41 @@ func _package_lost() -> void:
 
 
 func _downed() -> void:
+	_log_rewind("downed")
 	_downs += 1
+	if _gate_cleared:
+		_recover_in_eddy()
+		return
 	if _hud != null:
 		_hud.toast("DOWNED · BACK TO THE %s OVERLOOK" % GATE_NAMES[_gate], 2.6)
 	_retry_gate()
+
+
+## Dev-only trace for every intentional rewind (founder 2026-11-06: no unexplained jump upstream).
+func _log_rewind(reason: String) -> void:
+	if OS.is_debug_build():
+		print("[day88] rewind gate=%d crate_s=%.1f cleared=%s reason=%s" % [_gate, _crate_s, _gate_cleared, reason])
+
+
+## Downed after the gate's wave is down (on the way to the next ledge): the crate stays waiting in the eddy, nothing respawns; he is
+## back on this gate's overlook with full hearts and the ammunition he has. The gate he won is never replayed.
+func _recover_in_eddy() -> void:
+	if _hud != null:
+		_hud.toast("DOWNED · BACK TO THE %s OVERLOOK · THE SHIPMENT WAITS" % GATE_NAMES[_gate], 2.6)
+	_health = 3
+	_invuln = 1.5
+	var o: Vector3 = OVERLOOKS[_gate]
+	_player_pos = Vector3(o.x, o.y, o.z)
+	_ground_y = o.y
+	_ready_guns()
+
+
+## After any restore the guns are fireable: no half-finished reload or breech cycle carried over.
+func _ready_guns() -> void:
+	for id in Ep2ArmoryState.IDS:
+		var gun: Ep2Winchester = armory.firearm(id)
+		gun.cancel_reload()
+		gun._cycle = 0.0
 
 
 ## The one retry rule: the current gate again - the crate back where the gate began, its wave again, him on its overlook with full
@@ -2016,6 +2064,7 @@ func _retry_gate() -> void:
 	_invuln = 1.5
 	if not _gate_ammo.is_empty():
 		armory.restore(_gate_ammo, armory.owns(Ep2ArmoryState.REM))
+	_ready_guns()
 	var o: Vector3 = OVERLOOKS[_gate]
 	_player_pos = Vector3(o.x, o.y, o.z)
 	_ground_y = o.y
