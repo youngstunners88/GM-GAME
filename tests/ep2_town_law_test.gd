@@ -182,7 +182,7 @@ func _civilian_and_cell() -> void:
 
 
 func _story_wounds_and_bull() -> void:
-	print("-- STORY CAST WOUNDS; INFERNO IS NEVER A TARGET")
+	print("-- PROTECTED STORY CAST; INFERNO IS NEVER A TARGET")
 	for who in ["sheriff", "minister"]:
 		var c: GoldTownChamber = _fresh()
 		# Past the office meeting: walking up to the Sheriff at STREET starts the office show, and a show holds the controls
@@ -199,8 +199,8 @@ func _story_wounds_and_bull() -> void:
 		c.step(1.0 / 60.0)
 		_until(c, 4.0, func(): return c.has_player_control())
 		var fired: bool = _fire_at(c, folk.position + Vector3(0.0, 1.10, 0.0))
-		_check("a shot on %s wounds but never kills, and still arrests" % who,
-			fired and not folk.dead and bool(folk.get_meta("law_wounded", false)) and c.get_town_law().is_arrest_active(),
+		_check("a shot on %s starts protected retaliation without injury or arrest" % who,
+			fired and not folk.dead and not bool(folk.get_meta("law_wounded", false)) and c.get_town_law().retaliation.active and not c.get_town_law().is_arrest_active(),
 			"fired %s control %s beat %s last %s" % [str(fired), str(c.has_player_control()), c.get_beat_name(), str(c.get_town_law().last_shot)])
 		_retire(c)
 	var c: GoldTownChamber = _fresh()

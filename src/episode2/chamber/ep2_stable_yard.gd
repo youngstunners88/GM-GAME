@@ -42,6 +42,9 @@ const RIDE_LOOP: Array = [Vector3(-12.0, 0, 1222.0), Vector3(-6.0, 0, 1222.0),
 	Vector3(-6.0, 0, 1226.0), Vector3(-12.0, 0, 1226.0), Vector3(-12.0, 0, 1222.0)]
 const RIDE_ROOT_Y := 0.72
 const RIDE_SPEED := 0.85
+## The supplied horse's nose is +X; people face +Z.
+const HORSE_FORWARD_YAW := PI * 0.5
+const MOUNT_SECONDS := 2.2
 const TROUGH_POS := Vector3(-20.0, 0.0, 1216.4)
 const BRUSH_SPOT := Vector3(-8.5, 0.0, 1210.2)
 const HAY_STACK := Vector3(-5.5, 0.0, 1206.5)
@@ -119,6 +122,7 @@ var _ride_next: float = 62.0
 var _ride_path: Array = []
 var _ride_index: int = 0
 var _ride_mount_t: float = 0.0
+var _ride_from_yaw: float = 0.0
 var _ride_from: Vector3 = Vector3.ZERO
 var _ride_distance: float = 0.0
 var _assistant_task: String = ""
@@ -429,6 +433,7 @@ func _install_poses(folk: Ep2TownFolk) -> void:
 		var up: Vector3 = (inverse * Vector3.UP).normalized()
 		var unit: float = maxf(0.0001, folk.model.global_transform.basis.get_scale().y * relative.basis.get_scale().y)
 		RANCH_POSE.install_ride(ap, skel, fwd, up, unit)
+		RANCH_POSE.install_mount(ap, skel, fwd, up, unit)
 		RANCH_POSE.install_brush(ap, skel, fwd, up, unit)
 		RANCH_POSE.install_carry(ap, skel, fwd, up, unit)
 		return
@@ -740,24 +745,30 @@ func _begin_mount() -> void:
 	_ride_state = "mount"
 	_ride_mount_t = 0.0
 	_ride_from = dude.position
-	dude.hold_clip(RANCH_POSE.RIDE)
+	_ride_from_yaw = dude.rotation.y
+	dude.hold_clip(RANCH_POSE.MOUNT)
 	_play_horse(0, "horse_stand", 1.0)
 
 
 func _seat_position() -> Vector3:
 	var horse: Node3D = horses[0]
-	return horse.position + Basis(Vector3.UP, horse.rotation.y) * Vector3(0, RIDE_ROOT_Y, -0.08)
+	return horse.position + Basis(Vector3.UP, horse.rotation.y) * Vector3(-0.08, RIDE_ROOT_Y, 0)
 
 
 func _tick_mount(dude: Ep2TownFolk, delta: float) -> void:
 	_ride_mount_t += delta
-	var k: float = clampf(_ride_mount_t / 1.15, 0.0, 1.0)
-	var e: float = k * k * (3.0 - 2.0 * k)
-	dude.position = _ride_from.lerp(_seat_position(), e) + Vector3(0, 0.28 * sin(PI * e), 0)
-	dude.facing = horses[0].rotation.y
-	dude.rotation.y = dude.facing
+	var k: float = clampf(_ride_mount_t / MOUNT_SECONDS, 0.0, 1.0)
+	# Plant and turn first; step up, swing across, then settle on the horse.
+	var rise: float = smoothstep(0.22, 0.66, k)
+	var across: float = smoothstep(0.48, 0.90, k)
+	var seat: Vector3 = _seat_position()
+	dude.position = _ride_from.lerp(seat, across)
+	dude.position.y = lerpf(_ride_from.y, seat.y, rise) + 0.12 * sin(PI * across)
+	dude.facing = horses[0].rotation.y + HORSE_FORWARD_YAW
+	dude.rotation.y = lerp_angle(_ride_from_yaw, dude.facing, smoothstep(0.0, 0.22, k))
 	dude.anim_player().advance(delta)
 	if k < 1.0: return
+	dude.hold_clip(RANCH_POSE.RIDE)
 	_ride_state = "ride"
 	_ride_path = [RIDE_ENTRY]
 	_ride_path.append_array(RIDE_LOOP)
@@ -770,13 +781,20 @@ func _tick_mount(dude: Ep2TownFolk, delta: float) -> void:
 
 func _tick_ride(dude: Ep2TownFolk, delta: float, player: Vector3) -> void:
 	if _ride_index >= _ride_path.size():
+		var home_yaw: float = float(HORSES[0][1])
+		horses[0].rotation.y = lerp_angle(horses[0].rotation.y, home_yaw, minf(1.0, delta * 3.0))
+		dude.rotation.y = horses[0].rotation.y + HORSE_FORWARD_YAW
+		dude.facing = dude.rotation.y
+		dude.position = _seat_position()
+		dude.anim_player().advance(delta)
+		if absf(wrapf(horses[0].rotation.y - home_yaw, -PI, PI)) > 0.01: return
 		_begin_dismount()
 		return
 	var horse: Node3D = horses[0]
 	var target: Vector3 = _ride_path[_ride_index]
 	var offset: Vector3 = target - horse.position
 	offset.y = 0.0
-	if offset.length() < 0.08:
+	if offset.length() < 0.001:
 		_ride_index += 1
 		return
 	var direction: Vector3 = offset.normalized()
@@ -786,9 +804,9 @@ func _tick_ride(dude: Ep2TownFolk, delta: float, player: Vector3) -> void:
 	if not blocked:
 		horse.position = candidate
 		_ride_distance += RIDE_SPEED * delta
-		horse.rotation.y = lerp_angle(horse.rotation.y, atan2(direction.x, direction.z), clampf(4.0 * delta, 0.0, 1.0))
+		horse.rotation.y = lerp_angle(horse.rotation.y, atan2(direction.x, direction.z) - HORSE_FORWARD_YAW, clampf(4.0 * delta, 0.0, 1.0))
 	dude.position = _seat_position()
-	dude.facing = horse.rotation.y
+	dude.facing = horse.rotation.y + HORSE_FORWARD_YAW
 	dude.rotation.y = dude.facing
 	dude.anim_player().advance(delta)
 
@@ -808,11 +826,12 @@ func _begin_dismount() -> void:
 	var dude: Ep2TownFolk = actors[0]
 	var horse: Node3D = horses[0]
 	horse.position = HORSES[0][0]
-	horse.rotation.y = float(HORSES[0][1])
 	_play_horse(0, "horse_stand", 1.0)
 	_ride_state = "dismount"
 	_ride_mount_t = 0.0
 	_ride_from = dude.position
+	_ride_from_yaw = dude.rotation.y
+	dude.anim_player().play(RANCH_POSE.MOUNT, 0.15, -1.0, true)
 
 
 func _tick_dismount(dude: Ep2TownFolk, delta: float, player: Vector3) -> void:
@@ -820,15 +839,17 @@ func _tick_dismount(dude: Ep2TownFolk, delta: float, player: Vector3) -> void:
 		dude.anim_player().advance(delta)
 		return
 	_ride_mount_t += delta
-	var k: float = clampf(_ride_mount_t / 1.0, 0.0, 1.0)
-	var e: float = k * k * (3.0 - 2.0 * k)
-	dude.position = _ride_from.lerp(RIDE_MOUNT, e) + Vector3(0, 0.18 * sin(PI * e), 0)
+	var k: float = clampf(_ride_mount_t / MOUNT_SECONDS, 0.0, 1.0)
+	var reverse: float = 1.0 - k
+	var across: float = smoothstep(0.48, 0.90, reverse)
+	dude.position = RIDE_MOUNT.lerp(_ride_from, across)
+	dude.position.y = lerpf(RIDE_MOUNT.y, _ride_from.y, smoothstep(0.22, 0.66, reverse)) + 0.12 * sin(PI * across)
 	dude.anim_player().advance(delta)
 	if k < 1.0: return
 	dude.place(RIDE_MOUNT)
 	dude.hold_clip("idle")
 	dude.face_yaw(PI * 0.5)
-	dude.rotation.y = dude.facing
+	# Leave rotation interpolation to the normal standing controller.
 	_ride_state = ""
 	_ride_path.clear()
 	_ride_index = 0

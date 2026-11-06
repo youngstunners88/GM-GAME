@@ -90,14 +90,17 @@ func _bind_clips() -> void:
 func play_clip(name: String, speed: float = 1.0) -> bool:
 	if not _rigged:
 		return false
-	var want: String = name.to_lower()
+	var requested: String = name.to_lower()
+	var want: String = requested
+	if held_prop("Sharps") != null and has_meta("sharps_clip_map"):
+		want = str((get_meta("sharps_clip_map") as Dictionary).get(requested, requested)).to_lower()
 	for a in _anim.get_animation_list():
 		var an: String = str(a).to_lower()
 		if an == want or an.ends_with("/" + want) or an.ends_with("|" + want) or an.begins_with(want):
-			if _clip == want and _anim.is_playing() and _anim.current_animation == str(a):
+			if _clip == requested and _anim.is_playing() and _anim.current_animation == str(a):
 				_anim.speed_scale = speed
 				return true
-			_clip = want
+			_clip = requested
 			_anim.speed_scale = speed
 			_anim.play(str(a), clip_blend if clip_blend > 0.0 else -1.0)
 			return true

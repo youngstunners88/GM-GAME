@@ -9,6 +9,7 @@ extends RefCounted
 const RIDE: String = "RanchRide"
 const BRUSH: String = "RanchBrush"
 const CARRY: String = "RanchCarry"
+const MOUNT: String = "RanchMount"
 
 const RIDE_LOOP: float = 2.4
 const BRUSH_LOOP: float = 1.9
@@ -48,6 +49,49 @@ static func install_brush(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector
 ## leg animation. Returns false when the supplied rig is incomplete.
 static func install_carry(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector3, up: Vector3, unit: float) -> bool:
 	return _install(player, skel, fwd, up, unit, CARRY)
+
+
+## One-shot mounting action: reach, left leg step, right leg swing, seat.
+## Root translation/heading belongs exclusively to the yard controller.
+static func install_mount(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector3, up: Vector3, unit: float) -> bool:
+	if not player.has_animation(RIDE): return false
+	var idle: String = ""
+	for key in player.get_animation_list():
+		if str(key).to_lower().begins_with("idle"): idle = str(key)
+	if idle == "": return false
+	player.play(idle)
+	player.seek(0.0, true)
+	player.advance(0.0)
+	var rest: Dictionary = {}
+	for b in skel.get_bone_count(): rest[b] = skel.get_bone_pose_rotation(b)
+	var hips: int = _find(skel, "Hips")
+	var start: Vector3 = skel.get_bone_pose_position(hips)
+	var idx: Dictionary = {}
+	for name in _BODY_TRACKS: idx[name] = _find(skel, name)
+	var seated: Dictionary = _solve_ride(skel, idx, fwd, up, fwd.cross(up).normalized(), unit, 0.0)
+	var anim := Animation.new()
+	anim.length = 2.2
+	var path: String = str(player.get_node(player.root_node).get_path_to(skel))
+	for name in _BODY_TRACKS:
+		var b: int = idx[name]
+		var track: int = anim.add_track(Animation.TYPE_ROTATION_3D)
+		anim.track_set_path(track, NodePath("%s:%s" % [path, skel.get_bone_name(b)]))
+		for frame in 67:
+			var k: float = float(frame) / 66.0
+			var mix: float = smoothstep(0.22, 0.90, k)
+			if "Arm" in name or "Hand" in name: mix = smoothstep(0.10, 0.42, k)
+			if str(name).begins_with("Left") and ("Leg" in name or "Foot" in name): mix = smoothstep(0.22, 0.55, k)
+			if str(name).begins_with("Right") and ("Leg" in name or "Foot" in name): mix = smoothstep(0.48, 0.88, k)
+			anim.rotation_track_insert_key(track, k * anim.length, (rest[b] as Quaternion).slerp(seated.rot[b], mix))
+	var track: int = anim.add_track(Animation.TYPE_POSITION_3D)
+	anim.track_set_path(track, NodePath("%s:%s" % [path, skel.get_bone_name(hips)]))
+	for frame in 67:
+		var k: float = float(frame) / 66.0
+		anim.position_track_insert_key(track, k * anim.length, start.lerp(seated.hips_pos, smoothstep(0.35, 0.95, k)))
+	var lib: AnimationLibrary = Ep2TownFolk.own_default_library(player)
+	if lib.has_animation(MOUNT): lib.remove_animation(MOUNT)
+	lib.add_animation(MOUNT, anim)
+	return true
 
 
 static func _install(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector3, up: Vector3, unit: float, clip: String) -> bool:
@@ -129,9 +173,17 @@ static func _install(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector3, up
 
 static func _find(skel: Skeleton3D, n: String) -> int:
 	var want: String = n.to_lower()
+	# Rich retains the founder's UE skeleton; names are mapped, never rebound.
+	var ue: Dictionary = {"Hips": "pelvis", "Spine": "spine_01", "Head": "head",
+		"LeftArm": "upperarm_l", "LeftForeArm": "lowerarm_l", "LeftHand": "hand_l",
+		"RightArm": "upperarm_r", "RightForeArm": "lowerarm_r", "RightHand": "hand_r",
+		"LeftUpLeg": "thigh_l", "LeftLeg": "calf_l", "LeftFoot": "foot_l",
+		"RightUpLeg": "thigh_r", "RightLeg": "calf_r", "RightFoot": "foot_r"}
+	var dotted: Dictionary = {"LeftArm": "UpperArm.L", "LeftForeArm": "Forearm.L", "LeftHand": "Hand.L", "RightArm": "UpperArm.R", "RightForeArm": "Forearm.R", "RightHand": "Hand.R", "LeftUpLeg": "Thigh.L", "LeftLeg": "Shin.L", "LeftFoot": "Foot.L", "RightUpLeg": "Thigh.R", "RightLeg": "Shin.R", "RightFoot": "Foot.R"}
 	for i in skel.get_bone_count():
 		var have: String = skel.get_bone_name(i).to_lower()
-		if have == want or have.ends_with(":" + want) or have.ends_with("_" + want):
+		if have == str(dotted.get(n, "")).to_lower(): return i
+		if have == want or have == str(ue.get(n, "")) or have.ends_with(":" + want) or have.ends_with("_" + want):
 			return i
 	return -1
 
@@ -293,11 +345,11 @@ static func _rotate_global(skel: Skeleton3D, i: int, local_rot: Dictionary, G: C
 
 
 static func _child_offset(skel: Skeleton3D, i: int) -> Vector3:
+	var longest := Vector3.ZERO
 	for child in skel.get_bone_children(i):
 		var offset: Vector3 = skel.get_bone_rest(child).origin
-		if offset.length() > 1e-5:
-			return offset.normalized()
-	return Vector3.ZERO
+		if offset.length_squared() > longest.length_squared(): longest = offset
+	return longest.normalized()
 
 
 ## Elbow position for an upper/lower arm chain reaching from `s` to `t`.

@@ -91,8 +91,10 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  session._active=room
  session._chain_id=id
  session._mode=session.Mode.CHAMBER
+ if room.has_method("remember_retaliation_entry"): room.remember_retaliation_entry()
  if continuing_story:
   room.chamber_cleared.connect(session._on_chamber_cleared, CONNECT_ONE_SHOT)
+ if not room.chamber_failed.is_connected(session._on_chamber_failed):
   room.chamber_failed.connect(session._on_chamber_failed, CONNECT_ONE_SHOT)
  if room.has_method("_update_camera"): room._update_camera(0.0)
  if room.has_method("_sync_visuals"): room._sync_visuals()

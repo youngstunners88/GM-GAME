@@ -244,6 +244,7 @@ var _sheriff_smoke: CPUParticles3D = null
 var _bartender: Ep2TownFolk = null
 var _opp: Ep2TownFolk = null
 var _revolver: Node3D = null
+var _retaliation_entry: Dictionary = {}
 var _glass: Node3D = null
 var _coin: Node3D = null
 var _rng := RandomNumberGenerator.new()
@@ -598,7 +599,11 @@ func _build_armory_folk_v2() -> void:
 	_utah.name = "Utah"
 	_visuals.add_child(_utah)
 	_utah.setup(Ep2Extras.UTAH, UTAH2_HEIGHT, Color(0.28, 0.33, 0.34))
+	preload("res://src/episode2/actors/ep2_armory_pose.gd").install(_rich)
+	preload("res://src/episode2/actors/ep2_armory_pose.gd").install(_utah)
+	Ep2GroundedWalk.install(_rich)
 	Ep2GroundedWalk.install(_utah)
+	preload("res://src/episode2/actors/ep2_armory_pose.gd").install_rifle(_rich)
 	_rich_brain = Ep2ArmoryBrain.new()
 	_rich_brain.walk_speed = RICH2_WALK
 	_rich_brain.setup("rich", _rich, xf, _brain_spots(), "counter_rich", 7101)
@@ -698,19 +703,12 @@ func _on_sharps_lifted(in_hand: bool) -> void:
 		if _sharps_case != null:
 			_sharps_case.visible = true
 		return
-	if not Ep2Extras.has(Ep2Extras.SHARPS) or _rich == null:
+	if _rich == null:
 		return
-	var ps: PackedScene = load(Ep2Extras.SHARPS) as PackedScene
-	if ps == null:
-		return
-	var rifle: Node3D = ps.instantiate() as Node3D
-	rifle.name = "Sharps"
-	Ep2Pbr.dress(rifle)
-	if _rich.attach_prop(rifle, HOLD_RICH, SHARPS_HOLD_POS, SHARPS_HOLD_ROT):
+	var rifle: Node3D = preload("res://src/episode2/actors/ep2_armory_pose.gd").attach_rifle(_rich)
+	if rifle != null:
 		if _sharps_case != null:
 			_sharps_case.visible = false
-	else:
-		rifle.free()
 
 
 ## The introduction starts when he walks up to the counter, and ends (guns put away, both men back at work) if the beat moves on.
@@ -2139,6 +2137,7 @@ func _tick(delta: float) -> void:
 			_hud.toast(_fine_toast_text, 3.4)
 	if _law != null:
 		_law.step(delta)
+		if _law.retaliation.active: return
 		if _law.suspends_story():
 			_tick_people(delta)
 			return
@@ -2687,6 +2686,27 @@ func _opp_fires() -> void:
 ## Inside the cell the eye remains free; its collision keeps him behind bars.
 func has_player_control() -> bool:
 	return super.has_player_control() and (_law == null or not _law.blocks_control())
+
+
+func remember_retaliation_entry() -> void:
+	_retaliation_entry = {"position": _player_pos, "yaw": _look_yaw, "pitch": _look_pitch}
+
+
+func retry_protected_npc() -> void:
+	if _law == null or not _law.retaliation.active: return
+	_law.retaliation.reset()
+	if not _retaliation_entry.is_empty():
+		_player_pos = _retaliation_entry.position
+		_look_yaw = _retaliation_entry.yaw
+		_look_pitch = _retaliation_entry.pitch
+	_move_input = Vector2.ZERO
+	_vel_y = 0.0
+	_running = true
+	_resolved = false
+	remove_meta("protected_npc_defeat")
+	_hud.fade_to(0.0, 0.3)
+	_update_camera(0.0)
+	_sync_visuals()
 
 
 func _law_arrest_started() -> void:

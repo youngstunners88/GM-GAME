@@ -1,5 +1,10 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-05 — Character motion and protected retaliation — LOCAL WORK IN PROGRESS, not released.**
+- Utah/Rich rest-aware arm and grounded gait changes, supplied showcase Sharps attachment, Dude lens texture and horse heading/mount changes are implemented locally.
+- Nine affected native checks passed before expanding retaliation to the full roster. User assigned the existing golden Remington to Minister Mike Dean, bartender, sheriff and Utah; Rich retains showcase Sharps. Expanded verification is pending.
+- Actual armory-camera capture completed. Full release gates/export, retaliation aiming proof, woods-copy integration and deployment remain open. Evidence and limitations: `docs/episode2-quality/npc-motion-20261105/VERIFICATION.md`.
+
 **2026-11-05 - Your "Shipment and Bears" notes - LIVE on itch (build `2026-11-05-dff3acd`, confirmed from the public page); NOT founder-verified, not tried on a real phone.**
 
 | Your note | State | What it was |

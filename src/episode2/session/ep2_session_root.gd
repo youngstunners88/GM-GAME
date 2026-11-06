@@ -135,6 +135,8 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_mode = Mode.IDLE
 
 func capture_section_checkpoint() -> void:
+	if is_instance_valid(_active) and _active.has_method("remember_retaliation_entry"):
+		_active.remember_retaliation_entry()
 	var manager: Node = get_node_or_null("/root/GameManager")
 	if manager == null: return
 	var room: String = _chain_id
@@ -561,11 +563,25 @@ func _respawn_at_dude(owner_segment: int) -> void:
 
 
 func _on_chamber_failed() -> void:
+	var retry_section: bool = is_instance_valid(_active) and bool(_active.get_meta("protected_npc_defeat", false))
+	if retry_section and _active.has_method("retry_protected_npc"):
+		# The existing failure signal owns the restart. Keep this story instance,
+		# purchases and ordinary NPC state; only rewind the defeated player's entry.
+		call_deferred("_retry_protected_section", _active)
+		return
 	_chamber_segment = -1
 	_mode = Mode.IDLE
 	_teardown_active()
 	_sync_mouse_mode()
 	session_failed.emit()
+
+
+func _retry_protected_section(chamber: Node) -> void:
+	if not is_instance_valid(chamber) or _active != chamber: return
+	if not chamber.chamber_failed.is_connected(_on_chamber_failed):
+		chamber.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
+	chamber.retry_protected_npc()
+	_sync_mouse_mode()
 
 func _on_run_failed() -> void:
 	if _mode != Mode.RUNNER:

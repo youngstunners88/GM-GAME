@@ -71,6 +71,7 @@ var caption_log: Array = []
 var cell_captioned: Array = []
 var cell_line_times: Array = []
 var last_shot: Dictionary = {}
+var retaliation := preload("res://src/episode2/actors/ep2_protected_retaliation.gd").new()
 
 var _host: Node = null
 var _visuals: Node3D = null
@@ -130,6 +131,10 @@ func refresh_targets() -> void:
 	if _visuals != null:
 		var logan: Node3D = _visuals.find_child("Logan", true, false) as Node3D
 		_add_cast("logan", logan, "story", 1.80)
+	var keepers: Variant = _host.get("_shopkeepers")
+	if keepers is Array:
+		for row in keepers:
+			if str(row[0]) == "Bldg_A": _add_cast("store_clerk", row[1], "story", row[1].height_m)
 	_refresh_stable_cast()
 	_refresh_horses()
 
@@ -156,6 +161,8 @@ func _refresh_stable_cast() -> void:
 
 func _add_stable_actor(id: String, actor: Variant) -> void:
 	if actor is Ep2TownFolk:
+		if actor.name == "Dude": id = "dude"
+		if actor.name == "StableAssistant": id = "stable_assistant"
 		_add_cast(id, actor as Ep2TownFolk, "story", (actor as Ep2TownFolk).height_m)
 	elif actor is Node3D:
 		_add_cast(id, actor as Node3D, "story", 1.80)
@@ -293,6 +300,9 @@ func _corpse_ray(eye: Vector3, direction: Vector3, folk: Ep2TownFolk) -> float:
 	return _ray_capsule(eye,direction,pose * Vector3(0,0.25,0),pose * Vector3(0,1.6,0),0.34)
 
 func _resolve_hit(hit: Dictionary, direction: Vector3) -> void:
+	if retaliation.active: return
+	if str(hit.get("kind", "")) == "story" and retaliation.begin(_host, str(hit.get("id", "")), hit.get("folk")):
+		return
 	match str(hit.get("kind", "miss")):
 		"corpse":
 			_blood_spurt(hit["point"],direction,1.0)
@@ -385,6 +395,9 @@ func _note_offence() -> void:
 
 ## Advance fines, effects, the arrest and the two-minute cell conversation.
 func step(delta: float) -> void:
+	if retaliation.active:
+		retaliation.step(delta)
+		return
 	_time += delta
 	_cold_cd = maxf(0.0, _cold_cd - delta)
 	for i in range(_effects.size() - 1, -1, -1):
@@ -440,12 +453,12 @@ func _charge_fine() -> void:
 
 ## True while the Sheriff, not the player, owns movement and the trigger.
 func blocks_control() -> bool:
-	return law_state in ["approach", "escort", "enter", "release"]
+	return retaliation.active or law_state in ["approach", "escort", "enter", "release"]
 
 
 ## The town's story beats wait while an arrest/cell sequence is active.
 func suspends_story() -> bool:
-	return law_state != "idle"
+	return retaliation.active or law_state != "idle"
 
 
 ## True until the full CELL_SECONDS has elapsed and the Sheriff opens the gate.
