@@ -43,3 +43,11 @@ The failed earlier clean export exhausted the 8 GiB workspace by duplicating 4 G
 - Regression gates: protected town/woods and mount alignment tests; updated protected expectations in `ep2_town_law_test.gd`; CI workflow additions; hardened `scripts/pack-gate-fresh.sh`.
 
 Final diagnostic images beside this report show all eight firing actors, plus the clerk and assistant from the actual player camera. They are runtime captures, not generated reference art.
+
+## Final integration and measured rifle contact
+
+Integrated master `df2cdb0e` without dropping its crowd keep-clear, saloon doors, Inferno/body dialogue, raft damage or river audio work. The merged candidate passed common-sense, protected town, protected woods, town law, gold town, ranch, river cover and script compilation checks.
+
+An independent wrist-to-model-landmark measurement caught an unreachable support target in the earlier rifle pose. Rich now carries the rifle diagonally in front of his body with a reachable fore-end grip, turns into a side-on firing stance, and maintains the left-hand contact as the aiming wrist follows the player. A 0.5-second rifle draw interpolates from the actual current pose, including when he already holds the rifle; it does not snap through an idle pose. The new `ep2_rich_grip_test` checks six held clips at four headings and four phases plus the live aim/fire sequence: 253 checks, zero failures, maximum wrist-landmark error 0.000166 m. Bone lengths are preserved; the fore-end target is measured independently on the supplied model.
+
+The new master adds only three small river sound assets and their import descriptors to the prior asset baseline; all model and texture bytes remain unchanged. Final source export and pack receipts are regenerated after integration.

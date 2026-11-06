@@ -521,6 +521,9 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_mount_alignment_test.tscn 2>&1 | tee mount-alignment-tests.log
           grep -q 'EP2_MOUNT_ALIGNMENT: ALL PASS' mount-alignment-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' mount-alignment-tests.log; then exit 1; fi
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_rich_grip_test.tscn 2>&1 | tee rich-grip-tests.log
+          grep -q 'EP2_RICH_GRIP: ALL PASS' rich-grip-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' rich-grip-tests.log; then exit 1; fi
           # Town feel at 60 fps (fix pack 2026-10-27): nobody walks backwards, the bar has sitters, own drinking rhythms, bumps, the train.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_feel_test.tscn 2>&1 | tee town-feel-tests.log
           grep -q 'EP2_TOWN_FEEL: ALL PASS' town-feel-tests.log

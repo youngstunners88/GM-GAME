@@ -48,7 +48,9 @@ func begin(chamber: Node, id: String, target: Ep2TownFolk) -> bool:
 		if case_rifle != null:
 			saved.case_visible = case_rifle.visible
 			case_rifle.visible = false
-		POSE.install_rifle(folk, host.get("_player_pos") + Vector3(0, float(host.get("eye_height")), 0))
+		if not _prepare_rifle_draw():
+			reset()
+			return false
 		weapon = folk.held_prop("Sharps")
 		owned_weapon = weapon == null
 		if weapon == null: weapon = POSE.attach_rifle(folk)
@@ -56,7 +58,10 @@ func begin(chamber: Node, id: String, target: Ep2TownFolk) -> bool:
 			reset()
 			return false
 		weapon.transform = folk.get_meta("sharps_hand_transform")
-		folk.hold_clip("InspectRifle")
+		folk.hold_clip("ProtectedRifleDraw")
+		folk.play_clip("ProtectedRifleDraw")
+		folk.anim_player().seek(0.0, true)
+		folk.anim_player().advance(0.0)
 	else:
 		owned_weapon = true
 		if not _draw_remington():
@@ -66,6 +71,7 @@ func begin(chamber: Node, id: String, target: Ep2TownFolk) -> bool:
 	elapsed = 0.0
 	fired = false
 	folk.face_point(host.get("_player_pos"))
+	if weapon.name == "Sharps": folk.facing -= POSE.RIFLE_YAW
 	folk.anim_player().callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	host.set("_show_blocks_control", true)
 	host.set("_show_active", false)
@@ -121,6 +127,45 @@ func reset() -> void:
 	active = false
 	fired = false
 	elapsed = 0.0
+
+
+func _prepare_rifle_draw() -> bool:
+	var ap: AnimationPlayer = folk.anim_player()
+	var rigs: Array = folk.model.find_children("*", "Skeleton3D", true, false)
+	if rigs.is_empty(): return false
+	var sk: Skeleton3D = rigs[0]
+	var hips: int = SOLVE._find(sk, "Hips")
+	var start: Dictionary = {}
+	for b in sk.get_bone_count(): start[b] = sk.get_bone_pose_rotation(b)
+	var hp: Vector3 = sk.get_bone_pose_position(hips)
+	if not POSE.install_rifle(folk, host.get("_player_pos") + Vector3(0, float(host.get("eye_height")), 0)): return false
+	var end: Animation = ap.get_animation("InspectRifle")
+	var anim := Animation.new()
+	anim.length = DRAW_SECONDS
+	var path: String = str(ap.get_node(ap.root_node).get_path_to(sk))
+	for b in sk.get_bone_count():
+		var bp := NodePath("%s:%s" % [path, sk.get_bone_name(b)])
+		var source: int = end.find_track(bp, Animation.TYPE_ROTATION_3D)
+		var track: int = anim.add_track(Animation.TYPE_ROTATION_3D)
+		anim.track_set_path(track, bp)
+		var goal: Quaternion = end.rotation_track_interpolate(source, 0.0)
+		anim.rotation_track_insert_key(track, 0, start[b])
+		anim.rotation_track_insert_key(track, 0.50, goal)
+		anim.rotation_track_insert_key(track, DRAW_SECONDS, goal)
+	var hp_path := NodePath("%s:%s" % [path, sk.get_bone_name(hips)])
+	var source: int = end.find_track(hp_path, Animation.TYPE_POSITION_3D)
+	var track: int = anim.add_track(Animation.TYPE_POSITION_3D)
+	anim.track_set_path(track, hp_path)
+	var goal: Vector3 = end.position_track_interpolate(source, 0.0)
+	anim.position_track_insert_key(track, 0, hp)
+	anim.position_track_insert_key(track, 0.50, goal)
+	anim.position_track_insert_key(track, DRAW_SECONDS, goal)
+	ap.stop()
+	ap.clear_caches()
+	var lib: AnimationLibrary = Ep2TownFolk.own_default_library(ap)
+	if lib.has_animation("ProtectedRifleDraw"): lib.remove_animation("ProtectedRifleDraw")
+	lib.add_animation("ProtectedRifleDraw", anim)
+	return true
 
 
 func _draw_remington() -> bool:
@@ -197,6 +242,7 @@ func step(delta: float) -> void:
 	if not active or not is_instance_valid(folk): return
 	elapsed += delta
 	folk.face_point(host.get("_player_pos"))
+	if weapon.name == "Sharps": folk.facing -= POSE.RIFLE_YAW
 	var root_height: float = folk.position.y
 	folk.step(delta)
 	# Mounted actors keep their seat height while the reaction owns their motion.
@@ -222,6 +268,7 @@ func step(delta: float) -> void:
 			var local_basis: Basis = parent_frame.basis.inverse() * Basis(correction) * wrist.basis
 			skeleton.set_bone_pose_rotation(bone, local_basis.orthonormalized().get_rotation_quaternion())
 			skeleton.force_update_all_bone_transforms()
+	if weapon.name == "Sharps": POSE.track_support(folk, weapon)
 	if not fired and elapsed >= DRAW_SECONDS:
 		fired = true
 		shots += 1

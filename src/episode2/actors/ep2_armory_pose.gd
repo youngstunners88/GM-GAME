@@ -64,12 +64,13 @@ const SHARPS := "res://src/episode2/extras/armory/showcase/sharps.glb"
 ## Measured on the current scoped showcase mesh after its 45-degree heading correction.
 ## Its normalization is 0.8511 of the canonical 1.21 m founder rifle.
 const GUN_GRIP := Vector3(0.0035, 0.1416, -0.2140)
-const GUN_SUPPORT := Vector3(0.0035, 0.1671, 0.0669)
+const GUN_SUPPORT := Vector3(0.0035, 0.1671, -0.0012)
 const GUN_MUZZLE := Vector3(0.0035, 0.2054, 0.5181)
 const GUN_SCALE := 1.175
+const RIFLE_YAW := 0.70
 
 static func rifle_frame(folk: Ep2TownFolk) -> Transform3D:
-	return Transform3D(Basis(Vector3.RIGHT, -0.05), Vector3(-0.16, folk.height_m * 0.67, 0.28))
+	return Transform3D(Basis(Vector3.UP, RIFLE_YAW) * Basis(Vector3.RIGHT, -0.05), Vector3(-0.20, folk.height_m * 0.70, 0.08))
 
 
 static func install_rifle(folk: Ep2TownFolk, target: Vector3 = Vector3.INF) -> bool:
@@ -80,7 +81,7 @@ static func install_rifle(folk: Ep2TownFolk, target: Vector3 = Vector3.INF) -> b
 	for n in ["Hips", "LeftArm", "LeftForeArm", "LeftHand", "RightArm", "RightForeArm", "RightHand"]:
 		idx[n] = SOLVE._find(sk, n)
 		if idx[n] < 0: return false
-	ap.play("Idle")
+	ap.play("Idle", 0.0)
 	ap.seek(0.0, true)
 	ap.advance(0.0)
 	var rot: Dictionary = {}
@@ -90,16 +91,16 @@ static func install_rifle(folk: Ep2TownFolk, target: Vector3 = Vector3.INF) -> b
 	var local: Transform3D = sk.global_transform.affine_inverse() * folk.global_transform
 	var gun: Transform3D = rifle_frame(folk)
 	if target.is_finite():
-		var heading: float = atan2(target.x - folk.global_position.x, target.z - folk.global_position.z)
+		var heading: float = atan2(target.x - folk.global_position.x, target.z - folk.global_position.z) - RIFLE_YAW
 		var direction: Vector3 = Basis(Vector3.UP, heading).inverse() * (target - folk.global_position) - gun.origin
 		gun.basis = Basis.looking_at(direction.normalized(), Vector3.UP, true)
 	var support: Vector3 = gun * ((GUN_SUPPORT - GUN_GRIP) * GUN_SCALE)
 	for side in ["Left", "Right"]:
 		var palm: Vector3 = support if side == "Left" else gun.origin
 		# A palm is distal to the wrist, not the wrist bone origin itself.
-		var wrist: Vector3 = palm + (Vector3(0, -0.065, -0.03) if side == "Left" else Vector3(0, -0.015, -0.055))
+		var wrist: Vector3 = palm + gun.basis * (Vector3(0, -0.065, -0.03) if side == "Left" else Vector3(0, -0.015, -0.055))
 		var pole: Vector3 = Vector3(0.39 if side == "Left" else -0.43, folk.height_m * 0.56, 0.12)
-		SOLVE._reach_arm(sk, idx, rot, G, side, local * wrist, local * pole, (local.basis * Vector3(0, 0.3, 0.95)).normalized())
+		SOLVE._reach_arm(sk, idx, rot, G, side, local * wrist, local * pole, (local.basis * gun.basis * Vector3(0, 0.3, 0.95)).normalized())
 	var anim := Animation.new()
 	anim.length = 3.9
 	anim.loop_mode = Animation.LOOP_LINEAR
@@ -114,6 +115,7 @@ static func install_rifle(folk: Ep2TownFolk, target: Vector3 = Vector3.INF) -> b
 	anim.position_track_insert_key(t, 0, hp)
 	anim.position_track_insert_key(t, anim.length, hp)
 	ap.stop()
+	ap.clear_caches()
 	var lib: AnimationLibrary = Ep2TownFolk.own_default_library(ap)
 	if lib.has_animation("InspectRifle"): lib.remove_animation("InspectRifle")
 	lib.add_animation("InspectRifle", anim)
@@ -165,3 +167,26 @@ static func attach_rifle(folk: Ep2TownFolk) -> Node3D:
 		return null
 	holder.transform = folk.get_meta("sharps_hand_transform")
 	return holder
+
+
+## Keep the independent fore-end contact after the firing wrist tracks a moving eye.
+static func track_support(folk: Ep2TownFolk, weapon: Node3D) -> void:
+	var sk: Skeleton3D = folk.model.find_children("*", "Skeleton3D", true, false)[0]
+	var idx: Dictionary = {}
+	for name in ["Hips", "LeftArm", "LeftForeArm", "LeftHand"]:
+		idx[name] = SOLVE._find(sk, name)
+		if idx[name] < 0: return
+	var attachment: BoneAttachment3D = weapon.get_parent() as BoneAttachment3D
+	var hand: int = sk.find_bone(attachment.bone_name)
+	var gun: Transform3D = sk.global_transform * sk.get_bone_global_pose(hand) * weapon.transform
+	var target: Vector3 = gun * ((GUN_SUPPORT - GUN_GRIP) * GUN_SCALE + Vector3(0, -0.065, -0.03))
+	var pole: Vector3 = folk.global_transform * Vector3(0.39, folk.height_m * 0.56, 0.12)
+	var inverse: Transform3D = sk.global_transform.affine_inverse()
+	var rot: Dictionary = {}
+	for b in sk.get_bone_count(): rot[b] = sk.get_bone_pose_rotation(b)
+	var hp: Vector3 = sk.get_bone_pose_position(idx.Hips)
+	var G: Callable = func(b: int) -> Transform3D: return SOLVE._global(sk, b, rot, hp, idx.Hips)
+	SOLVE._reach_arm(sk, idx, rot, G, "Left", inverse * target, inverse * pole,
+		(inverse.basis * gun.basis * Vector3(0, 0.3, 0.95)).normalized())
+	for name in ["LeftArm", "LeftForeArm", "LeftHand"]: sk.set_bone_pose_rotation(idx[name], rot[idx[name]])
+	sk.force_update_all_bone_transforms()
