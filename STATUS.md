@@ -1,5 +1,22 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-06 - Ridge climb and Utah's dock: texture pass - PUSHED, not yet live, not founder-verified, not tried on a real phone.**
+
+| Your note | State | What changed |
+|---|---|---|
+| The climb looks cheap | **Rebuilt** | The path is a worn gravel-and-dirt trail (photo-scanned), with grass on the shoulder and back slope. The ridge is now one continuous surface, so there are no seams or overlapping strips at the bends. |
+| Cliff and ledges | **Rebuilt** | The river side of the ridge is layered canyon rock in uneven ledges, with sandstone outcrops set into it. All three overlooks match: a timber stand to shoot from, a sandbag wall on the upstream side (out of the view down), a sandstone landmark behind you, and the post and ammo box. |
+| River banks from the ridge | **Rebuilt** | Each bank has a dark wet line at the water and a dry stony bank above it, fading into the grass. The riverbed is stony under the water. The three gate stretches and the rapids have real boulders. |
+| Utah's dock and the facility | **Rebuilt** | The dock is now separate weathered boards on beams, braced piles stained at the waterline, iron cleats, coiled rope, and a heavy timber landing pad under a timber-and-iron crane with a pulley and hook. The shipment goes to a receiving warehouse on a stone footing, with plank walls, a corrugated iron roof and open doors. The DAY-88 DOCK sign is on its gable. Utah walks out of those doors to take the crate. |
+| The DAY-88 marker | **Same place** | The cairn is stacked river sandstone with a painted top stone. The post and sign are unchanged. |
+| Day-88 run | **Unchanged** | The marker, overlooks, launch, three gates, bears, rafts, retry, Utah's walk, the crate and the dock hand-off are all where they were. The stage's gameplay test passes. |
+
+- **Credits:** Tripo P2: 340 used (warehouse 120, sandstone 110, sandbags 110), **50 left**. Meshy: 0 (Tripo was enough). Ground surfaces are free CC0 photo scans (Poly Haven).
+- **Download:** about 7.5 MB more in the streamed Episode 2 pack. Until that pack loads, the old ridge and dock show.
+- **Please check:** do a hard-refresh walk from Logan's Lake up the ridge, then look down at the dock. Your verdict is the real one. Pictures (before and after, same frames): `docs/episode2-quality/ridge-dock-texture-20261106/`.
+
+---
+
 **2026-11-05 - Wildlife and creature combat - LIVE on itch (build `2026-11-05-6cdc135`, confirmed from the public page); NOT founder-verified, not tried on a real phone.**
 
 | What you asked for | State | What changed |

@@ -26,6 +26,11 @@ const GATLING := "res://src/episode2/extras/armory/gatling_post.glb"      # the 
 ## The smelter's CAD prop kit (founder 2026-10-25 "not grey primitives"): Colt SAA, kegs, anvil, tongs, ladle, ingot mould, tools, chain, crates (Ep2KitProps).
 const SMELTER_KIT := "res://src/episode2/extras/hideout/smelter_kit.glb"
 const BOW := "res://src/episode2/extras/bow/founder_bow.glb"            # the founder's Tripo bow (Drive 2026-10-20): riser + Lil Blunt's left arm, flexing limbs, arrow, string hand
+## The day-88 river's kit (founder 2026-11-06 "the ridge ... looks very cheap"; Tripo P2): the dock's receiving warehouse, the layered
+## sandstone rock (overlooks, cliff, banks, rapids, the cairn) and the overlooks' sandbag cover. RiverCoverChamber keeps its old set without them.
+const RIVER_WAREHOUSE := "res://src/episode2/extras/river/dock_warehouse.glb"
+const RIVER_ROCK := "res://src/episode2/extras/river/ridge_rock.glb"
+const RIVER_SANDBAGS := "res://src/episode2/extras/river/sandbag_cover.glb"
 const RICH := "res://src/episode2/extras/folk/rich_armory2.glb"
 const UTAH := "res://src/episode2/extras/folk/utah_armory2.glb"
 ## The town kit with REAL openings (windows, doors, side windows; 2026-10-19 openings pass): same piece names as town_kit.glb.

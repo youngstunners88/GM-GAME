@@ -1,6 +1,28 @@
 {
  "licence": "CC0 1.0 (Poly Haven, ambientCG): commercial use, no attribution required",
  "sets": {
+  "bank_dry": {
+   "has_ao_map": true,
+   "has_metal_map": false,
+   "mean_albedo_linear": [
+    0.3099,
+    0.1815,
+    0.0835
+   ],
+   "px": 512,
+   "source": "polyhaven:dry_ground_rocks"
+  },
+  "bank_wet": {
+   "has_ao_map": true,
+   "has_metal_map": false,
+   "mean_albedo_linear": [
+    0.0982,
+    0.0754,
+    0.0473
+   ],
+   "px": 512,
+   "source": "polyhaven:brown_mud_rocks_01"
+  },
   "brass_worn": {
    "has_ao_map": false,
    "has_metal_map": true,
@@ -22,6 +44,17 @@
    ],
    "px": 512,
    "source": "polyhaven:large_red_bricks"
+  },
+  "cliff_layered": {
+   "has_ao_map": true,
+   "has_metal_map": false,
+   "mean_albedo_linear": [
+    0.2085,
+    0.0907,
+    0.0343
+   ],
+   "px": 1024,
+   "source": "polyhaven:cliff_side"
   },
   "fabric_burlap": {
    "has_ao_map": true,
@@ -78,6 +111,17 @@
    "px": 1024,
    "source": "polyhaven:old_planks_02"
   },
+  "riverbed_stones": {
+   "has_ao_map": true,
+   "has_metal_map": false,
+   "mean_albedo_linear": [
+    0.195,
+    0.1547,
+    0.1085
+   ],
+   "px": 512,
+   "source": "polyhaven:river_small_rocks"
+  },
   "rope": {
    "has_ao_map": false,
    "has_metal_map": true,
@@ -88,6 +132,17 @@
    ],
    "px": 512,
    "source": "ambientcg:Rope001"
+  },
+  "slope_grass": {
+   "has_ao_map": true,
+   "has_metal_map": false,
+   "mean_albedo_linear": [
+    0.1717,
+    0.1228,
+    0.0267
+   ],
+   "px": 512,
+   "source": "polyhaven:aerial_grass_rock"
   },
   "steel_blued": {
    "has_ao_map": false,
@@ -121,6 +176,17 @@
    ],
    "px": 512,
    "source": "polyhaven:rustic_stone_wall_02"
+  },
+  "trail_packed": {
+   "has_ao_map": true,
+   "has_metal_map": false,
+   "mean_albedo_linear": [
+    0.299,
+    0.2241,
+    0.1518
+   ],
+   "px": 1024,
+   "source": "polyhaven:rocky_trail"
   },
   "wood_dark": {
    "has_ao_map": true,

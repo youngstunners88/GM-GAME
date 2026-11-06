@@ -26,6 +26,8 @@ const MEAN := {
 	"planks_raw": Color(0.3858, 0.225, 0.0978), "stone_dressed": Color(0.3781, 0.289, 0.1764), "iron_painted": Color(0.4126, 0.2867, 0.133),
 	"leather_brown": Color(0.0828, 0.027, 0.0056), "brick_red": Color(0.4133, 0.1958, 0.1057), "stone_rustic": Color(0.2524, 0.182, 0.1122),
 	"fabric_burlap": Color(0.2514, 0.2392, 0.1949), "rope": Color(0.204, 0.152, 0.0804),
+	"trail_packed": Color(0.299, 0.2241, 0.1518), "cliff_layered": Color(0.2085, 0.0907, 0.0343), "bank_dry": Color(0.3099, 0.1815, 0.0835),
+	"bank_wet": Color(0.0982, 0.0754, 0.0473), "slope_grass": Color(0.1717, 0.1228, 0.0267), "riverbed_stones": Color(0.195, 0.1547, 0.1085),
 }
 
 ## Authored material name -> [set, tile size in metres (object space), metallic cap, roughness scale].
@@ -65,6 +67,14 @@ static var _tex: Dictionary = {}           # path -> Texture2D
 ## True once the streamed PBR sets can be loaded (always on desktop / in tests; on the web after the extras pack mounted).
 static func available() -> bool:
 	return ResourceLoader.exists(DIR + "planks_weathered/albedo.jpg")
+
+
+## A set in its own photographed colour (the ground sets: trail, cliff, banks), `gain` brighter or darker. null when not mounted.
+static func natural(set_id: String, tile_m: float, gain: float = 1.0, rough_scale: float = 1.0) -> StandardMaterial3D:
+	if not available():
+		return null
+	var mean: Color = MEAN.get(set_id, Color(0.5, 0.5, 0.5))
+	return make(set_id, Color(mean.r * gain, mean.g * gain, mean.b * gain).linear_to_srgb(), tile_m, 0.0, rough_scale)
 
 
 ## The set a material name maps to ("" = not dressed).
