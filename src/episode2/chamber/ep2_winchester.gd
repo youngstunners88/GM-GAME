@@ -31,6 +31,8 @@ const MOVE_SPREAD_MULT := 1.6      # walking widens it; standing still is the ti
 const AIR_SPREAD_MULT := 2.5
 const KICK_DEG := 2.0              # view kick per shot (ADS keeps 65 %)
 const ADS_KICK_KEEP := 0.65
+const SCOPE_SPREAD_DEG := 0.05     # through a telescopic sight the round goes where the reticle is
+const SCOPE_KICK_KEEP := 0.25      # and the kick must not throw the lens off the eye
 
 var rounds: int = 0
 var reserve: int = RESERVE_START
@@ -39,6 +41,7 @@ var reserve: int = RESERVE_START
 var locked: bool = true
 var reload_locked: bool = true
 var ads: float = 0.0               # 0 = hip, 1 = fully aimed
+var scope_fov: float = 0.0          # above 0 this gun wears a telescopic sight (Ep2ArmoryState.PROFILES)
 var wants_ads: bool = false
 var reloading: bool = false
 var shots_fired: int = 0
@@ -143,7 +146,7 @@ func is_full() -> bool: return rounds >= capacity
 
 ## One-sigma aim error in degrees right now.
 func spread_deg(moving: bool = false, airborne: bool = false) -> float:
-	var s: float = lerpf(HIP_SPREAD_DEG, ADS_SPREAD_DEG, ads)
+	var s: float = lerpf(HIP_SPREAD_DEG, SCOPE_SPREAD_DEG if scope_fov > 0.0 else ADS_SPREAD_DEG, ads)
 	if moving:
 		s *= lerpf(MOVE_SPREAD_MULT, 1.15, ads)
 	if airborne:
@@ -153,4 +156,4 @@ func spread_deg(moving: bool = false, airborne: bool = false) -> float:
 
 ## View kick (radians) one shot adds at the current aim state.
 func kick_rad() -> float:
-	return deg_to_rad(kick_deg) * lerpf(1.0, ADS_KICK_KEEP, ads)
+	return deg_to_rad(kick_deg) * lerpf(1.0, SCOPE_KICK_KEEP if scope_fov > 0.0 else ADS_KICK_KEEP, ads)

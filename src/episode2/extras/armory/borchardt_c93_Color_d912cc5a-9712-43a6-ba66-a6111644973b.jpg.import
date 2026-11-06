@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://cs3wnm6x5pafs"
+path="res://.godot/imported/borchardt_c93_Color_d912cc5a-9712-43a6-ba66-a6111644973b.jpg-eb4e31c3862639e452d50668dc8095f7.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "787ea1fbb4c5ad454766b3f59bc7f7aa"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/armory/borchardt_c93_Color_d912cc5a-9712-43a6-ba66-a6111644973b.jpg"
+dest_files=["res://.godot/imported/borchardt_c93_Color_d912cc5a-9712-43a6-ba66-a6111644973b.jpg-eb4e31c3862639e452d50668dc8095f7.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1

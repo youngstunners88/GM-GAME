@@ -35,6 +35,9 @@ const VM_SPRINT_POS := Vector3(0.19, -0.27, -0.48)    # sprint: still in frame (
 const VM_SPRINT_ROT := Vector3(-0.2, PI + 0.3, 0.12)
 const VM_ADS_DEPTH := -0.46
 const VM_ADS_SIGHT_DROP := 0.012
+## A scoped gun: the lens fades in over this stretch of the aim, and past its end the rifle is away and only the lens is left (Ep2FpsHud), so nothing covers the target.
+const SCOPE_FADE_FROM := 0.55
+const SCOPE_FULL_AT := 0.92
 
 ## The Winchester report (skill ep2-winchester-sound): three layered rifle samples round-robin on their own pool so a
 ## quick follow-up never cuts the previous echo, then the lever racks after each shot.
@@ -299,7 +302,7 @@ func set_shown(on: bool) -> void:
 	_shown = on
 	if rifle != null and is_instance_valid(rifle):
 		var available: bool = armory == null or armory.equipped == Ep2ArmoryState.PICK or armory.owns(armory.equipped)
-		rifle.visible = on and available
+		rifle.visible = on and available and scope_k() < 1.0
 
 
 ## The mouse delta in pixels: the rifle LAGS the mouse a little (sway).
@@ -341,6 +344,13 @@ func reload() -> bool:
 
 func is_ads() -> bool:
 	return gun.ads > 0.5
+
+
+## 0..1: how far up the telescopic sight is (0 for a gun without one). Ep2FpsHud draws the lens at this strength.
+func scope_k() -> float:
+	if rifle == null or not is_instance_valid(rifle) or not rifle.get_meta("scoped", false):
+		return 0.0
+	return clampf((gun.ads - SCOPE_FADE_FROM) / (SCOPE_FULL_AT - SCOPE_FADE_FROM), 0.0, 1.0)
 
 
 ## Advance everything one physics step. `moving` / `sprinting` / `walk_phase` come from the host's movement.
@@ -428,6 +438,8 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 	pos += Basis.from_euler(rot_hold) * piv - Basis.from_euler(rot) * piv
 	rifle.position = pos
 	rifle.rotation = rot
+	if rifle.get_meta("scoped", false):
+		set_shown(_shown)
 
 
 # --- the founder's bow: sound pairing and the late-mounted view --------------------------------------------------------------------

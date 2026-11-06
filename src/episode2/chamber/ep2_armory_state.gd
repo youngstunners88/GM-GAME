@@ -26,12 +26,14 @@ const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round", BOW: "bear_arrow
 	BORCH: "seven_six_five", BUFF: "sharps_round"}
 ## Rounds that come with a gun when it is acquired (loaded + reserve; never refilled for free afterwards).
 const START_RESERVE := {WIN: 24, REM: 18, BOW: 0, SHOT: 10, MP18: 64, TOMMY: 100, BORCH: 16, BUFF: 10}
+## The Sharps' telescopic sight, fully aimed: about 2.1x the normal aimed view (58) and 2.8x the hip (78).
+const SCOPE_FOV := 28.0
 ## The guns' game profiles. Feel-values (F - free to tune): the coach gun is two barrels of buckshot (wide hit cone, a heavy kick,
 ## shell-by-shell reload); the two submachine guns fire while the trigger is HELD and change a whole drum at once.
 const PROFILES := {
 	SHOT: {"capacity": 5, "cycle": 0.62, "reload": 0.55, "kick": 4.6, "pellets": 8, "hit_scale": 2.4},
 	BORCH: {"capacity": 8, "cycle": 0.24, "reload": 1.6, "kick": 2.0, "drum": true},
-	BUFF: {"capacity": 1, "cycle": 1.1, "reload": 1.35, "kick": 6.5},
+	BUFF: {"capacity": 1, "cycle": 1.1, "reload": 1.35, "kick": 6.5, "scope_fov": SCOPE_FOV},
 	MP18: {"capacity": 32, "cycle": 0.1, "reload": 2.3, "kick": 0.75, "automatic": true, "drum": true},
 	TOMMY: {"capacity": 50, "cycle": 0.085, "reload": 2.7, "kick": 0.85, "automatic": true, "drum": true},
 }
@@ -65,7 +67,7 @@ const SHOP: Array = [
 	{"id": "borchardt_ammo", "name": "7.65 BORCHARDT", "note": "TWO MAGAZINES - SIXTEEN", "price": 1, "rounds": 16},
 	{"id": SHOT, "name": "LEVER SHOTGUN", "note": "WINCHESTER 1887 - FIVE SHELLS", "price": 3, "rounds": 0},
 	{"id": "shotgun_ammo", "name": "BUCKSHOT SHELLS", "note": "A BOX OF TEN", "price": 1, "rounds": 10},
-	{"id": "sniper", "name": "BUFFALO GUN", "note": "SHARPS 1874 - LADDER SIGHT", "price": 3, "rounds": 0},
+	{"id": "sniper", "name": "BUFFALO GUN", "note": "SHARPS 1874 - TELESCOPIC SIGHT", "price": 3, "rounds": 0},
 	{"id": "sniper_ammo", "name": "SHARPS CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
 	{"id": MP18, "name": "DRUM SMG", "note": "BERGMANN MP18 - SNAIL DRUM", "price": 4, "rounds": 0},
 	{"id": "mp18_ammo", "name": "9MM SNAIL DRUMS", "note": "TWO DRUMS - SIXTY-FOUR", "price": 1, "rounds": 64},
@@ -161,6 +163,7 @@ static func _apply_profile(id: String, gun: Ep2Winchester) -> void:
 	gun.drum_reload = bool(p.get("drum", false))
 	gun.pellets = int(p.get("pellets", 1))
 	gun.hit_scale = float(p.get("hit_scale", 1.0))
+	gun.scope_fov = float(p.get("scope_fov", 0.0))
 
 
 func _watch(gun: Ep2Winchester) -> void:
@@ -322,6 +325,21 @@ func purchase_river_gear(tender: String) -> bool:
 
 
 ## Standalone post-hideout scenes declare their story entry, separate from rendering.
+## THE ONE AIMING RULE for every first-person room: the view's fov at aim blend `ads_k`. A scoped gun in the hands narrows to its own fov, every other gun to the room's `ads_fov`.
+static func aimed_fov(state: Ep2ArmoryState, ads_k: float, hip_fov: float, ads_fov: float) -> float:
+	var aimed: float = ads_fov
+	if state != null and PROFILES.has(state.equipped):
+		aimed = float(PROFILES[state.equipped].get("scope_fov", ads_fov))
+	return lerpf(hip_fov, aimed, ads_k)
+
+
+## Mouse look through a scope scales with the zoom, so it is no more twitchy on the target than the normal aimed view. 1.0 for every other gun.
+static func aimed_look_scale(state: Ep2ArmoryState, ads: float, ads_fov: float) -> float:
+	if state == null or not PROFILES.has(state.equipped) or not PROFILES[state.equipped].has("scope_fov"):
+		return 1.0
+	return lerpf(1.0, float(PROFILES[state.equipped]["scope_fov"]) / ads_fov, ads)
+
+
 static func post_hideout() -> Ep2ArmoryState:
 	var state := Ep2ArmoryState.new()
 	state.acquire(WIN)

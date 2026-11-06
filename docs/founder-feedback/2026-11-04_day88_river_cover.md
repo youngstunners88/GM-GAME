@@ -72,3 +72,14 @@ Captures (real renderer, `tools/ep2_shots/river_cover_shot.tscn`): `docs/episode
 - **Waves:** swimmers 4 / 7 / 6, plus far-bank archers 1 / 2 / 2 and Hammer's rafts 1 / 1 / 2 (two men each). A raft hooks the crate and drains it until its men are dead. 9 bear-seconds tip it (was 5).
 - **Fairness:** one gun on him at a time, a visible tell first, moving always dodges, and a man standing still is not hit by every shot. Each gate tops up the Sharps to what the wave needs.
 - **Logan:** he is visible back at his lake from the climb. The "never at the ridge" rule still holds: he does not come up it.
+
+## Texture pass (founder 2026-11-06: "texturing on the level going up the ridge ... looks very cheap")
+Gameplay geometry and constants are untouched. Collision stays analytic on `RIDGE_POINTS`, and the gate passes.
+- **Ridge skin:** mitred cross-sections every `RIDGE_STEP`. Surfaces: trail (`trail_packed`), grass (`slope_grass`, lake-green tint) and cliff (`cliff_layered`, world triplanar so the strata lie level). Per-segment quads overlapped at bends; that was the seam.
+- **Overlooks:** timber stand, sandbag cover upstream (inside the lip) and a landmark rock on the back shoulder. Nothing sits in the view down.
+- **Banks:** `_build_banks` gives each bank a wet line under the water's edge (`bank_wet`) and a dry bank (`bank_dry`) that sinks under the valley floor. It starts past the lake's ground.
+- **Kit (Tripo P2, `src/episode2/extras/river/`):** `dock_warehouse.glb`, `ridge_rock.glb` (MultiMesh on the cliff, banks and rapids, plus the cairn) and `sandbag_cover.glb`.
+- **Dock:** boards, stringers, piles with a waterline stain, cleats, rope, landing pad, crane, and the warehouse at `WAREHOUSE_AT`. Its doorway frames Utah's existing start point.
+- **Fallback:** before the streamed pack mounts, `Ep2Pbr.available()` and `Ep2Extras.has()` are false, so the old plain set and dock are built.
+- **Captures:** `tools/ep2_shots/ridge_dock_texture_shot.tscn`. Before/after pairs are in `docs/episode2-quality/ridge-dock-texture-20261106/`.
+- [ ] FIXED only after the founder's hard-refresh climb and look at the dock.

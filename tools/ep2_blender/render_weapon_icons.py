@@ -2,7 +2,7 @@
 be selected ... also reconfigure the Golden Remington in the selection tab as it doesn't have Lil Blunt's hand on it the way the rifle has his hands on it. We need to
 maintain consistency in our designs"; skill ep2-weapon-selector-icons).
 
-  blender -b --factory-startup -P tools/ep2_blender/render_weapon_icons.py -- --which remington|bow|winchester [--out <png>] [--samples 48]
+  blender -b --factory-startup -P tools/ep2_blender/render_weapon_icons.py -- --which remington|bow|winchester|borchardt|sharps [--out <png>] [--samples 48]
 
 The three icons share ONE studio (the Winchester icon's own: neutral world 0.65 / 0.7, two area lights, orthographic side camera, 640 x 320 transparent PNG, muzzle /
 arrow to the left) so the three cards read as a set:
@@ -25,7 +25,7 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 WHICH = argv[argv.index("--which") + 1] if "--which" in argv else "remington"
 SAMPLES = int(argv[argv.index("--samples") + 1]) if "--samples" in argv else 48
 DRAW = float(argv[argv.index("--draw") + 1]) if "--draw" in argv else 0.8
-OUT = argv[argv.index("--out") + 1] if "--out" in argv else os.path.join(ROOT, "src/episode2/assets/weapons/armory/%s_icon.png" % {"remington": "remington", "bow": "bow", "winchester": "winchester"}[WHICH])
+OUT = argv[argv.index("--out") + 1] if "--out" in argv else os.path.join(ROOT, "src/episode2/assets/weapons/armory/%s_icon.png" % {"remington": "remington", "bow": "bow", "borchardt": "borchardt", "sharps": "sharps_buffalo", "winchester": "winchester"}[WHICH])
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 CONV = Matrix(((1, 0, 0), (0, 0, -1), (0, 1, 0)))        # game (x, y, z) -> blender (x, -z, y)
@@ -55,6 +55,27 @@ def mesh_points(objs=None):
 if WHICH == "winchester":
     load(os.path.join(ROOT, "src/episode2/assets/weapons/winchester_1886_founder.glb"))
     cam_dir, ortho_k, tilt = Vector((1.6, 0.04, 0.42)), 1.42, True
+elif WHICH in ("borchardt", "sharps"):
+    # the gun + the Remington's own glove and arm, posed as in the first-person view (Ep2ArmoryGunView.HELD, game frame)
+    def placed(path, pos, turn=0.0, scale=(1.0, 1.0, 1.0)):
+        before = set(bpy.data.objects)
+        load(os.path.join(ROOT, path))
+        game = Matrix.Translation(pos) @ Matrix.Rotation(turn, 4, "Y") @ Matrix.Diagonal((*scale, 1.0))
+        to_blender = CONV.to_4x4()
+        xf = to_blender @ game @ to_blender.inverted()
+        for o in set(bpy.data.objects) - before:
+            if o.parent is None:
+                o.matrix_world = xf @ o.matrix_world
+        bpy.context.view_layer.update()
+    HAND, TURN = "src/episode2/extras/armory/lil_blunt_gun_hand.glb", math.pi * 0.5
+    if WHICH == "borchardt":
+        placed("src/episode2/extras/armory/borchardt_c93.glb", (0.0, 0.045, -0.083), 0.0, (1.527, 1.527, 1.527))
+        placed(HAND, (0.0, -0.45, -0.157), TURN)
+    else:
+        placed("src/episode2/extras/armory/sharps_scoped.glb", (0.0, 0.0, 0.0))
+        placed(HAND, (0.0, -0.277, -0.128), TURN, (0.6, 0.6, 0.6))
+        placed(HAND, (0.0, -0.29, 0.229), TURN, (0.6, 0.6, -0.6))
+    cam_dir, ortho_k, tilt = Vector((1.0, 0.0, 0.12)), 1.30, True
 elif WHICH == "remington":
     load(os.path.join(ROOT, "src/episode2/assets/weapons/armory/golden_revolver_founder.glb"))
     # the founder hand-and-gun: muzzle toward -x in the file; the icon camera looks at its right flank so the muzzle is on the left, like the rifle's
@@ -153,7 +174,7 @@ if WHICH == "bow":
 ws = [(p - center).dot(right) for p in pts]
 hs = [(p - center).dot(up) for p in pts]
 w, h = max(ws) - min(ws), max(hs) - min(hs)
-cam.data.ortho_scale = max(w, h * 2.0) * {"remington": 1.32, "bow": 1.12, "winchester": 1.10}[WHICH]      # the card's key label sits top-left: the revolver keeps clear of it
+cam.data.ortho_scale = max(w, h * 2.0) * {"remington": 1.32, "bow": 1.12, "winchester": 1.10, "borchardt": 1.22, "sharps": 1.06}[WHICH]      # the card's key label sits top-left: the revolver keeps clear of it
 cam.location = center + cam_dir.normalized() * 3.0 + right * ((max(ws) + min(ws)) / 2) + up * ((max(hs) + min(hs)) / 2)
 sc.camera = cam
 sc.render.film_transparent = True

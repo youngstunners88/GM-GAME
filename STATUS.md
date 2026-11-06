@@ -4,6 +4,55 @@
 - Utah/Rich rest-aware arm and grounded gait changes, supplied showcase Sharps attachment, Dude lens texture and horse heading/mount changes are implemented locally.
 - Nine affected native checks passed before expanding retaliation to the full roster. User assigned the existing golden Remington to Minister Mike Dean, bartender, sheriff and Utah; Rich retains showcase Sharps. Expanded verification is pending.
 - Actual armory-camera capture completed. Full release gates/export, retaliation aiming proof, woods-copy integration and deployment remain open. Evidence and limitations: `docs/episode2-quality/npc-motion-20261105/VERIFICATION.md`.
+**2026-11-06 - Ridge climb and Utah's dock: texture pass - LIVE on itch (build `2026-11-06-0733403`, confirmed from the public page, streamed pack loads); NOT founder-verified, not tried on a real phone.**
+
+| Your note | State | What changed |
+|---|---|---|
+| The climb looks cheap | **Rebuilt** | The path is a worn gravel-and-dirt trail (photo-scanned), with grass on the shoulder and back slope. The ridge is now one continuous surface, so there are no seams or overlapping strips at the bends. |
+| Cliff and ledges | **Rebuilt** | The river side of the ridge is layered canyon rock in uneven ledges, with sandstone outcrops set into it. All three overlooks match: a timber stand to shoot from, a sandbag wall on the upstream side (out of the view down), a sandstone landmark behind you, and the post and ammo box. |
+| River banks from the ridge | **Rebuilt** | Each bank has a dark wet line at the water and a dry stony bank above it, fading into the grass. The riverbed is stony under the water. The three gate stretches and the rapids have real boulders. |
+| Utah's dock and the facility | **Rebuilt** | The dock is now separate weathered boards on beams, braced piles stained at the waterline, iron cleats, coiled rope, and a heavy timber landing pad under a timber-and-iron crane with a pulley and hook. The shipment goes to a receiving warehouse on a stone footing, with plank walls, a corrugated iron roof and open doors. The DAY-88 DOCK sign is on its gable. Utah walks out of those doors to take the crate. |
+| The DAY-88 marker | **Same place** | The cairn is stacked river sandstone with a painted top stone. The post and sign are unchanged. |
+| Day-88 run | **Unchanged** | The marker, overlooks, launch, three gates, bears, rafts, retry, Utah's walk, the crate and the dock hand-off are all where they were. The stage's gameplay test passes. |
+
+- **Credits:** Tripo P2: 340 used (warehouse 120, sandstone 110, sandbags 110), **50 left**. Meshy: 0 (Tripo was enough). Ground surfaces are free CC0 photo scans (Poly Haven).
+- **Download:** about 7.5 MB more in the streamed Episode 2 pack. Until that pack loads, the old ridge and dock show.
+- **Please check:** do a hard-refresh walk from Logan's Lake up the ridge, then look down at the dock. Your verdict is the real one. Pictures (before and after, same frames): `docs/episode2-quality/ridge-dock-texture-20261106/`.
+
+---
+
+**2026-11-05 - Wildlife and creature combat - LIVE on itch (build `2026-11-05-6cdc135`, confirmed from the public page); NOT founder-verified, not tried on a real phone.**
+
+| What you asked for | State | What changed |
+|---|---|---|
+| Vultures | **Done** | They circle together in one thermal. One shot wounds a bird and it sags out of the circle; a second kills it (one Sharps round is enough) and it falls and lies on the ground. Birds at a carcass work the same way and are now the same model. |
+| Bison | **Motion improved, model kept** | Your bison model looked right up close, so no credits were spent on it. Each animal now has its own stride, rises and lands hard, lurches when hit, and ploughs on before it falls. Survivors run off instead of galloping on the spot. |
+| Stampede | **Done** | Still once per run, shoot or dodge. Nothing on screen warns you any more, except "TRAMPLED!" when you are hit. Standing still is safe: the herd crosses and the ride goes on. |
+| Stampede and bird sound | **Done** | Rumble, many hooves, rising as they near, a whoosh on a close pass, a heavy bison hit, light wings and cries. The music dips and always comes back. These sounds are generated, not recordings. |
+| Horses | **Mostly done** | Town, stable and lake horses and your own can be wounded and killed. A dead horse falls on its side and blocks nothing. If yours dies you are on foot, and Dude patches it up. Remounting at Logan's Lake still works. **Not yet:** bullets pass through the chasing bandits' horses, and a town or stable horse you killed is back after a reload. |
+| Other animals | **Not done** | The road cart's donkey and the small songbirds in the woods cannot be shot yet. Bears keep their own system and can already be killed. |
+| People | **Not changed** | Rich, Utah, Logan, Mike Dean and the townsfolk stay on their own systems. |
+
+- **Credits:** 0 Tripo, 0 Meshy.
+- **Please check:** the sounds and the running have only been checked by measurements and still pictures, not by ear or in play. Your hard-refresh test of the trail, the stampede and a kill is the real verdict.
+- **Details:** `design/ep2/wildlife/WILDLIFE_COMBAT.md`. Pictures: `docs/captures/wildlife-combat/`.
+
+---
+
+**2026-11-05 - Borchardt size and Sharps scope - PUSHED, deploying; not yet confirmed live, not founder-verified, not tried on a real phone.**
+
+| Your note | State | What it was |
+|---|---|---|
+| Borchardt far too small | **Fixed, one number not met** | The old model baked a tiny hand onto the gun. It now sits in the Golden Remington's own glove and arm at the Remington's size. Aimed length is within 4.1% of the Remington. Height over the barrel is not close (14 px vs 55 px), because a C93 has a low flat top. See `docs/captures/weapon-consistency/AB_ads_remington_borchardt.png`. |
+| The stranger's pistol | **Same new gun** | He draws and drops the new pistol at real size. Searching him still gives you the gun. |
+| Sharps blocks the view | **Fixed** | It has a long period telescopic sight. Fully aimed, the rifle clears and you look through a round lens with hairlines, about 2.2x closer than normal aiming. |
+| Sharps tabs and shop | **Updated** | Tab model, weapon card, shop note ("TELESCOPIC SIGHT"), Rich's case rifle and the rifle in his hand. Still nine tabs. |
+| Rich's line | **Not changed** | He still says "a tang sight". It is voiced and this machine has no ElevenLabs key, so it needs a new take. |
+
+- **Tripo:** 110 of the 400 credits used, 390 left. The Sharps generation (50 credits) came out with a modern scope, so it was not used: the scope is built onto your own Sharps instead.
+- **Details:** `design/ep2/armory/WEAPON_CONSISTENCY.md`.
+
+---
 
 **2026-11-05 - Your "Shipment and Bears" notes - LIVE on itch (build `2026-11-05-dff3acd`, confirmed from the public page); NOT founder-verified, not tried on a real phone.**
 

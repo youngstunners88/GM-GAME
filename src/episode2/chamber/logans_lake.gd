@@ -53,7 +53,9 @@ const MOUNTED_SPEED := 6.0
 const SADDLE_HEIGHT := 1.28
 var _horse: Node3D
 var _horse_anim: AnimationPlayer
-var _horse_state: String = "drink"                # lead -> drink; ridden; graze (left where he dismounted)
+const DEAD_ROLL := -1.46                          # this actor's root faces +Z, so its roll is the Z axis
+const DEAD_LYING_Y := 0.27
+var _horse_state: String = "drink"                # lead -> drink; ridden; graze (left where he dismounted); hurt; gone (came down on the trail); dead (shot here)
 var _horse_clip: String = ""
 var _horse_sip_t: float = 2.0
 var _riding: bool = false
@@ -463,8 +465,54 @@ func _on_player_shot() -> void:
 	if _logan != null and _logan_draw_t < 0.0 and _bullet_hits_logan():
 		_logan_draws()
 		return
+	if _horse != null and _horse.visible and _horse_state != "dead" and _bullet_hits_horse():
+		_wound_lake_horse()
+		return
 	if _player_pos.distance_to(LOGAN_MARK) < 35:
 		_hud.toast("LOGAN: Easy. Keep the staging bank secure.", 2.5)
+
+
+func _bullet_hits_horse() -> bool:
+	var eye: Vector3 = _player_pos + Vector3(0, eye_height, 0)
+	var cp: float = cos(_look_pitch)
+	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
+	# The actor faces +Z (the model inside it is turned), so that is the length of the body.
+	var centre: Vector3 = _horse.global_position + Vector3(0, 1.05, 0)
+	var axis: Vector3 = _horse.global_transform.basis.z.normalized()
+	return WoodsQuadChamber._ray_capsule(eye, dir, centre - axis * 0.92, centre + axis * 0.92, 0.61) >= 0.0
+
+
+## Dude's horse is a creature here too. A shot wounds it through the same travelling state as the trail, and the third puts it
+## down: it falls and lies where it stood, and Lil Blunt simply walks. Dude patches it up on the road back, so this is never a dead
+## end. A wound in the saddle puts him down at once: the "hurt" rule says nobody rides a shot horse.
+func _wound_lake_horse() -> void:
+	armory.wound_horse()
+	_horse_whinny()
+	if _riding:
+		_dismount()
+	if _hud != null:
+		_hud.hit_marker(armory.horse_is_down())
+	if armory.horse_is_down():
+		_horse_state = "dead"
+		if _horse_anim != null:
+			_horse_anim.pause()
+		Ep2CreatureHealth.topple(_horse, _horse.rotation.x, DEAD_ROLL, _horse.position.y + DEAD_LYING_Y)
+	else:
+		_horse_state = "hurt"
+		_set_horse_clip("horse_stand", 0.6)
+
+
+func _horse_whinny() -> void:
+	var path := "res://src/episode2/extras/audio/town/horse_whinny.ogg"
+	if not ResourceLoader.exists(path):
+		return
+	var p := AudioStreamPlayer.new()
+	p.bus = "SFX"
+	p.stream = load(path) as AudioStream
+	p.volume_db = -3.0
+	add_child(p)
+	p.play()
+	p.finished.connect(p.queue_free)
 
 
 func _bullet_hits_logan() -> bool:
@@ -616,7 +664,7 @@ func _tick_horse(delta: float) -> void:
 				var step: Vector3 = to.normalized() * minf(to.length(), HORSE_WALK * delta)
 				_place_horse(_horse.position + step, lerp_angle(_horse.rotation.y, atan2(to.x, to.z), clampf(delta * 4.0, 0.0, 1.0)))
 				_set_horse_clip("horse_walk", HORSE_WALK / HORSE_CLIP_SPEED)
-		"hurt", "gone":
+		"hurt", "gone", "dead":
 			pass
 		"drink":
 			_horse.rotation.y = lerp_angle(_horse.rotation.y, HORSE_DRINK_YAW, clampf(delta * 2.5, 0.0, 1.0))
@@ -673,7 +721,7 @@ func _sip() -> void:
 ## E mounts him whenever Logan is not mid-explanation and the horse is beside Lil Blunt.
 func can_mount_horse() -> bool:
 	# not while he is still walking himself down to the water, nor while Logan is explaining
-	if _horse == null or _riding or _horse_state in ["lead", "hurt", "gone"] or _beat == Beat.INVESTIGATE or not has_player_control():
+	if _horse == null or _riding or _horse_state in ["lead", "hurt", "gone", "dead"] or _beat == Beat.INVESTIGATE or not has_player_control():
 		return false
 	return Vector2(_player_pos.x - _horse.position.x, _player_pos.z - _horse.position.z).length() < HORSE_REACH
 

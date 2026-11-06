@@ -564,7 +564,7 @@ func look(relative: Vector2) -> void:
 	if not has_player_control():
 		return
 	var ads: float = _vm.gun.ads if _vm != null else 0.0
-	var k: float = LOOK_SENSITIVITY * lerpf(1.0, ADS_LOOK_SCALE, ads) * lerpf(1.0, 0.22, _scope_k)
+	var k: float = LOOK_SENSITIVITY * lerpf(1.0, ADS_LOOK_SCALE, ads) * lerpf(1.0, 0.22, _scope_k) * Ep2ArmoryState.aimed_look_scale(armory, ads, FPS_ADS_FOV)
 	_look_yaw -= relative.x * k
 	if fps_mode:
 		_look_pitch = clampf(_look_pitch - relative.y * k, FPS_PITCH_MIN, FPS_PITCH_MAX)
@@ -812,7 +812,7 @@ func _fps_camera(_delta: float) -> void:
 	var dir := Vector3(sin(_look_yaw) * cp, sin(pitch), cos(_look_yaw) * cp)
 	_camera.look_at(_camera.position + dir, Vector3.UP)
 	var ads_k: float = ads * ads * (3.0 - 2.0 * ads)
-	var fov: float = lerpf(FPS_FOV, FPS_ADS_FOV, ads_k)
+	var fov: float = Ep2ArmoryState.aimed_fov(armory, ads_k, FPS_FOV, FPS_ADS_FOV)
 	if _scope_k > 0.0:
 		fov = lerpf(fov, _scope_fov, _scope_k)
 	_camera.fov = fov
@@ -875,6 +875,7 @@ func _tick_viewmodel(delta: float) -> void:
 	if _hud != null:
 		_hud.spread_deg = _vm.gun.spread_deg(_moving, _player_pos.y > _ground_y + 0.05)
 		_hud.ads = maxf(_vm.gun.ads, _scope_k)
+		_hud.scope = _vm.scope_k()
 		var armed: bool = armory == null or armory.equipped != Ep2ArmoryState.PICK
 		_hud.on_target = armed and has_player_control() and _camera != null and aim_on_target(_camera.global_position, -_camera.global_transform.basis.z)
 		_hud.set_ammo(_vm.gun.rounds, _vm.gun.reserve, _vm.gun.capacity)

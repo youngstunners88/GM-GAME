@@ -86,6 +86,7 @@ const CONV_LINES: Dictionary = {
 
 var actors: Array[Ep2TownFolk] = []
 var horses: Array[Node3D] = []
+var _dead_horses: Dictionary = {}
 var _brains: Array = []
 var _horse_anims: Array = []
 var _solids: Array = []
@@ -487,7 +488,56 @@ func _build_horses(props: Array) -> void:
 		var phase: float = rng.randf_range(0.0, ap.get_animation(clip).length)
 		ap.seek(phase, true)
 		_horse_anims.append(ap)
+		Ep2CreatureHealth.attach(horse, Ep2ArmoryState.HORSE_WOUNDS_MAX).died.connect(_on_horse_died.bind(i))
+		horse.add_to_group(Ep2CreatureHealth.HORSE_GROUP)
 		_solid(horse, 0.95, 1.8, props)
+
+
+## A yard horse took its third wound. It goes down where it stands and stops being a wall: its prop row leaves the town survey and
+## its collider is gone, so nothing invisible is left in its place. Dude gets off if it was the horse under him.
+func _on_horse_died(_at: Vector3, index: int) -> void:
+	if index < 0 or index >= horses.size():
+		return
+	var horse: Node3D = horses[index]
+	if not is_instance_valid(horse):
+		return
+	_dead_horses[horse.get_instance_id()] = true
+	horse.set_meta("law_dead", true)
+	if index < _horse_anims.size():
+		(_horse_anims[index] as AnimationPlayer).speed_scale = 0.0
+	# Dude's seat is worked out from this same horse, so he comes off before it starts to go over.
+	if index == 0 and _ride_state in ["mount", "ride", "dismount"]:
+		_dismount_dead_horse(horse)
+	Ep2CreatureHealth.topple(horse, Ep2TownLife.DEAD_ROLL, 0.0, Ep2TownLife.DEAD_LYING_Y)
+	_remove_solid(horse)
+	if index == _drink_horse:
+		_drink_left = 0.0
+		_drink_next = _time + 22.0
+
+
+func _remove_solid(node: Node3D) -> void:
+	for entry in _solids.duplicate():
+		if entry[0] == node:
+			_ranch_props.erase(entry[1])
+			_solids.erase(entry)
+	var body: Node = node.get_node_or_null("YardBody")
+	if body != null:
+		body.queue_free()
+
+
+func _dismount_dead_horse(horse: Node3D) -> void:
+	_ride_state = ""
+	_ride_next = _time + 30.0
+	_ride_mount_t = 0.0
+	if actors.is_empty():
+		return
+	var dude: Ep2TownFolk = actors[0]
+	dude.stop()
+	dude.hold_clip("idle")
+	# Beside the fallen horse on the yard's own ground (the shot's hit point is world space and at body height).
+	dude.position = Vector3(horse.position.x + 1.8, 0.0, horse.position.z + 1.1)
+	dude.facing = 0.0
+	dude.rotation.y = 0.0
 
 
 ## True when Dude is at the yard, off his horse and able to have a conversation.
@@ -664,7 +714,12 @@ func step(delta: float, player: Vector3, quiet: bool = false) -> void:
 		_horse_sound_left -= dt
 		if _horse_sound_left <= 0.0:
 			var i: int = _horse_sound_index % horses.size()
-			_sfx3d("horse_whinny" if _horse_sound_index % 3 == 0 else "horse_snort", horses[i].position + Vector3(0,1.5,0), -4.0, 55.0)
+			for _try in horses.size():
+				if _horse_alive(i):
+					break
+				i = (i + 1) % horses.size()
+			if _horse_alive(i):
+				_sfx3d("horse_whinny" if _horse_sound_index % 3 == 0 else "horse_snort", horses[i].position + Vector3(0,1.5,0), -4.0, 55.0)
 			_horse_sound_index += 1
 			_horse_sound_left = 9.0 + float((_horse_sound_index * 7) % 8)
 	for ap in _horse_anims:
@@ -721,7 +776,7 @@ func _tick_dude(delta: float, player: Vector3, quiet: bool) -> void:
 		return
 	match _ride_state:
 		"":
-			if _time >= _ride_next and horses.size() >= 1 and player.distance_to(dude.position) > 5.0:
+			if _time >= _ride_next and _horse_alive(0) and player.distance_to(dude.position) > 5.0:
 				_ride_state = "to_horse"
 				dude.hold_clip("idle")
 				dude.walk_to(RIDE_MOUNT, 0.75)
@@ -740,6 +795,9 @@ func _tick_dude(delta: float, player: Vector3, quiet: bool) -> void:
 
 
 func _begin_mount() -> void:
+	if not _horse_alive(0):
+		_ride_state = ""
+		return
 	var dude: Ep2TownFolk = actors[0]
 	dude.stop()
 	_ride_state = "mount"
@@ -859,6 +917,7 @@ func _tick_dismount(dude: Ep2TownFolk, delta: float, player: Vector3) -> void:
 
 func _play_horse(index: int, clip: String, speed: float) -> void:
 	if index < 0 or index >= _horse_anims.size(): return
+	if not _horse_alive(index): return
 	var ap: AnimationPlayer = _horse_anims[index]
 	if not ap.has_animation(clip): return
 	ap.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
@@ -866,9 +925,17 @@ func _play_horse(index: int, clip: String, speed: float) -> void:
 	ap.speed_scale = speed
 
 
+func _horse_alive(index: int) -> bool:
+	if index < 0 or index >= horses.size():
+		return false
+	var horse: Node3D = horses[index]
+	return is_instance_valid(horse) and not _dead_horses.has(horse.get_instance_id())
+
+
 func _tick_walking_horse() -> void:
 	for horse in horses:
 		if horse.name != WALKING_HORSE: continue
+		if _dead_horses.has(horse.get_instance_id()): return
 		var travel: float = fposmod(_time * 0.65, 8.0)
 		horse.position.z = 1233.0 + (travel if travel < 4.0 else 8.0 - travel)
 		horse.rotation.y = -PI * 0.5 if travel < 4.0 else PI * 0.5
@@ -957,7 +1024,12 @@ func _tick_drink(_delta: float, quiet: bool) -> void:
 		return
 	if _time < _drink_next: return
 	_drink_cycle += 1
-	_drink_horse = 5 + _drink_cycle % 2
+	var pick: int = 5 + _drink_cycle % 2
+	if not _horse_alive(pick):
+		pick = 5 if _horse_alive(5) else (6 if _horse_alive(6) else -1)
+	if pick < 0:
+		return
+	_drink_horse = pick
 	_drink_left = 5.5
 	_play_horse(_drink_horse, "horse_graze", 0.55)
 	_sfx3d("water_trough", TROUGH_POS + Vector3(0, 0.6, 0), -19.0, 20.0)

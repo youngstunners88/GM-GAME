@@ -39,6 +39,8 @@ const RIDGE_POINTS: Array = [Vector3(-29, 6.5, -179), Vector3(-30, 8.5, -140), V
 	Vector3(-36, 21, 96), Vector3(-32, 15, 112), Vector3(-30, 15, 124), Vector3(-31, 15, 160), Vector3(-30, 14.5, 196), Vector3(-27, 13, 212),
 	Vector3(-24, 8, 228), Vector3(-22, 8, 241)]                 # ends at the last overlook: the dock below stays in clear view
 const RIDGE_HALF := 3.0
+const RIDGE_STEP := 2.0                      # the ridge skin's cross-sections along the path (m)
+const CLIFF_ROWS := 6                        # the cliff's ledges from the lip to the bank
 const MARKER := Vector3(-35, 22, -8)         # the DAY-88 cairn and post: crossing it arms the run
 ## The three overlooks stand on the cliff lip (the river side of the path), so the eye clears the edge and sees the water below.
 const OVERLOOKS: Array = [Vector3(-31.4, 22, 4), Vector3(-27.4, 15, 124), Vector3(-19.6, 8, 238)]
@@ -113,6 +115,9 @@ var _raiders: Array = []                     # Hammer's men: folk, raft, state, 
 var _arrows: Array = []                      # node, from, to, t, flight
 var _valley: MeshInstance3D
 var _lake_root: Node3D
+var _ridge_sections: Array = []              # [centre, mitred offset toward the river, arc] along the ridge skin
+var _rock_mesh: Mesh                         # the Tripo sandstone (Ep2Extras.RIVER_ROCK), loaded once
+var _rock_mat: StandardMaterial3D
 
 
 func _init() -> void:
@@ -160,6 +165,72 @@ func _mat(color: Color, roughness: float = 0.9) -> StandardMaterial3D:
 	m.albedo_color = color
 	m.roughness = roughness
 	return m
+
+
+## A photo-scanned set (Ep2Pbr) in `color`, or the flat colour while the streamed pack is not mounted.
+func _pbr(set_id: String, color: Color, tile_m: float, roughness: float = 0.9) -> StandardMaterial3D:
+	var m: StandardMaterial3D = Ep2Pbr.make(set_id, color, tile_m) if Ep2Pbr.available() else null
+	return m if m != null else _mat(color, roughness)
+
+
+## The Tripo sandstone (one 1 m piece, shared by the overlooks, the cliff, the banks, the rapids and the cairn). False before the pack mounts.
+func _rock_ready() -> bool:
+	if _rock_mesh != null:
+		return true
+	if not Ep2Extras.has(Ep2Extras.RIVER_ROCK):
+		return false
+	var scene: Node3D = (load(Ep2Extras.RIVER_ROCK) as PackedScene).instantiate()
+	var mi: MeshInstance3D = scene.find_children("*", "MeshInstance3D", true, false)[0]
+	_rock_mesh = mi.mesh
+	var src: Material = mi.get_active_material(0)
+	_rock_mat = (src as StandardMaterial3D).duplicate() if src is StandardMaterial3D else _mat(Color(0.6, 0.45, 0.3))
+	_rock_mat.vertex_color_use_as_albedo = true         # each placement's own tone (a MultiMesh instance colour)
+	scene.free()
+	return true
+
+
+## One sandstone at `at` (its base; sink it yourself), `size` metres. Nothing before the pack mounts.
+func _rock(parent: Node3D, at: Vector3, size: Vector3, yaw: float, label: String, tone: Color = Color.WHITE) -> MeshInstance3D:
+	if not _rock_ready():
+		return null
+	var mi := MeshInstance3D.new()
+	mi.name = label
+	mi.mesh = _rock_mesh
+	var m: StandardMaterial3D = _rock_mat.duplicate()
+	m.vertex_color_use_as_albedo = false
+	m.albedo_color = m.albedo_color * tone
+	mi.material_override = m
+	mi.position = at
+	mi.rotation.y = yaw
+	mi.scale = size
+	parent.add_child(mi)
+	return mi
+
+
+## Many sandstones in one draw: [position (base), size, yaw] each, a gentle tone spread so no two read alike.
+func _rocks(parent: Node3D, placements: Array, label: String) -> void:
+	if placements.is_empty() or not _rock_ready():
+		return
+	var xfs: Array = []
+	var tones: Array = []
+	for i in placements.size():
+		var p: Array = placements[i]
+		xfs.append(Transform3D(Basis(Vector3.UP, float(p[2])).scaled(p[1]), p[0]))
+		var k: float = 0.82 + 0.18 * float((i * 7) % 5) / 4.0
+		tones.append(Color(k, k * (0.97 + 0.03 * float(i % 3)), k * 0.96))
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = _rock_mesh
+	mm.instance_count = xfs.size()
+	for i in xfs.size():
+		mm.set_instance_transform(i, xfs[i])
+		mm.set_instance_color(i, tones[i])
+	var node := MultiMeshInstance3D.new()
+	node.name = label
+	node.multimesh = mm
+	node.material_override = _rock_mat
+	parent.add_child(node)
 
 
 ## Ground everywhere (the banks), a long reach of the river valley.
@@ -265,7 +336,11 @@ func _build_river() -> void:
 		if i > 0:
 			_river_total += _river_pts[i - 1].distance_to(_river_pts[i])
 		_river_arc[i] = _river_total
-	var bed := Ep2LakeRoad.ribbon(_visuals, _river_pts, RIVER_HALF * 2.0 + 6.0, _mat(Color(0.16, 0.17, 0.11)), 0.27)
+	var bed_mat: StandardMaterial3D = _mat(Color(0.16, 0.17, 0.11))
+	var stones: StandardMaterial3D = Ep2Pbr.natural("riverbed_stones", 2.6, 0.75)        # the stony bed through the water
+	if stones != null:
+		bed_mat = stones
+	var bed := Ep2LakeRoad.ribbon(_visuals, _river_pts, RIVER_HALF * 2.0 + 6.0, bed_mat, 0.27)
 	bed.name = "RiverBed"
 	var water_mat := StandardMaterial3D.new()
 	water_mat.albedo_color = Color(0.13, 0.29, 0.33, 0.88)
@@ -274,22 +349,110 @@ func _build_river() -> void:
 	water_mat.metallic = 0.25
 	var water := Ep2LakeRoad.ribbon(_visuals, _river_pts, RIVER_HALF * 2.0, water_mat, 0.32)
 	water.name = "RiverWater"
+	_build_banks()
 	var foam := _mat(Color(0.86, 0.90, 0.88), 0.5)
+	var rapids: Array = []
 	for i in 14:
 		var s: float = river_s_of(BEND_POINT) - 14.0 + i * 2.6
-		var p: Vector3 = river_point(s)
+		var p: Vector3 = river_point(s) + river_right(s) * (float((i * 7) % 11) - 5.0)
+		if i % 2 == 1 and _rock_ready():                     # the bend's boulders: real stone breaking the water, foam on the rest
+			var k: float = 0.9 + 0.25 * float(i % 3)
+			rapids.append([p + Vector3(0, 0.32 - 0.4 * k, 0), Vector3(k * 1.3, k, k * 1.1), float(i) * 2.1])
+			continue
 		var rock := MeshInstance3D.new()
 		var sm := SphereMesh.new()
 		sm.radius = 0.6 + 0.25 * float(i % 3)
 		sm.height = sm.radius * 1.1
 		rock.mesh = sm
 		rock.material_override = foam if i % 2 == 0 else _mat(Color(0.36, 0.34, 0.31))
-		rock.position = p + river_right(s) * (float((i * 7) % 11) - 5.0) + Vector3(0, 0.25, 0)
+		rock.position = p + Vector3(0, 0.25, 0)
+		if i % 2 == 0 and _rock_ready():                     # white water breaking round the boulders: low, soft, half seen through
+			var spray := _mat(Color(0.92, 0.95, 0.94, 0.55), 0.6)
+			spray.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			rock.material_override = spray
+			rock.scale = Vector3(0.9, 0.3, 0.6)
+			rock.position.y = 0.3
 		rock.name = "Rapids%d" % i
 		_visuals.add_child(rock)
+	_rocks(_visuals, rapids, "RapidsRocks")
 
 
-## The ridge: the walkable path (a raised strip at the path's heights) and the cliff face down to the east bank.
+## The banks, as the sniper sees them along the three gates: a dark wet line where the water meets the ground, a dry stony bank above
+## it, both falling away under the valley grass so there is no edge. Only past the lake's own ground (that part is the lake's outflow).
+func _build_banks() -> void:
+	var wet: StandardMaterial3D = Ep2Pbr.natural("bank_wet", 2.4, 0.9)
+	var dry: StandardMaterial3D = Ep2Pbr.natural("bank_dry", 4.2, 0.55)
+	if wet == null or dry == null:
+		return
+	var noise := FastNoiseLite.new()
+	noise.seed = 188
+	noise.frequency = 0.06
+	# [offset from the water's centre line, height]: under the water's edge, the wet line, the dry bank, down under the grass
+	var profile: Array = [[RIVER_HALF - 1.0, 0.2], [RIVER_HALF + 0.9, 0.4], [RIVER_HALF + 2.6, 0.5], [RIVER_HALF + 5.0, 0.62],
+		[RIVER_HALF + 10.0, 0.42], [RIVER_HALF + 14.0, 0.12]]
+	var start_z: float = LAKE_OFFSET.z + LAKE_CLIP_Z + 4.0
+	for side in [-1.0, 1.0]:
+		var sts: Array = [SurfaceTool.new(), SurfaceTool.new()]
+		for st in sts:
+			(st as SurfaceTool).begin(Mesh.PRIMITIVE_TRIANGLES)
+		var prev: Array = []
+		for i in _river_pts.size():
+			var p: Vector3 = _river_pts[i]
+			if p.z < start_z:
+				continue
+			var tangent: Vector3 = _river_pts[mini(i + 1, _river_pts.size() - 1)] - _river_pts[maxi(i - 1, 0)]
+			tangent.y = 0.0
+			tangent = tangent.normalized()
+			var out: Vector3 = Vector3(tangent.z, 0, -tangent.x) * side
+			var n: float = noise.get_noise_2d(float(i), side * 50.0)
+			var row: Array = []
+			for k in profile.size():
+				var pr: Array = profile[k]
+				var off: float = float(pr[0]) + (0.0 if k < 2 else n * (1.0 + float(k)))     # the wet line follows the water; the rest wanders
+				row.append(p + out * off + Vector3(0, float(pr[1]) + (0.0 if k < 2 else 0.08 * n), 0))
+			if not prev.is_empty():
+				for k in profile.size() - 1:
+					var a: Vector3 = prev[k]
+					var b: Vector3 = prev[k + 1]
+					var c: Vector3 = row[k + 1]
+					var d: Vector3 = row[k]
+					if side > 0.0:
+						_quad(sts[0 if k < 2 else 1], a, b, c, d, Color.WHITE)
+					else:
+						_quad(sts[0 if k < 2 else 1], b, a, d, c, Color.WHITE)
+			prev = row
+		var mesh := ArrayMesh.new()
+		for st in sts:
+			(st as SurfaceTool).index()
+			(st as SurfaceTool).generate_normals()
+			(st as SurfaceTool).commit(mesh)
+		var node := MeshInstance3D.new()
+		node.name = "Bank%s" % ("East" if side > 0.0 else "West")
+		node.mesh = mesh
+		node.set_surface_override_material(0, wet)
+		node.set_surface_override_material(1, dry)
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_visuals.add_child(node)
+	# stones along the wet line of the three gate stretches - what the scope rests on while the crate drifts by
+	var scatter: Array = []
+	for g in [LAUNCH_POINT, BEND_POINT, DOCK_APPROACH]:
+		var s0: float = river_s_of(g)
+		for i in 12:
+			var s: float = s0 - 22.0 + float(i) * 4.0 + float((i * 3) % 5)
+			var side: float = -1.0 if i % 2 == 0 else 1.0
+			var k: float = 0.55 + 0.9 * float((i * 7) % 6) / 5.0
+			var at: Vector3 = river_point(s) + river_right(s) * side * (RIVER_HALF + 0.6 + 1.4 * float(i % 3))
+			at.y = 0.36 - 0.4 * k
+			if _flat(at).distance_to(_flat(DOCK_DECK)) < 11.0:
+				continue                                         # the dock's pilings stand there
+			scatter.append([at, Vector3(k * 1.2, k, k), float(i) * 2.3 + float(s0)])
+	_rocks(_visuals, scatter, "BankRocks")
+
+
+## The ridge: the walkable path at the path's heights, the layered cliff down to the river and the grassy back slope. One continuous skin
+## (founder 2026-11-06: "texturing on the level going up the ridge looks very cheap"; "no sellotape ridges"): at every path point a
+## mitred cross-section, so neighbouring segments share their edges instead of overlapping at the bends, sampled every RIDGE_STEP metres.
+## Three surfaces: the worn trail he walks, the grassy shoulder and back slope, and the cliff in ledges with a wandering face.
 func _build_ridge() -> void:
 	_ridge_arc.resize(RIDGE_POINTS.size())
 	var total: float = 0.0
@@ -297,45 +460,71 @@ func _build_ridge() -> void:
 		if i > 0:
 			total += _flat(RIDGE_POINTS[i - 1]).distance_to(_flat(RIDGE_POINTS[i]))
 		_ridge_arc[i] = total
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var rock_col := Color(0.34, 0.37, 0.24)                  # a worn grassy hog's back (a pale rock strip read as a sand road from up here)
-	for i in RIDGE_POINTS.size() - 1:
-		var a: Vector3 = RIDGE_POINTS[i]
-		var b: Vector3 = RIDGE_POINTS[i + 1]
-		var dir2: Vector2 = (_flat(b) - _flat(a)).normalized()
-		var to_river := Vector3(dir2.y, 0, -dir2.x)          # the path runs down +z with the river to its east (his left): this points at the water
-		var lip_a: Vector3 = a + to_river * (RIDGE_HALF + 0.35)        # the cliff lip, just past the overlook stance
-		var lip_b: Vector3 = b + to_river * (RIDGE_HALF + 0.35)
-		var back_a: Vector3 = a - to_river * (RIDGE_HALF + 3.0)
-		var back_b: Vector3 = b - to_river * (RIDGE_HALF + 3.0)
-		_quad(st, lip_a, back_a, back_b, lip_b, rock_col)                                                        # the path's top
-		var foot_a: Vector3 = lip_a + to_river * 9.0
-		var foot_b: Vector3 = lip_b + to_river * 9.0
-		foot_a.y = 0.3
-		foot_b.y = 0.3
-		_quad(st, foot_a, lip_a, lip_b, foot_b, Color(0.30, 0.28, 0.25))                                         # the river face: bare rock
-		var heel_a: Vector3 = back_a - to_river * 14.0
-		var heel_b: Vector3 = back_b - to_river * 14.0
-		heel_a.y = 0.3
-		heel_b.y = 0.3
-		_quad(st, back_a, heel_a, heel_b, back_b, Color(0.30, 0.42, 0.20))                                       # the back slope: grass
-	# the ridge's end: a slope down to the bank, so nothing stands between the last overlook and Utah's dock
-	var last: Vector3 = RIDGE_POINTS[-1]
-	var prev: Vector3 = RIDGE_POINTS[-2]
-	var d2: Vector2 = (_flat(last) - _flat(prev)).normalized()
-	var fwd := Vector3(d2.x, 0, d2.y)
-	var tr := Vector3(d2.y, 0, -d2.x)
-	var e_lip: Vector3 = last + tr * (RIDGE_HALF + 0.35)
-	var e_back: Vector3 = last - tr * (RIDGE_HALF + 3.0)
-	var e_lip_f: Vector3 = e_lip + fwd * 12.0
-	var e_back_f: Vector3 = e_back + fwd * 12.0
-	e_lip_f.y = 0.3
-	e_back_f.y = 0.3
-	_quad(st, e_lip, e_back, e_back_f, e_lip_f, rock_col.darkened(0.2))
-	st.generate_normals()
-	var mesh := MeshInstance3D.new()
-	mesh.mesh = st.commit()
+	_ridge_sections = _ridge_cross_sections()
+	var noise := FastNoiseLite.new()
+	noise.seed = 88
+	noise.frequency = 0.045
+	# the profile across the ridge, from the back heel to the cliff foot: [offset toward the river, height (-1 = the path's), surface]
+	var surfaces: Array = [SurfaceTool.new(), SurfaceTool.new(), SurfaceTool.new()]      # trail, grass, cliff
+	var cols: Array = [Color(0.34, 0.37, 0.24), Color(0.30, 0.42, 0.20), Color(0.30, 0.28, 0.25)]   # the plain set's colours
+	for st in surfaces:
+		(st as SurfaceTool).begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rows: Array = []
+	for sec in _ridge_sections:
+		var c: Vector3 = sec[0]
+		var r: Vector3 = sec[1]
+		var s_m: float = sec[2]
+		var n: float = noise.get_noise_1d(s_m)
+		var n2: float = noise.get_noise_1d(s_m + 400.0)
+		var row: Array = []
+		row.append(_ridge_v(c, r, -(RIDGE_HALF + 17.0 + 4.0 * n2), 0.3))                      # the back heel, on the valley floor
+		row.append(_ridge_v(c, r, -(RIDGE_HALF + 3.0 + 0.8 * n), c.y))                          # the shoulder
+		row.append(_ridge_v(c, r, -(RIDGE_HALF + 0.55 + 0.45 * n2), c.y))                       # the trail's back edge, never ruler-straight
+		row.append(_ridge_v(c, r, RIDGE_HALF + 0.35, c.y))                                      # the lip, where the overlooks stand
+		for j in range(1, CLIFF_ROWS + 1):                                                      # the cliff in ledges down to the bank
+			var t: float = float(j) / float(CLIFF_ROWS)
+			var bulge: float = noise.get_noise_2d(s_m, float(j) * 37.0) * 1.6 * sin(PI * t)
+			var ledge: float = 0.35 if j % 2 == 0 else -0.25                                    # strata: a steeper band, then a shelf
+			row.append(_ridge_v(c, r, RIDGE_HALF + 0.35 + 9.0 * pow(t, 0.85) + bulge + ledge * t, lerpf(c.y, 0.3, t)))
+		row.append(_ridge_v(c, r, RIDGE_HALF + 0.35 + 12.0, -0.8))                              # tucked under the bank
+		rows.append(row)
+	for i in rows.size() - 1:
+		var a: Array = rows[i]
+		var b: Array = rows[i + 1]
+		for k in a.size() - 1:
+			var surf: int = 1 if k < 2 else (0 if k == 2 else 2)
+			_quad(surfaces[surf], a[k + 1], a[k], b[k], b[k + 1], cols[surf])
+	var mesh := ArrayMesh.new()
+	for st in surfaces:
+		(st as SurfaceTool).index()
+		(st as SurfaceTool).generate_normals()
+		(st as SurfaceTool).commit(mesh)
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.name = "Ridge"
+	_visuals.add_child(node)
+	var mats: Array = [Ep2Pbr.natural("trail_packed", 3.2, 0.78), _ridge_grass(), Ep2Pbr.natural("cliff_layered", 7.0, 1.3)]
+	for i in 3:
+		var m: StandardMaterial3D = mats[i]
+		if m == null:
+			m = _plain_ridge_mat()
+		else:
+			m = m.duplicate()
+			m.uv1_world_triplanar = true                   # the strata lie level across the whole ridge, whatever the segment
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED
+			m.metallic_specular = 0.08
+		node.set_surface_override_material(i, m)
+	_build_overlooks()
+	_dress_ridge()
+
+
+## The scanned grass-and-rock ground in the lake's green (left in its own colour it reads as straw on a big sunlit slope).
+func _ridge_grass() -> StandardMaterial3D:
+	return Ep2Pbr.make("slope_grass", Color(0.33, 0.42, 0.21), 5.0) if Ep2Pbr.available() else null
+
+
+## The plain set (the streamed pack not mounted yet): the lake's own ground over the vertex colours, as before.
+func _plain_ridge_mat() -> StandardMaterial3D:
 	var m := _mat(Color.WHITE)
 	m.vertex_color_use_as_albedo = true
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -345,15 +534,77 @@ func _build_ridge() -> void:
 		m.uv1_triplanar = true
 		m.uv1_scale = Vector3(0.24, 0.24, 0.24)
 		m.albedo_color = Color(1.9, 1.9, 1.9)
-	mesh.material_override = m
-	mesh.name = "Ridge"
-	_visuals.add_child(mesh)
-	# each overlook: a flat rock lip and a stake, readable from the path
+	return m
+
+
+## [centre, mitred offset toward the river, arc length] every RIDGE_STEP along the path, then the ridge's end: a slope down to the bank,
+## so nothing stands between the last overlook and Utah's dock.
+func _ridge_cross_sections() -> Array:
+	var normals: Array = []
+	for i in RIDGE_POINTS.size() - 1:
+		var d2: Vector2 = (_flat(RIDGE_POINTS[i + 1]) - _flat(RIDGE_POINTS[i])).normalized()
+		normals.append(Vector3(d2.y, 0, -d2.x))         # the path runs down +z with the river to its east (his left): this points at the water
+	var mitre: Array = []
+	for i in RIDGE_POINTS.size():
+		var na: Vector3 = normals[maxi(i - 1, 0)]
+		var nb: Vector3 = normals[mini(i, normals.size() - 1)]
+		var avg: Vector3 = (na + nb).normalized()
+		mitre.append(avg / maxf(avg.dot(nb), 0.6))
+	var out: Array = []
+	for i in RIDGE_POINTS.size() - 1:
+		var a: Vector3 = RIDGE_POINTS[i]
+		var b: Vector3 = RIDGE_POINTS[i + 1]
+		var steps: int = maxi(1, ceili(_flat(a).distance_to(_flat(b)) / RIDGE_STEP))
+		for k in steps:
+			var t: float = float(k) / float(steps)
+			out.append([a.lerp(b, t), (mitre[i] as Vector3).lerp(mitre[i + 1], t), lerpf(_ridge_arc[i], _ridge_arc[i + 1], t)])
+	var last: Vector3 = RIDGE_POINTS[-1]
+	out.append([last, mitre[-1], _ridge_arc[-1]])
+	var d_end: Vector2 = (_flat(last) - _flat(RIDGE_POINTS[-2])).normalized()
+	var end: Vector3 = last + Vector3(d_end.x, 0, d_end.y) * 12.0
+	end.y = 0.3
+	out.append([end, mitre[-1], _ridge_arc[-1] + 12.0])
+	return out
+
+
+func _ridge_v(c: Vector3, r: Vector3, off: float, y: float) -> Vector3:
+	var v: Vector3 = c + r * off
+	v.y = y
+	return v
+
+
+## Each overlook: a timber stand on the lip, a sandbag flank on the upstream side (never in the view down), a sandstone landmark on the
+## back shoulder and a stake behind him. The plain set keeps the flat rock and the stake.
+func _build_overlooks() -> void:
+	var root := Node3D.new()
+	root.name = "Overlooks"
+	_visuals.add_child(root)
+	var deck: StandardMaterial3D = _pbr("planks_weathered", Color(0.40, 0.31, 0.22), 1.3)
 	for i in OVERLOOKS.size():
 		var o: Vector3 = OVERLOOKS[i]
-		_box(Vector3(2.6, 0.22, 2.6), o + Vector3(-0.2, 0.07, 0), _mat(Color(0.27, 0.26, 0.24)))          # the flat rock he stands on
-		_box(Vector3(0.12, 1.3, 0.12), o + Vector3(-1.0, 0.65, -1.5), _mat(Color(0.42, 0.28, 0.16)))    # behind him, out of the view
-	_dress_ridge()
+		var near: Array = ridge_nearest(o)
+		var c: Vector3 = near[0]
+		var back: Vector3 = near[2]                         # away from the river
+		var fwd := Vector3(back.z, 0, -back.x)              # downstream along the path
+		var yaw: float = atan2(fwd.x, fwd.z)
+		if not Ep2Pbr.available():
+			_box(Vector3(2.6, 0.22, 2.6), o + Vector3(-0.2, 0.07, 0), _mat(Color(0.27, 0.26, 0.24)), root)          # the flat rock he stands on
+			_box(Vector3(0.12, 1.3, 0.12), o + Vector3(-1.0, 0.65, -1.5), _mat(Color(0.42, 0.28, 0.16)), root)    # behind him, out of the view
+			continue
+		var stand := _box(Vector3(2.7, 0.12, 2.7), o + Vector3(0, 0.05, 0) + back * 0.2, deck, root)
+		stand.rotation.y = yaw
+		stand.name = "OverlookStand%d" % i
+		for side in [-1.0, 1.0]:                             # the stand's two bearers, so it sits on something
+			var bearer := _box(Vector3(0.2, 0.2, 2.9), o + back * 0.2 + fwd * side * 1.15 + Vector3(0, -0.06, 0), _pbr("wood_dark", Color(0.30, 0.22, 0.15), 0.9), root)
+			bearer.rotation.y = yaw + PI * 0.5
+		_box(Vector3(0.12, 1.3, 0.12), o + back * 1.4 - fwd * 1.5 + Vector3(0, 0.65, 0), _pbr("wood_dark", Color(0.42, 0.28, 0.16), 0.9), root)
+		if Ep2Extras.has(Ep2Extras.RIVER_SANDBAGS):
+			var bags: Node3D = (load(Ep2Extras.RIVER_SANDBAGS) as PackedScene).instantiate()
+			bags.name = "SandbagCover%d" % i
+			bags.position = o - fwd * 2.6 + back * 0.6 + Vector3(0, -0.05, 0)     # inside the lip, its berm sunk into the path: never on air
+			bags.rotation.y = yaw + PI
+			root.add_child(bags)
+		_rock(root, c + back * (RIDGE_HALF + 2.2) - fwd * 0.6 + Vector3(0, -0.55, 0), Vector3(2.4, 1.7, 2.1), yaw + 0.7 * float(i), "OverlookRock%d" % i)
 
 
 ## The ridge reads as a built way, not scaffolding: a post-and-rope rail along the drop, trail stakes on the back of the path, a plank
@@ -362,9 +613,9 @@ func _dress_ridge() -> void:
 	var root := Node3D.new()
 	root.name = "RidgeDressing"
 	_visuals.add_child(root)
-	var post := _mat(Color(0.36, 0.24, 0.13))
-	var rope := _mat(Color(0.34, 0.27, 0.17), 0.95)
-	var plank := _mat(Color(0.44, 0.31, 0.18))
+	var post := _pbr("wood_dark", Color(0.36, 0.24, 0.13), 0.8)
+	var rope := _pbr("rope", Color(0.34, 0.27, 0.17), 0.18, 0.95)
+	var plank := _pbr("planks_weathered", Color(0.44, 0.31, 0.18), 1.2)
 	for i in RIDGE_POINTS.size() - 1:
 		var a: Vector3 = RIDGE_POINTS[i]
 		var b: Vector3 = RIDGE_POINTS[i + 1]
@@ -401,6 +652,18 @@ func _dress_ridge() -> void:
 	sign.rotation.y = PI
 	root.add_child(sign)
 	_box(Vector3(0.16, 2.3, 0.16), (RIDGE_POINTS[1] as Vector3) + Vector3(-3.2, 1.1, 0.08), post, root)
+	# sandstone shoulders breaking the lower cliff, set into the face (half buried) and never under an overlook's view down
+	var cliff: Array = []
+	for i in range(3, _ridge_sections.size() - 2, 7):
+		var sec: Array = _ridge_sections[i]
+		var c: Vector3 = sec[0]
+		if c.y < 6.0 or _near_overlook(c):
+			continue
+		var t: float = 0.55 + 0.3 * float(i % 3) / 2.0
+		var size: float = 2.6 + 1.6 * float((i * 5) % 4) / 3.0
+		var at: Vector3 = _ridge_v(c, sec[1], RIDGE_HALF + 0.35 + 9.0 * pow(t, 0.85) - 0.9 - 0.35 * size, lerpf(c.y, 0.3, t) - 0.45 * size)
+		cliff.append([at, Vector3(size * 1.1, size * 0.9, size), float(i) * 1.7])
+	_rocks(root, cliff, "CliffRocks")
 
 
 func _near_overlook(p: Vector3) -> bool:
@@ -427,7 +690,14 @@ func _build_marker() -> void:
 	root.position = MARKER + Vector3(-2.2, 0, 0)                # on the back of the path: it never blocks the view down
 	_visuals.add_child(root)
 	var stone := _mat(Color(0.62, 0.58, 0.52))
-	for i in 5:
+	if _rock_ready():                                       # river sandstone stacked into a cairn, the top one painted
+		var base: float = -0.08
+		for i in 4:
+			var k: float = 1.0 - float(i) * 0.2
+			_rock(root, Vector3(0.04 * float(i % 2), base, 0), Vector3(1.2 * k, 0.75 * k, 1.1 * k),
+				float(i) * 1.3, "CairnStone%d" % i, Color(0.95, 0.40, 0.30) if i == 3 else Color(1.0, 0.95, 0.9))
+			base += 0.75 * k * 0.82                             # each stone sits into the one below: none rests on air
+	for i in (0 if _rock_ready() else 5):
 		var s := MeshInstance3D.new()
 		var sm := SphereMesh.new()
 		sm.radius = 0.55 - i * 0.08
@@ -444,8 +714,11 @@ func _build_marker() -> void:
 	band.mesh = bm
 	band.material_override = red                          # the painted top stone
 	band.position = Vector3(0, 2.25, 0)
-	root.add_child(band)
-	var wood := _mat(Color(0.45, 0.30, 0.17))
+	if not _rock_ready():
+		root.add_child(band)
+	else:
+		band.free()
+	var wood := _pbr("wood_dark", Color(0.45, 0.30, 0.17), 0.8)
 	_box(Vector3(0.16, 2.6, 0.16), Vector3(-1.1, 1.3, 0), wood, root)
 	_box(Vector3(0.12, 0.8, 1.9), Vector3(-1.1, 2.2, 0), wood, root)
 	for face in [-1.0, 1.0]:
@@ -461,8 +734,128 @@ func _build_marker() -> void:
 		root.add_child(label)
 
 
-## The lower dock on the west bank: deck, piles, a shed, and the A-frame crane that lifts the crate out.
+## THE RECEIVING END (founder 2026-11-06: "the facility the shipment goes to ... must look like a dock", "not grey boxes"): the lower
+## dock on the west bank in boards on stringers and braced piles with a waterline stain, iron cleats and rope, a landing pad under the
+## timber-and-iron crane, and Rich & Utah's receiving warehouse (Tripo) on a stone footing - Utah walks out of its doors to take the crate.
+## The deck top, the crane's rope and Utah's walk are where they always were. Before the streamed pack mounts: the plain dock below.
+const WAREHOUSE_AT := Vector3(-10.8, -0.05, 2.3)     # from DOCK_DECK: its ramp meets the deck, its doorway frames Utah's start
 func _build_dock() -> void:
+	if not Ep2Pbr.available():
+		_build_dock_plain()
+		return
+	var root := Node3D.new()
+	root.name = "LowerDock"
+	_visuals.add_child(root)
+	var dry := [_pbr("planks_weathered", Color(0.47, 0.38, 0.28), 1.6), _pbr("planks_weathered", Color(0.42, 0.33, 0.24), 1.45),
+		_pbr("planks_weathered", Color(0.50, 0.41, 0.31), 1.75)]
+	var wet := _pbr("planks_weathered", Color(0.30, 0.25, 0.19), 1.6)          # the boards the river splashes, darker toward the water
+	var timber := _pbr("wood_dark", Color(0.34, 0.25, 0.17), 1.0)
+	var iron := Ep2Pbr.make("iron_painted", Color(0.20, 0.18, 0.17), 0.5, 0.3)
+	var rope_mat := _pbr("rope", Color(0.64, 0.54, 0.38), 0.2)
+	var stain := Ep2Pbr.natural("bank_wet", 0.9, 0.8)
+	# the deck: boards across its width on three stringers, gaps between them
+	var x: float = -6.0
+	var b: int = 0
+	while x < 6.0:
+		var mat: Material = wet if x > 3.6 else dry[(b * 7) % 3]
+		var board := _box(Vector3(0.28, 0.08, 7.0), DOCK_DECK + Vector3(x + 0.14, -0.04, 0.03 * float(b % 3 - 1)), mat, root)
+		board.rotation.y = PI if b % 2 == 0 else 0.0
+		board.rotation.x = 0.004 * float(b % 3 - 1)                             # boards are never quite level
+		x += 0.31
+		b += 1
+	for z in [-3.0, 0.0, 3.0]:
+		_box(Vector3(12.2, 0.22, 0.22), DOCK_DECK + Vector3(0, -0.19, z), timber, root)
+	# the piles, a waterline stain, cross bracing; the outer pair rise above the deck as mooring posts
+	for px in [-5.5, -1.5, 2.5, 5.5]:
+		for pz in [-3.3, 3.3]:
+			var top: float = 0.45 if px > 5.0 else -0.08       # under the boards, or a mooring post above the deck
+			var h: float = 2.4 + top
+			_cyl(0.17, 0.19, h, DOCK_DECK + Vector3(px, -2.4 + h * 0.5, pz), timber, root, 10)
+			if stain != null:
+				_cyl(0.198, 0.205, 0.8, DOCK_DECK + Vector3(px, -0.95, pz), stain, root, 10)
+		var brace := _box(Vector3(0.09, 0.16, 6.75), DOCK_DECK + Vector3(px, -0.75, 0), timber, root)
+		brace.rotation.x = atan2(1.1, 6.6)
+	# iron cleats with rope, a coil on the deck, crates by the warehouse (clear of Utah's walk)
+	for c in [Vector3(5.75, 0, -2.6), Vector3(5.75, 0, 2.6), Vector3(1.0, 0, -3.35)]:
+		_box(Vector3(0.12, 0.06, 0.22), DOCK_DECK + c + Vector3(0, 0.03, 0), iron, root)
+		var horn := _box(Vector3(0.07, 0.06, 0.44), DOCK_DECK + c + Vector3(0, 0.1, 0), iron, root)
+		horn.name = "Cleat"
+	var coil := MeshInstance3D.new()
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.1
+	tm.outer_radius = 0.3
+	coil.mesh = tm
+	coil.material_override = rope_mat
+	coil.position = DOCK_DECK + Vector3(4.9, 0.05, -2.55)
+	coil.scale = Vector3(1, 0.55, 1)
+	root.add_child(coil)
+	var coil2 := coil.duplicate() as MeshInstance3D
+	coil2.position.y += 0.1
+	coil2.scale = Vector3(0.82, 0.55, 0.82)
+	root.add_child(coil2)
+	for c in [[Vector3(-3.6, 0.36, -2.4), 0.72, 0.2], [Vector3(-2.75, 0.31, -2.65), 0.62, -0.3], [Vector3(-3.5, 1.02, -2.45), 0.6, 0.5]]:
+		var crate := _box(Vector3.ONE * float(c[1]), DOCK_DECK + (c[0] as Vector3), _pbr("planks_raw", Color(0.52, 0.40, 0.27), 0.9), root)
+		crate.rotation.y = float(c[2])
+	# the landing pad under the boom: heavy timbers with iron corners, where the crane sets his crate down and Utah takes it
+	for k in 5:
+		_box(Vector3(2.2, 0.1, 0.36), DOCK_DECK + Vector3(4.8, 0.05, -0.8 + 0.4 * float(k)), timber, root)
+	for cx in [3.75, 5.85]:
+		for cz in [-0.98, 0.98]:
+			_box(Vector3(0.16, 0.115, 0.16), DOCK_DECK + Vector3(cx, 0.06, cz), iron, root)
+	# the crane: timber legs and braces, iron straps at the joints, a sheave at the boom's end and a hook on the rope
+	for z in [-2.2, 2.2]:
+		_box(Vector3(0.3, 6.0, 0.3), DOCK_DECK + Vector3(3.5, 3.0, z), timber, root)
+		var from: Vector3 = DOCK_DECK + Vector3(3.5, 3.7, z)                    # a brace from each leg up to the boom
+		var to: Vector3 = DOCK_DECK + Vector3(5.7, 5.9, 0)
+		var strut := _box(Vector3(0.16, 0.16, from.distance_to(to)), from.lerp(to, 0.5), timber, root)
+		strut.look_at_from_position(strut.position, to, Vector3.UP)
+		for y in [5.75, 1.0]:
+			_box(Vector3(0.36, 0.12, 0.36), DOCK_DECK + Vector3(3.5, y, z), iron, root)
+		var foot := _box(Vector3(0.9, 0.18, 0.5), DOCK_DECK + Vector3(3.5, 0.09, z), timber, root)
+		foot.name = "CraneFoot"
+	_box(Vector3(0.3, 0.3, 4.7), DOCK_DECK + Vector3(3.5, 6.0, 0), timber, root)
+	_box(Vector3(5.5, 0.28, 0.28), DOCK_DECK + Vector3(6.0, 6.0, 0), timber, root)
+	_box(Vector3(0.4, 0.34, 0.4), DOCK_DECK + Vector3(3.5, 6.0, 0), iron, root)
+	var sheave := _cyl(0.24, 0.24, 0.1, DOCK_DECK + Vector3(8.4, 5.78, 0), iron, root, 16)
+	sheave.rotation.x = PI * 0.5
+	_box(Vector3(0.06, 0.4, 0.24), DOCK_DECK + Vector3(8.4, 5.95, 0), iron, root)
+	var rope := _box(Vector3(0.05, 4.0, 0.05), DOCK_DECK + Vector3(8.4, 4.0, 0), rope_mat, root)
+	rope.name = "CraneRope"
+	var hook := MeshInstance3D.new()
+	var hm := TorusMesh.new()
+	hm.inner_radius = 0.07
+	hm.outer_radius = 0.15
+	hook.mesh = hm
+	hook.material_override = iron
+	hook.rotation.x = PI * 0.5
+	hook.position = DOCK_DECK + Vector3(8.4, 1.88, 0)
+	root.add_child(hook)
+	# the receiving warehouse on its stone footing, its doors to the deck; the dock's sign on its gable over the doors
+	var sign_at: Vector3 = DOCK_DECK + Vector3(-6.4, 2.6, 0)
+	if Ep2Extras.has(Ep2Extras.RIVER_WAREHOUSE):
+		var house: Node3D = (load(Ep2Extras.RIVER_WAREHOUSE) as PackedScene).instantiate()
+		house.name = "ReceivingWarehouse"
+		house.position = DOCK_DECK + WAREHOUSE_AT
+		root.add_child(house)
+		_box(Vector3(7.3, 1.6, 5.8), DOCK_DECK + WAREHOUSE_AT + Vector3(-0.08, -0.82, 0.28), _pbr("stone_rustic", Color(0.46, 0.40, 0.33), 1.5), root)
+		sign_at = DOCK_DECK + WAREHOUSE_AT + Vector3(3.62, 3.75, 0.3)
+		_box(Vector3(0.08, 0.62, 2.5), sign_at + Vector3(-0.06, 0, 0), _pbr("planks_raw", Color(0.40, 0.30, 0.21), 0.8), root)
+	else:
+		_box(Vector3(5, 3.2, 4), DOCK_DECK + Vector3(-9, 1.6, 0), dry[0], root)
+		_box(Vector3(5.4, 0.25, 4.4), DOCK_DECK + Vector3(-9, 3.3, 0), timber, root)
+	var sign := Label3D.new()
+	sign.text = "DAY-88 DOCK"
+	sign.font_size = 56
+	sign.pixel_size = 0.006
+	sign.modulate = Color(0.97, 0.86, 0.60)
+	sign.outline_size = 5
+	sign.position = sign_at
+	sign.rotation.y = PI * 0.5
+	root.add_child(sign)
+
+
+## The plain dock (the streamed pack not mounted): deck, piles, a shed, and the A-frame crane that lifts the crate out.
+func _build_dock_plain() -> void:
 	var root := Node3D.new()
 	root.name = "LowerDock"
 	_visuals.add_child(root)
@@ -583,6 +976,10 @@ func _close_lake_hills() -> void:
 	m.vertex_color_use_as_albedo = true
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.metallic_specular = 0.06
+	var grass: StandardMaterial3D = Ep2Pbr.make("slope_grass", Color(0.24, 0.32, 0.15), 5.0) if Ep2Pbr.available() else null   # the ridge's grass, shaded: it faces the sun
+	if grass != null:
+		m = grass.duplicate()
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mesh.material_override = m
 	_lake_root.add_child(mesh)
 

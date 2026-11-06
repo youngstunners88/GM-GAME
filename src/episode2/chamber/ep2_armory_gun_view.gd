@@ -15,8 +15,9 @@ const MESHY_MODELS := {
 	Ep2ArmoryState.SHOT: MESHY + "lever_shotgun.glb",
 	Ep2ArmoryState.MP18: MESHY + "mp18_drum.glb",
 	Ep2ArmoryState.TOMMY: MESHY + "thompson_gold.glb",
-	Ep2ArmoryState.BORCH: MESHY + "borchardt.glb",
-	Ep2ArmoryState.BUFF: MESHY + "sharps_buffalo.glb",
+	# gun only, since 2026-11-05: real size (the stranger's pistol is this same file), held by the arms below
+	Ep2ArmoryState.BORCH: Ep2Extras.BORCHARDT_GUN,
+	Ep2ArmoryState.BUFF: Ep2Extras.SHARPS_SCOPED,
 }
 ## The GM bow for the showcase only (the bow in his hands stays the animated founder bow: draw, loose, nock).
 const MESHY_BOW := MESHY + "gm_bow.glb"
@@ -43,13 +44,21 @@ const MESHY_ANCHORS := {
 	Ep2ArmoryState.MP18: {"muzzle": Vector3(0, 0.0, 0.42), "eye": Vector3(0.05, 0.105, -0.5), "hip": Vector3(0.03, -0.03, 0.06), "pivot": Vector3(0, -0.05, -0.15),
 		"ads_rot": Vector3(-0.06, PI, 0.0)},
 	Ep2ArmoryState.TOMMY: {"muzzle": Vector3(0, 0.0, 0.44), "eye": Vector3(0, 0.046, -0.44), "hip": Vector3(0.03, -0.03, 0.09), "pivot": Vector3(0, -0.05, -0.12)},
-	# the founder's model holds the pistol with the forearm straight back along the bore: aimed, the eye rides well above the arm so
-	# the pistol and glove sit low in the centre of the view and never cover the target
-	Ep2ArmoryState.BORCH: {"muzzle": Vector3(0, 0.0, 0.2), "eye": Vector3(0, 0.15, -0.42), "hip": Vector3(0.0, -0.01, -0.05), "pivot": Vector3(0, -0.02, -0.08)},
-	# THE LADDER SIGHT (founder: "the opening gap for aiming"): measured slot in the raised ladder at z 0.14, y 0.0725; front blade
-	# z 0.62, y 0.026. The eye sits 0.22 m behind the slot on that line and the rifle is pitched nose-up 5.5 degrees so the line is level.
-	Ep2ArmoryState.BUFF: {"muzzle": Vector3(0, 0.0, 0.64), "eye": Vector3(0, 0.0938, -0.08), "hip": Vector3(0.03, -0.03, -0.06), "pivot": Vector3(0, -0.05, 0.05),
-		"ads_rot": Vector3(-0.0965, PI, 0.0)},
+}
+## HELD IN THE REMINGTON'S OWN HAND (founder 2026-11-05: the Borchardt "far too small"). The cause was the hand, not the gun: the old model baked a hand at the gun's scale, 0.35 m in all,
+## against the Remington's 1.0 m of gun and arm. The Remington's own gun is 0.54 m in that model (1.5x a real 0.355 m C93). So these views use the very same glove, bracer and vine arm
+## (lil_blunt_gun_hand.glb), and the real-size pistol gets the Remington's first-person size here only: `gun_scale` is on the view's Gun node, the GLB stays 0.355 m for the stranger's draw.
+## `gun_at` puts the gun in the view. `hands` lists the arms: `at` is the arm model's origin, `size` its scale, `mirror` makes the support hand. The Borchardt's hand stays exactly where
+## the Remington's is, trigger on trigger, its toggle overhanging the wrist as a real C93's does.
+const HELD := {
+	Ep2ArmoryState.BORCH: {"gun_scale": 1.527, "gun_at": Vector3(0.0, 0.045, -0.083), "muzzle": Vector3(0, 0.045, 0.264), "eye": Vector3(0, 0.095, -0.60),
+		"hands": [{"at": Ep2RemingtonView.FOUNDER_OFFSET, "size": 1.0, "mirror": false}],
+		"hip_rotation": Vector3(0.03, PI + 0.28, -0.04), "hip_offset": Vector3(0.015, 0.055, -0.08), "arm_pivot": Vector3(-0.14, -0.23, -0.33)},
+	# trigger hand on the wrist with its finger at the set triggers, support hand under the fore-end. The eye is on the tube's axis, just behind the eyepiece (build_scoped_sharps.py
+	# prints it), and the bore is parallel, so the aimed view looks level down the tube; `scoped` takes the rifle away at full aim, when Ep2FpsHud draws the lens.
+	Ep2ArmoryState.BUFF: {"gun_scale": 1.0, "gun_at": Vector3.ZERO, "muzzle": Vector3(0, 0.0, 0.75), "eye": Vector3(0, 0.0915, -0.25), "scoped": true,
+		"hands": [{"at": Vector3(0.0, -0.277, -0.128), "size": 0.6, "mirror": false}, {"at": Vector3(0.0, -0.29, 0.229), "size": 0.6, "mirror": true}],
+		"hip_rotation": Vector3(0.03, PI + 0.26, -0.04), "hip_offset": Vector3(0.02, -0.03, -0.02), "arm_pivot": Vector3(0.0, -0.075, -0.11)},
 }
 ## Measured in the model frame (the build script prints its Blender anchors; game = (x, z, -y)): muzzle, the eye when aimed (on the
 ## line through the rear and front sights), the trigger-hand grip and the support hand.
@@ -57,6 +66,9 @@ const ANCHORS := {
 	Ep2ArmoryState.SHOT: {"muzzle": Vector3(0, 0.036, 0.585), "eye": Vector3(0, 0.066, -0.06), "grip": Vector3(0, 0.0, -0.07), "fore": Vector3(0, 0.0, 0.2)},
 	Ep2ArmoryState.MP18: {"muzzle": Vector3(0, 0.0, 0.352), "eye": Vector3(0, 0.035, -0.21), "grip": Vector3(0, -0.055, -0.18), "fore": Vector3(0, -0.045, 0.04)},
 	Ep2ArmoryState.TOMMY: {"muzzle": Vector3(0, 0.022, 0.48), "eye": Vector3(0, 0.075, -0.2), "grip": Vector3(0, -0.07, -0.085), "fore": Vector3(0, -0.06, 0.22)},
+	# no streamed model yet: the arms hold their places (HELD has the real views)
+	Ep2ArmoryState.BUFF: {"muzzle": Vector3(0, 0.0, 0.75), "eye": Vector3(0, 0.0915, -0.25), "grip": Vector3(0, -0.075, -0.11), "fore": Vector3(0, -0.045, 0.22)},
+	Ep2ArmoryState.BORCH: {"muzzle": Vector3(0, 0.0, 0.347), "eye": Vector3(0, 0.055, -0.60), "grip": Vector3(0, -0.15, -0.02), "fore": Vector3(0, -0.16, 0.0)},
 }
 const SOUNDS := {
 	Ep2ArmoryState.SHOT: ["ep2_shotgun_blast_1", "ep2_shotgun_blast_2"],
@@ -118,7 +130,9 @@ static func icon(id: String) -> Texture2D:
 
 ## The first-person view: gun + hands + metas. Never null (a missing model leaves the hands on an empty frame).
 static func make(id: String) -> Node3D:
-	if meshy(id):
+	if HELD.has(id) and meshy(id) and Ep2Extras.has(Ep2Extras.GUN_HAND):
+		return _make_held(id)
+	if meshy(id) and MESHY_ANCHORS.has(id):
 		return _make_meshy(id)
 	var root := Node3D.new()
 	root.name = "View_" + id
@@ -126,9 +140,7 @@ static func make(id: String) -> Node3D:
 	if gun != null:
 		gun.name = "Gun"
 		root.add_child(gun)
-	var a: Dictionary = ANCHORS.get(id, ANCHORS[Ep2ArmoryState.TOMMY])
-	if not ANCHORS.has(id):
-		a = MESHY_ANCHORS[id]
+	var a: Dictionary = ANCHORS[id]
 	var hands := Node3D.new()
 	hands.name = "Hands"
 	root.add_child(hands)
@@ -145,6 +157,42 @@ static func make(id: String) -> Node3D:
 	root.set_meta("arm_pivot", a["grip"])
 	root.set_meta("muzzle", a["muzzle"])
 	root.set_meta("shot_sounds", SOUNDS.get(id, []))
+	return root
+
+
+## The gun in the Golden Remington's own hand and arm.
+static func _make_held(id: String) -> Node3D:
+	var root := Node3D.new()
+	root.name = "View_" + id
+	var a: Dictionary = HELD[id]
+	var gun: Node3D = model(id)
+	gun.name = "Gun"
+	gun.scale = Vector3.ONE * float(a["gun_scale"])
+	gun.position = a["gun_at"]
+	root.add_child(gun)
+	var hands := Node3D.new()
+	hands.name = "Hands"
+	root.add_child(hands)
+	var packed: PackedScene = load(Ep2Extras.GUN_HAND) as PackedScene
+	for spec in a["hands"]:
+		var hand: Node3D = packed.instantiate() as Node3D
+		hand.name = "GunHand"
+		hand.rotation.y = Ep2RemingtonView.FOUNDER_TURN
+		hand.position = spec["at"]
+		var size: float = float(spec["size"])
+		# turned a quarter, the model's z is the view's x: flipping it makes the left hand
+		hand.scale = Vector3(size, size, -size if spec["mirror"] else size)
+		hands.add_child(hand, true)
+	root.set_meta("meshy", true)
+	root.set_meta("hip_offset", a["hip_offset"])
+	root.set_meta("arm_pivot", a["arm_pivot"])
+	root.set_meta("ads_cam", a["eye"])
+	root.set_meta("muzzle", a["muzzle"])
+	root.set_meta("shot_sounds", SOUNDS.get(id, []))
+	if a.has("hip_rotation"):
+		root.set_meta("hip_rotation", a["hip_rotation"])
+	if a.get("scoped", false):
+		root.set_meta("scoped", true)
 	return root
 
 

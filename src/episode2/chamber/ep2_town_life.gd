@@ -54,6 +54,9 @@ var _passby_start_x: float = 0.0
 var _passby_peak_x: float = 0.0
 var _train_x: float = TRAIN_FROM_X
 var _wait: float = 4.0
+const DEAD_ROLL := 1.46                   # on its side, one shoulder still a little off the ground
+const DEAD_LYING_Y := 0.27
+
 var _walker: Node3D
 var _walker_dir: float = 1.0
 var _t: float = 0.0
@@ -62,6 +65,9 @@ var _rng := RandomNumberGenerator.new()
 var town_ambient: bool = false
 var _horse_voices: Dictionary = {}
 var _horse_next: Dictionary = {}
+var _horse_rows: Dictionary = {}
+var _dead_horses: Dictionary = {}
+var _props: Array = []
 var _last_horse_sound: float = -100.0
 var _hooves: AudioStreamPlayer3D = null
 var horse_effect_counts: Dictionary = {}
@@ -345,6 +351,7 @@ func _train_audio_step() -> void:
 func _build_horses(props: Array) -> void:
 	if not ResourceLoader.exists(HORSE):
 		return
+	_props = props
 	var scene: PackedScene = load(HORSE)
 	for i in HORSES.size():
 		var h: Array = HORSES[i]
@@ -354,13 +361,17 @@ func _build_horses(props: Array) -> void:
 		horse.rotation.y = float(h[2])
 		add_child(horse)
 		_register_horse(horse)
-		props.append([Vector2(float(h[0]), float(h[1])), 1.0])         # solid: Lil Blunt walks around a horse
+		_attach_health(horse, Ep2ArmoryState.HORSE_WOUNDS_MAX)
+		var row: Array = [Vector2(float(h[0]), float(h[1])), 1.0]
+		props.append(row)                                              # solid: Lil Blunt walks around a horse
+		_horse_rows[horse.get_instance_id()] = row
 	_walker = _horse(scene, "horse_walk")
 	_walker.name = "HorseRoaming"
 	_walker.position = WALK_FROM
 	_walker.rotation.y = -PI * 0.5                                         # head toward +Z, up the street
 	add_child(_walker)
 	_register_horse(_walker)
+	_attach_health(_walker, Ep2ArmoryState.HORSE_WOUNDS_MAX)
 	_hooves = _horse_voice(_walker, "HorseHooves")
 	_hooves.position.y = 0.35
 	_hooves.unit_size = 4.0
@@ -388,6 +399,42 @@ func _register_horse(horse: Node3D) -> void:
 	_horse_next[id] = _rng.randf_range(12.0, 30.0)
 
 
+func _attach_health(horse: Node3D, pool: int) -> void:
+	Ep2CreatureHealth.attach(horse, pool).died.connect(_on_horse_died.bind(horse))
+	horse.add_to_group(Ep2CreatureHealth.HORSE_GROUP)
+
+
+## A town horse took its third wound. It falls where it stands, its prop row leaves the town survey (no invisible barrier), and
+## its voice is shut off. The roaming horse simply stops walking.
+func _on_horse_died(_at: Vector3, horse: Node3D) -> void:
+	if horse == null or not is_instance_valid(horse):
+		return
+	var id: int = horse.get_instance_id()
+	_dead_horses[id] = true
+	horse.set_meta("law_dead", true)
+	if _horse_rows.has(id):
+		var row: Array = _horse_rows[id]
+		if _props != null:
+			_props.erase(row)
+		_horse_rows.erase(id)
+	for ap in horse.find_children("*", "AnimationPlayer", true, false):
+		(ap as AnimationPlayer).pause()
+	# This model's head is +X, so its roll is the X axis (Z would stand it on its nose).
+	Ep2CreatureHealth.topple(horse, DEAD_ROLL, 0.0, DEAD_LYING_Y)
+	if _horse_voices.has(id):
+		var voice: AudioStreamPlayer3D = _horse_voices[id]
+		if is_instance_valid(voice):
+			voice.stop()
+	if horse == _walker:
+		_walker = null
+		if _hooves != null:
+			_hooves.stop()
+
+
+func _horse_alive(horse: Node3D) -> bool:
+	return horse != null and is_instance_valid(horse) and not _dead_horses.has(horse.get_instance_id())
+
+
 func _town_recording(id: String, loop: bool = false) -> AudioStream:
 	var path: String = TOWN_SFX_ROOT + id + ".ogg"
 	if not ResourceLoader.exists(path):
@@ -400,7 +447,7 @@ func _town_recording(id: String, loop: bool = false) -> AudioStream:
 
 ## A bump/shy/kick effect on a particular horse. Kept here so the same voice and speech dip serve ambience and contact.
 func play_horse_effect(horse: Node3D, id: String, db: float = -7.0) -> bool:
-	if not town_ambient or horse == null or not _horse_voices.has(horse.get_instance_id()):
+	if not town_ambient or horse == null or not _horse_voices.has(horse.get_instance_id()) or _dead_horses.has(horse.get_instance_id()):
 		return false
 	var stream: AudioStream = _town_recording(id)
 	if stream == null:
@@ -423,6 +470,8 @@ func _horse_audio_step(delta: float) -> void:
 	var am: Node = get_node_or_null("/root/AudioManager")
 	var talking: bool = am != null and am.has_method("is_speech_ducking") and bool(am.call("is_speech_ducking"))
 	for id in _horse_voices:
+		if _dead_horses.has(id):
+			continue
 		var voice: AudioStreamPlayer3D = _horse_voices[id]
 		if voice.playing:
 			var base: float = float(voice.get_meta("base_db", -10.0))

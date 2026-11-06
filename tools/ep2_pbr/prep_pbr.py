@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare the Episode 2 PBR material sets (founder 2026-10-25: "hyperreal ... not grey primitives") for the streamed extras pack.
 
-    python3 tools/ep2_pbr/prep_pbr.py <downloads_dir>        # needs ImageMagick 7 (`magick`)
+    python3 tools/ep2_pbr/prep_pbr.py <downloads_dir> [--only set,set]   # needs ImageMagick 7 (`magick`)
 
 <downloads_dir>/<set>/{albedo,normal,rough,ao,metal}.jpg come from Poly Haven / ambientCG (both CC0 - commercial use, no attribution
 required; ids recorded below and in pbr_sets.json). Writes src/episode2/extras/pbr/<set>/:
@@ -37,8 +37,17 @@ SETS = {   # set id: (source, size px)
     "stone_rustic": ("polyhaven:rustic_stone_wall_02", 512),
     "fabric_burlap": ("ambientcg:Fabric066", 512),
     "rope": ("ambientcg:Rope001", 512),
+    # the day-88 ridge and Utah's dock (founder 2026-11-06: "the ridge ... looks very cheap"): the climb's packed trail, the layered
+    # canyon face, the dry upper bank, the wet line at the water, the grassy back slope, the river's stony bed
+    "trail_packed": ("polyhaven:rocky_trail", 1024),
+    "cliff_layered": ("polyhaven:cliff_side", 1024),
+    "bank_dry": ("polyhaven:dry_ground_rocks", 512),
+    "bank_wet": ("polyhaven:brown_mud_rocks_01", 512),
+    "slope_grass": ("polyhaven:aerial_grass_rock", 512),
+    "riverbed_stones": ("polyhaven:river_small_rocks", 512),
 }
-DOWNLOAD_NAME = {"fabric_burlap": "fabric_burlap_b"}     # the download folder when it differs from the set id
+DOWNLOAD_NAME = {"fabric_burlap": "fabric_burlap_b", "trail_packed": "rocky_trail", "cliff_layered": "cliff_side",
+    "bank_dry": "dry_ground_rocks", "bank_wet": "brown_mud_rocks_01", "slope_grass": "aerial_grass_rock", "riverbed_stones": "river_small_rocks"}     # the download folder when it differs from the set id
 
 
 def magick(*args):
@@ -53,9 +62,17 @@ def mean_linear(path):
 
 def main() -> int:
     src_root = sys.argv[1]
+    # --only a,b: prepare just those sets and merge them into the existing pbr_sets.json. The other sets' files are left as they are
+    # (their downloads are not kept, and re-encoding an approved set would change what the player sees).
+    only = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else []
     os.makedirs(OUT, exist_ok=True)
     manifest = {"licence": "CC0 1.0 (Poly Haven, ambientCG): commercial use, no attribution required", "sets": {}}
+    if only:
+        with open(os.path.join(OUT, "pbr_sets.json")) as f:
+            manifest = json.load(f)
     for sid, (source, px) in SETS.items():
+        if only and sid not in only:
+            continue
         src = os.path.join(src_root, DOWNLOAD_NAME.get(sid, sid))
         dst = os.path.join(OUT, sid)
         os.makedirs(dst, exist_ok=True)

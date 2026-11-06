@@ -161,7 +161,7 @@ const BARTENDER_MODEL := "res://src/episode2/assets/town/bartender.glb"  # the b
 const COWBOY_HEIGHT := 1.84
 ## His gun hand in the Draw pose, as a fraction of his height (x right, y up, z forward; measured in Blender by prep_founder_town_models.py).
 const COWBOY_HAND_DRAW := Vector3(-0.122, 0.734, 0.315)     # his fist in the baked Draw mesh, measured (x -0.22, y 1.35, z 0.58 m at 1.84 m)
-const OPP_GUN_GRIP := Vector3(0.005, -0.1, 0.015)          # where that fist closes on the Borchardt, in the gun's own frame (measured)
+const OPP_GUN_GRIP := Vector3(0.0, -0.095, -0.012)          # where that fist closes on the Borchardt, in the gun's own frame (measured)
 const OPP_DRAW_S := 0.14                                   # the pistol's travel from the hip to the aimed hand
 const BARTENDER_HEIGHT := 1.76
 const WHISKEY_MODEL := "res://src/episode2/assets/whiskey_glass.glb"

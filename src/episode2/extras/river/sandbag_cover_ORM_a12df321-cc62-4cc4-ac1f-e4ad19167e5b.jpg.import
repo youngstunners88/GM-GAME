@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://cfoq2oti0tmal"
+path="res://.godot/imported/sandbag_cover_ORM_a12df321-cc62-4cc4-ac1f-e4ad19167e5b.jpg-6e60e067a9d68e51b43a55bb30bfba34.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "783a420e5c08df42251dcc31c0353118"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/river/sandbag_cover_ORM_a12df321-cc62-4cc4-ac1f-e4ad19167e5b.jpg"
+dest_files=["res://.godot/imported/sandbag_cover_ORM_a12df321-cc62-4cc4-ac1f-e4ad19167e5b.jpg-6e60e067a9d68e51b43a55bb30bfba34.ctex"]
+
+[params]
+
+compress/mode=1
+compress/high_quality=false
+compress/lossy_quality=0.85
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=0
