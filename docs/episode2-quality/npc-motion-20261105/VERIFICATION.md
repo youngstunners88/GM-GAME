@@ -23,3 +23,23 @@ Baseline: `0acdb2a55c2ffed1aa3dc9cee2ee854b89822f81`. Integrated master: `0e1ee4
 - Runtime captures: original armory introduction completed with 23 Gatling rounds and 2 plates; supplied Sharps visible from the player's camera. Final response capture tool: `tools/ep2_shots/protected_npc_shot.tscn`, writes `.farm/protected-npc/` (player view plus firing diagnostic for all eight). Bright/dim Dude lens and staged mount diagnostics are included beside this report.
 
 Not founder-verified; not tested on a physical phone. Native tests and renderer evidence do not alone prove a public deployment. Release/upload/public BUILD verification remains a separate required gate.
+
+## Export and browser receipt
+
+Cold asset import/export: source `ca1820d5`, main pack 199,052,304 bytes. The code-only vehicle/checkpoint update was fast-forwarded to `686eba0a` in that clean checkout, with no asset differences; the final re-export succeeded with no script/parse errors at 199,051,680 bytes. The streamed pack is 196,763,360 bytes. Both are below 199,229,440 bytes (190 MiB), and their headers are valid Godot PCKs. This avoids using the stale textures left in the original working cache.
+
+Chromium boot of the asset-identical clean export passed: build `dev-local`, streamed extras ready, extras HTTP 200. Native final checks are 213 town and 40 woods, including interrupted reverse dismount and Gatling exit after death. Deployment and public BUILD confirmation are separate and still pending at this receipt.
+
+The failed earlier clean export exhausted the 8 GiB workspace by duplicating 4 GiB of Git history. The gate now shares immutable Git objects while keeping the checkout and import cache fresh; it also fails on an unsuccessful export or an empty pack and retains failure logs. No source, textures or gameplay were trimmed to fit the size gate.
+
+## Changed implementation files
+
+- `src/episode2/actors/ep2_armory_pose.gd`, `ep2_ranch_pose.gd`, `ep2_town_folk.gd`: rig mapping, bounded arm motion, supplied rifle contacts and held variants, phased mount pose.
+- `src/episode2/actors/ep2_protected_retaliation.gd`: explicit hit-only roster, draw/aim/fire, authoritative muzzle, debounce and interrupted-state restore.
+- `src/episode2/chamber/ep2_town_law.gd`, `gold_town.gd`, `woods_quad.gd`, `ep2_stable_yard.gd`: target registration, movement ownership, supplies, existing checkpoint retries and horse alignment.
+- `src/episode2/session/ep2_session_root.gd`, `world_routes.gd`: failure signal routing and town arrival capture.
+- Assets: `assets/town/dude_stable_owner.glb` and its new lens atlas PNG; `assets/town/bartender.glb`; `extras/people/previous_sheriff/sheriff_walk.glb`, all under `src/episode2/`.
+- Authoring/evidence: `tools/ep2_forge/dude_black_lenses.py`, `tools/ep2_motion/add_protected_arms.py`, `tools/ep2_shots/protected_npc_shot.gd/.tscn`.
+- Regression gates: protected town/woods and mount alignment tests; updated protected expectations in `ep2_town_law_test.gd`; CI workflow additions; hardened `scripts/pack-gate-fresh.sh`.
+
+Final diagnostic images beside this report show all eight firing actors, plus the clerk and assistant from the actual player camera. They are runtime captures, not generated reference art.
