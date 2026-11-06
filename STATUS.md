@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-06 - Episode 2 common sense: the five things you should never have had to point out - PUSHED, deploying; not yet confirmed live, not founder-verified, not tried on a real phone.**
+**2026-11-06 - Episode 2 common sense: the five things you should never have had to point out - LIVE on itch (build `2026-11-06-df2cdb0`, confirmed from the public page, streamed pack loads); NOT founder-verified, not tried on a real phone.**
 
 | Your note | State | What changed |
 |---|---|---|
