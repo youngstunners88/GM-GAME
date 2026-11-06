@@ -71,6 +71,12 @@ func _ready() -> void:
 			check(id + " state resets for next encounter", not c._law.retaliation.active and c.has_player_control())
 			check(id + " interrupted clip and playback restore " + saved_animation + "/" + str(saved_speed) + " -> " + str(f.anim_player().assigned_animation) + "/" + str(f.anim_player().get_playing_speed()), f.anim_player().assigned_animation == saved_animation and is_equal_approx(f.anim_player().get_playing_speed(), saved_speed))
 			check(id + " narrative and purchases survive", c._beat == c.Beat.GEARED and GameManager.purse_balance("btc") == old_purse)
+	c._mount()
+	check("mounted Gatling precondition", c.is_mounted())
+	check("mounted response can start", c._law.retaliation.begin(c, "utah", c._utah))
+	for frame in 100: c.step(1.0 / 60.0)
+	await get_tree().process_frame
+	check("Gatling death returns to entry on foot", not c.is_mounted() and c._player_pos.is_equal_approx(entry) and c.has_player_control())
 	check("ordinary population is preserved", c.get_people() == crowd and crowd.people.size() == original_people)
 	check("story protection does not start arrest", c._law.law_state == "idle" and c._law.person_hits == 0)
 	session.queue_free()

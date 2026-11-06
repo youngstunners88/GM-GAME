@@ -183,7 +183,6 @@ var _rock_mesh: Mesh = null
 var _wildlife: Ep2Wildlife = null
 var _people: Ep2TownPeople = null                   # the townsfolk: already living in their town while the quad rolls in
 var _protected_trace := Ep2TownLaw.new()
-var _retaliation_entry: Dictionary = {}
 var _stable_yard: Ep2StableYard = null
 var _stable_prompt_shown: bool = false
 signal stable_voice_requested(line_id: String, voice_id: String)
@@ -3077,19 +3076,12 @@ func start_rig(_mode: String = "eth") -> bool:
 	return true
 
 
-func remember_retaliation_entry() -> void:
-	_retaliation_entry = {"position": _player_pos, "yaw": _look_yaw, "pitch": _look_pitch}
-
-
 func retry_protected_npc() -> void:
 	if not _protected_trace.retaliation.active: return
 	_protected_trace.retaliation.reset()
-	if not _retaliation_entry.is_empty():
-		_player_pos = _retaliation_entry.position
-		_look_yaw = _retaliation_entry.yaw
-		_look_pitch = _retaliation_entry.pitch
-	_move_input = Vector2.ZERO
-	_vel_y = 0.0
+	# Use this chamber's established surface-elevator attempt checkpoint, which
+	# also restores health and clears passenger/quad camera state.
+	_retry_from_surface()
 	_running = true
 	_resolved = false
 	remove_meta("protected_npc_defeat")

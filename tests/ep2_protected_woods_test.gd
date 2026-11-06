@@ -21,6 +21,8 @@ func _ready() -> void:
  c._show_blocks_control = false
  c._hold = 0
  var entry: Vector3 = c._player_pos
+ GameManager.purse_add("btc", 7)
+ var purse: int = GameManager.purse_balance("btc")
  for row in [["dude", "Dude"], ["stable_assistant", "StableAssistant"], ["sheriff", "OfficeSheriff"], ["minister", "OfficeMikeDean"]]:
   var f: Ep2TownFolk = c._visuals.find_child(row[1], true, false)
   for encounter in 2:
@@ -38,6 +40,7 @@ func _ready() -> void:
    check(str(row[0])+" woods single decisive shot", c._protected_trace.retaliation.shots == before+1)
    check(str(row[0])+" woods restart preserves active chamber", session._active==c and c._player_pos.is_equal_approx(entry) and not c._resolved and not f.dead)
    check(str(row[0])+" woods response resets", not c._protected_trace.retaliation.active and c.has_player_control())
+   check(str(row[0])+" established surface retry clears riding and preserves purse", not c._riding and c._beat == c.Beat.SNEAK and GameManager.purse_balance("btc") == purse)
  session.queue_free()
  await get_tree().process_frame
  print("EP2_PROTECTED_WOODS: %d checks, %d failures" % [checks,failures])

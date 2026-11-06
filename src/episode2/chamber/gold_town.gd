@@ -2695,6 +2695,7 @@ func remember_retaliation_entry() -> void:
 func retry_protected_npc() -> void:
 	if _law == null or not _law.retaliation.active: return
 	_law.retaliation.reset()
+	if _mounted: _dismount()
 	if not _retaliation_entry.is_empty():
 		_player_pos = _retaliation_entry.position
 		_look_yaw = _retaliation_entry.yaw

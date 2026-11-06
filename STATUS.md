@@ -3,7 +3,7 @@
 **2026-11-06 — Character motion and protected retaliation — implemented; release checks running.**
 - Utah and Rich use bounded rig-aware arms and grounded walking; Rich holds the supplied showcase Sharps. Dude has black lens textures and a forward-facing, phased mount/dismount.
 - Registered hits on Dude, Minister Mike Dean, bartender, sheriff, Utah, the General Store clerk and StableAssistant draw the existing golden Remington; Rich uses his showcase Sharps. Misses and ordinary NPC rules are preserved. The shared woods cast is covered too.
-- Added the missing sheriff/bartender arm rigging while preserving their supplied meshes/materials. Native protected checks: 210 town + 32 woods, repeated encounters included; two full mount cycles pass. All affected regression checks pass. Full local suite passed. The regular web export is valid and under 190 MiB; fresh export and public deployment verification remain pending.
+- Added the missing sheriff/bartender arm rigging while preserving their supplied meshes/materials. Native protected checks: 213 town + 40 woods, repeated encounters included; two full mount cycles pass. All affected regression checks pass. Full local suite passed. The regular web export is valid and under 190 MiB; fresh export and public deployment verification remain pending.
 - Evidence: `docs/episode2-quality/npc-motion-20261105/VERIFICATION.md`. Not founder-verified or tested on a real phone.
 
 | Your note | State | What changed |
