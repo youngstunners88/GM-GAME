@@ -144,6 +144,14 @@ var _cel: Dictionary = {}     # the celebration after the draw while it runs (ce
 var _story_was_duel: bool = false
 ## Radius around the player that people keep clear of (0.68 on foot; the woods ride raises it for the quad).
 var player_clearance: float = 0.68
+## The story cast the crowd must not walk into (founder 2026-11-05: "people walk through Minister Mike Dean while he prays"). The room
+## refreshes these each tick: id -> [centre (ground plane), radius]. A standing body keeps a body's width; anyone praying, talking or
+## working keeps a wider berth (KEEP_BUSY). Walkers steer round the circle instead of through it; nobody steps INTO one, but anyone caught
+## inside when it appears may always step out.
+var keep_clear: Dictionary = {}
+const KEEP_BODY := 0.45                  # a standing man's own room (shoulder half-width plus a little)
+const KEEP_BUSY := 1.25                  # a kneeling, praying, talking or working man: room to be left alone
+const KEEP_MARGIN := 0.15                # walkers aim this far outside a circle when they go round it
 
 func configure_space(info: Dictionary) -> void:
 	navigation.configure(info)
@@ -432,6 +440,9 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 		p.parcel_t = maxf(0.0, p.parcel_t - dt)          # never below zero: a saved 0 must restore (restore() bounds it 0..PARCEL_SECONDS)
 		if p.parcel_t <= 0.0: p.folk.drop_prop("Parcel")
 	var before: Vector2 = _pos(p)
+	if not keep_clear.is_empty() and p.state in ["pause", "social", "greet"] and _make_room(p):
+		p.folk.step(dt)
+		return
 	if _town_cold() and p.fear <= 0.0 and p.state not in SHOP_STATES and p.state not in CEL_STATES:
 		if _cold_avoid(p, dt, player):
 			return
@@ -1023,7 +1034,123 @@ func _body_clear(point: Vector2, owner: Person, player: Vector3, respect_cold: b
 	for other in people:
 		if other == owner: continue
 		if point.distance_to(_pos(other)) < BODY_R * 2.0: return false
+	if not keep_clear.is_empty():
+		var here: Vector2 = _pos(owner) if owner != null else point
+		for key in keep_clear:
+			var c: Vector2 = keep_clear[key][0]
+			var r: float = float(keep_clear[key][1]) + BODY_R
+			# into the circle is refused; out of it (caught inside when it appeared) is always allowed
+			if point.distance_to(c) < r and point.distance_to(c) <= here.distance_to(c): return false
 	return true
+
+
+## Register (or move) one of the story cast as a body the crowd keeps clear of. `radius` is the room he needs: KEEP_BODY standing,
+## KEEP_BUSY while he prays, talks or works. Call every tick while it holds; `clear_keep_clear` when he is gone.
+func set_keep_clear(id: String, at: Vector3, radius: float = KEEP_BODY) -> void:
+	keep_clear[id] = [Vector2(at.x, at.z), maxf(radius, 0.0)]
+
+
+func clear_keep_clear(id: String) -> void:
+	keep_clear.erase(id)
+
+
+## The circle a walk from `here` toward `target` runs into first: [centre, radius incl. the walker's own body and a margin], or [].
+func _keep_clear_hit(here: Vector2, target: Vector2) -> Array:
+	var best: Array = []
+	var best_along: float = INF
+	var to_t: Vector2 = target - here
+	var length: float = to_t.length()
+	if length < 0.01: return best
+	var dir: Vector2 = to_t / length
+	for key in keep_clear:
+		var c: Vector2 = keep_clear[key][0]
+		var r: float = float(keep_clear[key][1]) + BODY_R + KEEP_MARGIN
+		var rel: Vector2 = c - here
+		var along: float = rel.dot(dir)
+		if along < -r or along > length + r: continue
+		if (rel - dir * clampf(along, 0.0, length)).length() >= r: continue
+		if here.distance_to(c) < r - KEEP_MARGIN and along < 0.0: continue    # walking out of it: let him
+		if along < best_along:
+			best_along = along
+			best = [c, r]
+	if best.is_empty(): return best
+	# circles that touch (Mike Dean kneeling by the fallen stranger) are gone round as one: steering round only the first would walk
+	# straight into the second
+	for pass_i in 2:
+		for key in keep_clear:
+			var c2: Vector2 = keep_clear[key][0]
+			var r2: float = float(keep_clear[key][1]) + BODY_R + KEEP_MARGIN
+			var gap: float = (best[0] as Vector2).distance_to(c2)
+			if gap >= float(best[1]) + r2 or gap + r2 <= float(best[1]): continue
+			if gap + float(best[1]) <= r2:
+				best = [c2, r2]
+				continue
+			var r_all: float = (gap + float(best[1]) + r2) * 0.5
+			best = [(best[0] as Vector2) + (c2 - (best[0] as Vector2)) / gap * (r_all - float(best[1])), r_all]
+	return best
+
+
+## Someone idling where one of the story cast now needs the room (the Minister kneels beside him) steps back out of it to its rim and
+## watches him, the same short step-aside the quad gets (make_way). True when he moved.
+func _make_room(p: Person) -> bool:
+	var here: Vector2 = _pos(p)
+	var inside: Array = _keep_clear_containing(here)
+	if inside.is_empty(): return false
+	var c: Vector2 = inside[0]
+	var away: Vector2 = (here - c).normalized() if here.distance_to(c) > 0.01 else Vector2.RIGHT
+	var spot: Vector2 = c + away * (float(inside[1]) + KEEP_MARGIN + 0.2)
+	if not navigation.is_clear(spot):
+		spot = navigation.closest(spot)
+	_release(p)
+	p.partner = ""
+	p.threat = c
+	p.safety = spot
+	p.fear = maxf(p.fear, 2.0)
+	p.waypoints.clear()
+	p.waypoints.append(spot)
+	p.state = "flee"
+	p.folk.hold_clip("Observe")
+	return true
+
+
+## The keep-clear circle `point` stands in ([centre, radius incl. a body]), or [].
+func _keep_clear_containing(point: Vector2) -> Array:
+	for key in keep_clear:
+		var c: Vector2 = keep_clear[key][0]
+		var r: float = float(keep_clear[key][1]) + BODY_R
+		if point.distance_to(c) < r:
+			return [c, r]
+	return []
+
+
+## Where to head instead of `target` so the walk goes round the story cast rather than through them: the tangent point on the side the
+## straight line already passes (or the walker's own passing side when it would hit dead centre). Walls win: a side the walls block is
+## swapped for the other.
+func _steer_round(p: Person, here: Vector2, target: Vector2) -> Vector2:
+	var hit: Array = _keep_clear_hit(here, target)
+	if hit.is_empty(): return target
+	var c: Vector2 = hit[0]
+	var r: float = hit[1]
+	if target.distance_to(c) < r:
+		return target                                    # the goal itself is inside: _move stops him at the rim instead
+	var rel: Vector2 = c - here
+	var dist: float = rel.length()
+	var dir: Vector2 = (target - here).normalized()
+	var cross: float = dir.x * rel.y - dir.y * rel.x  # > 0: the centre lies counter-clockwise of the line: pass it clockwise (s = +1)
+	var side: float = signf(cross) if absf(cross) > 0.02 else (1.0 if int(p.id.hash()) % 2 == 0 else -1.0)
+	for s in [side, -side]:
+		var aim: Vector2
+		if dist <= r + 0.02:
+			# on the rim: walk along it, easing outward
+			var out: Vector2 = (here - c).normalized()
+			aim = here + Vector2(-out.y, out.x) * float(s) * 0.8 + out * 0.15
+		else:
+			var ang: float = asin(clampf(r / dist, 0.0, 1.0))
+			var tangent: Vector2 = rel.normalized().rotated(-ang * float(s))
+			aim = here + tangent * (sqrt(maxf(dist * dist - r * r, 0.0)) + 0.35)
+		if navigation.segment_clear(here, here + (aim - here).normalized() * 0.4):
+			return aim
+	return target
 
 func _move(p: Person, dt: float, player: Vector3) -> void:
 	var here: Vector2 = _pos(p)
@@ -1038,6 +1165,19 @@ func _move(p: Person, dt: float, player: Vector3) -> void:
 		else: _arrive(p)
 		return
 	var target: Vector2 = p.waypoints[0]
+	if not keep_clear.is_empty():
+		# a waypoint where one of the story cast now stands (the Minister kneeling on the walking line) is skipped; a goal there is
+		# reached at the rim of his room, never in it
+		var inside: Array = _keep_clear_containing(target)
+		if not inside.is_empty():
+			if p.waypoints.size() > 1:
+				p.waypoints.pop_front()
+				target = p.waypoints[0]
+			elif here.distance_to(inside[0]) < float(inside[1]) + 0.45:
+				p.waypoints.clear()
+				_arrive(p)
+				return
+		target = _steer_round(p, here, target)
 	var direction: Vector2 = (target - here).normalized()
 	var speed: float = p.speed * (1.45 if p.state == "flee" else (CEL_RUSH if p.state == "cel_go" else 1.0))
 	var distance: float = minf(speed * dt, here.distance_to(target))

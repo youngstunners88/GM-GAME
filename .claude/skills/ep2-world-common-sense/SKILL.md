@@ -20,6 +20,13 @@ The founder (2026-11-05): "This is so stupid." He should never have to specify t
 
 These are the founder's reports, recorded as examples. Check the current code before assuming any one is still open or already fixed.
 
+**Built 2026-11-06 (branch `claude/ep2-common-sense-fixes`, not founder-verified):** all five are in code, with one shared system
+each: `Ep2TownPeople.keep_clear` (the story cast as crowd obstacles), `GoldTownChamber._bull_body_spot` and `_bull_way_to` (Inferno talks
+where he meets Lil Blunt and never walks back past a mark), `Ep2SwingDoor` (one door behaviour), and the raft's `Ep2CreatureHealth`
+together with `RiverCoverChamber._overboard`. Gate: `tests/ep2_common_sense_test.tscn`. ADR: `docs/architecture/adr-ep2-common-sense-world.md`.
+Still open in the same families: scripted actors (`Ep2Actor.walk_to`) do not avoid one another. A trail rider who is shot drops through
+his saddle in one frame before sliding off (`lake_trail.gd`). The office and shop doorways have no leaves at all.
+
 ## The five questions: ask them before calling anything done
 1. **Would a real person do this, in this order?** Remove pointless trips. Say the thing where you stand. Finish one errand before starting the next. Nobody turns around for no reason.
 2. **What is physically in the way?** People, furniture, doors, animals and vehicles are solid. Nothing passes through anything, and nobody stands inside or floats above anything.

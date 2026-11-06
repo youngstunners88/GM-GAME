@@ -2973,6 +2973,11 @@ func _tick_town_people(delta: float) -> void:
 		return
 	_people.player_clearance = 1.6 if _riding else 0.68
 	_people.step(delta, _player_pos)
+	# the same swinging saloon doors as the town chamber's copy: pushed by Lil Blunt and anyone of the town going through
+	var bodies: Array = [_player_pos]
+	for q in _people.people:
+		bodies.append(q.folk.position)
+	Ep2GoldTown.step_doors(_town_col, delta, bodies)
 	if _quad != null and _quad.visible:
 		var v: float = 4.0 if _riding else float(_rideoff.get("v", 0.0))
 		if v > 0.5:

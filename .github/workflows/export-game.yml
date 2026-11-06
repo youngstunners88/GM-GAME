@@ -454,6 +454,11 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_river_cover_test.tscn > river-cover-tests.log 2>&1
           grep -q 'RIVER_COVER: ALL PASS' river-cover-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' river-cover-tests.log; then exit 1; fi
+          # The world obeys common sense (founder 2026-11-05): nobody walks through the praying Minister, Inferno asks at the body then
+          # goes for the whiskey, the saloon batwings swing for anyone going through, a shot raft man goes into the river, rafts take hits.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_common_sense_test.tscn > common-sense-tests.log 2>&1
+          grep -q 'EP2_COMMON_SENSE: ALL PASS' common-sense-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' common-sense-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_interior_visible_test.tscn > interior-visible-tests.log 2>&1
           grep -q 'INTERIOR_VISIBLE: ALL PASS' interior-visible-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' interior-visible-tests.log; then exit 1; fi

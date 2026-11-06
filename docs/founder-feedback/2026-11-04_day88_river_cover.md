@@ -83,3 +83,16 @@ Gameplay geometry and constants are untouched. Collision stays analytic on `RIDG
 - **Fallback:** before the streamed pack mounts, `Ep2Pbr.available()` and `Ep2Extras.has()` are false, so the old plain set and dock are built.
 - **Captures:** `tools/ep2_shots/ridge_dock_texture_shot.tscn`. Before/after pairs are in `docs/episode2-quality/ridge-dock-texture-20261106/`.
 - [ ] FIXED only after the founder's hard-refresh climb and look at the dock.
+
+## Common sense on the river (founder 2026-11-05: "shot bandits stay on the raft", "bullets do nothing to the raft")
+- **A shot raft man goes overboard.** He leaves the raft's frame, falls backwards over the nearer side, splashes in, and the current
+  takes him downstream and under. The raft carries on without him. He never fires or hooks again.
+- **Rafts take bullets.** The raft has `RAFT_HP` 6 (`Ep2CreatureHealth`, and the Sharps counts two). Each hit splinters the wood,
+  leaves a pale scar on the log it struck and jolts the raft. At half health it lists and rides low, with an end log working loose.
+  At none it breaks up: the hook lets go of the crate, anyone still aboard goes into the river, and the logs float apart and drift.
+- **Fairness:** breaking a raft takes more bullets than shooting its two men, so the men stay the better target. A shot that misses a
+  man and hits his raft still counts for something. A retry brings the gate's raft back whole, and any bodies the river took are cleared.
+- **Sounds:** `raft_hit`, `raft_break` and `body_splash` are synthesized (`tools/ep2_audio/synth_river_hits.py`) and streamed in
+  `src/episode2/extras/audio/river/`. They are judged by loudness only, not by ear.
+- **Gate:** `tests/ep2_common_sense_test.tscn` (sections 4 and 5). Captures: `docs/episode2-quality/common-sense-20261106/`.
+- [ ] FIXED only after the founder's own run.
