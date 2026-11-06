@@ -7,7 +7,9 @@ cd "$(git rev-parse --show-toplevel)"
 LIMIT=199229440
 D="${PACK_GATE_DIR:-$HOME/.cache/gm-pack-gate}"
 rm -rf "$D"; mkdir -p "$(dirname "$D")"
-git clone -q --no-hardlinks . "$D" && git -C "$D" checkout -q "$(git rev-parse HEAD)" || { echo "✗ clone failed"; exit 2; }
+# Share immutable Git objects only; checkout and import cache remain fresh.
+# Duplicating this repository history consumes 4 GiB before the export starts.
+git clone -q --shared . "$D" && git -C "$D" checkout -q "$(git rev-parse HEAD)" || { echo "✗ clone failed"; exit 2; }
 G=.godot-cache/Godot_v4.3-stable_linux.x86_64
 [ -x "$G" ] || { echo "✗ pinned Godot missing: scripts/bootstrap-godot.sh"; exit 2; }
 mkdir -p "$D/.godot-cache" "$D/.farm"; cp "$G" "$D/.godot-cache/"
