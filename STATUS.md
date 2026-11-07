@@ -1,5 +1,15 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-07 — Weapon tabs only show what Lil Blunt has, pickaxe tab, Rich & Utah's counter order, bow forearm, shorter Sharps scope, Rich opens the glass case — pushed, NOT founder-verified.**
+- **Tabs (the mystery rule):** Tabs and the tab strip at Rich's counter show only the weapons he has. On a new save that is the Winchester and his pickaxe, and no other gun is named anywhere. Buying a gun brings in its tab and card. When the Sheriff takes the guns their tabs leave, and they come back when he buys them back or gets them returned.
+- **Pickaxe:** a new PICKAXE tab using your 500 KB Verdant War Pick, shown in his glove. It counts as his from the start: it is his own miner's tool, nobody sells it, and the Sheriff hands it back with "Take your pick".
+- **Counter order:** THE SHIPMENT, then the BUFFALO GUN, then SHARPS CARTRIDGES. After that, each gun sits over its ammo in the order the story gives them to him: Winchester, Remington, bow, Borchardt, then shotgun, Drum SMG and Golden Thompson. No ids changed, and the Shipment → Sharps lock still holds.
+- **Bow:** the string hand's "plastic pole" forearm is now a cloth sleeve with a leather cuff, a taper and folds. No credits spent.
+- **Sharps scope:** 0.56 m → 0.36 m, on wrist and receiver mounts. The view through the scope is unchanged.
+- **Rich and the case:** the glass case has a real lid now. Rich steps beside the case and lifts the lid by its pull. He takes the rifle by the grip, raises it clear of the glass and brings it up to both hands. He puts it back the same way and closes the lid by hand. It is the same rifle in the case and in his hands. Before, the rifle vanished through closed glass and a different one appeared at his hip.
+- Evidence and the per-item checklist: `docs/episode2-quality/weapon-tabs-2026-11-07/REPORT.md`. New check `tests/ep2_weapons_test` (48, in CI). Main pack margin is now 31,008 B, down from 82,688 B on master (new code).
+- Found, not fixed: the bow arm's own sleeve is the same kind of flat pole; on a sideways phone, Tabs' ammo line runs past its card.
+
 **2026-11-06 — Day-88 ridge: the Shipment no longer jumps back after a won gate; reload fixed — pushed, NOT founder-verified.**
 - Falling on the way down to the next ledge used to send the crate back to the gate's start and replay the wave. Now the crate keeps waiting in the eddy and you're back on that overlook with full hearts.
 - A real tip or death still sends you back to the current gate only. There is now a warning ("THE SHIPMENT IS GOING OVER") halfway to a tip. Hammer's rafts hook the crate from behind, which made the tip feel random.
