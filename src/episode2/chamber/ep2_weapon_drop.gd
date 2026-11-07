@@ -1,23 +1,16 @@
 class_name Ep2WeaponDrop
 extends Node3D
-## WHAT A DEAD GUNMAN LEAVES (founder 2026-11-07): the gun he actually held and the rounds he carried for it, lying in the dirt where he
-## fell until Lil Blunt takes them - by walking (or riding) over them, or with the interact control in reach. One rule for every room
-## with armed men: the room calls `place()` when a man dies, `nearest()` for its prompt, and `take()` on contact or interact.
-## The armory keeps the record (Ep2ArmoryState.record_drop / claim_drop, saved with the searched bodies), so a drop is taken once, a gun
-## goes into the one armory (acquire) and its rounds into that gun's own reserve - there is no second inventory and nothing times out.
-## A man who dies on a raft goes into the river with his gun: the room places nothing for him (ep2-world-common-sense).
+## What a dead gunman leaves (founder 2026-11-07, docs/architecture/adr-ep2-weapon-drops.md): his own gun and its rounds where he fell,
+## taken once by walking over it or interact. The record is Ep2ArmoryState.record_drop/claim_drop (saved; no timer, no second inventory).
 
-## Walking or riding over the drop takes it.
-const WALK_OVER := 0.9
-## The prompt shows and the interact control takes it within this reach.
-const REACH := 2.4
+const WALK_OVER := 0.9      # m: walking or riding over it takes it
+const REACH := 2.4          # m: prompt + interact
 
 var drop_id: String = ""
 var gun_id: String = ""
 
 
-## Lays `gun` (the man's own held gun node, moved here) and a box of its rounds on the ground at `at` (parent frame) and records the drop.
-## Returns the drop already lying there for `id`, or null once it has been taken (the gun node is then hidden: it went with the first one).
+## Lays the man's own `gun_node` and a box of rounds at `at` (parent frame). Returns the drop already lying there, or null once taken.
 static func place(parent: Node3D, armory: Ep2ArmoryState, id: String, gun: String, rounds: int, at: Vector3, yaw: float,
 		gun_node: Node3D = null) -> Ep2WeaponDrop:
 	var node_name: String = ("Drop_" + id).validate_node_name()
@@ -38,10 +31,10 @@ static func place(parent: Node3D, armory: Ep2ArmoryState, id: String, gun: Strin
 			gun_node.reparent(drop, false)
 		else:
 			drop.add_child(gun_node)
-		# on its side in the dirt beside the hand that held it
+		# on its side in the dirt
 		gun_node.transform = Transform3D(Basis.from_euler(Vector3(0.0, 0.9, PI * 0.5)), Vector3(-0.22, 0.045, 0.12))
 		gun_node.visible = true
-	# the cartridge box: card with a brass label, the size of a real box of fifty
+	# a card cartridge box with a brass label
 	var box := MeshInstance3D.new()
 	box.name = "AmmoBox"
 	var mesh := BoxMesh.new()
@@ -66,7 +59,7 @@ static func place(parent: Node3D, armory: Ep2ArmoryState, id: String, gun: Strin
 	return drop
 
 
-## The drop Lil Blunt can take from `at` (the drops' parent frame, flat distance), nearest first, or null.
+## The nearest drop within `reach` of `at` (parent frame, flat), or null.
 static func nearest(parent: Node, at: Vector3, reach: float = REACH) -> Ep2WeaponDrop:
 	if parent == null:
 		return null
@@ -83,7 +76,7 @@ static func nearest(parent: Node, at: Vector3, reach: float = REACH) -> Ep2Weapo
 	return best
 
 
-## Takes it into the armory. {} when nothing could be taken; once nothing is left on the ground the drop is gone from the world.
+## Into the armory; {} when nothing was taken. Gone from the world once nothing is left.
 func take(armory: Ep2ArmoryState) -> Dictionary:
 	var got: Dictionary = armory.claim_drop(drop_id) if armory != null else {}
 	if not got.is_empty() and bool(armory.corpses[drop_id]["searched"]):
@@ -92,12 +85,11 @@ func take(armory: Ep2ArmoryState) -> Dictionary:
 	return got
 
 
-## The prompt (no key name: the HUD adds one only where keys are shown; a phone lights its interact button instead).
+## No key name here: the room adds one only where keys are shown.
 func prompt() -> String:
 	return "Take %s" % str(Ep2ArmoryState.NAMES.get(gun_id, "gun"))
 
 
-## The line after taking it, e.g. "Borchardt Pistol taken · 8 rounds" or "+8 Borchardt Pistol rounds".
 static func taken_text(got: Dictionary) -> String:
 	var gun_name: String = str(Ep2ArmoryState.NAMES.get(str(got.get("gun", "")), "gun"))
 	if bool(got.get("new", false)):

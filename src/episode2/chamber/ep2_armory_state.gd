@@ -451,8 +451,7 @@ func claim_corpse(id: String) -> int:
 	return count
 
 
-## A dead gunman's gun and the rounds he carried for it (Ep2WeaponDrop), kept with the searched bodies so it is taken once, saved, and
-## never lost on a timer. False when it has already been taken (or `gun_id` is not a firearm this armory knows).
+## A dead gunman's gun + rounds (Ep2WeaponDrop), kept with the searched bodies. False once taken or for an unknown gun.
 func record_drop(id: String, gun_id: String, rounds: int) -> bool:
 	if not IDS.has(gun_id) or gun_id == BOW or id == "":
 		return false
@@ -462,9 +461,8 @@ func record_drop(id: String, gun_id: String, rounds: int) -> bool:
 	return not bool(corpses[id]["searched"])
 
 
-## Takes a recorded drop: a gun he has not got goes into the armory loaded (acquire) with only the rounds the man carried as its reserve
-## (not the store's starting box); a gun he owns still gives its rounds. Rounds go into that gun's own reserve, capped like the store's;
-## what does not fit stays on the ground. {} when there is nothing to take, else {"gun", "new", "rounds"}.
+## A new gun comes loaded (acquire) with only the dead man's rounds as reserve; an owned gun still takes the rounds. Capped at RESERVE_CAP,
+## the rest stays on the ground. {} when nothing was taken, else {"gun", "new", "rounds"}.
 func claim_drop(id: String) -> Dictionary:
 	if not corpses.has(id) or bool(corpses[id]["searched"]) or not IDS.has(str(corpses[id].get("gun", ""))):
 		return {}

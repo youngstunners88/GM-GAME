@@ -22,11 +22,11 @@ const MIN_RIDE_SPEED := -7.0
 const MAX_RIDE_SPEED := 7.0
 const FOOT_SPEED := 2.9
 const LANE_LIMIT := 2.2
-## A dead bandit's Borchardt and the spare magazine he carried (Ep2WeaponDrop); the lane widens toward a gun lying within this many metres of trail.
+## A dead bandit's drop (Ep2WeaponDrop): his Borchardt + one magazine; the lane widens toward one lying within DROP_DETOUR m of trail.
 const BANDIT_GUN := Ep2ArmoryState.BORCH
 const BANDIT_ROUNDS := 8
 const DROP_DETOUR := 7.0
-## Where a man who fell backwards lets go of his gun, in his own standing frame (right hand, a metre behind his feet).
+## Where a man falling backwards lets go of his gun (his standing frame: right hand, a metre behind his feet).
 const HAND_FALLS_TO := Vector3(-0.45, 0.0, -1.0)
 ## The open ranch ground hands the horse to the trail once he is on the visible road (5.8 m wide: +-2.9, plus the horse) past 65 m...
 const DEPART_CAPTURE_R := 3.6
@@ -48,13 +48,10 @@ const AMBUSH_BEHIND := 14.0
 const RIDER_START_S := 215.0
 const RIDER_END_S := 294.0
 const UNHORSE_SECONDS := 1.4
-## THE LAST METRES ARE ONE MOTION (founder 2026-11-07: "the stage pauses, and then the scene jumps"; it was an 8 s stop at the water,
-## then the cut). Over the last SHORE_RUN metres the horse eases from his riding pace to a walk while he slides off to the right, and
-## the lake room takes the same stride on; nothing waits for a beat.
+## The last metres are one motion (founder 2026-11-07; was an 8 s stop, then a cut): over SHORE_RUN m he eases to a walk and slides off.
 const SHORE_RUN := 7.0
 const DISMOUNT_SIDE := 1.3                     # the lake room expects the horse 1.3 m to his left (LogansLakeChamber._on_setup)
-## The lake's water reads dusty under the desert haze far out and clears as he nears Logan (metres from Logan; the lake room's whole
-## play area is inside CLEAR_NEAR, so it is always clear there and the hand-over frame draws it exactly the same).
+## Water clarity by metres from Logan: dusty far out, clear inside CLEAR_NEAR (the whole lake room), so the hand-over draws it the same.
 const CLEAR_NEAR := 40.0
 const CLEAR_FAR := 240.0
 const LAKE_REVEAL_DISTANCE := 130.0     # founder 2026-11-01: a longer, readable shore approach (was 80 m)
@@ -126,7 +123,7 @@ var _unhorse_events: int = 0
 var _unhorse_roll: float = 0.0
 
 var _bandits_root: Node3D = null
-## What the dead leave (Ep2WeaponDrop): its own root, so a retry (which rebuilds the bandits) never sweeps away a gun still lying there.
+## Drops keep their own root: a retry rebuilds the bandits, never the guns lying there.
 var _drops_root: Node3D = null
 var _bandits: Array = []
 var _bandits_down: int = 0
@@ -521,9 +518,7 @@ func _make_bandit(root: Node3D, height: float, tint: Color) -> Dictionary:
 	return {"folk": folk, "gun": gun, "glint": glint, "accents": accents}
 
 
-## Jack Hammer's men carry the same gun as the stranger in the town draw: since 2026-11-02 that is the Borchardt C93 (the streamed real-size
-## GLB, held where his fist closes on it). The Colt kit / primitive holds its place in a build without the extras. It is this gun that drops
-## when he dies (Ep2WeaponDrop), with the rounds he carried for it.
+## Hammer's men carry the town-draw stranger's gun, the Borchardt C93 since 2026-11-02 (Colt kit stand-in without the extras); it drops when he dies.
 func _arm_bandit(gun: Node3D) -> void:
 	if Ep2Extras.has(Ep2Extras.BORCHARDT_GUN):
 		var real: Node3D = (load(Ep2Extras.BORCHARDT_GUN) as PackedScene).instantiate() as Node3D
@@ -1168,8 +1163,7 @@ var _shore_side: Vector3 = Vector3.ZERO
 var _shore_dismount: float = 0.0
 
 
-## The last metres: his speed carries in and eases to the lake room's walking pace by the water's edge (constant easing, so speed is
-## continuous at both ends), the lane eases onto the road's end, and a mounted rider slides off to the right on the move.
+## Speed eases (constantly) to the lake room's walking pace by the water, the lane onto the road's end; a rider slides off on the move.
 func _begin_shore() -> void:
 	_ending = true
 	_end_t = 0.0
@@ -1375,7 +1369,7 @@ func _drop_bandit(index: int) -> void:
 	var folk: Ep2TownFolk = b["folk"]
 	folk.fall_dead()
 	if not bool(b["rider"]):
-		# shot while crouched behind his rock he still falls on the ground he stood on, never half under it
+		# shot crouched, he still falls on the ground, not half under it
 		(b["root"] as Node3D).position.y = (b["home"] as Vector3).y
 	var body_at: Vector3 = _bandit_world_position(b)
 	if _carrion != null:
@@ -1390,7 +1384,7 @@ func _drop_bandit(index: int) -> void:
 		anim.play("horse_stand", 0.2)
 
 
-## His gun and his spare rounds land in the dirt beside him (a rider's under his horse's shoulder): the gun he held, never a stand-in.
+## The gun he held and his rounds land by his hand (a rider's beside his horse).
 func _drop_gun(index: int, b: Dictionary, body_at: Vector3) -> void:
 	if _drops_root == null:
 		_drops_root = Node3D.new()
@@ -1398,8 +1392,7 @@ func _drop_gun(index: int, b: Dictionary, body_at: Vector3) -> void:
 		_visuals.add_child(_drops_root)
 	var ground: float = 0.0 if bool(b["rider"]) else float((b["home"] as Vector3).y)
 	var folk: Ep2TownFolk = b["folk"]
-	# he falls backwards (Ep2TownFolk.fall_dead): the gun leaves his right hand about a metre behind where his feet were - clear of
-	# the rock he hid behind; a rider lands beside his horse's shoulder (the slide in _tick_bandits)
+	# he falls backwards (fall_dead), away from his rock; a rider slides off beside his horse (_tick_bandits)
 	var feet := Vector3(1.1, 0.0, folk.position.z) if bool(b["rider"]) else Vector3(folk.position.x, 0.0, folk.position.z)
 	var hand: Vector3 = Basis(Vector3.UP, folk.facing) * HAND_FALLS_TO
 	var at: Vector3 = body_at
@@ -1415,7 +1408,7 @@ func _drop_gun(index: int, b: Dictionary, body_at: Vector3) -> void:
 		drop.set_meta("lat", where.y)
 
 
-## Arc length and signed lane offset of a point beside the trail (the nearest route sample).
+## (arc length, signed lane offset) of a point beside the trail.
 func _route_s_lat(p: Vector3) -> Vector2:
 	var best: float = INF
 	var s: float = 0.0
@@ -1429,9 +1422,9 @@ func _route_s_lat(p: Vector3) -> Vector2:
 	return Vector2(s, (p - (sample[0] as Vector3)).dot(Vector3(-cos(yaw), 0.0, sin(yaw))))
 
 
-## The lane he may steer in: the trail's own width, widened on the side of any gun still lying beside this stretch so he can ride over to it.
+## [min, max] lane: the trail's width, widened toward any gun lying beside this stretch.
 func _lane_bounds() -> Array:
-	var bounds: Array = [-LANE_LIMIT, LANE_LIMIT]          # 64-bit floats: a Vector2 would round the edge past LANE_LIMIT
+	var bounds: Array = [-LANE_LIMIT, LANE_LIMIT]          # not a Vector2: 32-bit would round past LANE_LIMIT
 	if _drops_root == null:
 		return bounds
 	for child in _drops_root.get_children():
@@ -1442,7 +1435,7 @@ func _lane_bounds() -> Array:
 	return bounds
 
 
-## Walking or riding over a drop takes it; in reach the prompt shows (a phone lights its interact button).
+## Ride-over takes a drop; in reach the prompt shows (a phone lights INTERACT).
 func _tick_drops() -> void:
 	if _hud != null and not _hud.search_requested.is_connected(start_rig):
 		_hud.search_requested.connect(start_rig)
