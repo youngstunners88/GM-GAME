@@ -66,6 +66,11 @@ func tabs() -> void:
 	woods.get_hud().toggle_armory()
 	woods.get_hud()._panel.select_bud()
 	await grab("tabs-selected")
+	if woods.get_hud()._panel._bud_art == null:
+		push_error("CHILL_BUD_ART_MISSING")
+		get_tree().quit(1)
+		return
+	print("CHILL_BUD_ART ", woods.get_hud()._panel._bud_art.resource_path)
 	var before: int = GameManager.chill_buds
 	var ok: bool = woods.use_chill_bud()
 	print("CHILL_BUD_HEAL success=", ok, " health=", woods.get_health(), " spent=", before - GameManager.chill_buds)
