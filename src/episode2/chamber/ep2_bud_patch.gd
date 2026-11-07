@@ -8,16 +8,15 @@ extends RefCounted
 
 const POS := Vector3(-1.2, 0.0, 1210.6)         # outside the paddock's east fence (x = -4), 10 m south of the lake road
 const REACH := 2.6                               # E works within this many metres of the bed's centre
-const BED := Vector2(2.6, 1.7)
-const LEAF_GLOW := 0.1
+const BED := Vector2(2.6, 2.1)
+const LEAF_GLOW := 0.55
 const BUSH_RANGE := 110.0                        # the bed's plants stop drawing here (the trees stand on the horizon, so they never do)
 ## The founder's plants (Ep2Extras, streamed): the bed in front, the purple trees behind the back rail. Metres from the bed's centre.
 const PLANTS: Array = [
-	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(-0.55, 0.1, -0.1), "yaw": 0.4, "scale": 1.0, "tree": false},
-	{"path": Ep2Extras.PATCH_FROST, "at": Vector3(0.72, 0.1, -0.32), "yaw": 1.1, "scale": 1.0, "tree": false},
-	{"path": Ep2Extras.PATCH_FROST, "at": Vector3(0.78, 0.1, 0.42), "yaw": 3.6, "scale": 0.82, "tree": false},
-	{"path": Ep2Extras.PATCH_TREE, "at": Vector3(0.7, 0.0, -2.7), "yaw": 0.0, "scale": 1.0, "tree": true},
-	{"path": Ep2Extras.PATCH_TREE, "at": Vector3(-1.5, 0.0, -3.3), "yaw": 2.2, "scale": 0.82, "tree": true},
+	# The accepted source is already a grove of three rooted plants: place it once, leaving each root visible in soil.
+	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(0.0, 0.015, 0.0), "yaw": 0.12, "scale": 1.0, "tree": false},
+	{"path": Ep2Extras.PATCH_TREE, "at": Vector3(0.8, -0.025, -4.0), "yaw": 0.0, "scale": 1.0, "tree": true},
+	{"path": Ep2Extras.PATCH_TREE, "at": Vector3(-1.6, -0.025, -4.7), "yaw": 2.2, "scale": 0.82, "tree": true},
 ]
 ## The patch's stock (single source for the panel and the room that debits it). Prices are feel-values in purse coins (any tender).
 const STOCK: Array = [
@@ -44,18 +43,32 @@ static func build(parent: Node3D) -> Node3D:
 	root.position = POS
 	parent.add_child(root)
 	var soil := StandardMaterial3D.new()
-	soil.albedo_color = Color(0.24, 0.16, 0.09)
+	soil.albedo_color = Color.WHITE
 	soil.roughness = 1.0
-	_box(root, "TilledBed", Vector3(0, 0.06, 0), Vector3(BED.x, 0.12, BED.y), soil)
+	var noise := FastNoiseLite.new()
+	noise.seed = 417
+	noise.frequency = 0.14
+	noise.fractal_octaves = 4
+	var dirt := NoiseTexture2D.new()
+	dirt.width = 256
+	dirt.height = 256
+	dirt.seamless = true
+	dirt.noise = noise
+	dirt.color_ramp = Gradient.new()
+	dirt.color_ramp.colors = PackedColorArray([Color("21160f"), Color("69503a")])
+	soil.albedo_texture = dirt
+	soil.uv1_scale = Vector3(3, 3, 1)
+	var mound := MeshInstance3D.new()
+	mound.name = "TilledBed"
+	mound.mesh = _soil_mound()
+	mound.material_override = soil
+	root.add_child(mound)
 	var wood := StandardMaterial3D.new()
 	wood.albedo_color = Color(0.45, 0.30, 0.16)
 	wood.roughness = 0.9
-	# a knee-high rail fence on three sides, open toward the road so the bed reads as a place to walk up to
-	for p in [Vector2(-1.45, -1.0), Vector2(1.45, -1.0), Vector2(-1.45, 1.0), Vector2(1.45, 1.0)]:
-		_box(root, "PatchPost", Vector3(p.x, 0.32, p.y), Vector3(0.09, 0.64, 0.09), wood)
-	_box(root, "PatchRail", Vector3(0, 0.5, -1.0), Vector3(2.98, 0.06, 0.06), wood)
-	_box(root, "PatchRail", Vector3(-1.45, 0.5, 0), Vector3(0.06, 0.06, 2.0), wood)
-	_box(root, "PatchRail", Vector3(1.45, 0.5, 0), Vector3(0.06, 0.06, 2.0), wood)
+	# Low boundary stakes leave the stems visible in earth; no rail crosses a flower crown.
+	for p in [Vector2(-1.52, -1.20), Vector2(1.52, -1.20), Vector2(-1.52, 1.20), Vector2(1.52, 1.20)]:
+		_box(root, "PatchPost", Vector3(p.x, 0.14, p.y), Vector3(0.07, 0.28, 0.07), wood)
 	var leaf_mat := StandardMaterial3D.new()
 	leaf_mat.albedo_color = Color(0.30, 0.58, 0.22)
 	leaf_mat.roughness = 0.75
@@ -90,6 +103,26 @@ static func build(parent: Node3D) -> Node3D:
 	return root
 
 
+## An uneven earth surface meets the terrain below zero; there is no vertical planter/slab edge.
+static func _soil_mound() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for ring in 8:
+		for slice in 32:
+			var corners: Array[Vector3] = []
+			for point in [Vector2(ring, slice), Vector2(ring, slice + 1), Vector2(ring + 1, slice + 1), Vector2(ring + 1, slice)]:
+				var r: float = point.x / 8.0
+				var angle: float = point.y * TAU / 32.0
+				var rim: float = 1.0 + 0.035 * sin(angle * 5.0) + 0.025 * cos(angle * 9.0)
+				corners.append(Vector3(cos(angle) * r * 1.44 * rim, 0.12 * pow(maxf(0.0, 1.0 - r * r), 1.5) - 0.04, sin(angle) * r * 1.16 * rim))
+			for index in [0, 1, 2, 0, 2, 3]:
+				var p: Vector3 = corners[index]
+				st.set_uv(Vector2(p.x, p.z))
+				st.add_vertex(p)
+	st.generate_normals()
+	return st.commit()
+
+
 ## Place the next of the founder's plants once the streamed pack has it: one load per call, so a mounting pack never costs one long frame. The
 ## stand-ins go when the last plant is in. True when the bed is finished. Without the pack it stays false and the stand-ins stay.
 static func upgrade_step(root: Node3D) -> bool:
@@ -122,14 +155,21 @@ static func upgrade_step(root: Node3D) -> bool:
 ## Thin leaves are seen from both sides; only the trees throw a shadow, and only the bed has a draw distance.
 static func _dress_plant(mi: MeshInstance3D, tree: bool) -> void:
 	for s in mi.mesh.get_surface_count():
-		var m: BaseMaterial3D = mi.mesh.surface_get_material(s) as BaseMaterial3D
-		if m != null:
+		var source: BaseMaterial3D = mi.mesh.surface_get_material(s) as BaseMaterial3D
+		if source != null:
+			# Instance overrides: the patch must never mutate the shared shop/Tabs resource.
+			var m: BaseMaterial3D = source.duplicate() as BaseMaterial3D
 			m.cull_mode = BaseMaterial3D.CULL_DISABLED
-			# backlit by the town's low warm sun the purple goes brown: a little of the leaf's own colour keeps it purple from every side
-			m.emission_enabled = true
-			m.emission_texture = m.albedo_texture
-			m.emission = Color.WHITE
-			m.emission_energy_multiplier = LEAF_GLOW
+			m.metallic = 0.0
+			m.roughness = maxf(m.roughness, 0.78)
+			# Keep green fans and lavender flowers readable in the ranch's low amber sun.
+			if not "trunk" in m.resource_name.to_lower() and not "stem" in m.resource_name.to_lower():
+				m.emission_enabled = true
+				m.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
+				m.emission_texture = m.albedo_texture
+				m.emission = m.albedo_color
+				m.emission_energy_multiplier = LEAF_GLOW
+			mi.set_surface_override_material(s, m)
 	if tree:
 		return
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

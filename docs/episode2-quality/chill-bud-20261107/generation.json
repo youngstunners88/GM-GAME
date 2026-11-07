@@ -1,0 +1,28 @@
+{
+  "task_id": "5fe79f47-5c7b-4753-8976-c390edbef6b8",
+  "type": "image_to_model",
+  "status": "success",
+  "created_at": "2026-11-07T08:14:47.159668Z",
+  "completed_at": "2026-11-07T08:17:39.608338Z",
+  "credits_consumed": 30,
+  "input": {
+    "pbr": true,
+    "file": {
+      "type": "jpeg",
+      "object": {
+        "key": "tcli_18fab9da385a4910b4ee16417e16aaca/20261107/5fe79f47-5c7b-4753-8976-c390edbef6b8/image.jpeg",
+        "bucket": "tripo-data"
+      }
+    },
+    "texture": true,
+    "export_uv": true,
+    "face_limit": 15000,
+    "model_version": "v3.1-20260211",
+    "geometry_quality": "standard",
+    "enable_image_autofix": false
+  },
+  "source_image": "https://drive.google.com/file/d/1mNQOYJcOCL2TYfsKn2qeXph6oFg-SIde/view",
+  "cli": "tripo-cli 0.7.2",
+  "remaining_balance": 5,
+  "runtime_preparation": "tools/ep2_blender/prepare_purple_haze.py; 19 coplanar faces removed; UVs preserved; 1024px PBR maps; standard GLB"
+}

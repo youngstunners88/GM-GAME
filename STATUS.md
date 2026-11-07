@@ -1,5 +1,11 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-07 — Dude's purple-haze plants and actual healing bud — local release validation in progress.**
+- New rooted cannabis grove and taller purple growth use the supplied original reference. Textured earth replaces the wood-like slab; rails no longer cross the flowers. Instance-local materials preserve texture color instead of adding white emission.
+- Tabs shows a render of your actual `Dude Buds.glb` while selecting/restoring health. The art streams with the plant assets; buying, stock, one-bud/full-three-heart healing and controls stay the same.
+- One Tripo generation: **30 credits**, **5 remaining**. Patch triangles: **82,867 → 40,467**. Provenance and verification: `docs/episode2-quality/chill-bud-20261107/REPORT.md`. Not yet claimed deployed or founder-verified.
+
+
 **2026-11-07 — Weapon tabs only show what Lil Blunt has, pickaxe tab, Rich & Utah's counter order, bow forearm, shorter Sharps scope, Rich opens the glass case — pushed, NOT founder-verified.**
 - **Tabs (the mystery rule):** Tabs and the tab strip at Rich's counter show only the weapons he has. On a new save that is the Winchester and his pickaxe, and no other gun is named anywhere. Buying a gun brings in its tab and card. When the Sheriff takes the guns their tabs leave, and they come back when he buys them back or gets them returned.
 - **Pickaxe:** a new PICKAXE tab using your 500 KB Verdant War Pick, shown in his glove. It counts as his from the start: it is his own miner's tool, nobody sells it, and the Sheriff hands it back with "Take your pick".
