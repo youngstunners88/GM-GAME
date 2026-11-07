@@ -54,6 +54,10 @@ bm.to_mesh(o.data);bm.free();o.data.update()
 original=o.data.copy()
 for name,height in [('purple_frost',1.35),('purple_bloom_grove',1.55),('purple_bloom_tree',3.7)]:
  o.data=original.copy();o.data.transform(Matrix.Scale(height/1.35,4));o.name=name
+ if name=='purple_frost':
+  # The shop's existing presence gate caps this showcase at 12,500 triangles.
+  mod=o.modifiers.new('Showcase budget','DECIMATE');mod.ratio=.88;mod.use_collapse_triangulate=True
+  bpy.ops.object.modifier_apply(modifier=mod.name)
  if name=='purple_bloom_tree':
   # Keep the taller grove outside the paddock rails, on the original tree footprint.
   o.data.transform(Matrix.Diagonal((.58,.58,1.0,1.0)))
