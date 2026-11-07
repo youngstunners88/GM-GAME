@@ -141,7 +141,10 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "river_cover"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _build_land, _build_river, _build_ridge, _build_marker, _build_dock, _build_crate, _build_utah]
+## Each step stays short (ep2-no-blackouts: a step over ~100 ms is a visible hitch in the room he is walking through), so the ridge's
+## overlooks and dressing are steps of their own.
+func _build_steps() -> Array: return [_light, _build_land, _build_river, _build_ridge, _build_overlooks, _dress_ridge, _build_marker, _build_dock,
+	_build_crate, _build_utah]
 
 
 # --- the set ------------------------------------------------------------------------------------------------------------------
@@ -526,8 +529,6 @@ func _build_ridge() -> void:
 			m.cull_mode = BaseMaterial3D.CULL_DISABLED
 			m.metallic_specular = 0.08
 		node.set_surface_override_material(i, m)
-	_build_overlooks()
-	_dress_ridge()
 
 
 ## The scanned grass-and-rock ground in the lake's green (left in its own colour it reads as straw on a big sunlit slope).
@@ -952,6 +953,14 @@ func adopt_lake(lake: Node3D) -> void:
 		(ground.material_override as ShaderMaterial).set_shader_parameter("clip_z", LAKE_CLIP_Z)
 	_trim_lake_flora(visuals)
 	_close_lake_hills()
+	# a lake line still on screen goes on over the climb for the rest of its time: the walk never waited for it (founder 2026-11-07)
+	var box: Control = lake.get("_dialogue_panel")
+	var left: float = float(lake.get("_talk_t"))
+	if box != null and box.visible and left > 0.0 and _hud_layer != null:
+		box.reparent(_hud_layer, false)
+		get_tree().create_timer(left, false).timeout.connect(box.queue_free)
+		lake.set("_dialogue_panel", null)
+		lake.call("_build_dialogue")                        # the lake keeps a box of its own for a later visit
 	if _valley != null:
 		_valley.position.z = LAKE_OFFSET.z + LAKE_CLIP_Z + 1200.0 - 2.0
 
@@ -1085,6 +1094,9 @@ func _on_setup() -> void:
 	_player_pos = (handoff["ridge_from"] as Vector3) + LAKE_OFFSET if handoff.has("ridge_from") else SPAWN
 	_player_pos = _collide(_player_pos)
 	_ground_y = (ridge_nearest(_player_pos)[0] as Vector3).y
+	# the eye starts where the lake left it (the trail's few cm of rise, or a horse's height) and settles while he walks: no pop
+	var from_eye: float = float(handoff.get("eye", FPS_EYE_HEIGHT)) + ((handoff["ridge_from"] as Vector3).y + LAKE_OFFSET.y - _ground_y if handoff.has("ridge_from") else 0.0)
+	eye_height = clampf(from_eye, FPS_EYE_HEIGHT - 0.8, FPS_EYE_HEIGHT + 0.8)
 	_player_pos.y = _ground_y
 	_apply_handoff_gaze(0.0, -0.02, PI)                   # yaw 0 = +z = up the ridge; both rooms share the convention, so the view is unbroken
 	_health = 3
@@ -1140,6 +1152,7 @@ func _heal_full() -> bool:
 
 func _tick(delta: float) -> void:
 	_invuln = maxf(0.0, _invuln - delta)
+	eye_height = move_toward(eye_height, FPS_EYE_HEIGHT, delta * 0.8)
 	var near: Array = ridge_nearest(_player_pos)
 	_ground_y = (near[0] as Vector3).y
 	match _beat:

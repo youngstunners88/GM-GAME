@@ -415,6 +415,10 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_personal_armory_test.tscn 2>&1 | tee personal-armory-tests.log
           grep -q 'EP2_PERSONAL_ARMORY: ALL PASS' personal-armory-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' personal-armory-tests.log; then exit 1; fi
+          # A dead gunman's gun + its own rounds lie where he fell, taken once into the one armory (Ep2WeaponDrop).
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_weapon_drops_test.tscn 2>&1 | tee weapon-drops-tests.log
+          grep -q 'EP2_WEAPON_DROPS: ALL PASS' weapon-drops-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' weapon-drops-tests.log; then exit 1; fi
           # Rich & Utah's unlock chain and weapon tabs (founder 2026-11-03): Shipment -> Sharps -> the rest, saved; the bud in Tabs.
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_armory_chain_test.tscn 2>&1 | tee armory-chain-tests.log
           grep -q 'EP2_ARMORY_CHAIN: ALL PASS' armory-chain-tests.log
@@ -454,6 +458,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_river_cover_test.tscn > river-cover-tests.log 2>&1
           grep -q 'RIVER_COVER: ALL PASS' river-cover-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' river-cover-tests.log; then exit 1; fi
+          # Cargo check -> hill -> ridge in one motion (founder 2026-11-07): never held, no camera jump, no ridge built in view
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_cargo_hill_test.tscn > cargo-hill-tests.log 2>&1
+          grep -q 'CARGO_HILL: ALL PASS' cargo-hill-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' cargo-hill-tests.log; then exit 1; fi
           # The world obeys common sense (founder 2026-11-05): nobody walks through the praying Minister, Inferno asks at the body then
           # goes for the whiskey, the saloon batwings swing for anyone going through, a shot raft man goes into the river, rafts take hits.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_common_sense_test.tscn > common-sense-tests.log 2>&1
@@ -531,6 +539,10 @@ jobs:
           # The ride to Logan's Lake (fix pack 2026-10-27): Dude's horse, telegraphed bandits, UNHORSE, retry, the prebuilt lake hand-off.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_lake_trail_test.tscn 2>&1 | tee lake-trail-tests.log
           grep -q 'EP2_LAKE_TRAIL: ALL PASS' lake-trail-tests.log
+          # Desert -> Logan's Lake in one motion (founder 2026-11-07): no shore pause, a one-frame hand-over, water clearing by distance to Logan.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_seamless_test.tscn > lake-seamless-tests.log 2>&1
+          if grep -E '\[FAIL\]' lake-seamless-tests.log; then exit 1; fi
+          grep -q 'EP2_LAKE_SEAMLESS: 13 checks, 0 failed' lake-seamless-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
           grep -q 'EP2_WORLD_ROUTES: 29 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi

@@ -71,8 +71,11 @@ func _ready() -> void:
 	check("overlook stands above the water", c.get_player_position().y > 5.5)
 	check("water remains outside walkable bounds", c._collide(Vector3(25, 0, 20)).x <= -4)
 	check("arrival/overview cannot walk off the world", c._collide(Vector3(-200, 0, 500)).z <= 64)
-	check("cannot finish before overlook closing dialogue", not c.start_rig())
-	advance(c, 8.1)
+	# founder 2026-11-07 ("no pause climbing the hill from the cargo check"): finishing never waits for the overlook line to end
+	check("the ridge is being built behind the lake since Logan's first line", session._pb_id == "river_cover")
+	check("the overlook line is still running when he may walk on", c._talk_t > 0.0)
+	session._drive_prebuild(1.0e9)                 # the test is the frame clock: the background build, done
+	c._hud.search_requested.emit()
 	c._hud.search_requested.emit()
 	check("finish touch action resolves the lake exactly once (the session carries on to the ridge)", completions.is_empty() and results.size() == 1)
 	# founder lock 2026-11-04: the lake hands on to the day-88 ridge (never a vault, never the runner)

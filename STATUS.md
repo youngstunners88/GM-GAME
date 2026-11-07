@@ -1,5 +1,11 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-07 — Episode 2: pick up enemy guns, ride straight into Logan's Lake, no stop on the hill — pushed, deploying; NOT founder-verified, no phone test.**
+- **Enemy guns:** shoot a trail bandit and the gun he held (the stranger's Borchardt) lies by his hand with a box of its own rounds. Ride over it or press interact (a prompt shows in reach; on a phone the interact button lights). It goes into the armory; a Borchardt you already own still gives its 8 rounds; capped like the store. Nothing disappears on a timer. You can now steer off the trail toward a gun lying beside it. A man shot on a raft goes into the river with his gun. A bandit shot while crouched no longer lies half under the ground.
+- **Desert -> lake:** the 8-second stop at the end of the ride is gone. He slows to walking pace, slides off the horse while moving and is at the water in one motion. The water clears gradually as he nears Logan (dusty beyond 240 m, clear inside 40 m), and Logan is visible on the way in. One ~62 ms frame remains at the hand-over (it was there before this change).
+- **Cargo check -> hill:** the 6.5-second hold waiting for Logan's line is gone; he walks on while it plays. The ridge is built while Logan talks, so the climb has no 270-485 ms hitches, and the 1 m sideways jump at the hand-over is gone.
+- Tests: EP2_WEAPON_DROPS, ep2_lake_seamless, ep2_cargo_hill (all in CI). Not checked: phone, a real GPU capture of the hill, the lake first appearing ~500 m out (two ~750 ms frames, measured).
+
 **2026-11-06 — Day-88 ridge: the Shipment no longer jumps back after a won gate; reload fixed — pushed, NOT founder-verified.**
 - Falling on the way down to the next ledge used to send the crate back to the gate's start and replay the wave. Now the crate keeps waiting in the eddy and you're back on that overlook with full hearts.
 - A real tip or death still sends you back to the current gate only. There is now a warning ("THE SHIPMENT IS GOING OVER") halfway to a tip. Hammer's rafts hook the crate from behind, which made the tip feel random.

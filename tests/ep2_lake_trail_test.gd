@@ -216,10 +216,11 @@ func _test_mounted_arrival_and_prebuild() -> void:
 	while not c._ending and seconds < 140.0:
 		c.step(1.0 / 30.0)
 		seconds += 1.0 / 30.0
-	_step(c, c.SHORE_SECONDS+0.2)
+	_step(c, c._shore_time + 0.2)
 	_check("the shore waits for the already-requested lake instead of building at the cut", c._ending and results.is_empty()
 		and c.is_waiting_for_handoff() and _prebuild.size() == 1)
-	_check("a living horse lowers its head to drink (horse_graze)", c.get_horse_clip() == "horse_graze" and c.get_horse_hp() == 3)
+	_check("a living horse walks on to the water as he slides off on the move (horse_walk, on foot)", c.get_horse_clip() == "horse_walk"
+		and c.get_horse_hp() == 3 and absf(c.eye_height - Ep2Interlude.FPS_EYE_HEIGHT) < 0.001)
 	_lake_ready = true
 	_step(c, 0.2)
 	_check("arrival resolves to logans_lake mounted, with time and bandit count", results.size() == 1
@@ -267,10 +268,22 @@ func _ready() -> void:
 	shore._begin_shore()
 	shore._tick_shore(.5)
 	_check("an unhorsed arrival keeps walking eye height throughout the shore beat",absf(shore.eye_height-Ep2Interlude.FPS_EYE_HEIGHT)<.001)
+	# founder 2026-11-07 "no pause, no sudden swap": the last metres are one motion - his speed carries in and eases to a walk, he slides
+	# off on the move, and the hand-over comes the moment he reaches the water (it was an 8 s stop at the shore before the cut)
 	shore._mounted=true
+	shore._ending=false
+	shore._place_at_distance(shore._route_total-shore.SHORE_RUN)
+	shore._speed=shore.MAX_RIDE_SPEED
 	shore._begin_shore()
-	shore._tick_shore(3.0)
-	_check("the horse drinks before a short deliberate dismount",absf(shore.eye_height-shore.MOUNTED_EYE)<.001 and not shore.is_resolved())
+	var shore_from: float=shore.get_route_distance()
+	shore._tick_shore(shore._shore_time*.5)
+	_check("halfway through the last metres he is still moving and part-way out of the saddle",shore.get_route_distance()>shore_from+1.0
+		and shore.eye_height<shore.MOUNTED_EYE-.05 and shore.eye_height>Ep2Interlude.FPS_EYE_HEIGHT+.05 and not shore.is_resolved(),"eye %.2f"%shore.eye_height)
+	shore._tick_shore(shore._shore_time*.5+.02)
+	shore._update_horse(0.0)
+	_check("at the water he is on foot beside the horse and the lake takes over in that frame (no wait at the shore)",shore.is_resolved()
+		and absf(shore.eye_height-Ep2Interlude.FPS_EYE_HEIGHT)<.001 and absf(shore.get_route_speed()-3.4)<.05
+		and absf(Vector2(shore._player_pos.x-shore.get_horse_node().position.x,shore._player_pos.z-shore.get_horse_node().position.z).length()-shore.DISMOUNT_SIDE)<.05)
 	shore.free()
 	if _failures == 0:
 		print("EP2_LAKE_TRAIL: ALL PASS")

@@ -124,8 +124,9 @@ func tick(session: Node, delta: float) -> void:
   if c._move_input.length()>0.05: horse.rotation.y=c._look_yaw
   c.eye_height=move_toward(c.eye_height,2.18,delta*1.5);c.walk_speed=7.0
  if cooldown>0:return
- if id=="lake_trail" and c._ending and rooms.has("logans_lake"):
-  travel(session,"logans_lake",LogansLakeChamber.SPAWN)
+ # the shore run carries him to the water's edge first; he arrives where he is, not snapped to the lake's spawn
+ if id=="lake_trail" and c._ending and c._end_t>=c._shore_time and rooms.has("logans_lake"):
+  travel(session,"logans_lake",c.lake_transform().affine_inverse()*c.get_player_position())
   return
  if not c.has_player_control() or c._move_input.length()<0.05:return
  if id=="logans_lake" and p.z<LogansLakeChamber.SPAWN.z-0.7:

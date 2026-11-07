@@ -341,6 +341,8 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	# The handoff must render the new eye pose immediately, before its first physics tick.
 	_update_camera(0.0)
 	_sync_visuals()
+	if handoff_seamless:
+		_tick_viewmodel(0.0)                        # and the held gun and its ammo count, not the build's defaults (a 0 / 0 flash)
 	beat_changed.emit(_beat)
 
 

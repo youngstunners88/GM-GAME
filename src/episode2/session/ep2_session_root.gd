@@ -291,7 +291,15 @@ func _enter_chamber_chained(segment: int) -> void:
 		if old.has_method("portal_detach"):old.portal_detach()
 		_persist_town()
 		if old.get_parent() == self and not adopt_town:
-			world_routes.park(self,old)
+			if seamless and old is LakeTrailChamber and c is LogansLakeChamber:
+				# Ridden straight into the lake (founder 2026-11-07 "no pause, no sudden swap"): the trail stops drawing in this frame and
+				# is put away in the next, so the hand-over frame carries only the lake's own start.
+				old.hide()
+				if old._hud_layer != null: old._hud_layer.hide()     # its HUD is a canvas layer: hiding the room does not reach it
+				old.process_mode = Node.PROCESS_MODE_DISABLED
+				get_tree().process_frame.connect(_park_next_frame.bind(old), CONNECT_ONE_SHOT)
+			else:
+				world_routes.park(self,old)
 			# Isolated viewport retains the visited world without leaking its camera, sky or lights.
 	_active = c
 	_wire_chamber(c)
@@ -486,6 +494,14 @@ func _on_runner_archer_down(_archer_id: String) -> void:
 
 func _on_runner_shovel_bear_down(_obstacle_index: int) -> void:
 	GameManager.tally_bear("shovel")
+
+## The second half of a ride-in hand-over (see `_enter_chamber_chained`): the room he left is kept as it was, one frame later.
+func _park_next_frame(old: Node) -> void:
+	if is_instance_valid(old) and old.get_parent() == self and old != _active:
+		old.show()
+		if old._hud_layer != null: old._hud_layer.show()
+		world_routes.park(self, old)
+
 
 func _on_chamber_cleared(result: Dictionary) -> void:
 	armory.active_gun().cancel_reload()

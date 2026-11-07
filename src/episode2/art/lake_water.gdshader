@@ -3,6 +3,8 @@ render_mode unshaded, cull_back, depth_draw_opaque;
 // Calm lake water for Compatibility: no screen-space reflection dependency.
 // Reflected silhouettes use actual shoreline tree positions uploaded by the
 // landscape builder. Fine normals replace the old broad white stripe pattern.
+// Every pattern works in the LAKE'S OWN frame (the mesh's model space): the same water drawn on the trail's horizon (a copy under the
+// lake's transform) or behind the ridge reads exactly as it does at the shore, so nothing changes in the frame the rooms hand over.
 uniform vec3 sun_direction=vec3(.45,.6,.4);
 uniform sampler2D branch_tex : source_color, filter_linear_mipmap, repeat_disable;
 uniform vec4 trees[16]; // world x,z,top height, crown radius
@@ -10,8 +12,12 @@ uniform int tree_count=0;
 uniform bool boat_present=false;
 uniform mat4 boat_inverse;
 uniform float boat_half_width[18];
+// Founder 2026-11-07: as Lil Blunt rides in, the desert-dusty water clears gradually by his distance to Logan (set by the trail; 1 = clear).
+uniform float clarity : hint_range(0.0, 1.0) = 1.0;
+uniform vec3 dust_color : source_color = vec3(.52,.45,.34);
 varying vec3 wp;
-void vertex(){wp=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;}
+varying vec3 eye_local;
+void vertex(){wp=VERTEX;eye_local=(inverse(MODEL_MATRIX)*vec4((INV_VIEW_MATRIX*vec4(0,0,0,1)).xyz,1.0)).xyz;}
 float rim(float a){return 1.0+.038*sin(a*3.0+.4)+.020*sin(a*7.0-.6);}
 void fragment(){
  if(boat_present){
@@ -27,7 +33,7 @@ void fragment(){
  float sx=cos(p.x*.85+p.y*.22+t)*.022+cos(p.x*2.8-p.y*.65-t*1.8)*.007;
  float sz=cos(p.y*1.1-p.x*.27-t*.8)*.018+sin(p.y*3.7+p.x*.6+t*1.5)*.006;
  vec3 n=normalize(vec3(-sx,1.0,-sz));
- vec3 eye=(INV_VIEW_MATRIX*vec4(0,0,0,1)).xyz;vec3 v=normalize(eye-wp);vec3 r=reflect(-v,n);
+ vec3 v=normalize(eye_local-wp);vec3 r=reflect(-v,n);
  float fres=.035+.88*pow(1.0-clamp(dot(n,v),0.0,1.0),4.5);
  vec3 sky=mix(vec3(.32,.43,.43),vec3(.085,.19,.25),clamp(r.y*.85,0.0,1.0));
  float denom=max(.001,dot(r.xz,r.xz));
@@ -46,5 +52,8 @@ void fragment(){
  vec3 col=mix(depth,sky,clamp(fres,.0,.88));
  float shine=pow(max(0.0,dot(r,normalize(sun_direction))),420.0);
  col+=vec3(.78,.66,.43)*shine*.22;
+ // far off the water is a dull, dusty sheet under the desert haze; it clears to the dark still water as he nears Logan
+ float dull=1.0-clarity;
+ col=mix(col,mix(dust_color,col,.35),dull*.85);
  ALBEDO=col;
 }
