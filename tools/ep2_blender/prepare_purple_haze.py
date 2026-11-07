@@ -54,5 +54,8 @@ bm.to_mesh(o.data);bm.free();o.data.update()
 original=o.data.copy()
 for name,height in [('purple_frost',1.35),('purple_bloom_grove',1.55),('purple_bloom_tree',3.7)]:
  o.data=original.copy();o.data.transform(Matrix.Scale(height/1.35,4));o.name=name
+ if name=='purple_bloom_tree':
+  # Keep the taller grove outside the paddock rails, on the original tree footprint.
+  o.data.transform(Matrix.Diagonal((.58,.58,1.0,1.0)))
  bpy.ops.export_scene.gltf(filepath=os.path.join(out,name+'.glb'),export_format='GLB',use_selection=True,export_animations=False,export_image_format='JPEG',export_jpeg_quality=91)
  print('HAZE_ASSET',name,'tris',sum(len(p.vertices)-2 for p in o.data.polygons),'bounds',list(o.dimensions),flush=True)
