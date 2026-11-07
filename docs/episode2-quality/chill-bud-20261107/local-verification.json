@@ -1,11 +1,11 @@
 {
-  "runtime_source": "0b92f94c",
+  "runtime_source": "628ec107",
   "clean_clone_base": "77ccf9d4",
   "cold_reimported_revision": [
     "purple_frost.glb"
   ],
   "packs": {
-    "index.pck": 199204672,
+    "index.pck": 199205504,
     "ep2_extras.pck": 194574016
   },
   "armory_chain": "ALL PASS",
@@ -66,5 +66,7 @@
     "scriptErrors": []
   },
   "full_native_suite": "completed; only initial Frost triangle-budget failure; affected armory-chain suite rerun passes after reduction",
-  "physical_phone": false
+  "physical_phone": false,
+  "previous_runtime_source": "0b92f94c",
+  "layout_recheck": "short screens use a 64px selected-bud preview; real healing test and actual-art captures pass"
 }

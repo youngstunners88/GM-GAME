@@ -26,10 +26,11 @@ Local source and the corrected Frost were validated on the clean-clone import/ex
 
 - The full native CI gate block completed; its only initial failure was Frost at 13,489 triangles exceeding the existing 12,500 gate. The corrected 11,864-triangle Frost passes the rerun of the entire armory-chain suite. Other full-suite results are retained, not relabeled as a clean initial run.
 - Final healing transaction test: **14 checks / 0 failures**. Actual woods-host capture: **1 heart → 3**, exactly **one bud consumed**, panel stays paused. Capture asserts the actual streamed PNG is loaded.
-- Final non-threaded web export: **0 script/parse errors**. Main **199,204,672 B** (24,768 B under gate); extras **194,574,016 B**, both under 190 MiB. Named and tracked extras presence gate passes, including the bud PNG. Texture probe: **71 models / 0 excluded-but-used textures**.
+- Final non-threaded web export: **0 script/parse errors**. Main **199,205,504 B** (23,936 B under gate); extras **194,574,016 B**, both under 190 MiB. Named and tracked extras presence gate passes, including the bud PNG. Texture probe: **71 models / 0 excluded-but-used textures**.
 - Local Chromium WebGL: build `dev-local`, extras HTTP 200/ready, no script errors, production harness disabled, real keyboard input rejects an invalid access code. No unlock shortcut used.
 - Founder front-page lock: **5 files unchanged**. Green-VFX check passes. Staged security sentinel: no high-severity blockers.
-- Public deployment verification: pending.
+- A final short-screen review caught the new bud caption overlapping the purse. The preview now uses 64px on short screens; the 14-check healing test and actual-art captures pass again. The superseded 6f9cfcc deployment was cancelled before upload.
+- Public deployment verification: pending for the replacement source.
 - Not tested on a physical phone; not founder-verified.
 
 ## Player-view evidence
