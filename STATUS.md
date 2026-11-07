@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-07 — Weapon tabs only show what Lil Blunt has, pickaxe tab, Rich & Utah's counter order, bow forearm, shorter Sharps scope, Rich opens the glass case — pushed, NOT founder-verified.**
+**2026-11-07 — Weapon tabs only show what Lil Blunt has, pickaxe tab, Rich & Utah's counter order, bow forearm, shorter Sharps scope, Rich opens the glass case — LIVE on itch, build `2026-11-07-063667b` (public BUILD and streamed extras verified, CI run 42352426412); NOT founder-verified, not tried on a real phone.**
 - **Tabs (the mystery rule):** Tabs and the tab strip at Rich's counter show only the weapons he has. On a new save that is the Winchester and his pickaxe, and no other gun is named anywhere. Buying a gun brings in its tab and card. When the Sheriff takes the guns their tabs leave, and they come back when he buys them back or gets them returned.
 - **Pickaxe:** a new PICKAXE tab using your 500 KB Verdant War Pick, shown in his glove. It counts as his from the start: it is his own miner's tool, nobody sells it, and the Sheriff hands it back with "Take your pick".
 - **Counter order:** THE SHIPMENT, then the BUFFALO GUN, then SHARPS CARTRIDGES. After that, each gun sits over its ammo in the order the story gives them to him: Winchester, Remington, bow, Borchardt, then shotgun, Drum SMG and Golden Thompson. No ids changed, and the Shipment → Sharps lock still holds.
