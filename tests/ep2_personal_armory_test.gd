@@ -50,8 +50,9 @@ func _ready() -> void:
 	for item in Ep2ArmoryState.SHOP:
 		ids.append(str(item.get("id", "")))
 	_check("the catalogue is well formed and single-sourced (id / name / note / price / rounds)",
-		ids == ["river_gear", Ep2ArmoryState.REM, "revolver_ammo", Ep2ArmoryState.BOW, "arrows", Ep2ArmoryState.WIN, "rifle_ammo",
-			Ep2ArmoryState.BORCH, "borchardt_ammo", Ep2ArmoryState.SHOT, "shotgun_ammo", "sniper", "sniper_ammo",
+		# founder 2026-11-07: the Shipment, the Sharps and its box, then each gun over its ammo in story order (tests/ep2_weapons_test)
+		ids == ["river_gear", "sniper", "sniper_ammo", Ep2ArmoryState.WIN, "rifle_ammo", Ep2ArmoryState.REM, "revolver_ammo",
+			Ep2ArmoryState.BOW, "arrows", Ep2ArmoryState.BORCH, "borchardt_ammo", Ep2ArmoryState.SHOT, "shotgun_ammo",
 			Ep2ArmoryState.MP18, "mp18_ammo", Ep2ArmoryState.TOMMY, "tommy_ammo"]
 		and int(Ep2ArmoryState.shop_item("sniper").get("price", 0)) > 0
 		and int(Ep2ArmoryState.shop_item("rifle_ammo").get("rounds", 0)) == 24
@@ -273,10 +274,12 @@ func _ready() -> void:
 	await get_tree().process_frame
 	room.toggle_armory()
 	await get_tree().process_frame
-	_check("portrait selector uses a readable 390-unit layout: two columns, stacked rows, no overlap", is_equal_approx(hud._panel.size.x, 390)
-		and hud._slots[0].get_global_rect().end.y < hud._slots[2].get_global_rect().position.y
-		and hud._slots[0].get_global_rect().end.x < hud._slots[1].get_global_rect().position.x
-		and hud._slots[5].get_global_rect().end.y <= hud._panel.get_global_rect().end.y)
+	# the grid's own slots (founder 2026-11-07: only the cards he has are on screen, filling these slots in order)
+	var p: Ep2WeaponSelector = hud._panel
+	_check("portrait selector uses a readable 390-unit layout: two columns, stacked rows, no overlap", is_equal_approx(p.size.x, 390)
+		and p.card_rect(0).end.y < p.card_rect(2).position.y
+		and p.card_rect(0).end.x < p.card_rect(1).position.x
+		and p.card_rect(5).end.y <= p.size.y)
 	hud.close_armory(false)
 	get_window().size = Vector2i(1280, 720)
 	await get_tree().process_frame

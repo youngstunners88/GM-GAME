@@ -223,7 +223,8 @@ func _update_armory() -> void:
 	if armory == null:
 		return
 	_hold_button.disabled = not armory_enabled
-	_hold_button.icon = Ep2WeaponSelector.ICONS[armory.equipped]
+	# the pickaxe (what he carries while the Sheriff holds the irons) has no card icon: indexing it aborted this update every frame in jail
+	_hold_button.icon = Ep2WeaponSelector.ICONS.get(armory.equipped, null)
 	var keys: bool = TouchUi.keys_shown()
 	# the holster button is its weapon icon alone on a phone ("HOLD Tab" names a key); the touch hold works on the icon
 	_hold_button.text = "HOLD\n%s" % Ep2ArmoryState.key_label("ep2_armory") if keys else ""

@@ -86,20 +86,26 @@ func _reload(st: Ep2ArmoryState) -> Ep2ArmoryState:
 
 
 func _test_tabs() -> void:
-	print("-- THE NINE WEAPON TABS")
+	print("-- THE WEAPON TABS (every gun owned: the mystery rule is tests/ep2_weapons_test)")
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	var shop := Ep2ArmoryShop.new()
 	layer.add_child(shop)
 	var bought: Array = []
 	shop.buy_requested.connect(func(id: String, _p: int, _t: String) -> void: bought.append(id))
-	shop.open_shop(Ep2ArmoryState.new(), 50)
+	var owner := Ep2ArmoryState.post_hideout()
+	owner.purchase_river_gear("btc")
+	owner.purchase_sniper("btc")
+	for id in Ep2ArmoryState.IDS:
+		owner.acquire(id)
+	shop.open_shop(owner, 50)
 	shop.grace = 0.0
-	var tabs: Array = Ep2ArmoryShop.WEAPON_TABS
+	await get_tree().process_frame
+	var tabs: Array = shop._tabs()
 	var keys: Dictionary = {}
 	for tab in tabs:
 		keys[str(tab["key"])] = true
-	_check("nine tabs, one for each supplied model", tabs.size() == 9 and keys.size() == 9 and shop._tab_btns.size() == 9)
+	_check("ten tabs once he owns every gun: one per supplied model, nine guns and his pickaxe", tabs.size() == 10 and keys.size() == 10 and tabs.size() == Ep2ArmoryShop.WEAPON_TABS.size() and shop._tab_btns.size() == 10, "%d tabs, %d buttons" % [tabs.size(), shop._tab_btns.size()])
 	for i in tabs.size():
 		shop._tab_btns[i].pressed.emit()
 		for f in 3:
@@ -108,7 +114,8 @@ func _test_tabs() -> void:
 		for f in 6:
 			await get_tree().process_frame
 		_check("%s: its model is in the case and turning" % tabs[i]["label"], shop.showcase_key == str(tabs[i]["key"]) and shop._case_piece != null and shop.showcase_spin > spin_a and shop.active_tab() == i)
-		_check("%s: the highlight is on the row that sells it" % tabs[i]["label"], str(Ep2ArmoryState.SHOP[shop.index]["id"]) == str(tabs[i]["row"]))
+		if str(tabs[i]["row"]) != "":
+			_check("%s: the highlight is on the row that sells it" % tabs[i]["label"], str(Ep2ArmoryState.SHOP[shop.index]["id"]) == str(tabs[i]["row"]))
 	_check("looking at a tab never buys anything, locked or not", bought.is_empty())
 	shop.index = 0
 	for f in 3:

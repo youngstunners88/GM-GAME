@@ -295,6 +295,7 @@ var _spent: int = 0                                   # crypto spent at the coun
 var _gatling: Ep2GatlingPost = null                   # the Colt on its post in the yard (streamed extras; null when they are not mounted)
 var _mounted: bool = false                            # he is at the crank: the bore is his view and his mouse
 var _sharps_case: Node3D = null                       # the Sharps in the lit case
+var _case: Ep2SharpsCase = null                        # the case's lid, its rifle and Rich's hands at it (the take-out, founder 2026-11-07)
 var _sharps_hand: Node3D = null                       # ...and the same rifle once Rich has lifted it out
 var _intro: Ep2ArmoryIntro = null                     # Rich and Utah introduce the two guns
 var _intro_asked: bool = false
@@ -638,6 +639,7 @@ func _brain_spots() -> Dictionary:
 	var sp: Dictionary = Ep2GoldTown.armory_spots.duplicate()
 	sp["gatling_stand"] = Ep2GoldTown.GATLING_POST + Vector3(-Ep2GoldTown.GATLING_STAND_BACK, 0.0, 0.0)
 	sp["gatling_look"] = Ep2GoldTown.GATLING_POST + Vector3(-1.1, 0.0, -2.0)
+	sp["case_reach"] = Ep2SharpsCase.REACH_SPOT                     # beside the lit case, where his arm reaches the rifle's grip
 	return sp
 
 
@@ -646,6 +648,15 @@ func _brain_spots() -> Dictionary:
 func _build_guns() -> void:
 	var xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Armory"))
 	_sharps_case = _visuals.find_child("Arm2_Sharps_Bldg_Armory", true, false) as Node3D
+	# the rifle he lifts IS the case rifle (the scoped showcase Sharps), under a glass lid that opens; without the stream the kit rifle stays
+	_case = Ep2SharpsCase.new()
+	_case.name = "SharpsCase"
+	_visuals.add_child(_case)
+	if _case.setup(xf, _rich, _visuals.find_child("Arm2_CaseLid_Bldg_Armory", true, false) as Node3D, _sharps_case):
+		_sharps_case = _case.rifle
+	else:
+		_case.queue_free()
+		_case = null
 	if Ep2Extras.has(Ep2Extras.GATLING):
 		var post_w: Vector3 = xf * Ep2GoldTown.GATLING_POST
 		var fwd: Vector3 = xf.basis * Vector3.RIGHT
@@ -675,6 +686,9 @@ func _build_guns() -> void:
 	_intro.utah = _utah_brain
 	_intro.gatling = _gatling
 	_intro.sharps_price = int(Ep2ArmoryState.shop_item("sniper").get("price", PRICE_SNIPER))
+	if _case != null:
+		_intro.case_point = _case.rest_point()
+		_intro.reach_spot = "case_reach"
 	_intro.voice_seconds = func(who: String, text: String) -> float: return Ep2Speech.pace(Ep2TownVoiceBank.id_for(_town_speaker(who), text), text)
 	if _gatling != null and _gatling.plate_count() > 0:
 		var first: Dictionary = _gatling.targets[0]
@@ -697,6 +711,12 @@ func _on_intro_finished() -> void:
 
 ## Rich lifts the Sharps out of the lit case into his hand (the case rifle hides), or locks it back. Without a hand bone the rifle simply stays in the case.
 func _on_sharps_lifted(in_hand: bool) -> void:
+	if _case != null:
+		if in_hand:
+			_case.give_to_hand()
+		else:
+			_case.take_from_hand()                    # Ep2SharpsCase lowers it home on the intro's clock (or settles it, if the beat was cut short)
+		return
 	if not in_hand:
 		if _rich != null:
 			_rich.drop_prop("Sharps")
@@ -727,6 +747,8 @@ func _tick_armory_guns(delta: float) -> void:
 	_intro.mounted = _mounted
 	_intro.player_bursts = _mount_bursts
 	_intro.step(delta, _player_pos)
+	if _case != null:
+		_case.update(_intro.stage, _intro.stage_time())
 
 
 func skip_armory_intro() -> void:

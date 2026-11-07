@@ -3,7 +3,7 @@ extends RefCounted
 ## RICH AND UTAH INTRODUCE LIL BLUNT TO THE SHARPS 1874 BUFFALO GUN AND THE COLT GATLING GUN (founder 2026-10-20; skill ep2-armory-guns).
 ##
 ## One story beat inside the Armory, run by the two shopkeepers' Ep2ArmoryBrains (they are DIRECTED for its length, then released back to their work):
-##   1. SHARPS  - Rich walks to the lit case, lifts the rifle out into his hand and introduces it (the buffalo hunters' gun, falling block, 30 in octagon
+##   1. SHARPS  - Rich walks to the lit case, opens its glass lid, lifts the rifle out into his hands and introduces it (the buffalo hunters' gun, falling block, 30 in octagon
 ##                barrel, set triggers, tang sight), holds it out for Lil Blunt to look at, then locks it back. It is the long rifle on his counter: the
 ##                price is the shop's own (Ep2ArmoryState.SHOP "sniper"), paid in Episode 1 crypto, nothing handed over free.
 ##   2. GATLING - Utah takes him out the door to the yard, where the Colt Gatling stands on its post. It is NOT FOR SALE (never in the shop): Utah lays it
@@ -19,6 +19,15 @@ signal finished
 enum Stage { IDLE, RICH_WALK, SHARPS_REACH, SHARPS_TALK, SHARPS_BACK, GATLING_WALK, GATLING_WAIT, GATLING_DEMO, GATLING_OFFER, GATLING_FREE, DONE }
 
 const LINE_S := 4.2                              # a line stays up this long
+## THE HAND-OVER AT THE CASE (founder 2026-11-07: "improve the way Rich takes it out the glass so that it's not tacky"). Stage seconds; Ep2SharpsCase
+## animates the lid, the rifle and his arms from the same clock. Out: his hand lifts the lid, takes the grip, raises the rifle clear of the glass and
+## brings it to his chest, where the support hand takes the fore-end. Back: the reverse, and he shuts the lid by hand.
+const REACH_S := 3.6                             # SHARPS_REACH length
+const IN_HAND_AT := 3.2                          # the rifle is his (on his hand bone) from here
+const FACE_CASE_OUT := 2.1                       # he looks at the case until the rifle is clear of it
+const BACK_S := 3.8                              # SHARPS_BACK length
+const OUT_OF_HAND_AT := 0.25                     # he lets go of the hand-held rifle here, and lowers it into the case
+const FACE_CASE_BACK := 3.25
 ## Rich at the lit case. {price} is filled from the shop's own price list.
 const SHARPS_LINES: Array = [
 	["RICH", "Lil Blunt. Come in off the street. Mind the glass. This is what the river wants."],
@@ -54,6 +63,8 @@ var mounted: bool = false                        # set by the chamber
 var player_bursts: int = 0                       # bursts Lil Blunt has fired from the post
 var shown_lines: Array = []                      # every [who, text] said, in order (the test reads it)
 var voice_seconds: Callable = Callable()         # the chamber supplies actual recorded duration; standalone logic keeps LINE_S
+var case_point: Vector3 = Vector3.INF            # the rifle in the case (world): Rich looks at it while he works there (INF = he faces Lil Blunt)
+var reach_spot: String = "sniper_case"           # where he stands to reach in (the chamber names "case_reach" beside the case when it has one)
 
 var _t: float = 0.0
 var _i: int = 0
@@ -64,6 +75,11 @@ var _rich_arrived: bool = false
 var _burst_done: bool = false
 var _free_t: float = 0.0
 var _demo_step: int = 0
+
+
+## Seconds into the current stage (Ep2SharpsCase reads it to pose the lid, the rifle and his arms).
+func stage_time() -> float:
+	return _t
 
 
 func is_busy() -> bool:
@@ -89,7 +105,7 @@ func begin() -> void:
 	_utah_arrived = false
 	rich.directed_arrived.connect(_on_arrived)
 	utah.directed_arrived.connect(_on_arrived)
-	rich.direct("sniper_case", "Idle", Vector3(0.4, 1.5, -3.1))
+	rich.direct(reach_spot, "Idle", Vector3(0.4, 1.5, -3.1))
 	utah.direct("front_mid", "Idle", Vector3(0.4, 1.5, -3.1))
 	objective_changed.emit("Rich is calling you over to the lit case.")
 
@@ -130,13 +146,13 @@ func step(delta: float, player_world: Vector3) -> void:
 			if _rich_arrived:
 				stage = Stage.SHARPS_REACH
 				_t = 0.0
-				rich.direct_here("Reach", player_world, true)
+				rich.direct_here("Counter", player_world, true)    # he stands at the case; Ep2SharpsCase solves his arms (the Reach clip bent him double over it)
 		Stage.SHARPS_REACH:
-			rich.folk.face_point(player_world)
-			if not _lifted and _t >= 1.3:
+			rich.folk.face_point(case_point if case_point.is_finite() and _t < FACE_CASE_OUT else player_world)
+			if not _lifted and _t >= IN_HAND_AT:
 				_lifted = true
 				sharps_lifted.emit(true)
-			if _t >= 2.9:
+			if _t >= REACH_S:
 				stage = Stage.SHARPS_TALK
 				_t = 0.0
 				_i = 0
@@ -148,16 +164,16 @@ func step(delta: float, player_world: Vector3) -> void:
 				if _i >= SHARPS_LINES.size():
 					stage = Stage.SHARPS_BACK
 					_t = 0.0
-					rich.direct_here("PutDown", player_world, true)
+					rich.direct_here("Counter", player_world, true)  # standing, not the floor-level PutDown: the case is waist high
 				else:
 					# the rifle held up while he describes it, then offered, then back to rest
 					_say_next(SHARPS_LINES, "InspectRifle" if _i == 1 or _i == 3 else ("Reach" if _i == 4 else "Talk"))
 		Stage.SHARPS_BACK:
-			rich.folk.face_point(player_world)
-			if _lifted and _t >= 1.4:
+			rich.folk.face_point(case_point if case_point.is_finite() and _t < FACE_CASE_BACK else player_world)
+			if _lifted and _t >= OUT_OF_HAND_AT:
 				_lifted = false
 				sharps_lifted.emit(false)
-			if _t >= 2.9:
+			if _t >= BACK_S:
 				rich.release()
 				_begin_gatling()
 		Stage.GATLING_WALK:

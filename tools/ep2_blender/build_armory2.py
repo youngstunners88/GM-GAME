@@ -17,6 +17,7 @@ plain coloured ones for the rest):
                     at the gallery rail, a punt gun and a buffalo rifle mounted on the gallery fascia, crates of dynamite and cartridges,
                     bandoliers, Utah's upstairs workbench and river gear (sealed crates, a skiff on the wall), a chain across the stair foot.
   Arm2_Sharps       Rich's Sharps Model 1874 in the lit case (its own piece so the introduction can lift it out into his hand)
+  Arm2_CaseLid      the lit case's glass lid with its brass pull, and the empty Hinge_case on its hinge edge (the game opens it)
   Arm2_Nav          empties only: Spot_<name> (NPC waypoints, y = floor height), Block_<name> (scale = half extents of a walk blocker in
                     the shop floor plane), LightAnchor_<n> (warm lamp positions), SignAnchor_ARMS (the painted sign).
 Everything is written in GAME coordinates (x right, y up, z toward the street) and converted once at the end.
@@ -462,7 +463,11 @@ for sx in (-1, 1):
         revolver(F, (x - 0.55 + i * 0.37, 0.84, -2.2), yaw=0.3 if i % 2 else -0.3)
 # the lit long-rifle case: Rich's Sharps Model 1874 Buffalo Gun (the day-88 long rifle), end of the counter
 F.box("DarkWood", (0.5, 0.9, 1.7), (2.6, 0.45, CZ))
-F.box("GlassClear", (0.5, 0.45, 1.7), (2.6, 1.13, CZ))
+# its glass: four walls here, and the lid as its own piece (Arm2_CaseLid, below) so Rich can lift it to take the rifle out (founder 2026-11-07,
+# "not tacky": the old one-piece glass box let the rifle pass through a closed case). Same outer box as before: 0.5 x 0.45 x 1.7 at y 0.905 - 1.355.
+for sx in (-1, 1):
+    F.box("GlassClear", (0.012, 0.436, 1.7), (2.6 + sx * 0.244, 1.123, CZ))
+    F.box("GlassClear", (0.476, 0.436, 0.012), (2.6, 1.123, CZ + sx * 0.844))
 F.box("Felt", (0.46, 0.02, 1.66), (2.6, 0.91, CZ))
 # (the rifle itself is its own piece, Arm2_Sharps, built below: Rich lifts it out of the case in the introduction)
 F.cyl("LampGlow", 0.02, 0.02, 1.5, (2.6, 1.34, CZ), "z", 6)
@@ -558,6 +563,12 @@ for k in range(12):
 F.box("Iron", (1.25, 0.02, 0.02), ((STAIR_X0 + STAIR_X1) / 2, 0.8, -2.3))
 F.box("Paper", (0.3, 0.16, 0.01), ((STAIR_X0 + STAIR_X1) / 2, 0.7, -2.28))
 root_f, tris_f = F.build()
+# the case's glass lid, hinged along its far (+x) top edge; Hinge_case marks that edge's middle (the game turns the lid about the edge, which runs along z)
+LID = Piece("Arm2_CaseLid")
+LID.box("GlassClear", (0.5, 0.014, 1.7), (2.6, 1.348, CZ))
+LID.box("Brass", (0.012, 0.012, 0.16), (2.36, 1.36, CZ - 0.25))                          # a brass pull on Rich's edge
+LID.empty("Hinge_case", (2.85, 1.355, CZ))
+root_lid, tris_lid = LID.build()
 SH = Piece("Arm2_Sharps")
 K.sharps(SH, (2.6, 1.012, CZ + 0.245), yaw=math.pi / 2)
 root_sh, tris_sh = SH.build()
@@ -587,7 +598,7 @@ N.build()
 
 # export just these three pieces
 for o in bpy.context.scene.objects:
-    o.select_set(o.name.split(".")[0].split("_geo")[0] in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav", "Arm2_Sharps") or (o.parent and o.parent.name in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav", "Arm2_Sharps")))
+    o.select_set(o.name.split(".")[0].split("_geo")[0] in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav", "Arm2_Sharps", "Arm2_CaseLid") or (o.parent and o.parent.name in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav", "Arm2_Sharps", "Arm2_CaseLid")))
 import os
 os.makedirs(os.path.dirname(os.path.abspath(OUT)), exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", export_apply=True, export_yup=True, use_selection=True,

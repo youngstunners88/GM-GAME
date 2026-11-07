@@ -21,15 +21,19 @@ var spine_lean: float = 0.0
 var lean_toward: Vector3 = Vector3.ZERO
 ## Last solve: how far (metres) the hand fell short of the target (0 = reached).
 var shortfall: float = 0.0
+## A rig with other bone names (Rich keeps the founder's UE skeleton: upperarm_r, lowerarm_r, hand_r, pelvis) names its
+## [arm, forearm, hand, hips] here; empty = the Meshy names built from `side`.
+var bone_names: PackedStringArray = PackedStringArray()
 
 
 func _process_modification() -> void:
 	var sk: Skeleton3D = get_skeleton()
 	if sk == null or not reaching or influence <= 0.001:
 		return
-	var a: int = sk.find_bone(side + "Arm")
-	var f: int = sk.find_bone(side + "ForeArm")
-	var h: int = sk.find_bone(side + "Hand")
+	var named: bool = bone_names.size() == 4
+	var a: int = sk.find_bone(bone_names[0] if named else side + "Arm")
+	var f: int = sk.find_bone(bone_names[1] if named else side + "ForeArm")
+	var h: int = sk.find_bone(bone_names[2] if named else side + "Hand")
 	if a < 0 or f < 0 or h < 0:
 		return
 	var inv_xf: Transform3D = sk.global_transform.affine_inverse()
@@ -48,7 +52,7 @@ func _process_modification() -> void:
 	var dir_st: Vector3 = (t - s).normalized()
 	var x: float = (d * d + l1 * l1 - l2 * l2) / (2.0 * d)
 	var hgt: float = sqrt(maxf(l1 * l1 - x * x, 0.0))
-	var hips: int = sk.find_bone("Hips")
+	var hips: int = sk.find_bone(bone_names[3] if named else "Hips")
 	var out_v: Vector3 = (s - sk.get_bone_global_pose(hips).origin) if hips >= 0 else Vector3.RIGHT
 	out_v = (out_v - up * out_v.dot(up)).normalized()
 	var pole: Vector3 = (out_v * pole_out - up * pole_down).normalized()
