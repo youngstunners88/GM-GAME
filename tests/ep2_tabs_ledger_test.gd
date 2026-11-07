@@ -113,6 +113,16 @@ func _ready() -> void:
 		and GameManager.bear_total() == 2, str(GameManager.bear_tally))
 	runner_session.queue_free()
 
+	print("-- WOUNDED vs DOWN (founder 2026-11-08)")
+	_reset_manager()
+	var wound_room := Ep2Interlude.new()
+	add_child(wound_room)
+	wound_room._bear_money_hit(false)
+	wound_room._bear_money_hit(false)
+	wound_room._bear_money_hit(true)                 # the killing hit: the room's death path tallies it, not a wound
+	check("two non-lethal hits are two wounds; the killing hit is not a wound", GameManager.bears_wounded == 2, str(GameManager.bears_wounded))
+	wound_room.free()
+
 	print("-- CHILL BUDS: heal once, never past three hearts")
 	_reset_manager()
 	var bud_woods := _make_woods()
@@ -142,14 +152,16 @@ func _ready() -> void:
 	GameManager.tally_bear("brawler")
 	GameManager.tally_bear("shovel")
 	GameManager.add_chill_buds(5)
+	GameManager.tally_bear_wound()
+	GameManager.tally_bear_wound()
 	check("the ledger saves with the purse", GameManager.save_session())
 	_reset_manager()
 	check("reset_session clears the transient and persistent ledger state",
-		GameManager.bear_total() == 0 and GameManager.chill_buds == 0 and GameManager.runner_btc_credited == 0)
+		GameManager.bear_total() == 0 and GameManager.chill_buds == 0 and GameManager.runner_btc_credited == 0 and GameManager.bears_wounded == 0)
 	check("the save loads", GameManager.load_session())
 	check("save/load round-trips tally and buds",
 		int(GameManager.bear_tally.get("brawler", 0)) == 2 and int(GameManager.bear_tally.get("shovel", 0)) == 1
-		and GameManager.bear_total() == 3 and GameManager.chill_buds == 5,
+		and GameManager.bear_total() == 3 and GameManager.chill_buds == 5 and GameManager.bears_wounded == 2,
 		"%s, buds %d" % [str(GameManager.bear_tally), GameManager.chill_buds])
 
 	print("-- SELECTOR: headless leather, purse and ledger")

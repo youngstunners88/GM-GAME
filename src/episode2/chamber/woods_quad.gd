@@ -2194,11 +2194,14 @@ func _on_player_shot() -> void:
 		if _protected_trace.retaliation.begin(self, str(cast_hit.id), cast_hit.folk): return
 	var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 	if hit != null:
-		if not hit.is_dead(): hit.set_meta("killed_by", "player")   # Corpse shots never re-award a kill.
+		var was_alive: bool = not hit.is_dead()
+		if was_alive: hit.set_meta("killed_by", "player")   # Corpse shots never re-award a kill.
 		var wound: Vector3 = hit_info["point"]
 		var wound_normal: Vector3 = hit_info["normal"]
 		_bear_blood(hit, wound, dir, wound_normal)
 		var killed: bool = hit.take_hit(eye)
+		if was_alive:
+			_bear_money_hit(killed)
 		if _hud:
 			_hud.hit_marker(killed)
 		_sfx3d("ep2_bear_hit", hit.actor.global_position + Vector3(0.0, 1.4, 0.0), 0.0, float(hit.p.get("pitch", 1.0)), 60.0)
@@ -2429,11 +2432,14 @@ func _tick_player_arrows(delta: float) -> void:
 		var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 		var stopped: bool = hit != null or _ray_tree_blocked(before, travel.normalized(), travel.length(), 0.0, 0.0)
 		if hit != null:
+			var was_alive: bool = not hit.is_dead()
 			hit.set_meta("killed_by", "player")
 			var wound: Vector3 = hit_info["point"]
 			var wound_normal: Vector3 = hit_info["normal"]
 			_bear_blood(hit, wound, travel.normalized(), wound_normal)
 			var killed: bool = hit.take_hit(before)
+			if was_alive:
+				_bear_money_hit(killed)
 			if _hud != null:
 				_hud.hit_marker(killed)
 		item["t"] = float(item["t"]) + delta

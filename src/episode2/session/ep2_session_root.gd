@@ -1020,6 +1020,10 @@ func _route_free_roam(event: InputEvent) -> bool:
 		if k.pressed and not k.echo and k.physical_keycode in [KEY_ENTER, KEY_KP_ENTER] and _active.has_method("draw_weapon"):
 			if _active.draw_weapon():
 				return true
+		# C / Ctrl = duck behind the day-88 ridge barrack (founder 2026-11-08); only rooms with a barrack answer it.
+		if k.pressed and not k.echo and k.physical_keycode in [KEY_C, KEY_CTRL] and _active.has_method("toggle_cover"):
+			_active.toggle_cover()
+			return true
 		# R = load shells, one at a time (the Winchester's tube magazine).
 		if k.pressed and k.physical_keycode == KEY_R and _active.has_method("reload"):
 			_active.reload()

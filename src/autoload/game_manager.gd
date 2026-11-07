@@ -460,6 +460,9 @@ var runner_btc_credited: int = 0
 ## Every bear Lil Blunt personally put down, grouped by its role/kind.
 signal bear_tallied(kind: String, total: int)
 var bear_tally: Dictionary = {}
+## Hits Lil Blunt landed on a bear that did NOT kill it (founder 2026-11-08: "Bears wounded" on the Tabs). Bull's never count.
+signal bear_wounded(total: int)
+var bears_wounded: int = 0
 
 ## Dude's Chill Buds are stored, positive health items: one bud restores one
 ## heart when an Episode 2 room can use it. They are holdings, not run currency.
@@ -489,6 +492,11 @@ func tally_bear(kind: String) -> void:
         key = "bear"
     bear_tally[key] = int(bear_tally.get(key, 0)) + 1
     bear_tallied.emit(key, bear_total())
+
+## One non-lethal hit Lil Blunt landed on a living bear. The killing hit goes through tally_bear() instead.
+func tally_bear_wound() -> void:
+    bears_wounded += 1
+    bear_wounded.emit(bears_wounded)
 
 ## Store `n` of Dude's Chill Buds. Non-positive grants are ignored.
 func add_chill_buds(n: int) -> void:
@@ -543,6 +551,7 @@ func _load_ledger(data: Dictionary) -> void:
         var count: int = clampi(SaveSafe.to_int(raw[kind], 0), 0, 1000000)
         if key != "" and count > 0:
             bear_tally[key] = count
+    bears_wounded = clampi(SaveSafe.to_int(data.get("bears_wounded", 0), 0), 0, 1000000)
     chill_buds = maxi(0, SaveSafe.to_int(data.get("chill_buds", 0), 0))
     dude_free_bud_claimed = SaveSafe.to_int(data.get("dude_free_bud_claimed", 0), 0) != 0
     ep2_stampede_done = SaveSafe.to_int(data.get("ep2_stampede_done", 0), 0) != 0
@@ -901,6 +910,7 @@ func reset_session() -> void:
     town_debt_changed.emit(0)
     runner_btc_credited = 0
     bear_tally.clear()
+    bears_wounded = 0
     chill_buds = 0
     dude_free_bud_claimed = false
     ep2_stampede_done = false
@@ -965,6 +975,7 @@ func session_data() -> Dictionary:
         "town_standing": town_standing,
         "town_debt_btc": town_debt_btc,
         "bear_tally": bear_tally,
+        "bears_wounded": bears_wounded,
         "chill_buds": chill_buds,
         "dude_free_bud_claimed": dude_free_bud_claimed,
         "ep2_stampede_done": ep2_stampede_done,

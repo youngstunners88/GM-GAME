@@ -89,6 +89,7 @@ func _ready() -> void:
 	_test_full_run()
 	_test_tipped_and_downed()
 	_test_ridge_reload()
+	_test_ridge_cover()
 	_test_lake_is_logans_alone()
 	_test_continues_the_walk()
 	_test_ranged_threat()
@@ -250,6 +251,41 @@ func _test_ridge_reload() -> void:
 	c._package_lost()                                  # a soft fail mid-reload
 	check("after a soft-fail restore the gun is not left mid-reload", not sharps.reloading and not sharps.reload_queued)
 	check("...and it can be reloaded and fired", (sharps.rounds > 0 or sharps.start_reload()) )
+	c.free()
+
+
+## Founder 2026-11-08: duck behind the barrack, reload safe, pop up over the bags and fire.
+func _test_ridge_cover() -> void:
+	var st := _armory(true, true)
+	var c := _room(st)
+	_arm_and_launch(c)
+	check("on the gate overlook he is at a barrack", c.at_barrack())
+	check("C drops him into cover", c.toggle_cover() and c.in_cover())
+	_advance(c, 0.6)
+	check("...his eye sinks below the sandbag crest", c.eye_height <= RiverCoverChamber.COVER_EYE + 0.01, "%.2f" % c.eye_height)
+	c._invuln = 0.0
+	var before: int = c.get_health()
+	for i in 4:
+		c._hurt_player()
+	check("in cover the bears and men out front cannot hurt him", c.get_health() == before, "%d -> %d" % [before, c.get_health()])
+	var sharps: Ep2Winchester = st.firearm(Ep2ArmoryState.BUFF)
+	sharps.rounds = 0
+	sharps.reserve = 3
+	check("R reloads in cover", c.reload() or sharps.reloading)
+	for i in 240:
+		sharps.step(1.0 / 60.0)
+	check("...and he is still covered when the round is in", c.in_cover() and sharps.rounds > 0)
+	check("a click in cover pops him up instead of firing into the bags", not c.shoot() and not c.in_cover())
+	_advance(c, 0.6)
+	check("...back at full eye height over the barrack", absf(c.eye_height - RiverCoverChamber.FPS_EYE_HEIGHT) < 0.01, "%.2f" % c.eye_height)
+	c._invuln = 0.0
+	c._hurt_player()
+	check("out of cover he is exposed again", c.get_health() == before - 1)
+	c.toggle_cover()
+	_stand(c, RiverCoverChamber.OVERLOOKS[0] + Vector3(0, 0, 12.0))
+	_advance(c, 0.1)
+	check("walking off the overlook stands him up", not c.in_cover())
+	check("away from a barrack C does nothing", not c.toggle_cover() and not c.in_cover())
 	c.free()
 
 
