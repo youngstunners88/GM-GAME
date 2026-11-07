@@ -275,8 +275,9 @@ func card_rect(i: int) -> Rect2:
 ## How many of his cards share slot `i`'s row (the grid keeps room for all eight; the cards he has fill it in order).
 func _in_row(i: int, cols: int) -> int:
 	var shown: int = maxi(1, shown_ids().size())
-	var row: int = i / cols
-	return clampi(shown - row * cols, 1, cols) if row * cols < shown else cols
+	if i >= shown:
+		return cols                                    # a slot with no card keeps the full grid's place (the footer and hints measure from it)
+	return clampi(shown - (i / cols) * cols, 1, cols)
 
 func _text(text: String, p: Vector2, font_size: int, color: Color = PAPER, centered: bool = false) -> void:
 	drawn_text.append(text)
