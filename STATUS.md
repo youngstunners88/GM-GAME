@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-07 — Episode 2: pick up enemy guns, ride straight into Logan's Lake, no stop on the hill — pushed, deploying; NOT founder-verified, no phone test.**
+**2026-11-07 — Episode 2: pick up enemy guns, ride straight into Logan's Lake, no stop on the hill — LIVE on itch, build `2026-11-07-57b3749` (public pck checked); NOT founder-verified, no phone test.**
 - **Enemy guns:** shoot a trail bandit and the gun he held (the stranger's Borchardt) lies by his hand with a box of its own rounds. Ride over it or press interact (a prompt shows in reach; on a phone the interact button lights). It goes into the armory; a Borchardt you already own still gives its 8 rounds; capped like the store. Nothing disappears on a timer. You can now steer off the trail toward a gun lying beside it. A man shot on a raft goes into the river with his gun. A bandit shot while crouched no longer lies half under the ground.
 - **Desert -> lake:** the 8-second stop at the end of the ride is gone. He slows to walking pace, slides off the horse while moving and is at the water in one motion. The water clears gradually as he nears Logan (dusty beyond 240 m, clear inside 40 m), and Logan is visible on the way in. One ~62 ms frame remains at the hand-over (it was there before this change).
 - **Cargo check -> hill:** the 6.5-second hold waiting for Logan's line is gone; he walks on while it plays. The ridge is built while Logan talks, so the climb has no 270-485 ms hitches, and the 1 m sideways jump at the hand-over is gone.
