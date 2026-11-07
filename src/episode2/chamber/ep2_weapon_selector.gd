@@ -346,6 +346,8 @@ func _draw() -> void:
 	if bud_selected:
 		# The exact founder-supplied bud, rendered from the mesh; the health transaction stays in the host.
 		var br: Rect2 = shipment_rect()
+		if size.y < 520.0:
+			br.size = Vector2(64.0, 64.0)
 		br.position.x = size.x - br.size.x - 10.0
 		draw_texture_rect(_bud_art if _bud_art != null else BUD_ICON, br, false)
 		if keys:
