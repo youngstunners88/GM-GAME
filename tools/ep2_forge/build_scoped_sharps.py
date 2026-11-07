@@ -1,5 +1,8 @@
 """The founder's Sharps with a period telescopic sight (2026-11-05). Headless only:
   blender -b --factory-startup -P tools/ep2_forge/build_scoped_sharps.py -- <founder sharps.glb> <out.glb> [--ref <side.jpg>] [--case <diagonal.glb>] [--tris 40000] [--tex 1024]
+      [--tube-len 0.56] [--rings 0.07,0.27]
+Founder 2026-11-07, "the scope is too long": shipped with --tube-len 0.36 --rings -0.09,0.045. The eyepiece (Z_EYE) and the axis height do not move, so the
+first-person eye anchor is unchanged; the tube ends over the receiver instead of halfway down the barrel, on a wrist mount and a receiver mount.
 
 Body: his Tripo Sharps (the rifle in Rich's tab), laid along the case diagonal, turned to muzzle game +Z, up +Y, bore on y = 0, 1.21 m, origin at the trigger.
 Sight: a long thin tube of the 1870s (Malcolm / Vollmer pattern) built here, not generated: 0.56 m, 22 mm tube, a flared eyepiece, a slightly larger objective, two brass
@@ -21,7 +24,8 @@ TRIS = int(a[a.index("--tris") + 1]) if "--tris" in a else 40000
 TEX = int(a[a.index("--tex") + 1]) if "--tex" in a else 1024
 LENGTH = 1.21
 TUBE_R = 0.011
-TUBE_LEN = 0.56
+TUBE_LEN = float(a[a.index("--tube-len") + 1]) if "--tube-len" in a else 0.56
+RINGS = [float(v) for v in a[a.index("--rings") + 1].split(",")] if "--rings" in a else [0.07, 0.27]   # game z of the two ring mounts
 CLEARANCE = 0.012        # eyepiece underside over the highest thing beneath it
 LADDER_Z = (0.13, 0.30)  # game z along the barrel
 LADDER_OVER = 0.027      # game y: just over the barrel's top flat (+0.023)
@@ -184,7 +188,8 @@ for i, z in enumerate([Z_EYE + 0.052, Z_EYE + 0.14, Z_OBJ - 0.056]):
 parts.append(lathe("ScopeLensEye", [(Z_EYE - 0.0005, 0.0), (Z_EYE - 0.0005, BELL_EYE - 0.0045)], LENS))
 parts.append(lathe("ScopeLensObj", [(Z_OBJ + 0.0005, 0.0), (Z_OBJ + 0.0005, BELL_OBJ - 0.004)], LENS))
 # two ring mounts on raised posts, feet on the receiver ring (ahead of the hammer) and on the barrel, no rail
-for i, z in enumerate([0.07, 0.27]):
+for i, z in enumerate(RINGS):
+    assert Z_EYE + 0.083 <= z <= Z_OBJ - 0.06, "ring %d at z %.3f is off the tube" % (i, z)
     parts.append(lathe("ScopeRing%d" % i, [(z - 0.008, TUBE_R), (z - 0.008, TUBE_R + 0.004), (z + 0.008, TUBE_R + 0.004), (z + 0.008, TUBE_R)], BRASS))
     near = (np.abs(g[:, 2] - z) < 0.006) & (np.abs(g[:, 0]) < 0.012)     # a narrow window: a wide one reads the hammer's nose, and the foot floats
     foot = float(g[near, 1].max()) if near.any() else 0.012

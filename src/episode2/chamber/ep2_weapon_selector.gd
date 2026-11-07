@@ -160,18 +160,39 @@ func preview(id: String) -> void:
 
 func point_at(point: Vector2) -> void:
 	for i in cards.size():
-		if cards[i].get_global_rect().has_point(point):
+		if cards[i].visible and cards[i].get_global_rect().has_point(point):
 			preview(Ep2ArmoryState.IDS[i])
+
+
+## THE MYSTERY RULE (founder 2026-11-07): the cards are the weapons he has in hand now, in slot order. A gun he never acquired, or one the
+## Sheriff holds, has no card and is named nowhere on this panel; acquiring it (or buying it back) brings its card in.
+func shown_ids() -> Array:
+	var out: Array = []
+	if state == null:
+		return out
+	for id in Ep2ArmoryState.IDS:
+		if state.owns(id) and not state.is_held(id):
+			out.append(id)
+	return out
+
+
+## Where a weapon's card sits in the grid (-1 = it has no card). Its quick-switch key stays the slot's own key, wherever the card lands.
+func card_slot(id: String) -> int:
+	return shown_ids().find(id)
 
 func _process(_delta: float) -> void:
 	var viewport_size: Vector2 = get_viewport_rect().size
 	var ui_scale: float = viewport_size.x / 390.0 if viewport_size.x / viewport_size.y < 1.1 else 1.0
 	scale = Vector2.ONE * ui_scale
 	size = viewport_size / ui_scale
+	var shown: Array = shown_ids()
 	for i in cards.size():
-		cards[i].position = card_rect(i).position
-		cards[i].size = card_rect(i).size
-		cards[i].disabled = state == null or state.is_held(Ep2ArmoryState.IDS[i]) or not state.owns(Ep2ArmoryState.IDS[i])
+		var slot: int = shown.find(Ep2ArmoryState.IDS[i])
+		cards[i].visible = slot >= 0
+		cards[i].disabled = slot < 0
+		if slot >= 0:
+			cards[i].position = card_rect(slot).position
+			cards[i].size = card_rect(slot).size
 	var band: Rect2 = _ledger_band()
 	var action_width: float = 112.0 if size.x < 650 else 150.0
 	var supply_scale: float = _supply_scale()
@@ -238,7 +259,7 @@ func card_rect(i: int) -> Rect2:
 		var h: float = maxf(28.0, minf(160.0, minf(size.y * 0.20, (available - 10.0 * float(rows - 1)) / float(rows))))
 		var used: float = h * float(rows) + 10.0 * float(rows - 1)
 		var y: float = top + maxf(0.0, (available - used) * 0.25)
-		var x0: float = (size.x - total_w) * 0.5
+		var x0: float = (size.x - total_w) * 0.5 + float(cols - _in_row(i, cols)) * (w + 10.0) * 0.5     # a short row sits centred
 		return Rect2(Vector2(x0 + float(i % cols) * (w + 10.0), y + floorf(float(i) / float(cols)) * (h + 10.0)), Vector2(w, h))
 	var cols_w: int = 4 if n > 6 else 3          # the founder's eight guns: two rows of four
 	var rows_w: int = int(ceil(float(n) / float(cols_w)))
@@ -247,7 +268,15 @@ func card_rect(i: int) -> Rect2:
 	var h_w: float = maxf(70.0, minf(260.0, (available_w - 12.0 * float(rows_w - 1)) / float(rows_w)))
 	var y_w: float = top_w + maxf(0.0, (available_w - h_w * float(rows_w) - 12.0 * float(rows_w - 1)) * 0.30)
 	var w_w: float = minf(460.0, (size.x - 96.0) / float(cols_w))
-	return Rect2(Vector2(size.x * 0.5 + (float(i % cols_w) - float(cols_w - 1) * 0.5) * (w_w + 14.0) - w_w * 0.5, y_w + floorf(float(i) / float(cols_w)) * (h_w + 12.0)), Vector2(w_w, h_w))
+	var centre: float = float(_in_row(i, cols_w) - 1) * 0.5                                          # a short row sits centred
+	return Rect2(Vector2(size.x * 0.5 + (float(i % cols_w) - centre) * (w_w + 14.0) - w_w * 0.5, y_w + floorf(float(i) / float(cols_w)) * (h_w + 12.0)), Vector2(w_w, h_w))
+
+
+## How many of his cards share slot `i`'s row (the grid keeps room for all eight; the cards he has fill it in order).
+func _in_row(i: int, cols: int) -> int:
+	var shown: int = maxi(1, shown_ids().size())
+	var row: int = i / cols
+	return clampi(shown - row * cols, 1, cols) if row * cols < shown else cols
 
 func _text(text: String, p: Vector2, font_size: int, color: Color = PAPER, centered: bool = false) -> void:
 	drawn_text.append(text)
@@ -306,16 +335,23 @@ func _draw() -> void:
 		if not compact:
 			_text("DAY-88 LIVE" if shipment_live else "DAY-88 CARGO", Vector2(sr.get_center().x, sr.end.y + 29), 10, PAPER, true)
 	_draw_ledger(_ledger_band(), compact)
-	for i in Ep2ArmoryState.IDS.size():
-		var id: String = Ep2ArmoryState.IDS[i]
-		var rect: Rect2 = card_rect(i)
+	var shown: Array = shown_ids()
+	if shown.is_empty():
+		# the Sheriff holds every iron: say so in the first card's place, and name only what he does carry
+		var first: Rect2 = card_rect(0)
+		_text("THE SHERIFF HOLDS YOUR IRONS", Vector2(first.position.x + 8.0, first.get_center().y - 8.0), 12 if compact else 16, PAPER)
+		_text("PICKAXE IN HAND  ·  BUY THEM BACK AT RICH & UTAH'S", Vector2(first.position.x + 8.0, first.get_center().y + 14.0), 10 if compact else 13, BRASS)
+	for slot in shown.size():
+		var id: String = shown[slot]
+		var i: int = Ep2ArmoryState.IDS.find(id)                # the weapon's own slot: its quick-switch key
+		var rect: Rect2 = card_rect(slot)
 		var picked: bool = highlighted == id and not bud_selected
 		_leather(rect, Color("38261b") if picked else Color("231b15"), picked)
 		var icon: Texture2D = ICONS[id]
 		var image_rect := Rect2(rect.position + Vector2(18, 15), Vector2(rect.size.x - 36, rect.size.y * 0.65))
 		var ratio: float = minf(image_rect.size.x / icon.get_width(), image_rect.size.y / icon.get_height())
 		var image_size: Vector2 = icon.get_size() * ratio
-		draw_texture_rect(icon, Rect2(image_rect.get_center() - image_size * 0.5, image_size), false, Color.WHITE if state.owns(id) else Color(.45,.4,.34,.5))
+		draw_texture_rect(icon, Rect2(image_rect.get_center() - image_size * 0.5, image_size), false)
 		var fs: int = mini(16, int(rect.size.x / 22.0)) if compact else mini(20, int(rect.size.x / 15.0))
 		_text(Ep2ArmoryState.NAMES[id].to_upper(),Vector2(rect.get_center().x,rect.position.y+rect.size.y*.75),fs,PAPER,true)
 		var count: String = card_status(id)
@@ -328,7 +364,8 @@ func _draw() -> void:
 		if picked and keys:
 			_text("EQUIP ON RELEASE",Vector2(rect.get_center().x,rect.end.y-12),10,BRASS,true)
 	var footer_y: float = card_rect(Ep2ArmoryState.IDS.size() - 1).end.y + 26
-	_text("BEAR ARROWS  ·  %d" % state.arrows,Vector2(mid,footer_y),13,BRASS,true)
+	if state.owns(Ep2ArmoryState.BOW) or state.arrows > 0:      # arrows only once there is a bow or a quiver to speak of
+		_text("BEAR ARROWS  ·  %d" % state.arrows,Vector2(mid,footer_y),13,BRASS,true)
 	_text("TIME STANDS STILL",Vector2(mid,footer_y+26),12,PAPER,true)
 	if keys:
 		var hint: String = "Hold %s / Back · point or choose 1 - %d · release to equip" % [Ep2ArmoryState.key_label("ep2_armory"), Ep2ArmoryState.IDS.size()]

@@ -24,7 +24,7 @@ const EDGES := [
 	["door", "front_mid"], ["front_mid", "player"], ["front_mid", "case_left"], ["front_mid", "case_right"], ["front_mid", "stair_bottom"],
 	["player", "case_left"], ["player", "case_right"], ["case_left", "gap_left"], ["case_left", "shelves"], ["shelves", "gap_left"],
 	["case_right", "gap_right"], ["gap_left", "behind_left"], ["behind_left", "case_revolvers"], ["gap_right", "behind_right"],
-	["behind_right", "sniper_case"], ["behind_right", "kegs"],
+	["behind_right", "sniper_case"], ["behind_right", "kegs"], ["sniper_case", "case_reach"],      # case_reach: beside the lit case (the chamber's)
 	["case_revolvers", "counter_rich"], ["counter_rich", "counter_till"], ["counter_till", "sniper_case"], ["counter_rich", "back_mid"],
 	["counter_till", "back_mid"], ["case_revolvers", "back_mid"], ["sniper_case", "kegs"], ["kegs", "back_mid"], ["back_mid", "rack_back"],
 	["rack_back", "bench"], ["stair_bottom", "stair_foot"], ["stair_foot", "stair_head"], ["stair_head", "stair_top"],

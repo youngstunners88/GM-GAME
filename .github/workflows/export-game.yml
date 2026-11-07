@@ -419,6 +419,11 @@ jobs:
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_armory_chain_test.tscn 2>&1 | tee armory-chain-tests.log
           grep -q 'EP2_ARMORY_CHAIN: ALL PASS' armory-chain-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-chain-tests.log; then exit 1; fi
+          # Weapon tabs show only what he has (founder 2026-11-07, the mystery rule), the pickaxe tab, the counter's order (Shipment,
+          # Buffalo Gun, its cartridges, then each gun over its ammo) and Rich taking the Sharps out of the case through an open lid.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_weapons_test.tscn 2>&1 | tee weapons-tests.log
+          grep -q 'EP2_WEAPONS: ALL PASS' weapons-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' weapons-tests.log; then exit 1; fi
           # Bears strike and bite the way a bear would: authored swipe/bite/walk/run clips bound to the rig (a mis-bound
           # export leaves a T-pose), the brain's attack choice and the blow landing at the clip's contact time.
           timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_bear_attacks_test.tscn > bear-attacks-tests.log 2>&1

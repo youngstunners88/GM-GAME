@@ -32,7 +32,9 @@ func _ready() -> void:
 	st.river_gear = true
 	shop.show_tab(0)
 	await _shot("2_sharps_next")
-	st.sniper_owned = true
+	st.purchase_sniper("btc")
+	for id in Ep2ArmoryState.IDS:           # a tab shows only a gun he has (founder 2026-11-07): own them all for the tour
+		st.acquire(id)
 	for i in Ep2ArmoryShop.WEAPON_TABS.size():
 		shop.show_tab(i)
 		await _shot("tab_%d" % i)

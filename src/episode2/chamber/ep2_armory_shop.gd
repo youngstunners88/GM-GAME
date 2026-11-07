@@ -67,11 +67,16 @@ const WEAPON_TABS: Array = [
 	{"key": Ep2ArmoryState.MP18, "label": "MACHINE GUN", "row": Ep2ArmoryState.MP18, "model": TAB_DIR + "machine_gun.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.TOMMY, "label": "GOLD TOMMY", "row": Ep2ArmoryState.TOMMY, "model": TAB_DIR + "golden_tommy.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.TOMMY + "_held", "label": "HELD TOMMY", "row": Ep2ArmoryState.TOMMY, "model": TAB_DIR + "golden_tommy_held.glb", "yaw": PI * 0.5},
+	# His own miner's pick in his glove (founder's Verdant War Pick). Nobody sells it, so it has no row: the tab only fills the case.
+	{"key": Ep2ArmoryState.PICK, "label": "PICKAXE", "row": "", "model": TAB_DIR + "war_pick_held.glb", "yaw": 0.0},
 ]
+## THE MYSTERY RULE (founder 2026-11-07): a tab shows only what Lil Blunt has in hand now. A gun he never bought, or one the Sheriff holds,
+## has no tab, and nothing names it; buying it (or buying it back) reveals the tab. A tab whose model is not loadable never shows as a blank.
 const TAB_WIDE_MIN := 600.0                  # from this width the tabs are one strip; narrower they stack three across
 const TAB_GAP := 4.0
 var _tab_btns: Array[Button] = []
 var _tab_key: String = ""                    # the tab chosen by hand, while the highlight stays on its row
+var _tab_index: int = -1                     # the row that was highlighted when a row-less tab (the pickaxe) was chosen
 const CASE_CAPTION := 20.0                   # the strip under the turning gun where its name is written
 ## A short screen (a phone held sideways) cannot show all eleven rows at a readable height: the list becomes a window that keeps the
 ## highlighted row in view, with brass up/down buttons (a finger), the mouse wheel and Up/Down (the keys) moving through it.
@@ -88,9 +93,22 @@ func _catalogue() -> Array:
 	return Ep2ArmoryState.SHOP
 
 
-## This panel's weapon tabs (the Chill Bud patch has none).
+## This panel's weapon tabs as the player sees them now: only the ones he owns (the Chill Bud patch has none).
 func _tabs() -> Array:
-	return WEAPON_TABS
+	var out: Array = []
+	for tab in WEAPON_TABS:
+		if tab_owned(state, tab) and Ep2Extras.has(str(tab["model"])):
+			out.append(tab)
+	return out
+
+
+## Does Lil Blunt have this tab's weapon in hand now? The pickaxe always (his own tool: never bought, never kept by the Sheriff, who hands
+## it back with "Take your pick"); a gun only while he owns it and the Sheriff is not holding it. A "_held" tab follows its gun.
+static func tab_owned(armory_state: Ep2ArmoryState, tab: Dictionary) -> bool:
+	var id: String = str(tab["key"]).trim_suffix("_held")
+	if id == Ep2ArmoryState.PICK:
+		return true
+	return armory_state != null and armory_state.owns(id) and not armory_state.is_held(id)
 
 
 ## Why a row is locked, in the counter's words ("" = it is not).
@@ -109,6 +127,11 @@ func _tab_for_key(key: String) -> Dictionary:
 func show_tab(i: int) -> void:
 	var tabs: Array = _tabs()
 	if i < 0 or i >= tabs.size():
+		return
+	if str(tabs[i]["row"]) == "":
+		_tab_key = str(tabs[i]["key"])             # no row sells it (the pickaxe): the case shows it while the highlight stays put
+		_tab_index = index
+		_sync_showcase()
 		return
 	var rows: Array = _catalogue()
 	for r in rows.size():
@@ -255,7 +278,21 @@ func _ready() -> void:
 	_tender_btn.pressed.connect(func() -> void: _cycle_tender(1))
 	add_child(_tender_btn)
 	move_child(_tender_btn, 0)                     # its finger-sized strip reaches under the first rows: a row or a tab wins where they overlap
-	for t in _tabs().size():
+	_ensure_tab_buttons()
+	_up_btn = _arrow_button("ScrollUp", -1)
+	_down_btn = _arrow_button("ScrollDown", 1)
+	# Wordless way out for a finger: the trade pauses the tree, so Esc / ui_cancel is not
+	# reachable on a phone and the counter used to be a softlock (audit 2026-10-29).
+	# The shared close keeps raw-finger handling and the panel's own pause owner.
+	preload("res://src/ui/panel_close.gd").install(self, func() -> void: closed.emit())
+	_build_showcase()
+	set_process(true)
+
+
+## One button per tab he can see now. The list grows when a purchase reveals a tab (a button is never made for a tab that is not shown,
+## so the Chill Bud patch has none); a button past the end of the list hides.
+func _ensure_tab_buttons() -> void:
+	for t in range(_tab_btns.size(), _tabs().size()):
 		var tab_btn := Button.new()
 		tab_btn.name = "WeaponTab%d" % t
 		tab_btn.flat = true
@@ -266,14 +303,6 @@ func _ready() -> void:
 		tab_btn.pressed.connect(func() -> void: show_tab(t))
 		add_child(tab_btn)
 		_tab_btns.append(tab_btn)
-	_up_btn = _arrow_button("ScrollUp", -1)
-	_down_btn = _arrow_button("ScrollDown", 1)
-	# Wordless way out for a finger: the trade pauses the tree, so Esc / ui_cancel is not
-	# reachable on a phone and the counter used to be a softlock (audit 2026-10-29).
-	# The shared close keeps raw-finger handling and the panel's own pause owner.
-	preload("res://src/ui/panel_close.gd").install(self, func() -> void: closed.emit())
-	_build_showcase()
-	set_process(true)
 
 
 func _arrow_button(label: String, step: int) -> Button:
@@ -374,7 +403,9 @@ func _sync_showcase() -> void:
 	var key: String = _showcase_key_for(rows[index]) if index >= 0 and index < rows.size() else ""
 	if _tab_key != "":
 		var chosen: Dictionary = _tab_for_key(_tab_key)
-		if not chosen.is_empty() and index >= 0 and index < rows.size() and str(chosen["row"]) == str(rows[index]["id"]):
+		if not chosen.is_empty() and str(chosen["row"]) == "" and index == _tab_index:
+			key = _tab_key
+		elif not chosen.is_empty() and index >= 0 and index < rows.size() and str(chosen["row"]) == str(rows[index]["id"]):
 			key = _tab_key
 		else:
 			_tab_key = ""                            # the highlight moved on to another row
@@ -445,6 +476,7 @@ func open_shop(armory_state: Ep2ArmoryState, coin_purse: int) -> void:
 	index = 0
 	grace = 0.25
 	flash = ""
+	_ensure_tab_buttons()                       # his tabs are touchable the frame the counter opens
 	show()
 	if _case_vp != null:
 		_case_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -543,7 +575,10 @@ func _process(delta: float) -> void:
 		_tender_btn.size = Vector2(tw, 88.0)
 		_tender_btn.position = Vector2((size.x - tw) * 0.5, line_y - 8.0)
 	_keep_visible()
+	_ensure_tab_buttons()
+	var shown_tabs: int = _tabs().size()
 	for t in _tab_btns.size():
+		_tab_btns[t].visible = t < shown_tabs
 		var tab_r: Rect2 = tab_rect(t)
 		_tab_btns[t].position = tab_r.position
 		_tab_btns[t].size = tab_r.size
@@ -600,12 +635,13 @@ func _tabs_top() -> float:
 	return size.y * 0.075 + (44.0 if size.x < 650.0 else 58.0) + 34.0
 
 
+## Columns are sized for the whole set (one strip on a wide screen), so a tab keeps its width as purchases add tabs beside it.
 func _tab_columns() -> int:
-	return _tabs().size() if size.x >= TAB_WIDE_MIN else 3
+	return WEAPON_TABS.size() if size.x >= TAB_WIDE_MIN else 3
 
 
 func _tab_height() -> float:
-	return 26.0 if _short() or _tab_columns() < _tabs().size() else 32.0
+	return 26.0 if _short() or _tab_columns() < WEAPON_TABS.size() else 32.0
 
 
 ## The height the tabs take, with the gap under them (0 when this panel has none).
@@ -621,7 +657,8 @@ func tab_rect(i: int) -> Rect2:
 	var total: float = minf(1000.0, size.x - 40.0)
 	var cols: int = maxi(1, _tab_columns())
 	var w: float = (total - TAB_GAP * float(cols - 1)) / float(cols)
-	var x: float = (size.x - total) * 0.5 + float(i % cols) * (w + TAB_GAP)
+	var in_row: int = mini(cols, _tabs().size() - (i / cols) * cols)        # a short row (few owned) sits centred
+	var x: float = (size.x - total) * 0.5 + float(cols - maxi(in_row, 1)) * (w + TAB_GAP) * 0.5 + float(i % cols) * (w + TAB_GAP)
 	var y: float = _tabs_top() + float(i / cols) * (_tab_height() + TAB_GAP)
 	return Rect2(Vector2(x, y), Vector2(w, _tab_height()))
 
@@ -713,8 +750,6 @@ func _draw() -> void:
 	var tabs: Array = _tabs()
 	for t in tabs.size():
 		var tab_r: Rect2 = tab_rect(t)
-		var tab_row: String = str(tabs[t]["row"])
-		var locked: bool = _lock_note(tab_row) != ""
 		var box := StyleBoxFlat.new()
 		box.bg_color = LEATHER if t == picked_tab else LEATHER_DIM
 		box.border_color = BRASS if t == picked_tab else Color("765839")
@@ -722,12 +757,16 @@ func _draw() -> void:
 		box.set_corner_radius_all(6)
 		draw_style_box(box, tab_r)
 		var tab_font: int = 9 if tab_r.size.x < 80.0 else (10 if compact else 12)
-		_text(str(tabs[t]["label"]), Vector2(tab_r.get_center().x, tab_r.get_center().y + float(tab_font) * 0.36), tab_font, CLOSED if locked else PAPER, true)
+		# every tab is a weapon he has (the mystery rule), so none is drawn as locked, whatever the counter's chain says about its row
+		_text(str(tabs[t]["label"]), Vector2(tab_r.get_center().x, tab_r.get_center().y + float(tab_font) * 0.36), tab_font, PAPER, true)
 	if showcase_key != "":
 		var case_rect: Rect2 = showcase_rect()
 		_leather(case_rect, LEATHER_DIM, true)
 		var shown: String = ""
-		if index >= 0 and index < rows.size():
+		var shown_tab: Dictionary = _tab_for_key(showcase_key)
+		if not shown_tab.is_empty() and str(shown_tab["row"]) == "":
+			shown = str(shown_tab["label"]) + "  ·  IN HAND"           # sold nowhere: named by its tab, never by the highlighted row
+		elif index >= 0 and index < rows.size():
 			shown = str(rows[index]["name"])
 			if showcase_key.ends_with("_held"):
 				shown += "  ·  IN HAND"

@@ -967,6 +967,12 @@ static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null, props: Array 
 			sn.transform = building_xform(entry("Bldg_Armory"))
 			sn.name = "Arm2_Sharps_Bldg_Armory"
 			root.add_child(sn)
+		var lid: Node3D = a2.find_child("Arm2_CaseLid", true, false) as Node3D     # the case's glass lid: Rich lifts it (Ep2SharpsCase)
+		if lid != null:
+			var ln: Node3D = lid.duplicate() as Node3D
+			ln.transform = building_xform(entry("Bldg_Armory"))
+			ln.name = "Arm2_CaseLid_Bldg_Armory"
+			root.add_child(ln)
 		for i in mini(armory_lights.size(), 4):
 			lamps.append(["Bldg_Armory", armory_lights[i], 4.5])
 	if jail_v1:

@@ -14,7 +14,7 @@ Gate: `tests/ep2_weapon_consistency_test.tscn`. Shots: `tools/ep2_shots/weapon_c
 - `extras/armory/borchardt_c93.glb`: Tripo, gun only, 0.355 m real size, one file for the first-person view and the stranger's draw and drop.
 - `extras/armory/lil_blunt_gun_hand.glb`: the Remington's own glove, bracer and vine arm with the gun taken out (`tools/ep2_forge/founder_gun_hand.py`).
 - `Ep2ArmoryGunView.HELD`: `gun_scale` 1.527 on the view's Gun node only. Same hand position, eye point and carry as the Remington. **This is a deliberate first-person size, not real size**, the same exaggeration the Remington already has.
-- `extras/armory/sharps_scoped.glb`: the founder's Sharps body (his tab model) with a tube built in Blender (`tools/ep2_forge/build_scoped_sharps.py`): 0.56 m, 22 mm, flared eyepiece, brass collars, two raised rings, no rail. The raised ladder sight was removed because it stood where the tube goes.
+- `extras/armory/sharps_scoped.glb`: the founder's Sharps body (his tab model) with a tube built in Blender (`tools/ep2_forge/build_scoped_sharps.py`). **2026-11-07: shortened to 0.36 m on tang + receiver mounts (founder: too long); eye anchor unchanged.** Originally 0.56 m, 22 mm, flared eyepiece, brass collars, two raised rings, no rail. The raised ladder sight was removed because it stood where the tube goes.
 
 ## Borchardt vs Remington, 1280 x 720, fov 58, same camera, gun only
 

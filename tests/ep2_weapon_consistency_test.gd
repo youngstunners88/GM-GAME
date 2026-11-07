@@ -75,7 +75,7 @@ func _test_sharps_model() -> void:
 	if tube != null:
 		var tb: AABB = _bounds(gun).intersection(_bounds(gun))
 		var length: float = tube.get_aabb().size.z
-		check("the tube is a long period sight, 0.45 - 0.60 m", length > 0.45 and length < 0.60, str(length))
+		check("the tube is a short period sight, 0.30 - 0.40 m (founder 2026-11-07: the 0.56 m one was too long)", length > 0.30 and length < 0.40, str(length))
 		var eye: Vector3 = view.get_meta("ads_cam")
 		var axis_y: float = tube.global_position.y + tube.get_aabb().get_center().y
 		check("the aimed eye is on the tube's axis and behind the eyepiece", absf(eye.y - axis_y) < 0.003 and eye.z < tube.get_aabb().position.z + tube.position.z, "%s axis %.4f" % [str(eye), axis_y])
@@ -171,7 +171,7 @@ func _test_shop() -> void:
 	print("-- RICH & UTAH")
 	var sold: Dictionary = Ep2ArmoryState.shop_item("sniper")
 	check("the row keeps its story id, name and price, and now says telescopic sight", str(sold.get("id", "")) == "sniper" and "BUFFALO" in str(sold.get("name", "")) and int(sold.get("price", 0)) == 3 and "TELESCOPIC" in str(sold.get("note", "")) and not "LADDER" in str(sold.get("note", "")), str(sold))
-	check("still nine weapon tabs", Ep2ArmoryShop.WEAPON_TABS.size() == 9)
+	check("ten weapon tabs: the nine guns and his pickaxe", Ep2ArmoryShop.WEAPON_TABS.size() == 10)
 	var tab: Dictionary = Ep2ArmoryShop.WEAPON_TABS[0]
 	check("the Sharps tab shows the scoped model", str(tab["label"]) == "SHARPS" and Ep2Extras.has(str(tab["model"])))
 	var piece: Node3D = (load(str(tab["model"])) as PackedScene).instantiate() as Node3D

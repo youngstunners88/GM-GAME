@@ -151,8 +151,10 @@ static func install_rifle(folk: Ep2TownFolk, target: Vector3 = Vector3.INF) -> b
 	return true
 
 
-static func attach_rifle(folk: Ep2TownFolk) -> Node3D:
-	if not folk.has_meta("sharps_hand_transform") or not ResourceLoader.exists(SHARPS): return null
+## The scoped Sharps in its grip frame (origin = the trigger hand's palm, muzzle +z, sight up, real size): the one rifle that lies in the lit case and
+## sits in Rich's hand, so it can pass from one to the other without a swap (null when the streamed model is missing).
+static func make_rifle() -> Node3D:
+	if not ResourceLoader.exists(SHARPS): return null
 	var holder := Node3D.new()
 	holder.name = "Sharps"
 	var model: Node3D = (load(SHARPS) as PackedScene).instantiate()
@@ -162,6 +164,18 @@ static func attach_rifle(folk: Ep2TownFolk) -> Node3D:
 	muzzle.name = "Muzzle"
 	muzzle.position = (GUN_MUZZLE - GUN_GRIP) * GUN_SCALE
 	holder.add_child(muzzle)
+	return holder
+
+
+## Where each wrist goes on the rifle (its grip frame): the palm is distal to the wrist, so these are behind and under the contact points.
+static func wrist_on_rifle(side: String) -> Vector3:
+	return (GUN_SUPPORT - GUN_GRIP) * GUN_SCALE + Vector3(0, -0.065, -0.03) if side == "Left" else Vector3(0, -0.015, -0.055)
+
+
+static func attach_rifle(folk: Ep2TownFolk) -> Node3D:
+	if not folk.has_meta("sharps_hand_transform"): return null
+	var holder: Node3D = make_rifle()
+	if holder == null: return null
 	if not folk.attach_prop(holder, "hand_r"):
 		holder.free()
 		return null

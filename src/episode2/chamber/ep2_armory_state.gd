@@ -57,18 +57,22 @@ const SHOP: Array = [
 	# ride used to bounce Lil Blunt back to this counter; now nothing else here is sold until it is in his hands (`unlocks_stock`). The row
 	# keeps its save id "river_gear", so a save that already holds it keeps it.
 	{"id": "river_gear", "name": "THE SHIPMENT", "note": "WATER - SKIFF - SEALED CRATES", "price": 2, "rounds": 0},
+	# SECOND, THE SHARPS AND ITS BOX (founder 2026-11-07): the Buffalo Gun is the counter's second buy and the one that opens the other guns,
+	# so it sits right under the Shipment with its cartridges under it. Then each gun with its own ammunition under it, in the order the story
+	# puts them in his hands: the Winchester (the hideout), the Remington (the armed runner), the bow (an archer in the woods), the Borchardt
+	# (the stranger at the draw), then the counter-only Lever Shotgun, Drum SMG and Golden Thompson. Ids never change; only the rows moved.
+	{"id": "sniper", "name": "BUFFALO GUN", "note": "SHARPS 1874 - TELESCOPIC SIGHT", "price": 3, "rounds": 0},
+	{"id": "sniper_ammo", "name": "SHARPS CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
+	{"id": WIN, "name": "GM LEVER RIFLE", "note": "WINCHESTER 1886 - GM RECEIVER", "price": 3, "rounds": 0},
+	{"id": "rifle_ammo", "name": "REPEATER CARTRIDGES", "note": "A BOX OF TWENTY-FOUR", "price": 1, "rounds": 24},
 	{"id": REM, "name": "GOLDEN BTC REVOLVER", "note": "SINGLE ACTION - BITCOIN CYLINDER", "price": 4, "rounds": 0},
 	{"id": "revolver_ammo", "name": "SIXGUN CARTRIDGES", "note": "A BOX OF EIGHTEEN", "price": 1, "rounds": 18},
 	{"id": BOW, "name": "GM BOW", "note": "RECURVE - GM MEDALLION", "price": 2, "rounds": 0},
 	{"id": "arrows", "name": "GM ARROWS", "note": "A QUIVER OF TWELVE", "price": 1, "rounds": 12},
-	{"id": WIN, "name": "GM LEVER RIFLE", "note": "WINCHESTER 1886 - GM RECEIVER", "price": 3, "rounds": 0},
-	{"id": "rifle_ammo", "name": "REPEATER CARTRIDGES", "note": "A BOX OF TWENTY-FOUR", "price": 1, "rounds": 24},
 	{"id": BORCH, "name": "BORCHARDT PISTOL", "note": "C-93 TOGGLE LOCK - EIGHT ROUNDS", "price": 3, "rounds": 0},
 	{"id": "borchardt_ammo", "name": "7.65 BORCHARDT", "note": "TWO MAGAZINES - SIXTEEN", "price": 1, "rounds": 16},
 	{"id": SHOT, "name": "LEVER SHOTGUN", "note": "WINCHESTER 1887 - FIVE SHELLS", "price": 3, "rounds": 0},
 	{"id": "shotgun_ammo", "name": "BUCKSHOT SHELLS", "note": "A BOX OF TEN", "price": 1, "rounds": 10},
-	{"id": "sniper", "name": "BUFFALO GUN", "note": "SHARPS 1874 - TELESCOPIC SIGHT", "price": 3, "rounds": 0},
-	{"id": "sniper_ammo", "name": "SHARPS CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
 	{"id": MP18, "name": "DRUM SMG", "note": "BERGMANN MP18 - SNAIL DRUM", "price": 4, "rounds": 0},
 	{"id": "mp18_ammo", "name": "9MM SNAIL DRUMS", "note": "TWO DRUMS - SIXTY-FOUR", "price": 1, "rounds": 64},
 	{"id": TOMMY, "name": "GOLDEN THOMPSON", "note": "1928 - FIFTY-ROUND DRUM", "price": 6, "rounds": 0},

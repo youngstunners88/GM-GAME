@@ -152,9 +152,124 @@ static func make_founder() -> Node3D:
 	root.set_meta("hip_rotation", Vector3(0.0, PI + 0.75, -0.12))
 	root.set_meta("ads_pos", Vector3(-0.02, -0.10, -0.55))
 	root.set_meta("ads_rotation", Vector3(0.0, PI + 0.35, -0.05))
+	_founder_forearm(root.get_node("RightHand") as MeshInstance3D)
 	_tone_founder(root)
 	_pose_founder(root, 0.0, 1.0, 0.0, 0.0)
 	return root
+
+
+## THE STRING HAND'S FOREARM (founder 2026-11-07: it "looks like a plastic pole"). build_founder_bow.py grows a 0.9 m sleeve from the glove's
+## cut as a straight 14-sided frustum that widens slightly, every UV on one texel and a flat olive: at full draw it is a smooth even pole across the
+## lower right of the frame. Same pattern as Ep2ViewHands._add_sleeve: that surface is dropped here, and a forearm is grown from the same cut and axis:
+## a rolled leather cuff at the wrist, the sleeve swelling over the forearm and narrowing a little toward the elbow, soft folds that bunch near the cuff,
+## and a woven-cloth normal so the light breaks across it. The glove, the nock origin, the string and the limbs' shape keys are untouched.
+const FOREARM_LEN := 0.95                 # its far end must never reach the screen (0.62 showed its end at two-thirds draw)
+## The cloth mottles between these two olives, the bow arm's own sleeve shades (not one flat colour).
+const FOREARM_CLOTH := Color(0.115, 0.15, 0.075)
+const FOREARM_CLOTH_LIGHT := Color(0.20, 0.235, 0.12)
+const FOREARM_CUFF := Color(0.26, 0.17, 0.10)
+
+
+static func _founder_forearm(hand: MeshInstance3D) -> void:
+	if hand == null or hand.mesh == null:
+		return
+	var src: Mesh = hand.mesh
+	var keep := ArrayMesh.new()
+	var sleeve_verts := PackedVector3Array()
+	for i in src.get_surface_count():
+		var mat: Material = src.surface_get_material(i)
+		var arrays: Array = src.surface_get_arrays(i)
+		if mat != null and str(mat.resource_name) == "SleeveCloth":
+			sleeve_verts = arrays[Mesh.ARRAY_VERTEX]
+			continue
+		keep.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		keep.surface_set_material(keep.get_surface_count() - 1, mat)
+	if sleeve_verts.is_empty():
+		return                                                            # an older bow without the grown sleeve: leave it as it is
+	hand.mesh = keep
+	# the cut and the axis, read back from the dropped sleeve: its first ring sits on the glove's cut, its axis is the forearm's
+	var axis: Vector3 = FOUNDER_HAND_AXIS.normalized()
+	var lo: float = INF
+	for v in sleeve_verts:
+		lo = minf(lo, v.dot(axis))
+	var cut := Vector3.ZERO
+	var n: int = 0
+	for v in sleeve_verts:
+		if v.dot(axis) < lo + 0.01:
+			cut += v
+			n += 1
+	cut /= float(maxi(n, 1))
+	var r0: float = 0.0
+	for v in sleeve_verts:
+		if v.dot(axis) < lo + 0.01:
+			var off: Vector3 = v - cut
+			r0 += (off - axis * off.dot(axis)).length()
+	r0 /= float(maxi(n, 1))
+	var forearm := MeshInstance3D.new()
+	forearm.name = "StringForearm"
+	forearm.mesh = _forearm_mesh(cut, axis, r0)
+	hand.add_child(forearm)
+
+
+## The forearm as one mesh: surface 0 the cuff (leather), surface 1 the sleeve (cloth). Radii are fractions of the glove's cut radius `r0`.
+static func _forearm_mesh(cut: Vector3, axis: Vector3, r0: float) -> ArrayMesh:
+	var side: Vector3 = axis.cross(Vector3.UP if absf(axis.dot(Vector3.UP)) < 0.9 else Vector3.RIGHT).normalized()
+	var up: Vector3 = side.cross(axis).normalized()
+	# [distance along the arm, radius factor, fold depth]: the cuff rolls over the glove's edge, then the sleeve, fuller over the muscle
+	var cuff: Array = [[0.0, 0.98, 0.0], [0.006, 1.10, 0.0], [0.040, 1.12, 0.0], [0.050, 1.02, 0.0]]
+	var cloth: Array = [[0.046, 1.00, 0.0], [0.08, 1.10, 0.05], [0.13, 1.20, 0.07], [0.20, 1.28, 0.05], [0.28, 1.31, 0.035],
+		[0.38, 1.28, 0.03], [0.50, 1.22, 0.025], [0.70, 1.20, 0.02], [FOREARM_LEN, 1.18, 0.02]]
+	var mesh := ArrayMesh.new()
+	var noise := FastNoiseLite.new()
+	noise.frequency = 0.25
+	var weave := NoiseTexture2D.new()
+	weave.width = 128
+	weave.height = 128
+	weave.seamless = true
+	weave.as_normal_map = true
+	weave.bump_strength = 2.0
+	weave.noise = noise
+	var blotch := FastNoiseLite.new()                                     # the cloth's mottle: large soft patches, like the bow arm's sleeve
+	blotch.frequency = 0.035
+	var ramp := Gradient.new()
+	ramp.set_color(0, FOREARM_CLOTH)
+	ramp.set_color(1, FOREARM_CLOTH_LIGHT)
+	var mottle := NoiseTexture2D.new()
+	mottle.width = 128
+	mottle.height = 128
+	mottle.seamless = true
+	mottle.noise = blotch
+	mottle.color_ramp = ramp
+	for part in 2:
+		var rings: Array = cuff if part == 0 else cloth
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var segs: int = 20
+		for k in rings.size() - 1:
+			for i in segs:
+				var quad: Array = [[k, i], [k + 1, i + 1], [k + 1, i], [k, i], [k, i + 1], [k + 1, i + 1]]     # clockwise seen from outside (Godot's front)
+				for q in quad:
+					var ring: Array = rings[q[0]]
+					var a: float = TAU * float(q[1]) / float(segs)
+					var d: float = float(ring[0])
+					# folds: three soft creases that twist a little along the arm, deepest just above the cuff
+					var r: float = r0 * float(ring[1]) * (1.0 - float(ring[2]) * (0.5 + 0.5 * sin(3.0 * a + d * 9.0)))
+					st.set_uv(Vector2(float(q[1]) / float(segs) * 2.0, d * 6.0))
+					st.add_vertex(cut + axis * d + (side * cos(a) + up * sin(a)) * r)
+		st.generate_normals()
+		st.generate_tangents()
+		var m := StandardMaterial3D.new()
+		m.resource_name = "ForearmCuff" if part == 0 else "ForearmCloth"
+		m.albedo_color = FOREARM_CUFF if part == 0 else Color.WHITE
+		m.roughness = 0.75 if part == 0 else 0.95
+		if part == 1:
+			m.albedo_texture = mottle
+			m.normal_enabled = true
+			m.normal_texture = weave
+			m.normal_scale = 0.35
+		st.set_material(m)
+		st.commit(mesh)
+	return mesh
 
 
 ## The Tripo textures are bright for the desert sun (the first captures washed the gloves out): the textured surfaces are scaled to ~0.84 and the grown sleeve cloth a
