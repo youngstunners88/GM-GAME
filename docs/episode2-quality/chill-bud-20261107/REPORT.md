@@ -22,10 +22,25 @@ Tabs uses an actual transparent render of the supplied `Dude Buds.glb`, rather t
 
 ## Verification
 
-Local release validation and public deployment proof are recorded below as they complete. Do not read a local render or source commit as a public release.
+Local source and the corrected Frost were validated on the clean-clone import/export. Only Frost changed after the first clean export; its model and texture caches were removed before reimport/export. Every other runtime file matches the full-suite snapshot.
 
-- Existing healing transaction test: 14 checks / 0 failures before the final streaming-path change; final recheck pending.
-- Actual woods-host screenshot transaction: 1 heart → 3 hearts, exactly one bud consumed, panel remains paused.
-- Founder front-page lock: 5 files unchanged. Green-VFX check: pass. Security sentinel: no high-severity blockers; final staged rerun pending.
-- Full native suite, fresh non-threaded export, pack/texture presence and public build verification: pending.
+- The full native CI gate block completed; its only initial failure was Frost at 13,489 triangles exceeding the existing 12,500 gate. The corrected 11,864-triangle Frost passes the rerun of the entire armory-chain suite. Other full-suite results are retained, not relabeled as a clean initial run.
+- Final healing transaction test: **14 checks / 0 failures**. Actual woods-host capture: **1 heart → 3**, exactly **one bud consumed**, panel stays paused. Capture asserts the actual streamed PNG is loaded.
+- Final non-threaded web export: **0 script/parse errors**. Main **199,204,672 B** (24,768 B under gate); extras **194,574,016 B**, both under 190 MiB. Named and tracked extras presence gate passes, including the bud PNG. Texture probe: **71 models / 0 excluded-but-used textures**.
+- Local Chromium WebGL: build `dev-local`, extras HTTP 200/ready, no script errors, production harness disabled, real keyboard input rejects an invalid access code. No unlock shortcut used.
+- Founder front-page lock: **5 files unchanged**. Green-VFX check passes. Staged security sentinel: no high-severity blockers.
+- Public deployment verification: pending.
 - Not tested on a physical phone; not founder-verified.
+
+## Player-view evidence
+
+Same player position, look and Compatibility renderer before/after:
+
+![Before and after, same camera](before-after.jpg)
+
+![Ranch patch](patch-front.jpg)
+![Shop showcase](shop.jpg)
+![Actual supplied bud selected](tabs-selected.jpg)
+![One bud restored full health](tabs-healed.jpg)
+
+Portrait/landscape captures: `tabs-390x844.jpg`, `tabs-844x390.jpg`. `local-verification.json` records the source, sizes, asset and browser checks.

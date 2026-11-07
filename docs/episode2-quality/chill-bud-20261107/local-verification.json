@@ -1,0 +1,70 @@
+{
+  "runtime_source": "0b92f94c",
+  "clean_clone_base": "77ccf9d4",
+  "cold_reimported_revision": [
+    "purple_frost.glb"
+  ],
+  "packs": {
+    "index.pck": 199204672,
+    "ep2_extras.pck": 194574016
+  },
+  "armory_chain": "ALL PASS",
+  "healing_tabs": {
+    "checks": 14,
+    "failed": 0
+  },
+  "actual_art_path": "res://src/episode2/extras/patch/chill_bud.png",
+  "capture_heal": {
+    "health_before": 1,
+    "health_after": 3,
+    "buds_spent": 1
+  },
+  "texture_probe": {
+    "models": 71,
+    "excluded_but_used": 0
+  },
+  "local_web": {
+    "gameUrl": "http://localhost:8899/game/index.html?ep2=1&debug=beacon",
+    "extrasUrls": [
+      "http://localhost:8899/game/ep2_extras.pck?v=dev-local"
+    ],
+    "extrasStatus": [
+      200
+    ],
+    "beacon": {
+      "avg_ms": 75.8,
+      "build": "dev-local",
+      "frames": 158,
+      "harness": false,
+      "held": {},
+      "mem_mb": 0,
+      "mem_peak_mb": 0,
+      "paused": false,
+      "scene": "res://src/episode2/ep2_entry.tscn",
+      "state": "PLAYING",
+      "t": 16759,
+      "td": "IDLE",
+      "td_frozen": false,
+      "tex_mb": 98.6,
+      "tex_peak_mb": 98.7,
+      "time_scale": 1,
+      "touch": {
+        "held": 0,
+        "layout": "phone_landscape",
+        "profile": "platformer",
+        "shown": false,
+        "susp": false
+      },
+      "win": [
+        1280,
+        720
+      ],
+      "worst_all_ms": 2520.3,
+      "worst_ms": 0
+    },
+    "invalidCodeRejected": true,
+    "scriptErrors": []
+  },
+  "full_native_suite": "completed; only initial Frost triangle-budget failure; affected armory-chain suite rerun passes after reduction",
+  "physical_phone": false
+}
