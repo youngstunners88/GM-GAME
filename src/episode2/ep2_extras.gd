@@ -68,6 +68,7 @@ const SHOPKEEPER_HOTEL := "res://src/episode2/extras/people/shopkeeper_hotel.glb
 const PATCH_GROVE := "res://src/episode2/extras/patch/purple_bloom_grove.glb"
 const PATCH_FROST := "res://src/episode2/extras/patch/purple_frost.glb"
 const PATCH_TREE := "res://src/episode2/extras/patch/purple_bloom_tree.glb"
+const PATCH_BUD_ICON := "res://src/episode2/extras/patch/chill_bud.png"
 const STABLE_DUDE := "res://src/episode2/assets/town/dude_stable_owner.glb"
 const STABLE_ASSISTANT := "res://src/episode2/assets/town/stable_assistant.glb"
 

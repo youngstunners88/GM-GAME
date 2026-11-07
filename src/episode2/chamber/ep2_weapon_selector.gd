@@ -1,6 +1,8 @@
 class_name Ep2WeaponSelector
 extends Control
 ## Leather-and-brass armory. Icons are transparent renders of the actual weapon meshes.
+const BUD_ICON := preload("res://src/episode2/ui/icons/chill_bud.svg")
+var _bud_art: Texture2D = null
 const FONT := preload("res://src/episode2/assets/weapons/armory/western_bookman.otf")
 const ICONS := {
 	Ep2ArmoryState.WIN: preload("res://src/episode2/assets/weapons/armory/winchester_icon.png"),
@@ -56,9 +58,9 @@ func _ready() -> void:
 		add_child(card)
 		cards.append(card)
 	bud_card = _supply_button("ChillBud", select_bud)
-	bud_card.icon = preload("res://src/episode2/ui/icons/chill_bud.svg")
+	bud_card.icon = BUD_ICON
 	bud_card.expand_icon = true
-	bud_card.add_theme_constant_override("icon_max_width", 32)
+	bud_card.add_theme_constant_override("icon_max_width", 44)
 	bud_use = _supply_button("UseChillBud", func() -> void: chill_bud_requested.emit())
 	bud_use.icon = preload("res://src/episode2/ui/icons/full_hearts.svg")
 	bud_use.expand_icon = true
@@ -181,6 +183,11 @@ func card_slot(id: String) -> int:
 	return shown_ids().find(id)
 
 func _process(_delta: float) -> void:
+	# The actual bud streams with the ranch assets, preserving the main pack's small headroom.
+	if _bud_art == null and Ep2Extras.has(Ep2Extras.PATCH_BUD_ICON):
+		_bud_art = load(Ep2Extras.PATCH_BUD_ICON) as Texture2D
+		if _bud_art != null:
+			bud_card.icon = _bud_art
 	var viewport_size: Vector2 = get_viewport_rect().size
 	var ui_scale: float = viewport_size.x / 390.0 if viewport_size.x / viewport_size.y < 1.1 else 1.0
 	scale = Vector2.ONE * ui_scale
@@ -202,10 +209,10 @@ func _process(_delta: float) -> void:
 	bud_card.size = Vector2(band.size.x-action_width-28,button_height)
 	bud_use.position = Vector2(band.end.x-action_width-10,band.position.y+27)
 	bud_use.size = Vector2(action_width,button_height)
-	bud_card.add_theme_constant_override("icon_max_width",int(32*supply_scale))
+	bud_card.add_theme_constant_override("icon_max_width",int(44*supply_scale))
 	bud_use.add_theme_constant_override("icon_max_width",int(54*supply_scale))
 	bud_card.add_theme_font_size_override("font_size",int(15*supply_scale))
-	var owns_shipment: bool = state != null and state.river_gear and visible
+	var owns_shipment: bool = state != null and state.river_gear and visible and not bud_selected
 	shipment_tile.visible = owns_shipment
 	_ship_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS if owns_shipment else SubViewport.UPDATE_DISABLED
 	if owns_shipment:
@@ -221,7 +228,8 @@ func _process(_delta: float) -> void:
 func refresh_supplies() -> void:
 	if bud_card==null or bud_use==null:return
 	bud_card.text = ("DUDE'S CHILL BUD  ×%d" if TouchUi.keys_shown() else "×%d") % GameManager.chill_buds
-	bud_card.modulate = Color("ffd482") if bud_selected else Color.WHITE
+	bud_card.modulate = Color.WHITE
+	bud_card.add_theme_color_override("font_color", Color("ffd482") if bud_selected else PAPER)
 	bud_use.text = "USE" if TouchUi.keys_shown() else ""
 	bud_use.disabled = not bud_selected or health <= 0 or health >= 3 or GameManager.chill_buds <= 0
 	queue_redraw()
@@ -330,11 +338,20 @@ func _draw() -> void:
 	draw_line(Vector2(mid + 14,line_y),Vector2(mid+minf(270,size.x*.38),line_y),BRASS,1)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid,line_y-5),Vector2(mid+5,line_y),Vector2(mid,line_y+5),Vector2(mid-5,line_y)]),BRASS)
 	_draw_purse(_purse_band(), compact)
-	if state.river_gear and keys:                       # wordless on touch: the turning crate is the label there
+	if state.river_gear and keys and not bud_selected:                       # wordless on touch: the turning crate is the label there
 		var sr: Rect2 = shipment_rect()
 		_text("THE SHIPMENT", Vector2(sr.get_center().x, sr.end.y + (10 if compact else 14)), 9 if compact else 12, BRASS, true)
 		if not compact:
 			_text("DAY-88 LIVE" if shipment_live else "DAY-88 CARGO", Vector2(sr.get_center().x, sr.end.y + 29), 10, PAPER, true)
+	if bud_selected:
+		# The exact founder-supplied bud, rendered from the mesh; the health transaction stays in the host.
+		var br: Rect2 = shipment_rect()
+		if size.y < 520.0:
+			br.size = Vector2(64.0, 64.0)
+		br.position.x = size.x - br.size.x - 10.0
+		draw_texture_rect(_bud_art if _bud_art != null else BUD_ICON, br, false)
+		if keys:
+			_text("CHILL BUD", Vector2(br.get_center().x, br.end.y + (10 if compact else 14)), 9 if compact else 12, BRASS, true)
 	_draw_ledger(_ledger_band(), compact)
 	var shown: Array = shown_ids()
 	if shown.is_empty():
