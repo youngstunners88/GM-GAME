@@ -9,10 +9,16 @@ extends Ep2Interlude
 ##          already taking numbers at the auction". Talk, not a firefight; the wagon is pushed aside once they have spoken.
 ##   SPOOK  (environment / animal pressure) vultures lift off a bison carcass in a dust gust; the horse bolts for a few seconds (reuses
 ##          Ep2TrailVultures, the wildlife pass's shootable flock - no new creature system).
-##   ARRIVE the auction grounds' fence and sign: the room hands on (end of this slice; the auction lock owns what follows).
+##   ARRIVE the auction grounds' fence and sign. The grounds and the AUCTION HOUSE are in THIS room (Ep2AuctionHouse, brief
+##          PROMPT_AUCTION_HOUSE_RENEGADE_JACK_HAMMER_2026-11-08): no door trigger, no swap, no teleport. He hitches the horse at the rail.
+##   HALL   inside: Renegade calls the week's Gold Rush lot from the block, the floor answers, women serve the room.
+##   JACK   Jack Hammer by the claim board: recognised, a word, Renegade calls him out.  FLEE  he runs out the side door (never killed here).
+##   AFTER  the auction carries on; walking back out the front doors ends the slice.
+## One atmosphere: the light moves from the lake's day to the auction's dusk along the road, the wind gives way to the hall by distance,
+## and the lake builds this room behind itself (prebuild) so the hand-over keeps his gaze in one frame.
 ## A shot person falls and stays down (COMMON-SENSE RULE); the road stays open either way.
 
-enum Beat { QUIET, CLAIM, SPOOK, ARRIVE }
+enum Beat { QUIET, CLAIM, SPOOK, ARRIVE, HALL, JACK, FLEE, AFTER }
 const ROAD_YAW := PI * 0.25                        # the diagonal: north-east out of the lake
 const ROAD_HALF := 3.0
 const CORRIDOR := 24.0                             # how far either side of the road he may roam (open ground, not a canyon)
@@ -22,6 +28,8 @@ const CLAIM_TALK_R := 9.0
 const SPOOK_S := 235.0                             # the carcass beside the road
 const SPOOK_R := 28.0
 const ARRIVE_S := 345.0                            # the auction grounds' gate
+const PORCH_S := 395.0                             # the auction house's porch edge (Ep2AuctionHouse's origin)
+const DISMOUNT_S := PORCH_S - 26.0                 # level with the hitching rail: he gets down and walks the last stretch
 const MOUNTED_SPEED := 7.0                         # the ridden pace of the session's other horse legs (world_routes)
 const MOUNTED_EYE := 2.18
 const BOLT_SPEED := 11.5
@@ -60,6 +68,14 @@ var _spooked: bool = false
 var _bolt_t: float = -1.0
 var _rise_t: float = -1.0
 var _arrived: bool = false
+var _house: Ep2AuctionHouse
+var _foot_speed: float = 3.4
+var _hitched: bool = false
+var _dismount_t: float = -1.0
+var _env: Environment
+var _sky_mat: ProceduralSkyMaterial
+var _light_s: float = -999.0
+var _wind: AudioStreamPlayer
 
 
 func _init() -> void:
@@ -71,7 +87,34 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "auction_road"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _ground, _road_props, _build_wagon, _build_spook, _build_gate, _build_horse]
+func _build_steps() -> Array: return [_light, _ground, _road_props, _build_wagon, _build_spook, _build_gate, _build_horse, _build_house,
+	_build_house, _build_house]
+
+
+## The auction house in three slices (shell, furniture, people); if the streamed pack is not mounted yet, _tick finishes it later.
+func _build_house() -> void:
+	if _house == null:
+		_house = Ep2AuctionHouse.new()
+		_house.name = "AuctionHouse"
+		_visuals.add_child(_house)
+		_house.position = at(PORCH_S)
+		_house.rotation.y = ROAD_YAW
+		_house.phase_changed.connect(_on_house_phase)
+		_house.say = func(text: String, secs: float) -> void: _hud.speech(text, secs, false)
+	_house.build_next()
+
+
+func to_house(p: Vector3) -> Vector3:
+	return Vector3(p.dot(_right), p.y, road_s(p) - PORCH_S)
+
+
+func from_house(l: Vector3) -> Vector3:
+	return at(PORCH_S + l.z, l.x) + Vector3(0, l.y, 0)
+
+
+func _warm_views() -> Array:
+	return [{"eye": at(START_S) + Vector3(0, MOUNTED_EYE, 0), "yaw": ROAD_YAW}, {"eye": at(ARRIVE_S - 12.0) + Vector3(0, MOUNTED_EYE, 0), "yaw": ROAD_YAW},
+		{"eye": from_house(Vector3(0, FPS_EYE_HEIGHT, 5.0)), "yaw": ROAD_YAW, "pitch": 0.05}]
 
 
 ## Road frame: s along the diagonal, d to its right.
@@ -85,27 +128,41 @@ func road_s(p: Vector3) -> float:
 
 func _light() -> void:
 	var env := Environment.new()
+	_env = env
 	_env_node.environment = env
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color(0.36, 0.52, 0.66)
-	sky_mat.sky_horizon_color = Color(0.86, 0.78, 0.62)
+	_sky_mat = sky_mat
 	sky_mat.ground_horizon_color = Color(0.70, 0.58, 0.40)
 	sky_mat.ground_bottom_color = Color(0.30, 0.22, 0.14)
 	sky.sky_material = sky_mat
+	sky.radiance_size = Sky.RADIANCE_SIZE_32
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.70, 0.62, 0.50)
-	env.ambient_light_energy = 0.6
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.84, 0.74, 0.56)
-	env.fog_density = 0.0022                      # heat haze: the far end reads as distance, not a wall
-	_sun.rotation_degrees = Vector3(-38, -20, 0)
-	_sun.light_color = Color(1.0, 0.86, 0.64)
-	_sun.light_energy = 1.35
 	_sun.shadow_enabled = true
+	_light_s = -999.0
+	_tick_light(START_S)
+
+
+## ONE ATMOSPHERE: at the lake end the light is Logan's Lake's own (logans_lake.gd _light, so the hand-over frame matches); toward the
+## grounds it sinks to the auction's warm dusk, and the hall's lamps and glowing windows take over. Re-lit every 1.5 m of road.
+func _tick_light(s: float) -> void:
+	if _env == null or absf(s - _light_s) < 1.5:
+		return
+	_light_s = s
+	var k: float = smoothstep(20.0, 330.0, s)
+	_sky_mat.sky_top_color = Color(0.32, 0.48, 0.58).lerp(Color(0.10, 0.12, 0.25), k)
+	_sky_mat.sky_horizon_color = Color(0.71, 0.77, 0.76).lerp(Color(0.95, 0.50, 0.26), k)
+	_env.ambient_light_color = Color(0.53, 0.65, 0.63).lerp(Color(0.34, 0.28, 0.32), k)
+	_env.ambient_light_energy = lerpf(0.55, 0.42, k)
+	_env.fog_light_color = Color(0.60, 0.69, 0.65).lerp(Color(0.58, 0.38, 0.26), k)
+	_env.fog_density = lerpf(0.0015, 0.0026, k)
+	_sun.rotation_degrees = Vector3(lerpf(-31.0, -7.0, k), lerpf(-34.0, -20.0, k), 0)
+	_sun.light_color = Color(1.0, 0.88, 0.70).lerp(Color(1.0, 0.55, 0.30), k)
+	_sun.light_energy = lerpf(1.25, 0.62, k)
 	_sun.directional_shadow_max_distance = 90.0
 
 
@@ -127,6 +184,15 @@ func _ground() -> void:
 	road.position = at((ARRIVE_S + 40.0) * 0.5 - 10.0) + Vector3(0, 0.02, 0)
 	road.rotation.y = ROAD_YAW
 	_visuals.add_child(road)
+	var water := MeshInstance3D.new()                 # Logan's still water behind the road's first metre: the lake he just left
+	water.name = "LakeBehind"
+	var wm := PlaneMesh.new()
+	wm.size = Vector2(150, 90)
+	water.mesh = wm
+	water.material_override = _plain(Color(0.20, 0.32, 0.34), 0.08, 0.25)
+	water.position = at(-70.0) + Vector3(0, 0.03, 0)
+	water.rotation.y = ROAD_YAW
+	_visuals.add_child(water)
 
 
 ## Scrub, rocks and a few marker posts: enough to read speed on the open ground.
@@ -264,7 +330,7 @@ func _build_gate() -> void:
 	gate.add_child(words)
 	var canvas: StandardMaterial3D = _plain(Color(0.86, 0.80, 0.68), 0.9)
 	for i in 4:
-		var tent := _box(Vector3(5, 3, 5), Vector3(-12.0 + 8.0 * i, 1.5, 18.0 + 3.0 * (i % 2)), canvas, gate)
+		var tent := _box(Vector3(5, 3, 5), Vector3([-22.0, -14.0, 14.0, 22.0][i], 1.5, 18.0 + 3.0 * (i % 2)), canvas, gate)   # clear of the lamp-lit approach
 		tent.rotation.y = 0.2 * i
 
 
@@ -291,9 +357,25 @@ func _on_setup() -> void:
 	print("[EP2] auction road started")
 	_mounted = bool(handoff.get("road_mounted", true))
 	_player_pos = at(START_S)
-	_look_yaw = ROAD_YAW
-	_look_pitch = 0.0
+	_apply_handoff_gaze(ROAD_YAW, 0.0, PI * 0.5)          # the lake's gaze carries through the hand-over: no camera reset
 	_set_ground(0)
+	_hitched = false
+	_dismount_t = -1.0
+	_light_s = -999.0
+	if _house != null and _house.built:
+		_house.reset()
+	if _wind == null:
+		_wind = AudioStreamPlayer.new()
+		_wind.bus = "SFX"
+		var wind_path := "res://src/episode2/extras/audio/town/town_wind.ogg"
+		if Ep2Extras.has(wind_path):
+			var ws: AudioStream = (load(wind_path) as AudioStream).duplicate()
+			if ws is AudioStreamOggVorbis:
+				(ws as AudioStreamOggVorbis).loop = true
+			_wind.stream = ws
+		add_child(_wind)
+	if _wind.stream != null and not _wind.playing:
+		_wind.play()
 	_claim_line = -1
 	_claim_t = 0.0
 	_claim_done = false
@@ -309,7 +391,8 @@ func _on_setup() -> void:
 	if not _hud.search_requested.is_connected(start_rig):
 		_hud.search_requested.connect(start_rig)
 	_horse.visible = _mounted
-	walk_speed = MOUNTED_SPEED if _mounted else walk_speed
+	_foot_speed = walk_speed if walk_speed < MOUNTED_SPEED else _foot_speed
+	walk_speed = MOUNTED_SPEED if _mounted else _foot_speed
 	eye_height = MOUNTED_EYE if _mounted else FPS_EYE_HEIGHT
 	_place_horse(_player_pos, ROAD_YAW)
 	_advance_to(Beat.QUIET)
@@ -320,7 +403,11 @@ func _on_beat_entered(b: int) -> void:
 		Beat.QUIET: _hud.objective = "Ride north-east to the auction grounds." if _mounted else "Walk north-east to the auction grounds."
 		Beat.CLAIM: _hud.objective = "A claim wagon blocks the road. Show the clerk your papers."
 		Beat.SPOOK: _hud.objective = "Ride on to the auction grounds."
-		Beat.ARRIVE: _hud.objective = ARRIVE_LINE
+		Beat.ARRIVE: _hud.objective = ARRIVE_LINE + (" Hitch the horse and head for the hall." if _mounted and not _hitched else " The hall's doors are open.")
+		Beat.HALL: _hud.objective = "The Gold Rush Auction · find a place on the floor and watch the block."
+		Beat.JACK: _hud.objective = "That's Jack Hammer, by the claim board."
+		Beat.FLEE: _hud.objective = "Jack Hammer is running for the side door!"
+		Beat.AFTER: _hud.objective = "Jack Hammer rode for the rail line. Leave by the front doors when you're ready."
 
 
 func start_rig(_payment: String = "") -> bool:
@@ -398,13 +485,30 @@ func _tick(delta: float) -> void:
 			_bolt_t = -1.0
 			eye_height = MOUNTED_EYE
 	_tick_horse(delta)
-	# ARRIVE
+	# ARRIVE: the gate is only a sign now - the grounds and the hall go on in this same room
 	if not _arrived and s >= ARRIVE_S:
 		_arrived = true
 		_advance_to(Beat.ARRIVE)
-		_resolve({"end_session": true, "auction_arrived": true, "road_mounted": _mounted, "claim_talked": _claim_line >= CLAIM_LINES.size()
-			and not _down.has("clerk"), "spooked": _spooked, "companion": ""})
-		return
+	if _mounted and not _hitched and s >= DISMOUNT_S:
+		_hitched = true                               # he gets down by the rail; the horse walks over and stands with the others
+		_dismount_t = 0.0
+		walk_speed = _foot_speed
+		_hud.speech("LIL BLUNT: Easy now. Wait here with the others.", 2.6, false)
+	if _dismount_t >= 0.0:
+		_dismount_t += delta
+		eye_height = lerpf(MOUNTED_EYE, FPS_EYE_HEIGHT, smoothstep(0.0, 0.9, _dismount_t))
+		if _dismount_t >= 0.9:
+			_dismount_t = -1.0
+	_tick_light(s)
+	if _wind != null:
+		_wind.volume_db = lerpf(-9.0, -38.0, smoothstep(150.0, 400.0, s))
+	if _house != null:
+		if not _house.built:
+			_house.build_next()
+		var fwd: Vector3 = -_camera.global_transform.basis.z if _camera != null else _forward
+		_house.tick(delta, to_house(_player_pos), Vector3(fwd.dot(_right), fwd.y, fwd.dot(_forward)))
+		if _house.phase == "left":
+			return
 	var prompt := ""
 	if _beat == Beat.CLAIM and _claim_line < 0 and _can_talk():
 		prompt = "Show your papers [E]"
@@ -438,6 +542,20 @@ func _place_horse(p: Vector3, yaw: float) -> void:
 
 
 func _tick_horse(delta: float) -> void:
+	if _hitched and _horse != null:
+		var spot: Vector3 = from_house(Ep2AuctionHouse.HITCH + Vector3(1.3, 0, 0))
+		var to_spot := Vector3(spot.x - _horse.position.x, 0, spot.z - _horse.position.z)
+		var walking: bool = to_spot.length() > 0.08
+		if walking:
+			_horse.position += to_spot.normalized() * minf(to_spot.length(), 2.2 * delta)
+			_horse.rotation.y = lerp_angle(_horse.rotation.y, atan2(to_spot.x, to_spot.z), clampf(delta * 4.0, 0.0, 1.0))
+		else:
+			_horse.rotation.y = lerp_angle(_horse.rotation.y, ROAD_YAW - PI * 0.5, clampf(delta * 3.0, 0.0, 1.0))     # nose to the rail
+		var hc: String = "horse_walk" if walking else "horse_stand"
+		if _horse_anim != null and _horse_anim.has_animation(hc) and _horse_anim.current_animation != hc:
+			_horse_anim.play(hc, 0.3)
+			_horse_anim.speed_scale = 1.0
+		return
 	if not _mounted or _horse == null:
 		return
 	var moved := Vector3(_player_pos.x - _horse.position.x, 0, _player_pos.z - _horse.position.z)
@@ -456,11 +574,26 @@ func _tick_horse(delta: float) -> void:
 
 ## Open ground either side of the road; the claim wagon holds the road until the talk is done.
 func _collide(p: Vector3) -> Vector3:
-	var s: float = clampf(p.dot(_forward), START_S - 2.0, ARRIVE_S + 4.0)
+	var s: float = clampf(p.dot(_forward), START_S - 2.0, PORCH_S + 38.0)
 	var d: float = clampf(p.dot(_right), -CORRIDOR, CORRIDOR)
 	if not _claim_done and s > CLAIM_S - 4.0 and road_s(_player_pos) <= CLAIM_S - 4.0:
 		s = CLAIM_S - 4.0                         # the wagon, the clerk and the claimant across the way: he has to stop and talk
+	if _house != null and _house.built and s > PORCH_S - 45.0:
+		var l: Vector3 = _house.collide(Vector3(d, 0, s - PORCH_S))   # walls, stage, rail, seating, benches, posts, the hitched horses
+		s = PORCH_S + l.z
+		d = l.x
 	return at(s, d) + Vector3(0, p.y, 0)
+
+
+func _on_house_phase(phase: String) -> void:
+	match phase:
+		"calls": _advance_to(Beat.HALL)
+		"jack": _advance_to(Beat.JACK)
+		"flee": _advance_to(Beat.FLEE)
+		"after": _advance_to(Beat.AFTER)
+		"left":
+			_resolve({"end_session": true, "auction_arrived": true, "auction_seen": true, "jack_fled": true, "road_mounted": _mounted,
+				"claim_talked": _claim_line >= CLAIM_LINES.size() and not _down.has("clerk"), "spooked": _spooked, "companion": ""})
 
 
 ## A round at a person drops him where he stands (COMMON-SENSE RULE); a round at the birds goes to the flock.
@@ -469,6 +602,12 @@ func _on_player_shot() -> void:
 		return
 	var eye: Vector3 = _camera.global_position
 	var dir: Vector3 = -_camera.global_transform.basis.z
+	if _house != null and _house.built and road_s(_player_pos) > ARRIVE_S - 10.0:
+		if _house.shot(_house.to_local(eye), _house.global_transform.basis.inverse() * dir):
+			if _hud != null:
+				_hud.hit_marker(true)
+			return
+		_house.pressure()                          # a shot at the grounds: Jack does not wait for the next one
 	for folk in [_clerk, _claimant]:
 		if folk == null or _down.has(folk.name):
 			continue
@@ -492,3 +631,5 @@ func claim_done() -> bool: return _claim_done
 func spooked() -> bool: return _spooked
 func is_bolting() -> bool: return _bolt_t >= 0.0
 func is_mounted() -> bool: return _mounted
+func is_hitched() -> bool: return _hitched
+func house() -> Ep2AuctionHouse: return _house

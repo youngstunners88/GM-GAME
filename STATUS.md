@@ -1,5 +1,14 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-08 — The Auction House: Renegade on the block, Jack Hammer's first touch and flee — IN CODE + SEEN locally; NOT founder-verified, not live until master CI deploys.**
+- Lake → road → auction grounds → hall is ONE room now: the gate is only a sign, no load, no teleport, no title card; the lake builds the road behind itself and the hand-over keeps your gaze. Light sinks from the lake's day to a warm dusk along the road; wind gives way to the saloon bed by distance.
+- CAD hall (FreeCAD → Blender, `tools/ep2_cad/auction_house_cad.py`): false-front facade with lit gallery windows, porch columns and bunting, trusses, stage + proscenium, rostrum, brass rail, side seating, claim board + Jack's wanted poster, XAUT strongbox, lamp posts, hitching rail (two horses tied). Big surfaces dressed with the existing tileable PBR sets (planks/dark wood/brass) — no paper seams.
+- Renegade (your Drive GLB, cut to 16k tris) hosts from the block with real clips (lent from Jack/Logan's rigs); three Gold Rush calls (seven days, one pool, GOLD in → XAUT pro-rata) and the floor cheers/claps with paddles. Four women serve the floor and porch; a doorman soft-checks your license (never a lock).
+- Jack Hammer by the claim board: Lil Blunt recognises him, he says he came "to hear what's shipping", Renegade calls him out, he RUNS out the side door (any shot inside sends him running too — never killed here). The auction carries on; walk out the front doors to end the slice.
+- Collision: walls (door gaps), stage, rail, seating, benches, posts, horses are solid. You dismount at the hitching rail and walk in.
+- Not done: ComfyUI materials (local GPU is a 2 GB 920MX; existing PBR sets used instead — a Runpod Comfy pass is possible). The second Drive link ("whitepaper") is Jack Hammer's model, not a whitepaper; protocol wording came from our GoldMine design notes. No recorded voice (text lines).
+- Gate `tests/ep2_lake_auction_road_test.tscn` 48/48 (now in CI) + 8 neighbouring gates green. Captures: `tools/ep2_shots/auction_house_shot.tscn`.
+
 **2026-11-08 — After day-88: horse back at Logan's Lake, 0.5 BTC salve, road to the auction — pushed / deploying; NOT founder-verified.**
 - Utah takes the Shipment → the game returns to Logan's Lake (no longer ends there) with your horse already drinking; 4 of Logan's horses stand on the far shore.
 - Shot horse: Logan's farrier salve, **0.5 BTC** (one coin face, half kept as change for next time); short of coin = a clear line, never a lock. Dude's swap stays, now **1 BTC** (on his auction credit if you're short).

@@ -555,6 +555,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_seamless_test.tscn > lake-seamless-tests.log 2>&1
           if grep -E '\[FAIL\]' lake-seamless-tests.log; then exit 1; fi
           grep -q 'EP2_LAKE_SEAMLESS: 13 checks, 0 failed' lake-seamless-tests.log
+          # Lake -> road -> auction grounds -> hall as one room (founder 2026-11-08): no swap at the door, solid hall, Renegade, Jack Hammer's flee.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_auction_road_test.tscn > lake-auction-road-tests.log 2>&1
+          if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-auction-road-tests.log; then exit 1; fi
+          grep -q 'EP2_LAKE_AUCTION_ROAD: 48 checks, 0 FAIL' lake-auction-road-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
           grep -q 'EP2_WORLD_ROUTES: 29 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi

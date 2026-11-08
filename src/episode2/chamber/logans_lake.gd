@@ -401,6 +401,7 @@ func _on_beat_entered(b: int) -> void:
 			_say("The still-water narrows into the river. Rich and Utah's gear is ready for the run downstream.", 8.0)
 		Beat.ROAD:
 			_road_objective()
+			prebuild_requested.emit("auction_road")          # the road (and the auction grounds) build behind the lake: one-frame hand-over at the sign
 			_say("LOGAN: Day-eighty-eight's in, then. Your horse found the water before you did. The auction's a short ride east - go see who's taking numbers.", 7.5)
 
 func start_rig(_payment: String = "") -> bool:
@@ -409,7 +410,7 @@ func start_rig(_payment: String = "") -> bool:
 		# founder lock 2026-11-04: the lake hands on to the day-88 ridge (river_cover.gd); Logan stays here, Rich and Utah never come
 		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
 		return true
-	if _beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction():
+	if _beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction() and _handoff_ok():
 		_leave_for_auction()
 		return true
 	if _can_offer_salve():
@@ -638,7 +639,7 @@ func get_handoff() -> Dictionary:
 	return result
 
 ## At the top of the shore path with the ridge not yet built: the root spends more of each frame on it (never seen when built early).
-func _wants_handoff() -> bool: return _beat == Beat.OVERLOOK and _staged and _player_pos.z > 59
+func _wants_handoff() -> bool: return (_beat == Beat.OVERLOOK and _staged and _player_pos.z > 59) or (_beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction())
 
 func staging_complete() -> bool: return _staged
 func staging_count() -> int: return _stage_calls
