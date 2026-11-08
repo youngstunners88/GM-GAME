@@ -1,9 +1,16 @@
 {
-  "objective": "Publish and publicly verify completed town score/lake approach feature",
-  "branch": "codex/founder-fix-document-1029",
-  "runtime_tested_commit": "082b3b7b",
-  "scratch": "/workspace/work/town-lake-1031",
-  "checks": "Final full-native suite clean (3knownpause exceptions), region12/preview8/theme8/world28/lakeart27, audio32sPCM+energy, native and WebGL5frames real153.2sec automaticA\u2192B, contextRunning/nonzeroanalyser, no SCRIPT/USER errors, eye/gaze same, decksame. Warm197675808/fresh197643072B margin1586368; textures0; securityNo blockers; title5+harnesspass. Final sign(-12,0,-4) clearsactualLogansightline. Sourcefrozen082, docs-onlyafter.",
-  "next": "Commit final proof then explicitfetchmappedmaster+branchrefs; scripts/ship-to-master.sh --gates python3 /workspace/work/town-lake-1031/release_gates.py082b3b7b. Watch masterCI via github_status.py+watch_release.py, actual butler upload log and run success. Publicprobe first7releaseSOURCE --extras, public_input.mjs rejectinvalidcode, download_public.py first7 fetch10files hashSHA512, prepare_browser.py public-replay/game, serve8931 (session32774 alreadyrunning), browser.mjs REPLAY_URLlocalhost8931/game/arrival-web.html REPLAY_OUTscratch/public-replay EXPECT_BUILDsource7. Browser full153sec automaticrotation,8checks5frames runningctx+RMS/clock +no errors. Reviewactualpublicfiles screenshots; fill receipt+STATUS, validator, normaldocs-onlypush/master preservingbot exports; mappedfetchafterpush avoidsstale originbranch. Do notclaimlivebeforeproof. No Meshyspend.",
-  "tools": "Godot4.3flock-o/tmp/gm-godot.lock forruntime/export/GPU/browsers; ci-gates-local ownslock. Xorg98. CHROMIUM_BIN=/workspace/work/cart-rebuild/chromium-trusted NODE_USE_ENV_PROXY1 NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/environment-proxy-ca.crt; browsersnetworkadditionalpermission. GitHubstatus helper/workspace/work/cart-rebuild/github_status.py; watcher/workspace/work/town-continuity-1029/watch_release.py; logsMCPfilteronlyactualPushed/freshdata nofullsecrets. SourceCIstampdateUTC+7hash; user-facingdateAsiaSeoulOct31."
+  "objective": "Fix false Save failure and resume latest explicit checkpoint, then publish and verify itch",
+  "branch": "codex/save-resume-1108",
+  "observed_master": "d5a6d76b55f13594ec0764a11b115e1f0b58df36",
+  "source_commit": "c8cc11d86be8ed2a7e2d0ce41dd899cfd5825bb4",
+  "scratch": "/workspace/work/save-resume",
+  "changes": [
+    "src/autoload/game_manager.gd: accept JS true as int1/booltrue; allow lake_trail",
+    "tests/manual_checkpoint_test.gd:67 checks",
+    "CI pins67"
+  ],
+  "evidence": "Godot4.3 SHA512 verified. Native67pass, savecompat pass, full ci-gates-local pass (/tmp/tmp.hNSr59K3fy) except3 documented pausegeometry. Sentinel0highblockers(knownmediumtmp path reviewed), title5/harnesspass. Finalwarmweb198993312B noSCRIPTERRORe. Ep1browser actualSavedcheckpoint, reloadContinue,blocked/retry allpass; screenshots inspected. Ep2freshseed reachesgate; exact test stillrunning. FinalexactEp2browser gate/save/blocked/reload/re-save allpass, actual screenshots inspected. Freshmain198960128/extras194574240B.71texturemodels0excludedrefs. release-gates.py pass.",
+  "running": "branch CI42458746840 in progress; server55977 port8899",
+  "next": "Commit verification docs/audit/STATUS, ship-to-master.sh --gates python3 /workspace/work/save-resume/release-gates.py. Monitor exact master CI/source, actual butler upload, public BUILD and Save/Continue before sayinglive.",
+  "tools": "Pinned G .godot-cache/Godot_v4.3-stable_linux.x86_64; XDG dirs /workspace/work/save-resume/xdg/{data,config,cache}. Chromium /usr/bin/chromium +playwright repo-local. Publicbrowser may need environment CA trust. GitHubjobs connector; ci-status.py uses existing env token without output."
 }
