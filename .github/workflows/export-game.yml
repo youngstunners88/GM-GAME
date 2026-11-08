@@ -907,7 +907,19 @@ jobs:
         id: secaudit
         if: success()
         run: |
-          curl -fsSL https://bun.sh/install | bash
+          set -euo pipefail
+          # Retry the whole installer: its own GitHub download can return 504
+          # after all build gates have passed. Exhausted retries still block.
+          for bun_attempt in 1 2 3; do
+            if curl -fsSL --retry 2 --retry-all-errors https://bun.sh/install | bash; then
+              break
+            fi
+            if [ "$bun_attempt" -eq 3 ]; then
+              echo "::error::Bun installation failed after three attempts; audit cannot run"
+              exit 1
+            fi
+            sleep "$((bun_attempt * 3))"
+          done
           export PATH="$HOME/.bun/bin:$PATH"
           set +e
           bun .claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high --json > security-report.json
