@@ -44,6 +44,12 @@ Run `42464978907` attempt 1 stopped on Godot’s download returning HTTP 504; af
 
 The final workflow installs **Bun 1.4.4 before the long build**, from its fixed official release asset URL. The downloaded archive was checked against the release API’s published SHA-256 digest, then its SHA-512 was pinned in CI. CI verifies that hash before executing Bun. It uses bounded curl retries and fails before game import if setup is unavailable. The actual post-export security audit and its blocking exit code are unchanged. Actual-workflow bootstrap checks pass for the verified archive and reject both a corrupt archive and failed download before PATH registration. The pinned runtime ran the 47-check audit again with the same **13 pass / 0 fail / 2 manual / 32 skip** result.
 
+## Official npm distribution, identical verified binary
+
+The early fixed GitHub-release download also returned HTTP 504 on every attempt in run `42469074733`. Switched only the audit-runtime transport to Bun’s official **`@oven/bun-linux-x64@1.4.4`** npm package. Its metadata points to `oven-sh/bun`; the downloaded tarball matches npm’s published SHA-512 integrity, and the extracted executable is **byte-identical** to the independently verified GitHub release binary. CI pins and checks both archive and executable SHA-512 hashes before execution, extracting only `package/bin/bun` without running package-install scripts. The post-export audit remains mandatory and unchanged.
+
+Actual-bootstrap tests pass for the verified package and reject a corrupt archive, failed download, and tampered extracted binary before PATH registration. The identical runtime’s broad audit again reports **13 pass / 0 fail / 2 manual / 32 skip**. This changes no game code or game package dependency.
+
 ## Release
 
 Core save source `c8cc11d86be8ed2a7e2d0ce41dd899cfd5825bb4` passed [full branch CI 42458746840](https://github.com/youngstunners88/GM-GAME/actions/runs/42458746840). Combined runtime source `dd5755152b9d05a1ffa1bc26d798fd3bcffd6598` passed local release gates; later merge `748cfe3c` adds only CI export bookkeeping. Publishing through `scripts/ship-to-master.sh`; production CI/upload/public BUILD evidence pending. No physical-phone test or literal multi-day wait has been performed.

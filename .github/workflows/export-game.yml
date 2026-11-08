@@ -159,8 +159,9 @@ jobs:
           python3 scripts/repair-fort-knox-backdrop.py --check
           python3 scripts/make-bg-seamless.py --check
 
-      # Install the audit runtime before long imports/tests, using the exact
-      # archive verified against the published release digest (not /latest).
+      # Install the audit runtime early from Bun's official npm distribution.
+      # Its binary is byte-identical to the independently verified GitHub release;
+      # pin both the published archive integrity and that binary's checksum.
       - name: Install pinned security-audit runtime
         run: |
           set -euo pipefail
@@ -168,13 +169,14 @@ jobs:
           mkdir -p "$BUN_DIR"
           curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
             --connect-timeout 30 --max-time 120 --retry-max-time 180 \
-            -o "$BUN_DIR/bun.zip" \
-            "https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-linux-x64.zip"
-          echo "02d122b7e9488b2feed40d8a8bbd5a3c0700261c1528a457fe842a023a1c3d5899480f1dbc6adf67e56e432762a090942d0ddef6a2c10f6fd77e438d9ec236d1  $BUN_DIR/bun.zip" | sha512sum -c -
-          unzip -q "$BUN_DIR/bun.zip" -d "$BUN_DIR"
-          chmod +x "$BUN_DIR/bun-linux-x64/bun"
-          "$BUN_DIR/bun-linux-x64/bun" --version
-          echo "$BUN_DIR/bun-linux-x64" >> "$GITHUB_PATH"
+            -o "$BUN_DIR/bun.tgz" \
+            "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.4.4.tgz"
+          echo "0876db9261d5336f13d4616afba18be00a38ba3c306308f50b1145c041732da9cf7cdb0877d0216c83f4438ade5ae5819068a6524a10ca0acaed1823b63defa2  $BUN_DIR/bun.tgz" | sha512sum -c -
+          tar -xzf "$BUN_DIR/bun.tgz" -C "$BUN_DIR" package/bin/bun
+          echo "1f38956013ee77e4d405333647c21040a0ecbbccf9d355fd1bb332b3ed8639eb4418c0cb0a5786501b4a10bea035de10267becd2904b36258be6335b67d799af  $BUN_DIR/package/bin/bun" | sha512sum -c -
+          chmod +x "$BUN_DIR/package/bin/bun"
+          "$BUN_DIR/package/bin/bun" --version
+          echo "$BUN_DIR/package/bin" >> "$GITHUB_PATH"
 
       - name: Download Godot editor + export templates
         run: |
