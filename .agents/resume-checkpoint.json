@@ -1,16 +1,11 @@
 {
-  "objective": "Fix false Save failure and resume latest explicit checkpoint, then publish and verify itch",
+  "objective": "Publish verified Save/Continue repair and verify public itch BUILD/input",
   "branch": "codex/save-resume-1108",
-  "observed_master": "d5a6d76b55f13594ec0764a11b115e1f0b58df36",
-  "source_commit": "c8cc11d86be8ed2a7e2d0ce41dd899cfd5825bb4",
+  "runtime_base": "dd5755152b9d05a1ffa1bc26d798fd3bcffd6598",
+  "observed_master": "4bb5e45e910883fa07f2cde21f35c9432e758683",
   "scratch": "/workspace/work/save-resume",
-  "changes": [
-    "src/autoload/game_manager.gd: accept JS true as int1/booltrue; allow lake_trail",
-    "tests/manual_checkpoint_test.gd:67 checks",
-    "CI pins67"
-  ],
-  "evidence": "Godot4.3 SHA512 verified. Native67pass, savecompat pass, full ci-gates-local pass (/tmp/tmp.hNSr59K3fy) except3 documented pausegeometry. Sentinel0highblockers(knownmediumtmp path reviewed), title5/harnesspass. Finalwarmweb198993312B noSCRIPTERRORe. Ep1browser actualSavedcheckpoint, reloadContinue,blocked/retry allpass; screenshots inspected. Ep2freshseed reachesgate; exact test stillrunning. FinalexactEp2browser gate/save/blocked/reload/re-save allpass, actual screenshots inspected. Freshmain198960128/extras194574240B.71texturemodels0excludedrefs. release-gates.py pass.",
-  "running": "branch CI42458746840 in progress; server55977 port8899",
-  "next": "Commit verification docs/audit/STATUS, ship-to-master.sh --gates python3 /workspace/work/save-resume/release-gates.py. Monitor exact master CI/source, actual butler upload, public BUILD and Save/Continue before sayinglive.",
-  "tools": "Pinned G .godot-cache/Godot_v4.3-stable_linux.x86_64; XDG dirs /workspace/work/save-resume/xdg/{data,config,cache}. Chromium /usr/bin/chromium +playwright repo-local. Publicbrowser may need environment CA trust. GitHubjobs connector; ci-status.py uses existing env token without output."
+  "changes": "c8cc11d8 normalizes Godot4.3 JS boolean int1 and allows lake_trail; tests67. Preserved master town/quad work. dd575515 waits for complete CI imports and stops on errors; failed oldmaster42458747648 hid aborted import then36falseportal failures. 748cfe3c only merges CI export bookkeeping.",
+  "verified": "c8cc full native+branch CI42458746840 success;67/compat;3 documented nativepausegeometry. DD common40/townALLPASS/manual67, clean main198967888 extras194574144, fresh portalALLPASS, import failure checks, security0high/title5/harness/71texture0excluded. Combined actual webgate/Save/blocked/exact bytesreload/Continue/resave allpass; image reviewed.",
+  "next": "Commit these docs/audit then ship-to-master.sh --gates python3 /workspace/work/save-resume/release-gates.py. Source guard baseDD, browserlog web-ep2-merged.log. Monitor exact masterCI ~34min to actualbutlerupload, then public BUILD and Save/reload/Continue. Do notsaylivebeforeproof.",
+  "tools": "Servers55977 port8899 oldcore;36495 port8900 freshDD. G4.3 .godot-cache; XDG scratch/xdg/{data,config,cache}. Scripts web-save.cjs &web-ep2-exact.cjs supportGAME_URL/PROOF_OUT; latterEXPECT_BUILD, usesbeacon/words+actualwrites. CHROMIUM_BIN=scratch/chromium-trusted pins providedproxyCA; CDN200. ci-status.py existingauth. Specific branch fetchspecadded, CIbotf40e merged. Noaccess source change."
 }
