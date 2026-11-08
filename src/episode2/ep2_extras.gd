@@ -19,6 +19,8 @@ const BORCHARDT_GUN := "res://src/episode2/extras/armory/borchardt_c93.glb"   # 
 ## The trade counter's display pieces (founder 2026-11-03, tools/ep2_forge/meshy_prop_to_game.py ... solid): his gun-only and in-hand models and the Shipment crate.
 const SHOWCASE_DIR := "res://src/episode2/extras/armory/showcase/"
 const SHIPMENT := "res://src/episode2/extras/armory/showcase/shipment.glb"
+## The founder's guns cut to a rack budget, geometry only (tools/ep2_blender/build_rack_guns.py): Ep2ArmoryRacks stocks both floors with them.
+const RACK_GUNS := "res://src/episode2/extras/armory/rack_guns.glb"
 const GUN_HAND := "res://src/episode2/extras/armory/lil_blunt_gun_hand.glb"   # the Golden Remington's glove, bracer and arm with the gun taken away (tools/ep2_forge/founder_gun_hand.py)
 const SHARPS_SCOPED := "res://src/episode2/extras/armory/sharps_scoped.glb"   # the founder's Sharps with the telescopic sight, first person (tools/ep2_forge/build_scoped_sharps.py)
 const SHARPS := "res://src/episode2/extras/armory/sharps_1874.glb"        # Rich's Sharps Model 1874 Buffalo Gun (case, hand, the long rifle he sells)

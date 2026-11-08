@@ -511,6 +511,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_two_story_test.tscn 2>&1 | tee armory2-tests.log
           grep -q 'EP2_ARMORY2: ALL PASS' armory2-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory2-tests.log; then exit 1; fi
+          # The Armory stocked with the founder's real weapon GLBs on both floors (founder 2026-11-08): no placeholder sticks.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_real_weapons_test.tscn 2>&1 | tee armory-real-weapons-tests.log
+          grep -q 'EP2_ARMORY_REAL_WEAPONS: ALL PASS' armory-real-weapons-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-real-weapons-tests.log; then exit 1; fi
           # Jack Hammer's thread (founder lock 2026-10-21): identity, wording rules and order are enforced, not remembered.
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_jack_hammer_test.tscn 2>&1 | tee jack-hammer-tests.log
           grep -q 'EP2_JACK_HAMMER: ALL PASS' jack-hammer-tests.log

@@ -2,7 +2,7 @@
 
 Headless bpy:  blender -b --factory-startup -P tools/ep2_blender/build_armory2.py -- [--out src/episode2/extras/armory/armory2.glb]
 
-One GLB, named pieces (Bldg_Armory2, Arm2_Fit, Arm2_Nav and the case rifle Arm2_Sharps) the town places (same conventions as build_town_kit.py: origin = middle of the FRONT edge at street level,
+One GLB, named pieces (Bldg_Armory2, Arm2_Fit, Arm2_Guns, Arm2_Nav and the case rifle Arm2_Sharps) the town places (same conventions as build_town_kit.py: origin = middle of the FRONT edge at street level,
 front faces +Z in the game frame, named untextured materials that Ep2GoldTown._apply_mats skins - Siding, Trim, Roof, Planks - and
 plain coloured ones for the rest):
   Bldg_Armory2      the building: 10 x 12 m, ground floor 3.8 m + upper floor 3.4 m, false front with cornice and sign board, porch with
@@ -13,15 +13,19 @@ plain coloured ones for the rest):
                     hanging oil lamps.
   Arm2_Fit          the fit-out ("dense but readable"): the long counter with a glass-topped revolver section, two glass revolver cases,
                     the lit long-rifle case (the day-88 sniper), ammunition shelves by calibre, rifles standing in barrels, powder kegs,
-                    a cleaning bench, the back-wall and gallery rifle racks (~60 long guns, ~24 sidearms), a Gatling gun on its carriage
-                    at the gallery rail, a punt gun and a buffalo rifle mounted on the gallery fascia, crates of dynamite and cartridges,
+                    a cleaning bench, the back-wall and gallery rifle racks and pegboards, brass pegs under the mounted guns,
+                    the gallery fascia's gun boards, crates of dynamite and cartridges,
                     bandoliers, Utah's upstairs workbench and river gear (sealed crates, a skiff on the wall), a chain across the stair foot.
+  Arm2_Guns         empties only, Gun_<Rack|Near>_<family>_<n>: where each of the founder's guns goes (72 racked long guns, 12 in the
+                    barrels, ~45 sidearms in the cases, the counter and on the pegboards, a longbow, the Gatling at the gallery rail, the
+                    fascia's Sharps, Tommy and Winchester, the benches' guns). Ep2ArmoryRacks fills them from rack_guns.glb.
   Arm2_Sharps       Rich's Sharps Model 1874 in the lit case (its own piece so the introduction can lift it out into his hand)
   Arm2_CaseLid      the lit case's glass lid with its brass pull, and the empty Hinge_case on its hinge edge (the game opens it)
   Arm2_Nav          empties only: Spot_<name> (NPC waypoints, y = floor height), Block_<name> (scale = half extents of a walk blocker in
                     the shop floor plane), LightAnchor_<n> (warm lamp positions), SignAnchor_ARMS (the painted sign).
 Everything is written in GAME coordinates (x right, y up, z toward the street) and converted once at the end.
 """
+import json
 import math
 import os
 import sys
@@ -111,6 +115,10 @@ class Piece:
     def empty(self, name, pos, scale=(1, 1, 1)):
         self.empties.append((name, (self.xf @ Vector(pos).to_4d()).to_3d(), scale))
 
+    def slot(self, name, local):
+        """An empty with a full placement (game-frame 4x4, rotation and scale kept)."""
+        self.empties.append((name, self.xf @ local, None))
+
     def build(self):
         conv = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))     # game (x, y, z) -> blender (x, -z, y)
         root = bpy.data.objects.new(self.name, None)
@@ -146,6 +154,9 @@ class Piece:
             e.empty_display_size = 0.2
             bpy.context.scene.collection.objects.link(e)
             e.parent = root
+            if s is None:                # a slot: the whole placement, carried into the Blender frame
+                e.matrix_world = conv @ p @ conv.inverted()
+                continue
             e.location = (p.x, -p.z, p.y)
             e.scale = (s[0], s[2], s[1])
         return root, tris
@@ -203,41 +214,48 @@ def window(p, x, y, w, h, zf, bars=0, shutters=False, face=1.0):
                 p.box("Trim", (w * 0.4, 0.03, 0.02), (x + sx * (w / 2 + w * 0.24), y - h / 2 + 0.25 + k * (h - 0.5) / 2, zf + s * 0.065))
 
 
-def rifle(p, pos, yaw=0.0, pitch=0.0, roll=0.0, kind="lever", scale=1.0):
-    """A low-poly long gun along local +x (muzzle), stock at -x; ~1.2 m."""
-    keep = p.xf
-    p.xf = keep @ p.at(pos, yaw, pitch, roll) @ Matrix.Scale(scale, 4)
-    if kind == "shotgun":
-        p.box("GunWood", (0.40, 0.11, 0.045), (-0.42, -0.03, 0))
-        p.box("GunSteel", (0.14, 0.07, 0.05), (-0.16, 0.0, 0))
-        for dz in (-0.013, 0.013):
-            p.cyl("GunSteel", 0.012, 0.012, 0.72, (0.29, 0.015, dz), "x", 6)
-        p.box("GunWood", (0.26, 0.04, 0.045), (0.1, -0.01, 0))
-    else:
-        p.box("GunWood", (0.38, 0.13, 0.05), (-0.45, -0.045, 0))              # stock
-        p.box("Brass", (0.02, 0.135, 0.052), (-0.645, -0.045, 0))             # buttplate
-        p.box("GunWood", (0.10, 0.05, 0.035), (-0.24, -0.005, 0))             # wrist
-        p.box("Brass" if kind == "lever" else "GunSteel", (0.18, 0.07, 0.045), (-0.10, 0.0, 0))   # receiver
-        p.cyl("GunSteel", 0.015, 0.015, 0.78 if kind != "buffalo" else 0.92, (0.39 if kind != "buffalo" else 0.46, 0.015, 0), "x", 6)
-        p.box("GunWood", (0.30, 0.035, 0.04), (0.12, -0.005, 0))              # fore-end
-        if kind == "lever":
-            p.cyl("GunSteel", 0.008, 0.008, 0.6, (0.30, -0.012, 0), "x", 5)   # magazine tube
-            p.box("GunSteel", (0.12, 0.015, 0.012), (-0.14, -0.06, 0))        # lever loop
-        if kind == "sniper":
-            p.cyl("GunSteel", 0.017, 0.017, 0.46, (0.0, 0.07, 0), "x", 8)     # long brass-era scope
-            p.cyl("Brass", 0.021, 0.017, 0.04, (0.23, 0.07, 0), "x", 8)
-    p.xf = keep
+# THE GUNS ARE THE FOUNDER'S OWN MODELS (founder 2026-11-08: "no placeholder sticks"). Every rifle, pistol, bow and the Gatling in the
+# shop is a slot empty in Arm2_Guns, Gun_<Rack|Near>_<family>_<n>; Ep2ArmoryRacks puts that family's piece from rack_guns.glb
+# (tools/ep2_blender/build_rack_guns.py: muzzle +x, top +y, side +z, centred, real length) on it. GUN_DIMS seats them on shelves and felt.
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "rack_guns_dims.json")) as _f:
+    GUN_DIMS = json.load(_f)
+G = Piece("Arm2_Guns")
+_gun_n = [0]
 
 
-def revolver(p, pos, yaw=0.0, roll=0.0, gold=False):
-    keep = p.xf
-    p.xf = keep @ p.at(pos, yaw, 0.0, roll)
-    m = "Brass" if gold else "GunSteel"
-    p.box("GunWood", (0.04, 0.10, 0.03), (-0.07, -0.04, 0), roll=-0.35)
-    p.box(m, (0.09, 0.045, 0.03), (-0.02, 0.01, 0))
-    p.cyl(m, 0.02, 0.02, 0.05, (0.01, 0.01, 0), "x", 6)
-    p.cyl(m, 0.007, 0.007, 0.16, (0.11, 0.02, 0), "x", 5)
-    p.xf = keep
+def gun(fam, pos, yaw=0.0, pitch=0.0, roll=0.0, scale=1.0, near=False):
+    """One founder gun at `pos` (its centre; the Gatling: its feet), turned like the Piece primitives. `near` = the close-up cut."""
+    _gun_n[0] += 1
+    G.slot("Gun_%s_%s_%d" % ("Near" if near else "Rack", fam, _gun_n[0]), G.at(pos, yaw, pitch, roll) @ Matrix.Scale(scale, 4))
+
+
+def gun_flat(fam, x, top, z, yaw=0.0, near=True, scale=1.0):
+    """Lying on its side on a surface at height `top` (case felt, bench, counter)."""
+    gun(fam, (x, top + GUN_DIMS[fam]["z"] * scale / 2 + 0.002, z), yaw=yaw, pitch=-math.pi / 2, near=near, scale=scale)
+
+
+def gun_racked(fam, x, shelf_top, back, yaw=0.0, scale=1.0):
+    """Standing muzzle up, its butt on a rack shelf at `shelf_top`, its back against the board face at z = `back`."""
+    gun(fam, (x, shelf_top + GUN_DIMS[fam]["x"] * scale / 2, back + GUN_DIMS[fam]["z"] * scale / 2 + 0.004), yaw=yaw, roll=math.pi / 2, scale=scale)
+
+
+def gun_wall(fam, wall_x, y, z, near=False, scale=1.0):
+    """Hung flat on the left wall's board (face at x = `wall_x`), muzzle toward the back of the shop, on two brass pegs."""
+    gun(fam, (wall_x + GUN_DIMS[fam]["z"] * scale / 2 + 0.004, y, z), yaw=math.pi / 2, near=near, scale=scale)
+    for dz in (-0.3, 0.3):
+        F.cyl("Brass", 0.008, 0.008, 0.06, (wall_x + 0.03, y - GUN_DIMS[fam]["y"] * scale / 2 - 0.008, z + dz * GUN_DIMS[fam]["x"] * scale), "x", 5)
+
+
+def gun_fascia(fam, x, y, face_z, scale=1.0):
+    """Mounted broadside on a fascia board (face at z = `face_z`), on two brass pegs under it."""
+    gun(fam, (x, y, face_z + GUN_DIMS[fam]["z"] * scale / 2 + 0.004), near=True, scale=scale)
+    for dx in (-0.3, 0.3):
+        F.cyl("Brass", 0.01, 0.01, 0.08, (x + dx * GUN_DIMS[fam]["x"] * scale, y - GUN_DIMS[fam]["y"] * scale / 2 - 0.01, face_z + 0.04), "z", 5)
+
+
+def vary(k):
+    """A small, repeatable variation for slot k: (yaw, scale) within +-0.06 rad and 0.96 - 1.04."""
+    return 0.06 * math.sin(k * 2.39), 1.0 + 0.04 * math.sin(k * 1.71 + 0.5)
 
 
 def crate(p, pos, size=(0.8, 0.5, 0.5), yaw=0.0, label="Planks"):
@@ -448,8 +466,8 @@ for i in range(6):
 F.cyl("Brass", 0.022, 0.022, 5.2, (-0.9, 0.22, CZ + 0.45), "x", 6)
 F.box("GlassClear", (1.9, 0.22, 0.7), (-2.4, 1.19, CZ))
 F.box("Felt", (1.85, 0.02, 0.66), (-2.4, 1.09, CZ))
-for i in range(5):
-    revolver(F, (-3.2 + i * 0.4, 1.12, CZ - 0.1), yaw=0.2 * (i % 2), roll=math.pi / 2 * 0.0, gold=(i == 2))
+for i, fam in enumerate(("remington", "borchardt", "goldrev", "rem75", "remington")):          # the sidearms Rich sells, in the tray
+    gun_flat(fam, -3.2 + i * 0.4, 1.10, CZ - 0.05, yaw=math.pi / 2 + (0.12 if i % 2 else -0.12))
 F.box("Brass", (0.3, 0.25, 0.2), (0.9, 1.2, CZ))                                     # the scale / till
 for i in range(3):
     F.box("Paper", (0.14, 0.09 + 0.02 * i, 0.09), (0.3 + i * 0.18, 1.12 + 0.05, CZ + 0.15))   # cartridge boxes on the counter
@@ -459,8 +477,8 @@ for sx in (-1, 1):
     F.box("DarkWood", (1.6, 0.8, 0.7), (x, 0.4, -2.2))
     F.box("GlassClear", (1.6, 0.35, 0.7), (x, 0.98, -2.2))
     F.box("Felt", (1.55, 0.02, 0.65), (x, 0.81, -2.2))
-    for i in range(4):
-        revolver(F, (x - 0.55 + i * 0.37, 0.84, -2.2), yaw=0.3 if i % 2 else -0.3)
+    for i, fam in enumerate(("borchardt", "remington", "rem75", "goldrev") if sx < 0 else ("goldrev", "rem75", "remington", "borchardt")):
+        gun_flat(fam, x - 0.55 + i * 0.37, 0.82, -2.2, yaw=math.pi / 2 + (0.15 if i % 2 else -0.15))
 # the lit long-rifle case: Rich's Sharps Model 1874 Buffalo Gun (the day-88 long rifle), end of the counter
 F.box("DarkWood", (0.5, 0.9, 1.7), (2.6, 0.45, CZ))
 # its glass: four walls here, and the lid as its own piece (Arm2_CaseLid, below) so Rich can lift it to take the rifle out (founder 2026-11-07,
@@ -482,66 +500,69 @@ for k in range(4):
 # rifles standing in barrels and powder kegs in the front corners
 for x, z in ((-4.2, -0.9), (4.2, -1.0)):
     keg(F, (x, 0, z), 0.32, 0.8)
-    for i in range(6):
-        a = i * math.pi / 3
-        rifle(F, (x + 0.12 * math.cos(a), 1.05, z + 0.12 * math.sin(a)), yaw=a, roll=math.pi / 2 - 0.12, kind="lever" if i % 2 else "shotgun")
+    for i in range(6):                   # butts down in the barrel, leaning out over its rim, lever side in
+        a = i * math.pi / 3 + (0.3 if x > 0 else 0.0)
+        fam = ("coach", "winchester", "bergmann", "coach", "winchester", "mp18")[(i + (2 if x > 0 else 0)) % 6]
+        h = GUN_DIMS[fam]["x"] / 2
+        lean = 0.12
+        gun(fam, (x + (0.12 + h * math.sin(lean)) * math.cos(a), 0.3 + h * math.cos(lean), z + (0.12 + h * math.sin(lean)) * math.sin(a)),
+            yaw=-a, roll=math.pi / 2 - lean)
 for x, z in ((-3.4, -0.7), (-3.0, -1.1), (3.0, -6.6), (3.4, -6.9)):
     keg(F, (x, 0, z))
 # the back wall under the gallery: three long racks of rifles (two rows), the cleaning bench
-for x0 in (-3.6, -0.6, 2.2):
+# (the short guns - coach guns, Tommys, machine pistols - stand on the low shelf, the long rifles above them, so no muzzle meets a shelf)
+SHORT_ROW = ("coach", "tommy", "mp18", "bergmann")
+LONG_ROW = ("winchester", "sharps", "winchester", "coach")
+for r, x0 in enumerate((-3.6, -0.6, 2.2)):
     F.box("Felt", (2.6, 2.2, 0.08), (x0 + 1.2, 1.4, -D + T + 0.05))
     F.box("Trim", (2.75, 0.1, 0.12), (x0 + 1.2, 2.55, -D + T + 0.07))
     for row, y in enumerate((0.95, 2.05)):
         F.box("DarkWood", (2.6, 0.08, 0.2), (x0 + 1.2, y - 0.62, -D + T + 0.14))
-        for i in range(7):
-            rifle(F, (x0 + 0.2 + i * 0.36, y, -D + T + 0.16), roll=math.pi / 2, kind=("lever", "shotgun", "lever", "buffalo")[(i + row) % 4], scale=1.2)
+        for i in range(6):
+            k = r * 12 + row * 6 + i
+            vy, vs = vary(k)
+            gun_racked((SHORT_ROW, LONG_ROW)[row][(i + r) % 4], x0 + 0.1 + i * 0.44, y - 0.58, -D + T + 0.13, yaw=vy, scale=vs)
 F.box("DarkWood", (2.0, 0.9, 0.7), (-3.2, 0.45, -9.6))                                 # cleaning bench
 F.box("Felt", (1.9, 0.02, 0.6), (-3.2, 0.91, -9.6))
-rifle(F, (-3.2, 0.95, -9.6), yaw=0.15, roll=math.pi / 2)
+gun_flat("winchester", -3.2, 0.92, -9.6, yaw=0.15)                                       # a Winchester down for cleaning
 F.box("Leather", (0.3, 0.12, 0.2), (-2.6, 0.98, -9.4))
 F.box("Iron", (0.5, 0.25, 0.25), (-3.8, 1.03, -9.7))                                    # vice
 # the gallery: rifle racks on the upper back and left walls, a Gatling gun at the rail, crates, Utah's bench and river gear
-for x0 in (-4.2, -1.2, 1.8):
+for r, x0 in enumerate((-4.2, -1.2, 1.8)):
     F.box("Felt", (2.6, 2.3, 0.08), (x0 + 1.2, H1 + 1.6, -D + T + 0.05))
     F.box("Trim", (2.75, 0.1, 0.12), (x0 + 1.2, H1 + 2.8, -D + T + 0.07))
     for row, y in enumerate((H1 + 1.1, H1 + 2.25)):
         F.box("DarkWood", (2.6, 0.08, 0.2), (x0 + 1.2, y - 0.62, -D + T + 0.14))
-        for i in range(7):
-            rifle(F, (x0 + 0.2 + i * 0.36, y, -D + T + 0.16), roll=math.pi / 2, kind=("lever", "lever", "shotgun", "sniper")[(i + row) % 4], scale=1.2)
-for z0 in (-1.8, -4.6):
+        for i in range(6):
+            k = 40 + r * 12 + row * 6 + i
+            vy, vs = vary(k)
+            gun_racked((SHORT_ROW, LONG_ROW)[row][(i + r + 2) % 4], x0 + 0.1 + i * 0.44, y - 0.58, -D + T + 0.13, yaw=vy, scale=vs)
+# the left gallery wall: two pegboards of sidearms (the second under the skiff only above it), Utah's bear longbow over them
+SIDEARMS = ("remington", "borchardt", "goldrev", "rem75")
+WALL_X = -HX + T + 0.09
+for b, z0 in enumerate((-1.8, -4.6)):
     F.box("Felt", (0.08, 2.3, 2.4), (-HX + T + 0.05, H1 + 1.6, z0 - 1.1))
-    for i in range(6):
-        for j in range(4):
-            revolver(F, (-HX + T + 0.12, H1 + 0.9 + j * 0.4, z0 - 0.2 - i * 0.36), yaw=-math.pi / 2, gold=(i == 2 and j == 3))
-# Gatling gun on its carriage at the back gallery rail, looking down on the shop
-g = (0.2, H1, GZ - 0.9)
-keep = F.xf
-F.xf = F.at(g, yaw=-math.pi / 2)
-for sx in (-1, 1):
-    F.cyl("DarkWood", 0.45, 0.45, 0.07, (0, 0.45, sx * 0.55), "z", 12)
-    F.cyl("Iron", 0.08, 0.08, 0.1, (0, 0.45, sx * 0.55), "z", 8)
-F.box("DarkWood", (1.6, 0.12, 0.18), (-0.4, 0.45, 0))
-F.box("Brass", (0.36, 0.3, 0.3), (0.1, 0.78, 0))
-for i in range(6):
-    a = i * math.pi / 3
-    F.cyl("GunSteel", 0.018, 0.018, 1.0, (0.75, 0.78 + 0.07 * math.cos(a), 0.07 * math.sin(a)), "x", 5)
-F.cyl("Brass", 0.11, 0.11, 0.05, (1.2, 0.78, 0), "x", 10)
-F.cyl("Brass", 0.11, 0.11, 0.05, (0.45, 0.78, 0), "x", 10)
-F.box("Brass", (0.12, 0.36, 0.08), (0.05, 1.08, 0))                                       # magazine hopper
-F.box("Iron", (0.05, 0.05, 0.3), (-0.12, 0.78, 0.22))                                     # crank
-F.xf = keep
-# punt gun and a buffalo rifle mounted on the gallery fascia over the counter (the "crazy" hero pieces)
+    rows = (H1 + 0.95, H1 + 1.4, H1 + 1.85, H1 + 2.3) if b == 0 else (H1 + 1.95,)
+    for j, y in enumerate(rows):
+        for i in range(5):
+            gun_wall(SIDEARMS[(i + j + b) % 4], WALL_X, y, z0 - 0.3 - i * 0.44)
+gun_wall("longbow", WALL_X, H1 + 2.45, -5.75)
+# the Colt Gatling at the back gallery rail on its tripod, looking down on the shop
+gun("gatling", (0.2, H1, GZ - 0.9), yaw=-math.pi / 2, near=True)
+# the hero pieces on the gallery fascia over the counter: a Sharps and the golden Tommy, a Winchester on the short board
 F.box("DarkWood", (2.8, 0.25, 0.06), (-0.6, H1 - 0.5, GZ + 0.09))
-rifle(F, (-0.6, H1 - 0.5, GZ + 0.16), kind="buffalo", scale=2.1)
+gun_fascia("sharps", -1.3, H1 - 0.5, GZ + 0.12)
+gun_fascia("tommy", 0.2, H1 - 0.5, GZ + 0.12)
 F.box("DarkWood", (1.8, 0.2, 0.06), (2.0, H1 - 0.85, GZ + 0.09))
-rifle(F, (2.0, H1 - 0.85, GZ + 0.16), kind="sniper", scale=1.25)
+gun_fascia("winchester", 2.0, H1 - 0.85, GZ + 0.12)
 # crates of dynamite and cartridges stacked on the gallery, Utah's bench, sealed river crates and a skiff hung on the left wall
 for i, (x, z, s) in enumerate(((-4.0, -10.8, (0.9, 0.5, 0.6)), (-4.0, -10.8, (0.8, 0.45, 0.55)), (-3.0, -11.0, (0.9, 0.5, 0.6)),
                                (-4.1, -7.6, (0.7, 0.45, 0.5)), (-4.1, -6.6, (0.7, 0.45, 0.5)))):
     crate(F, (x, H1 + (0.5 if i == 1 else 0.0), z), s, yaw=0.1 * i, label="Dynamite" if i % 2 == 0 else "Paper")
 F.box("DarkWood", (2.0, 0.9, 0.8), (1.6, H1 + 0.45, -10.6))                               # Utah's bench
 F.box("Felt", (1.9, 0.02, 0.7), (1.6, H1 + 0.91, -10.6))
-rifle(F, (1.5, H1 + 0.95, -10.6), yaw=-0.2, roll=math.pi / 2, kind="sniper")
+gun_flat("sharps", 1.35, H1 + 0.92, -10.6, yaw=-0.2)                                     # Utah's work: a Sharps and a C93 down for cleaning
+gun_flat("borchardt", 2.3, H1 + 0.92, -10.75, yaw=math.pi / 2)
 for i in range(3):
     F.cyl("Brass", 0.03, 0.03, 0.12, (2.2 + i * 0.1, H1 + 0.97, -10.4), "y", 6)
 for x, z in ((3.6, -10.9), (4.3, -10.2)):
@@ -563,6 +584,7 @@ for k in range(12):
 F.box("Iron", (1.25, 0.02, 0.02), ((STAIR_X0 + STAIR_X1) / 2, 0.8, -2.3))
 F.box("Paper", (0.3, 0.16, 0.01), ((STAIR_X0 + STAIR_X1) / 2, 0.7, -2.28))
 root_f, tris_f = F.build()
+G.build()
 # the case's glass lid, hinged along its far (+x) top edge; Hinge_case marks that edge's middle (the game turns the lid about the edge, which runs along z)
 LID = Piece("Arm2_CaseLid")
 LID.box("GlassClear", (0.5, 0.014, 1.7), (2.6, 1.348, CZ))
@@ -598,7 +620,7 @@ N.build()
 
 # export just these three pieces
 for o in bpy.context.scene.objects:
-    o.select_set(o.name.split(".")[0].split("_geo")[0] in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav", "Arm2_Sharps", "Arm2_CaseLid") or (o.parent and o.parent.name in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav", "Arm2_Sharps", "Arm2_CaseLid")))
+    o.select_set(o.name.split(".")[0].split("_geo")[0] in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Guns", "Arm2_Nav", "Arm2_Sharps", "Arm2_CaseLid") or (o.parent and o.parent.name in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Guns", "Arm2_Nav", "Arm2_Sharps", "Arm2_CaseLid")))
 import os
 os.makedirs(os.path.dirname(os.path.abspath(OUT)), exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", export_apply=True, export_yup=True, use_selection=True,
