@@ -1,0 +1,42 @@
+{
+  "gameUrl": "https://html-classic.itch.zone/html/18305533-2323697/index.html?v=1794100893&ep2=1&debug=beacon",
+  "extrasUrls": [
+    "https://html-classic.itch.zone/html/18305533-2323697/ep2_extras.pck?v=2026-11-07-d6e0003"
+  ],
+  "extrasStatus": [
+    200
+  ],
+  "beacon": {
+    "avg_ms": 69.4,
+    "build": "2026-11-07-d6e0003",
+    "frames": 2307,
+    "harness": false,
+    "held": {},
+    "mem_mb": 0,
+    "mem_peak_mb": 0,
+    "paused": false,
+    "scene": "res://src/episode2/ep2_entry.tscn",
+    "state": "PLAYING",
+    "t": 158807,
+    "td": "IDLE",
+    "td_frozen": false,
+    "tex_mb": 98.5,
+    "tex_peak_mb": 98.5,
+    "time_scale": 1,
+    "touch": {
+      "held": 0,
+      "layout": "phone_landscape",
+      "profile": "platformer",
+      "shown": false,
+      "susp": false
+    },
+    "win": [
+      1280,
+      720
+    ],
+    "worst_all_ms": 2586.8,
+    "worst_ms": 0
+  },
+  "invalidCodeRejected": true,
+  "scriptErrors": []
+}
