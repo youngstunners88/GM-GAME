@@ -1,5 +1,8 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-08 — Rich & Utah's Armory stocked with your real weapon models on both floors — status in the next line.**
+- The grey box "sticks" are gone. The racks, glass cases, counter tray, corner barrels, gallery pegboards and fascia now carry 130 of your own guns (12 families: Winchester 1886, Sharps, coach gun, golden Tommy, machine gun, Bergmann, Borchardt, gold Remington, golden revolver, Remington 1875, bear longbow), with the real Gatling at the gallery rail. Same textures as the Tabs showcase. On the racks they stand butt-down, short guns low and long rifles high, turned and sized slightly differently. In the cases and the counter tray the pistols lie flat. Upstairs they hang on brass pegs. Shop rows, prices, Tabs, the Shipment chain and Rich & Utah are unchanged. Proof (before/after, both floors): `docs/episode2-quality/armory-real-weapons-2026-11-08/`. Test: EP2_ARMORY_REAL_WEAPONS (in CI).
+
 **2026-11-08 — Day-88 ridge cover, coin clink on bear hits, Tabs wounded/down — LIVE on itch, build `2026-11-07-d6e0003`; NOT founder-verified.**
 - At each ridge overlook press **C** (or Ctrl) to duck behind the sandbags: no damage from the bears, archers or Hammer's men out front, **R** reloads in cover, C or a click pops him back up to aim. Walking off the overlook stands him up. (Keyboard only; no touch button yet.) Every hit on a living bear plays one short coin clink (throttled). Tabs reads **BEARS DOWN N · WOUNDED M**, saved with the ledger; day-88 river kills now count too. Tests: EP2_TABS_LEDGER, RIVER_COVER (both ALL PASS). Shipment rewind untouched.
 
