@@ -159,6 +159,23 @@ jobs:
           python3 scripts/repair-fort-knox-backdrop.py --check
           python3 scripts/make-bg-seamless.py --check
 
+      # Install the audit runtime before long imports/tests, using the exact
+      # archive verified against the published release digest (not /latest).
+      - name: Install pinned security-audit runtime
+        run: |
+          set -euo pipefail
+          BUN_DIR="$RUNNER_TEMP/gm-security-bun"
+          mkdir -p "$BUN_DIR"
+          curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
+            --connect-timeout 30 --max-time 120 --retry-max-time 180 \
+            -o "$BUN_DIR/bun.zip" \
+            "https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-linux-x64.zip"
+          echo "02d122b7e9488b2feed40d8a8bbd5a3c0700261c1528a457fe842a023a1c3d5899480f1dbc6adf67e56e432762a090942d0ddef6a2c10f6fd77e438d9ec236d1  $BUN_DIR/bun.zip" | sha512sum -c -
+          unzip -q "$BUN_DIR/bun.zip" -d "$BUN_DIR"
+          chmod +x "$BUN_DIR/bun-linux-x64/bun"
+          "$BUN_DIR/bun-linux-x64/bun" --version
+          echo "$BUN_DIR/bun-linux-x64" >> "$GITHUB_PATH"
+
       - name: Download Godot editor + export templates
         run: |
           set -euo pipefail
@@ -908,22 +925,7 @@ jobs:
         if: success()
         run: |
           set -euo pipefail
-          # Retry the whole installer: its own GitHub download can return 504
-          # after all build gates have passed. Exhausted retries still block.
-          # Pinned: GitHub's releases/latest redirect for Bun returned 504 for hours on 2026-11-08 while pinned
-          # release assets served fine. Same audit, same --fail-on=high; only the download URL is fixed.
-          BUN_PIN=bun-v1.2.23
-          for bun_attempt in 1 2 3; do
-            if curl -fsSL --retry 2 --retry-all-errors https://bun.sh/install | bash -s "$BUN_PIN"; then
-              break
-            fi
-            if [ "$bun_attempt" -eq 3 ]; then
-              echo "::error::Bun installation failed after three attempts; audit cannot run"
-              exit 1
-            fi
-            sleep "$((bun_attempt * 3))"
-          done
-          export PATH="$HOME/.bun/bin:$PATH"
+          bun --version
           set +e
           bun .claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high --json > security-report.json
           CODE=$?

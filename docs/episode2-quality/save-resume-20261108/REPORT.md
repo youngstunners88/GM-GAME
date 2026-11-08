@@ -38,6 +38,12 @@ Production run `42461767823` for `bbe61f3d` passed gameplay, rendered captures a
 
 Installed Bun **1.4.4** under the task workspace and ran the broad checklist locally: **47 total; 13 pass, 0 fail, 0 warn, 2 manual, 32 skip**. Existing manual/skip classifications are unchanged. Runtime source and exported game data remain identical to the verified `dd575515` revision; only audit setup changed. A new production run must still pass the audit and upload before release is claimed.
 
+## Pinned, early audit setup
+
+Run `42464978907` attempt 1 stopped on Godot’s download returning HTTP 504; after the URL recovered to HTTP 200, attempt 2 passed the game suite, captures and export but all three Bun `/latest/download` attempts still returned 504. The game and its export remain verified; neither attempt deployed.
+
+The final workflow installs **Bun 1.4.4 before the long build**, from its fixed official release asset URL. The downloaded archive was checked against the release API’s published SHA-256 digest, then its SHA-512 was pinned in CI. CI verifies that hash before executing Bun. It uses bounded curl retries and fails before game import if setup is unavailable. The actual post-export security audit and its blocking exit code are unchanged. Actual-workflow bootstrap checks pass for the verified archive and reject both a corrupt archive and failed download before PATH registration. The pinned runtime ran the 47-check audit again with the same **13 pass / 0 fail / 2 manual / 32 skip** result.
+
 ## Release
 
 Core save source `c8cc11d86be8ed2a7e2d0ce41dd899cfd5825bb4` passed [full branch CI 42458746840](https://github.com/youngstunners88/GM-GAME/actions/runs/42458746840). Combined runtime source `dd5755152b9d05a1ffa1bc26d798fd3bcffd6598` passed local release gates; later merge `748cfe3c` adds only CI export bookkeeping. Publishing through `scripts/ship-to-master.sh`; production CI/upload/public BUILD evidence pending. No physical-phone test or literal multi-day wait has been performed.
