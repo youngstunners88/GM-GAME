@@ -131,7 +131,7 @@ var _kp_key_size := Vector2(40, 44)
 var _kp_show_text := true
 
 static func gate_wants_keypad() -> bool:
-	return OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
+	return TouchUi.is_touch()      # the one shared touch test (harness rule H6)
 
 func _show_gate() -> void:
 	var layer := CanvasLayer.new()
