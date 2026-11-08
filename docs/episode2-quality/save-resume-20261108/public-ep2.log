@@ -1,0 +1,7 @@
+PASS public BUILD 2026-11-08-1d56147
+PASS fresh browser Continue keeps the saved ride behind the access gate
+PASS real Episode2 ride Save writes and visibly confirms a fresh checkpoint
+PASS blocked Episode2 storage reports failure and preserves the previous checkpoint
+PASS reload retains the exact checkpoint while waiting for access
+PASS hard reload Continue restores the ride and can save it again
+PASS no Episode2 browser script errors

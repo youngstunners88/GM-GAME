@@ -1,11 +1,22 @@
 {
-  "objective": "Finishactualproductionupload/publicBUILD+Save/reloadContinue; no local/master-as-live claims",
+  "objective": "Completed Save/Continue repair and verified public release",
   "branch": "codex/save-resume-1108",
-  "master": "f611bb5478f7b29ef86bd1ffea82cbef231624d4",
-  "runtime_base": "dd5755152b9d05a1ffa1bc26d798fd3bcffd6598",
-  "scratch": "/workspace/work/save-resume",
-  "verified": "SavecoreC8 fixesJSboolint1+lake_trail,67/compat/fullnative/branchCIpass; DDcommon40/town/manual67/freshportal,clean198967888/extras194574144,71texture/title/harness/sentinel0high,actualwebbothSave/blocked/exactreload/Continue/resavepass. bbe/EEE2prodgame/render/exportpass butBunGitHub504blockedupload. BroadBun1.4.4 47total13pass0fail2manual32skip. Publicstilloldd6e0003.",
-  "current": "Bunofficialnpm bootstrap passedrealCI42469701893 botharchive+binaryhash/version, thengodotlegacyURL504. Now officialgodot-builds APIassetIDs186100020editor/186099742templates:fullGETbothmatchoriginalreleaseSHA512 (50MB/1.073GB). Workflowpins2hashes+version4.3; no missing-manifestchecksumskip. Helperverified/corrupt/downloadfail/wrongversionPASS; broad0fail. Runtime unchanged. Sentinel--log60378 runningsecurity-api-godot.log. Hashmanifestupdated;release-gates.py guardsruntimeDD+exactwf+newdownloadlogs.",
-  "next": "Awaitsentinel,commitwf/docs/audit/status,publishvia ship-to-master.sh --gates python3 scratch/release-gates.py. Newsource/newCI/BUILD:verifyearlyBunnpm andGodotAPI firstthen34minpipeline. MustseeactualbutlerPushed+publicBUILD andrealSave/reloadContinue, receiptvalidator, finalSTATUSonebullet/docspushonlyafterproof. No game retestsontransport-onlychanges.",
-  "tools": "Noactivewatcher; functionsstoreproduction_npm_logs haslastf611failedgodotdownload. Publicscripts web-save.cjs &web-ep2-exact.cjs GAME_URL/PROOF_OUT/EXPECT_BUILD, useCHROMIUM_BIN=scratch/chromium-trusted(rootCApin,CDN200). Servers8899old/8900freshDD. AllprovenSDKarchives/meta/hashesinwork; gdAPI streamedchecksumsverified. SpecificGitbranchfetchspecadded. Standingmaster/deployauth; no questions needed."
+  "source_sha": "1d561473434e8171a9901e414d1d3364e51a91d0",
+  "build_id": "2026-11-08-1d56147",
+  "run_id": 42470600984,
+  "outcome": "success; actual itch upload confirmed; public BUILD matched",
+  "verified": [
+    "67 checkpoint tests and save compatibility",
+    "Full CI game/render/export/security/deploy passed",
+    "Public Episode1 Save, exact reload, Continue, blocked write preservation, retry, no script errors",
+    "Public Episode2 access gate, actual lake-trail Save, blocked write preservation, exact reload, Continue and re-save, no script errors",
+    "Combined runtime preserves concurrent town work, SaveSafe and title locks"
+  ],
+  "report": "docs/episode2-quality/save-resume-20261108/REPORT.md",
+  "receipt": "docs/episode2-quality/save-resume-20261108/release-receipt.json",
+  "limitations": [
+    "No physical-phone test",
+    "No literal multi-day wait"
+  ],
+  "next": "No open blockers; final documentation shipment only"
 }
