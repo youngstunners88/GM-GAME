@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-08 — After day-88: horse back at Logan's Lake, 0.5 BTC salve, road to the auction — pushed / deploying; NOT founder-verified.**
+- Utah takes the Shipment → the game returns to Logan's Lake (no longer ends there) with your horse already drinking; 4 of Logan's horses stand on the far shore.
+- Shot horse: Logan's farrier salve, **0.5 BTC** (one coin face, half kept as change for next time); short of coin = a clear line, never a lock. Dude's swap stays, now **1 BTC** (on his auction credit if you're short).
+- Signpost by the arrival path → new short diagonal ride: a broken-down claim wagon checks your licenses and warns "the big ones are already taking numbers"; vultures burst off a bison carcass in a dust gust and the horse bolts; ends at the AUCTION GROUNDS gate. Zero Hammersmen. Auction interior untouched.
+- Files: `river_cover.gd`, `logans_lake.gd`, `auction_road.gd/.tscn` (new), `ep2_armory_state.gd`, `gold_town.gd` (Dude swap only), `ep2_session_root.gd`, `world_routes.gd`; gate `tests/ep2_lake_auction_road_test.tscn` 26/26 + 9 related gates green.
+- Left: stock horses are one coat colour (Codex owns colours); road visuals are plain primitives + existing props, no capture graded yet.
+
 - **2026-11-08 — Save/Continue repair, locally verified / publishing:** fixed successful Godot 4.3 browser writes being reported as failed and allowed the existing lake-trail checkpoint. Native 67/67 + save compatibility + full local regression gates pass (three documented pause-layout machine differences); both episodes pass actual web Save/reload/Continue and blocked-storage preservation. Combined clean pack 198,967,888 B; current master’s town work preserved and aborted-import handling repaired. Production deployment proof pending; `docs/episode2-quality/save-resume-20261108/REPORT.md`.
 
 **2026-11-08 — Inferno rides to Flux, minds people — pushed; NOT founder-verified.**

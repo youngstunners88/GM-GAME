@@ -2,7 +2,7 @@ class_name LogansLakeChamber
 extends Ep2Interlude
 ## Founder lock 2026-10-18: investigate / stage depth, player investigates; Logan may fish as background lake life.
 ## The surface route continues here after Rich & Utah's gear. No currency writes or rewards.
-enum Beat { ARRIVE, INVESTIGATE, STAGE, HANDOFF, OVERLOOK }
+enum Beat { ARRIVE, INVESTIGATE, STAGE, HANDOFF, OVERLOOK, ROAD }
 const LOGAN := "res://src/episode2/extras/lake/logan.glb"
 const DOCK := "res://src/episode2/assets/lake/staging_dock.glb"
 const SPAWN := Vector3(-8, 0, -13)
@@ -39,7 +39,22 @@ const HORSE_DRINK := Vector3(-0.7, 0, 5.0)        # forefeet on the bank, muzzle
 const HORSE_DRINK_YAW := PI * 0.5                 # facing +X: the water
 const LOGAN_DRAW_TIME := 0.55                      # gun up to the shot: too fast to answer, long enough to see the gold
 const LOGAN_DOWN_TIME := 1.15
-const HORSE_SHOT_LINE := "LOGAN: That horse is shot. It won't drink like that. Dude's the man to see."
+const HORSE_SHOT_LINE := "LOGAN: That horse is shot. It won't drink like that. I've farrier salve for half a Bitcoin - or Dude swaps it for a whole one."
+## AFTER DAY-88 (founder brief PROMPT_LAKE_HORSE_REPAIR_AUCTION_ROAD_2026-11-08): Utah has the Shipment, and the session comes back here with
+## his horse already at the water. Logan keeps working stock on the far shore, patches a shot horse for half a Bitcoin (Dude's whole-Bitcoin
+## swap stays the dear reset, back up the trail), and the signpost by the arrival path sends him on the short ride to the auction.
+const LOGAN_SALVE_BTC := 0.5                      # half a Bitcoin; paid through Ep2ArmoryState.pay_half_btc (whole faces + banked change)
+const SALVE_REACH := 4.2                          # beside the shot horse or beside Logan
+const SALVE_LINE := "LOGAN: Hold him steady. Farrier salve on the cuts, legs are sound... There. He'll carry you to the auction."
+const SALVE_SHORT_LINE := "LOGAN: Salve's half a Bitcoin and you're short. Come back with a coin, or walk him up to Dude's."
+const AUCTION_SIGN := Vector3(-3.0, 0, -9.0)      # beside the arrival path, clear of Logan's sightline and the trail mouth
+const AUCTION_REACH := 3.4
+const STOCK_ANGLES := [-0.42, -0.14, 0.12, 0.38]  # radians around the lake centre: the far (east) shore, opposite Logan's landing
+const STOCK_CLIPS := ["horse_graze", "horse_stand", "horse_graze", "horse_walk"]
+var after_day88: bool = false
+var _stock: Array[Node3D] = []
+var _auction_sign: Node3D
+var _salve_t: float = -1.0
 const HORSE_GONE_LINE := "LOGAN: You walked in. They shot your horse out from under you, then. Dude can find you another."
 var _logan_draw_t: float = -1.0
 var _logan_fired: bool = false
@@ -73,7 +88,7 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "logans_lake"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin, _build_ambience, _build_horse]
+func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin, _build_ambience, _build_horse, _build_stock]
 
 func _light() -> void:
 	var env := Environment.new()
@@ -273,7 +288,24 @@ func _on_setup() -> void:
 	var slid_off_at: Vector3 = _player_pos - Vector3(1.3, 0, 0)
 	var horse_yaw: float = float(handoff.get("lake_horse_yaw", _look_yaw))   # it keeps the heading it walked in on
 	_logan_draw_t = -1.0
-	if armory.horse_is_down():
+	after_day88 = bool(handoff.get("after_day88", false))
+	_salve_t = -1.0
+	if _auction_sign != null:
+		_auction_sign.visible = after_day88
+	if after_day88:
+		# He comes back from Utah's dock and the horse is already at the water: never stranded at the river. Sound, it drinks;
+		# shot (even shot down on the ridge), it limped back here and stands for Logan's salve.
+		_horse.visible = true
+		_place_horse(HORSE_DRINK, HORSE_DRINK_YAW)
+		if armory.horse_is_sound():
+			_horse_state = "drink"
+		else:
+			_horse_state = "hurt"
+			_set_horse_clip("horse_stand", 0.6)
+		_staged = true
+		_marker_label.text = "CARGO CHECKED"
+		_cargo.position = Vector3(24, -0.08, 72)
+	elif armory.horse_is_down():
 		_horse_state = "gone"                       # shot out from under him on the trail: there is no horse at the lake to water or ride
 		_horse.visible = false
 	elif not armory.horse_is_sound():
@@ -292,7 +324,10 @@ func _on_setup() -> void:
 		_place_horse(HORSE_DRINK, HORSE_DRINK_YAW)
 		_horse_state = "drink"
 	_clear_water()
-	_advance_to(Beat.ARRIVE)
+	if after_day88:
+		_advance_to(Beat.ROAD)
+	else:
+		_advance_to(Beat.ARRIVE)
 
 func _build_dialogue() -> void:
 	if _dialogue_panel != null: return
@@ -364,12 +399,21 @@ func _on_beat_entered(b: int) -> void:
 			_hud.objective = ("Day-88 river · at the overlook, [E] climb to the ridge." if TouchUi.keys_shown()
 				else "Day-88 river · at the overlook, climb to the ridge.")
 			_say("The still-water narrows into the river. Rich and Utah's gear is ready for the run downstream.", 8.0)
+		Beat.ROAD:
+			_road_objective()
+			_say("LOGAN: Day-eighty-eight's in, then. Your horse found the water before you did. The auction's a short ride east - go see who's taking numbers.", 7.5)
 
 func start_rig(_payment: String = "") -> bool:
 	if not has_player_control() or armory_open(): return false
 	if _beat == Beat.OVERLOOK and _staged and _player_pos.z > 59 and _handoff_ok():
 		# founder lock 2026-11-04: the lake hands on to the day-88 ridge (river_cover.gd); Logan stays here, Rich and Utah never come
 		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
+		return true
+	if _beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction():
+		_leave_for_auction()
+		return true
+	if _can_offer_salve():
+		_buy_salve()
 		return true
 	if _riding:
 		_dismount()
@@ -400,6 +444,7 @@ func _tick(delta: float) -> void:
 		_tick_logan_draw(delta)
 		return
 	_tick_horse(delta)
+	_tick_salve(delta)
 	_landscape.refresh_streamed()
 	_build_cabin()
 	_cabin.refresh_materials()
@@ -410,7 +455,10 @@ func _tick(delta: float) -> void:
 			_hud.objective = "Logan's Lake · Loading Logan…"
 			_hud.set_search_prompt("Loading interrupted. Retry [E]" if Ep2Extras.state() == "failed" else "")
 			return
-		_hud.objective = "Logan's Lake · Meet Logan at the shore."
+		if _beat == Beat.ROAD:
+			_road_objective()
+		else:
+			_hud.objective = "Logan's Lake · Meet Logan at the shore."
 	_build_skiff()
 	_logan.step(delta)
 	if _player_pos.distance_to(LOGAN_MARK) < 7:
@@ -436,12 +484,19 @@ func _tick(delta: float) -> void:
 		prompt = "Check staged cargo [E]"
 	elif _beat == Beat.OVERLOOK and _player_pos.z > 59:
 		prompt = "Finish lake visit [E]"
+	elif _beat == Beat.ROAD and _near_auction_sign():
+		if _can_leave_for_auction():
+			prompt = "Ride to the auction [E]" if _riding else "Walk to the auction [E]"
+		else:
+			prompt = "Patch the horse first: Logan's salve or Dude" if _horse_state == "hurt" else "Mount your horse first"
+	elif _can_offer_salve():
+		prompt = ("Logan's salve · 0.5 BTC [E]" if armory.can_pay_half_btc() else "Logan's salve · 0.5 BTC (short) · or Dude, 1 BTC")
 	elif _riding:
 		prompt = "Dismount [E]"
 	elif can_mount_horse():
 		prompt = "Mount the horse [E]"
 	elif _horse_state == "hurt" and Vector2(_player_pos.x - _horse.position.x, _player_pos.z - _horse.position.z).length() < HORSE_REACH:
-		prompt = "The horse is shot: it needs Dude, not water"
+		prompt = "The horse is shot: Logan's salve (0.5 BTC) or Dude's swap (1 BTC)"
 	if prompt != "" and not TouchUi.keys_shown():
 		prompt = prompt.replace(" [E]", "")
 	_hud.set_search_prompt(prompt)
@@ -579,6 +634,7 @@ func get_handoff() -> Dictionary:
 	var result: Dictionary = super.get_handoff()
 	result["ridge_from"] = _player_pos
 	result["eye"] = eye_height
+	result["road_mounted"] = _riding
 	return result
 
 ## At the top of the shore path with the ridge not yet built: the root spends more of each frame on it (never seen when built early).
@@ -810,6 +866,8 @@ func arrive_from_trail(mounted: bool) -> void:
 		_riding = false
 		walk_speed = _foot_speed
 		eye_height = FPS_EYE_HEIGHT
+	if _beat == Beat.ROAD:
+		_road_objective()
 
 
 ## The trail clears this same water material by his distance to Logan as he rides in (LakeTrailChamber.water_clarity); at the shore it is
@@ -817,3 +875,121 @@ func arrive_from_trail(mounted: bool) -> void:
 func _clear_water() -> void:
 	if _landscape.water_material != null:
 		_landscape.water_material.set_shader_parameter("clarity", 1.0)
+
+
+# --- After day-88: Logan's stock, his salve, and the road on to the auction (founder brief 2026-11-08) ----------------------------
+
+## Background stock on the far (east) shore: Logan's working horses, the same supplied horse, each on its own idle/drink loop.
+## Placements only - no ride AI, no herd logic. Also builds the auction signpost (shown only after day-88).
+func _build_stock() -> void:
+	if not _stock.is_empty():
+		return
+	var scene: PackedScene = load(HORSE_MODEL) if ResourceLoader.exists(HORSE_MODEL) else null
+	for i in STOCK_ANGLES.size():
+		var a: float = float(STOCK_ANGLES[i])
+		var r: float = 1.07 * Ep2LakeLandform.rim_radius(a)
+		var x: float = Ep2LakeLandform.CENTER_X + Ep2LakeLandform.RADIUS_X * r * cos(a)
+		var z: float = 20.0 + Ep2LakeLandform.RADIUS_Z * r * sin(a)
+		var actor := Node3D.new()
+		actor.name = "LoganStock%d" % i
+		_visuals.add_child(actor)
+		actor.position = Vector3(x, terrain_height(x, z), z)
+		actor.rotation.y = atan2(Ep2LakeLandform.CENTER_X - x, 20.0 - z)   # muzzle to the water
+		var model: Node3D = scene.instantiate() as Node3D if scene != null else null
+		if model != null:
+			model.rotation.y = -PI * 0.5
+			actor.add_child(model)
+			var anim: AnimationPlayer = null
+			for node in model.find_children("*", "AnimationPlayer", true, false):
+				anim = node as AnimationPlayer
+				break
+			if anim != null:
+				var clip: String = str(STOCK_CLIPS[i])
+				if not anim.has_animation(clip):
+					clip = "horse_graze"
+				if anim.has_animation(clip):
+					anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+					anim.play(clip)
+					anim.speed_scale = 0.0 if clip == "horse_walk" else 0.5 + 0.08 * i   # a walk clip held mid-stride reads as standing
+					anim.seek(1.3 * i, true)
+		else:
+			_box(Vector3(0.76, 0.82, 1.75), Vector3(0.0, 1.02, 0.0), _plain(Color(0.33, 0.2, 0.11)), actor)
+		_stock.append(actor)
+	_auction_sign = Node3D.new()
+	_auction_sign.name = "AuctionSign"
+	_visuals.add_child(_auction_sign)
+	_auction_sign.position = Vector3(AUCTION_SIGN.x, path_height(AUCTION_SIGN.z), AUCTION_SIGN.z)
+	var wood: StandardMaterial3D = _plain(Color(0.36, 0.24, 0.13), 0.9)
+	_box(Vector3(0.14, 2.2, 0.14), Vector3(0, 1.1, 0), wood, _auction_sign)
+	_box(Vector3(1.9, 0.42, 0.07), Vector3(0.35, 1.85, 0), wood, _auction_sign)
+	var words := Label3D.new()
+	words.text = "AUCTION GROUNDS  >"
+	words.font_size = 44
+	words.pixel_size = 0.006
+	words.modulate = Color(0.95, 0.88, 0.7)
+	words.position = Vector3(0.35, 1.85, 0.05)
+	_auction_sign.add_child(words)
+	_auction_sign.visible = after_day88
+
+
+func get_stock_count() -> int:
+	return _stock.size()
+
+
+func _road_objective() -> void:
+	if armory.horse_is_sound() or _horse_state == "dead":
+		_hud.objective = "Ride to the auction grounds · the signpost by the arrival path."
+	else:
+		_hud.objective = "Your horse is shot · Logan's salve (0.5 BTC) here, or Dude's swap (1 BTC) back up the trail."
+
+
+func _near_auction_sign() -> bool:
+	return Vector2(_player_pos.x - AUCTION_SIGN.x, _player_pos.z - AUCTION_SIGN.z).length() < AUCTION_REACH
+
+
+## Mounted by default. On foot only when there is no horse left to ride (shot dead at the water); a shot horse is patched first.
+func _can_leave_for_auction() -> bool:
+	return _riding or _horse_state == "dead"
+
+
+func _leave_for_auction() -> void:
+	_resolve({"next_chamber": "auction_road", "road_mounted": _riding, "lake_return": true, "companion": ""})
+
+
+## Logan's farrier salve: beside the shot horse or beside Logan, any visit, while Logan is not drawing on him.
+func _can_offer_salve() -> bool:
+	if _horse == null or _horse_state != "hurt" or _salve_t >= 0.0 or _logan_draw_t >= 0.0 or not has_player_control():
+		return false
+	var by_horse: bool = Vector2(_player_pos.x - _horse.position.x, _player_pos.z - _horse.position.z).length() < SALVE_REACH
+	return by_horse or _player_pos.distance_to(LOGAN_MARK) < SALVE_REACH
+
+
+## Pay half a Bitcoin, then a short beat of Logan working the salve in; short of coin is a clear line, never a lock.
+func _buy_salve() -> bool:
+	if not armory.pay_half_btc():
+		_say(SALVE_SHORT_LINE, 5.0)
+		return false
+	_salve_t = 0.0
+	_hud.toast("LOGAN'S SALVE · -0.5 BTC", 2.5)
+	_say(SALVE_LINE, 5.5)
+	if _logan != null:
+		_gesture("Greet", 2.5)
+	return true
+
+
+func _tick_salve(delta: float) -> void:
+	if _salve_t < 0.0:
+		return
+	_salve_t += delta
+	if _logan != null and _horse != null:
+		_logan.face_point(_horse.position)
+	if _salve_t >= 3.0:
+		_salve_t = -1.0
+		armory.treat_horse()
+		_horse_state = "drink"                      # patched up: it walks its nose back down to the water, rideable again
+		if _beat == Beat.ROAD:
+			_road_objective()
+
+
+func salve_running() -> bool:
+	return _salve_t >= 0.0

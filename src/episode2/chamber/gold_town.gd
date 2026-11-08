@@ -2392,12 +2392,19 @@ static func upgrade_license_wall(wall: Node3D) -> bool:
 
 
 ## A shot horse stays shot until he brings it to Dude (founder 2026-11-04); walking up to Dude is all it takes.
+## Founder brief 2026-11-08: this is the dear reset - Dude takes the wrecked mount and ONE Bitcoin (Logan's salve at the lake is the
+## half-Bitcoin local fix). Short of a coin he still swaps it, on his auction credit (as the horse itself can be): never a soft-lock.
+const DUDE_SWAP_BTC := 1
 func _dude_treats_horse() -> void:
 	if armory.horse_is_sound() or _player_pos.distance_to(_stable_yard.dude_position()) > DUDE_TREATS_WITHIN:
 		return
+	var paid: bool = GameManager.purse_spend("btc", DUDE_SWAP_BTC)
+	if not paid:
+		GameManager.record_dude_credit(DUDE_SWAP_BTC)
 	armory.treat_horse()
 	if _hud != null:
-		_hud.toast("DUDE PATCHES UP THE HORSE - IT CAN DRINK AND CARRY YOU AGAIN", 3.0)
+		_hud.toast(("DUDE SWAPS THE WRECKED HORSE FOR A FRESH ONE · -1 BTC" if paid
+			else "DUDE SWAPS THE WRECKED HORSE FOR A FRESH ONE · 1 BTC ON CREDIT TILL THE AUCTION"), 3.0)
 
 
 func _show_finished() -> void:

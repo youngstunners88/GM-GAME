@@ -65,6 +65,8 @@ const CHAMBER_SCENES := {
 	"logans_lake": preload("res://src/episode2/chamber/logans_lake.tscn"),
 	# Logan's overlook -> the day-88 ridge (founder lock 2026-11-04): cover the Shipment down the river to Utah's dock.
 	"river_cover": preload("res://src/episode2/chamber/river_cover.tscn"),
+	# Back at the lake after Utah's dock -> the short diagonal ride to the auction grounds (founder brief 2026-11-08).
+	"auction_road": preload("res://src/episode2/chamber/auction_road.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
 
@@ -309,7 +311,7 @@ func _enter_chamber_chained(segment: int) -> void:
 			built_vp.queue_free()
 	else:
 		add_child(c)
-		if c is RiverCoverChamber:
+		if c is RiverCoverChamber or bool(gaze.get("after_day88", false)) or c is AuctionRoadChamber:
 			c.handoff = gaze                                # not prebuilt in time: the ridge still continues his walk
 		c.setup(0, [], 0)
 	if c is RiverCoverChamber and old is LogansLakeChamber:
