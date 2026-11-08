@@ -958,6 +958,132 @@
       "id": "river_utah_dock",
       "speaker": "utah",
       "text": "Got her! Day-eighty-eight's in, Lil Blunt. Clean shooting up there."
+    },
+    {
+      "id": "miners_day88_1",
+      "speaker": "oldtimer",
+      "text": "Day eighty-eight, and this claim's still paying. Twelve more days and my miner's done its hundred.",
+      "ambient": true
+    },
+    {
+      "id": "miners_day88_2",
+      "speaker": "bald_worker",
+      "text": "Then what, old man? Start a new one?",
+      "ambient": true
+    },
+    {
+      "id": "miners_day88_3",
+      "speaker": "oldtimer",
+      "text": "Roll the gold into Fort Knox and let it sit. Patience pays better than a pick.",
+      "ambient": true
+    },
+    {
+      "id": "miners_day88_4",
+      "speaker": "bald_worker",
+      "text": "Patience don't move dirt. Keep swinging.",
+      "ambient": true
+    },
+    {
+      "id": "miners_river_1",
+      "speaker": "bald_worker",
+      "text": "Heard the Shipment goes down the river on day eighty-eight.",
+      "ambient": true
+    },
+    {
+      "id": "miners_river_2",
+      "speaker": "oldtimer",
+      "text": "Every gold run does. And every bear and bandit knows the date.",
+      "ambient": true
+    },
+    {
+      "id": "miners_river_3",
+      "speaker": "bald_worker",
+      "text": "Then somebody had better ride cover on it.",
+      "ambient": true
+    },
+    {
+      "id": "miners_river_4",
+      "speaker": "oldtimer",
+      "text": "Not me. My knees are staked till the end of the season.",
+      "ambient": true
+    },
+    {
+      "id": "miners_certs_1",
+      "speaker": "youth",
+      "text": "Went to the Certificates office. Mike Dean wants four licenses before I can work a real claim.",
+      "ambient": true
+    },
+    {
+      "id": "miners_certs_2",
+      "speaker": "rancher",
+      "text": "Four papers and a bond. That's how you know a claim is honest.",
+      "ambient": true
+    },
+    {
+      "id": "miners_certs_3",
+      "speaker": "youth",
+      "text": "Or how you know the minister likes paperwork.",
+      "ambient": true
+    },
+    {
+      "id": "miners_certs_4",
+      "speaker": "rancher",
+      "text": "Get your papers straight, kid. No certificate, no seat at the auction.",
+      "ambient": true
+    },
+    {
+      "id": "miners_auction_1",
+      "speaker": "rancher",
+      "text": "Gold Rush Auction's coming up. Folks are bidding on whole mining rigs.",
+      "ambient": true
+    },
+    {
+      "id": "miners_auction_2",
+      "speaker": "youth",
+      "text": "Whole rigs? I can barely afford this shovel.",
+      "ambient": true
+    },
+    {
+      "id": "miners_auction_3",
+      "speaker": "rancher",
+      "text": "Start small. Buy in low and let it run the full hundred days.",
+      "ambient": true
+    },
+    {
+      "id": "miners_auction_4",
+      "speaker": "youth",
+      "text": "And pray Jack Hammer doesn't buy up the whole lot first.",
+      "ambient": true
+    },
+    {
+      "id": "miners_hammer_1",
+      "speaker": "grandfather",
+      "text": "Another Jack Hammer bill on the board this morning. The price on his head keeps climbing.",
+      "ambient": true
+    },
+    {
+      "id": "miners_hammer_2",
+      "speaker": "rancher",
+      "text": "Paid in XAUt, they say. Real gold, on paper.",
+      "ambient": true
+    },
+    {
+      "id": "miners_hammer_3",
+      "speaker": "grandfather",
+      "text": "A man who robs honest miners belongs behind the Sheriff's bars.",
+      "ambient": true
+    },
+    {
+      "id": "miners_hammer_4",
+      "speaker": "youth",
+      "text": "Sheriff's looking for somebody brave enough to take the job.",
+      "ambient": true
+    },
+    {
+      "id": "miners_hammer_5",
+      "speaker": "grandfather",
+      "text": "Brave or foolish. Out here, that's the same thing.",
+      "ambient": true
     }
   ],
   "greetings": {

@@ -1225,6 +1225,174 @@ const LINES: Dictionary = {
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/river_utah_dock.ogg"
+	},
+	"miners_day88_1": {
+		"speaker": "oldtimer",
+		"text": "Day eighty-eight, and this claim's still paying. Twelve more days and my miner's done its hundred.",
+		"seconds": 6.605,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_day88_1.ogg"
+	},
+	"miners_day88_2": {
+		"speaker": "bald_worker",
+		"text": "Then what, old man? Start a new one?",
+		"seconds": 2.439542,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_day88_2.ogg"
+	},
+	"miners_day88_3": {
+		"speaker": "oldtimer",
+		"text": "Roll the gold into Fort Knox and let it sit. Patience pays better than a pick.",
+		"seconds": 5.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_day88_3.ogg"
+	},
+	"miners_day88_4": {
+		"speaker": "bald_worker",
+		"text": "Patience don't move dirt. Keep swinging.",
+		"seconds": 2.9295,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_day88_4.ogg"
+	},
+	"miners_river_1": {
+		"speaker": "bald_worker",
+		"text": "Heard the Shipment goes down the river on day eighty-eight.",
+		"seconds": 3.220208,
+		"start_seconds": 0.084792,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_river_1.ogg"
+	},
+	"miners_river_2": {
+		"speaker": "oldtimer",
+		"text": "Every gold run does. And every bear and bandit knows the date.",
+		"seconds": 4.805,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_river_2.ogg"
+	},
+	"miners_river_3": {
+		"speaker": "bald_worker",
+		"text": "Then somebody had better ride cover on it.",
+		"seconds": 2.492875,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_river_3.ogg"
+	},
+	"miners_river_4": {
+		"speaker": "oldtimer",
+		"text": "Not me. My knees are staked till the end of the season.",
+		"seconds": 3.618167,
+		"start_seconds": 0.086875,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_river_4.ogg"
+	},
+	"miners_certs_1": {
+		"speaker": "youth",
+		"text": "Went to the Certificates office. Mike Dean wants four licenses before I can work a real claim.",
+		"seconds": 5.805,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_certs_1.ogg"
+	},
+	"miners_certs_2": {
+		"speaker": "rancher",
+		"text": "Four papers and a bond. That's how you know a claim is honest.",
+		"seconds": 4.205,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_certs_2.ogg"
+	},
+	"miners_certs_3": {
+		"speaker": "youth",
+		"text": "Or how you know the minister likes paperwork.",
+		"seconds": 2.867083,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_certs_3.ogg"
+	},
+	"miners_certs_4": {
+		"speaker": "rancher",
+		"text": "Get your papers straight, kid. No certificate, no seat at the auction.",
+		"seconds": 4.205,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_certs_4.ogg"
+	},
+	"miners_auction_1": {
+		"speaker": "rancher",
+		"text": "Gold Rush Auction's coming up. Folks are bidding on whole mining rigs.",
+		"seconds": 4.105042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_auction_1.ogg"
+	},
+	"miners_auction_2": {
+		"speaker": "youth",
+		"text": "Whole rigs? I can barely afford this shovel.",
+		"seconds": 3.325,
+		"start_seconds": 0.08,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_auction_2.ogg"
+	},
+	"miners_auction_3": {
+		"speaker": "rancher",
+		"text": "Start small. Buy in low and let it run the full hundred days.",
+		"seconds": 4.605,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_auction_3.ogg"
+	},
+	"miners_auction_4": {
+		"speaker": "youth",
+		"text": "And pray Jack Hammer doesn't buy up the whole lot first.",
+		"seconds": 3.191583,
+		"start_seconds": 0.013417,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_auction_4.ogg"
+	},
+	"miners_hammer_1": {
+		"speaker": "grandfather",
+		"text": "Another Jack Hammer bill on the board this morning. The price on his head keeps climbing.",
+		"seconds": 5.805042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_hammer_1.ogg"
+	},
+	"miners_hammer_2": {
+		"speaker": "rancher",
+		"text": "Paid in XAUt, they say. Real gold, on paper.",
+		"seconds": 4.305042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_hammer_2.ogg"
+	},
+	"miners_hammer_3": {
+		"speaker": "grandfather",
+		"text": "A man who robs honest miners belongs behind the Sheriff's bars.",
+		"seconds": 4.605,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_hammer_3.ogg"
+	},
+	"miners_hammer_4": {
+		"speaker": "youth",
+		"text": "Sheriff's looking for somebody brave enough to take the job.",
+		"seconds": 2.991042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_hammer_4.ogg"
+	},
+	"miners_hammer_5": {
+		"speaker": "grandfather",
+		"text": "Brave or foolish. Out here, that's the same thing.",
+		"seconds": 4.305042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/miners_hammer_5.ogg"
 	}
 }
 const GREETINGS: Dictionary = {

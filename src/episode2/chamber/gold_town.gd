@@ -2606,6 +2606,10 @@ func _tick_people(delta: float) -> void:
 		_people.set_context("duel" if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW] else ("quiet" if _beat in [Beat.OFFICE, Beat.WON, Beat.JOB, Beat.BODY, Beat.JAIL] else "normal"))
 		_update_keep_clear()
 		_people.step(delta, _player_pos)
+	if _miners != null:
+		# the back-lot miners talk only when Lil Blunt is in earshot and no story scene is speaking (never over the draw or a briefing)
+		var free_talk: bool = not (_beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW, Beat.OFFICE, Beat.WON, Beat.JOB, Beat.BODY, Beat.JAIL])
+		_miners.player_pos = _player_pos if free_talk else Vector3(0.0, 0.0, -9999.0)
 	_step_doors(delta)
 	if _accomplice != null:
 		_accomplice.step(delta)
