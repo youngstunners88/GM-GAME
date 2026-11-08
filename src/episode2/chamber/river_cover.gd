@@ -141,7 +141,10 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "river_cover"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _build_land, _build_river, _build_ridge, _build_marker, _build_dock, _build_crate, _build_utah]
+## Each step stays short (ep2-no-blackouts: a step over ~100 ms is a visible hitch in the room he is walking through), so the ridge's
+## overlooks and dressing are steps of their own.
+func _build_steps() -> Array: return [_light, _build_land, _build_river, _build_ridge, _build_overlooks, _dress_ridge, _build_marker, _build_dock,
+	_build_crate, _build_utah]
 
 
 # --- the set ------------------------------------------------------------------------------------------------------------------
@@ -526,8 +529,6 @@ func _build_ridge() -> void:
 			m.cull_mode = BaseMaterial3D.CULL_DISABLED
 			m.metallic_specular = 0.08
 		node.set_surface_override_material(i, m)
-	_build_overlooks()
-	_dress_ridge()
 
 
 ## The scanned grass-and-rock ground in the lake's green (left in its own colour it reads as straw on a big sunlit slope).
@@ -952,6 +953,14 @@ func adopt_lake(lake: Node3D) -> void:
 		(ground.material_override as ShaderMaterial).set_shader_parameter("clip_z", LAKE_CLIP_Z)
 	_trim_lake_flora(visuals)
 	_close_lake_hills()
+	# a lake line still on screen goes on over the climb for the rest of its time: the walk never waited for it (founder 2026-11-07)
+	var box: Control = lake.get("_dialogue_panel")
+	var left: float = float(lake.get("_talk_t"))
+	if box != null and box.visible and left > 0.0 and _hud_layer != null:
+		box.reparent(_hud_layer, false)
+		get_tree().create_timer(left, false).timeout.connect(box.queue_free)
+		lake.set("_dialogue_panel", null)
+		lake.call("_build_dialogue")                        # the lake keeps a box of its own for a later visit
 	if _valley != null:
 		_valley.position.z = LAKE_OFFSET.z + LAKE_CLIP_Z + 1200.0 - 2.0
 
@@ -1085,6 +1094,9 @@ func _on_setup() -> void:
 	_player_pos = (handoff["ridge_from"] as Vector3) + LAKE_OFFSET if handoff.has("ridge_from") else SPAWN
 	_player_pos = _collide(_player_pos)
 	_ground_y = (ridge_nearest(_player_pos)[0] as Vector3).y
+	# the eye starts where the lake left it (the trail's few cm of rise, or a horse's height) and settles while he walks: no pop
+	var from_eye: float = float(handoff.get("eye", FPS_EYE_HEIGHT)) + ((handoff["ridge_from"] as Vector3).y + LAKE_OFFSET.y - _ground_y if handoff.has("ridge_from") else 0.0)
+	eye_height = clampf(from_eye, FPS_EYE_HEIGHT - 0.8, FPS_EYE_HEIGHT + 0.8)
 	_player_pos.y = _ground_y
 	_apply_handoff_gaze(0.0, -0.02, PI)                   # yaw 0 = +z = up the ridge; both rooms share the convention, so the view is unbroken
 	_health = 3
@@ -1140,6 +1152,7 @@ func _heal_full() -> bool:
 
 func _tick(delta: float) -> void:
 	_invuln = maxf(0.0, _invuln - delta)
+	eye_height = move_toward(eye_height, FPS_EYE_HEIGHT, delta * 0.8)
 	var near: Array = ridge_nearest(_player_pos)
 	_ground_y = (near[0] as Vector3).y
 	match _beat:
@@ -1157,6 +1170,7 @@ func _tick(delta: float) -> void:
 			_tick_dock(delta)
 	if _crate != null:
 		_place_crate(delta)
+	_tick_cover(delta)
 	_step_bears(delta)
 	_step_rafts(delta)
 	_step_arrows(delta)
@@ -1735,7 +1749,13 @@ func _on_player_shot() -> void:
 		return
 	if hit.is_empty():
 		return
+	var was_alive: bool = str(hit["state"]) != "dead"
+	var bear_kind: String = "archer" if str(hit["state"]) == "archer" else ("ridge" if bool(hit["ridge"]) else "river")
 	var killed: bool = damage_bear(hit, dmg)
+	if was_alive:
+		_bear_money_hit(killed)                      # the coin clink + a wound on the Tabs (founder 2026-11-08)
+		if killed:
+			GameManager.tally_bear(bear_kind)        # his own shot only: this is the player's shot path, never Utah's or a test's
 	if _hud != null:
 		_hud.hit_marker(killed)
 
@@ -1974,7 +1994,7 @@ func _river_sound(name: String, at: Vector3) -> void:
 
 
 func _hurt_player() -> void:
-	if _invuln > 0.0 or _resolved:
+	if _invuln > 0.0 or _resolved or _in_cover:
 		return
 	_health = maxi(0, _health - 1)
 	_invuln = 1.0
@@ -2027,6 +2047,7 @@ func _recover_in_eddy() -> void:
 
 ## After any restore the guns are fireable: no half-finished reload or breech cycle carried over.
 func _ready_guns() -> void:
+	_set_cover(false)
 	for id in Ep2ArmoryState.IDS:
 		var gun: Ep2Winchester = armory.firearm(id)
 		gun.cancel_reload()
@@ -2155,3 +2176,69 @@ func get_arrows() -> Array: return _arrows
 func utah_visible() -> bool: return _utah != null and _utah.visible
 func blocked_reason() -> String: return _blocked_reason
 func board_progress() -> float: return _crate_board / BOARD_TIME
+
+
+# --- ridge cover (founder 2026-11-08) -------------------------------------------------------------------------------------------
+## At an overlook's sandbag barrack, C (or Ctrl) drops him behind the bags: the bears, archers and Hammer's men out front cannot hurt
+## him there, and R still reloads. C again (or a click) pops him back up over the bags to aim and fire. Walking off the overlook
+## stands him up. The day-88 retry/rewind rules are untouched.
+const COVER_EYE := 0.82                      # eye below the sandbag berm's crest
+const COVER_EYE_RATE := 4.5                  # m/s the eye drops/rises
+var _in_cover: bool = false
+var _cover_rising: bool = false
+
+
+func in_cover() -> bool:
+	return _in_cover
+
+
+## True when he stands on one of the overlooks (the only places with a barrack to get behind).
+func at_barrack() -> bool:
+	for o in OVERLOOKS:
+		if _flat(_player_pos).distance_to(_flat(o)) <= OVERLOOK_R and absf(_player_pos.y - o.y) < 1.5:
+			return true
+	return false
+
+
+## The session root's C / Ctrl. Returns the new cover state.
+func toggle_cover() -> bool:
+	if not _in_cover and (not has_player_control() or not at_barrack()):
+		return false
+	_set_cover(not _in_cover)
+	return _in_cover
+
+
+func take_cover() -> void:
+	if has_player_control() and at_barrack():
+		_set_cover(true)
+
+
+func leave_cover() -> void:
+	_set_cover(false)
+
+
+func _set_cover(on: bool) -> void:
+	if on == _in_cover:
+		return
+	_in_cover = on
+	if _hud != null:
+		_hud.toast("IN COVER · R TO RELOAD · C TO AIM OVER THE BAGS" if on else "UP OVER THE BAGS", 1.4)
+
+
+## A click while ducked stands him up instead of firing into the sandbags.
+func shoot() -> bool:
+	if _in_cover:
+		_set_cover(false)
+		return false
+	return super.shoot()
+
+
+func _tick_cover(delta: float) -> void:
+	if _in_cover and not at_barrack():
+		_set_cover(false)
+	if _in_cover:
+		eye_height = move_toward(eye_height, COVER_EYE, COVER_EYE_RATE * delta)
+		_cover_rising = true
+	elif _cover_rising:                          # pop up briskly; any other eye change keeps the room's own slow return
+		eye_height = move_toward(eye_height, FPS_EYE_HEIGHT, COVER_EYE_RATE * delta)
+		_cover_rising = eye_height < FPS_EYE_HEIGHT

@@ -451,6 +451,36 @@ func claim_corpse(id: String) -> int:
 	return count
 
 
+## A dead gunman's gun + rounds (Ep2WeaponDrop), kept with the searched bodies. False once taken or for an unknown gun.
+func record_drop(id: String, gun_id: String, rounds: int) -> bool:
+	if not IDS.has(gun_id) or gun_id == BOW or id == "":
+		return false
+	if not corpses.has(id):
+		corpses[id] = {"arrows": 0, "searched": false, "bow": false, "gun": gun_id, "rounds": clampi(rounds, 0, RESERVE_CAP)}
+		changed.emit()
+	return not bool(corpses[id]["searched"])
+
+
+## A new gun comes loaded (acquire) with only the dead man's rounds as reserve; an owned gun still takes the rounds. Capped at RESERVE_CAP,
+## the rest stays on the ground. {} when nothing was taken, else {"gun", "new", "rounds"}.
+func claim_drop(id: String) -> Dictionary:
+	if not corpses.has(id) or bool(corpses[id]["searched"]) or not IDS.has(str(corpses[id].get("gun", ""))):
+		return {}
+	var gun_id: String = str(corpses[id]["gun"])
+	var fresh: bool = not owns(gun_id) and acquire(gun_id)
+	var gun: Ep2Winchester = firearm(gun_id)
+	if fresh:
+		gun.reserve = 0
+	var count: int = mini(int(corpses[id]["rounds"]), RESERVE_CAP - gun.reserve)
+	if not fresh and count <= 0:
+		return {}
+	gun.reserve += count
+	corpses[id]["rounds"] = int(corpses[id]["rounds"]) - count
+	corpses[id]["searched"] = int(corpses[id]["rounds"]) == 0
+	changed.emit()
+	return {"gun": gun_id, "new": fresh, "rounds": count}
+
+
 func wound_horse() -> void:
 	horse_wounds = mini(horse_wounds + 1, HORSE_WOUNDS_MAX)
 	changed.emit()
@@ -509,6 +539,9 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 			for id in records:
 				if records[id] is Dictionary:
 					corpses[str(id)] = {"arrows": clampi(SaveSafe.to_int(records[id].get("arrows", 0)), 0, 100), "searched": bool(records[id].get("searched", false)), "bow": bool(records[id].get("bow", false))}
+					if IDS.has(str(records[id].get("gun", ""))):
+						corpses[str(id)]["gun"] = str(records[id]["gun"])
+						corpses[str(id)]["rounds"] = clampi(SaveSafe.to_int(records[id].get("rounds", 0)), 0, RESERVE_CAP)
 	(firearm(BOW) as Ep2Bow).rounds = arrows
 	firearms_confiscated = valid and bool(data.get("confiscated", false))
 	held.clear()

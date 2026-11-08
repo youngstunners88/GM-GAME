@@ -246,6 +246,8 @@ jobs:
           #   design/,work-notes/,tools/,assets/keyart/,web_verify/,web/game/ -> reference
           #        images, notes, capture rigs and local export output nothing loads at runtime
           #        (2026-10-01: ~14 MB; the Episode 2 hideout's Meshy models pushed the pck over 190 MB).
+          #   assets/*.json, package*.json -> generator sources (audio/voice/art manifests, npm); the game embeds the generated
+          #        GDScript and never reads them (2026-11-07: ~280 KB, kept the pck under 190 MiB).
           #   src/assets/models/horse/assetfurnace/ -> the horse's raw/rigged GLBs, textures and run records (~10 MB);
           #        the stable plays the baked 2D sprites in src/assets/sprites/, no scene loads these.
           #   DO NOT exclude loose texture files next to GLBs (src/episode2/assets/{town,weapons,mine_lift,vehicles}/):
@@ -269,7 +271,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json,src/episode2/config/grounded_walk.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,assets/*.json,package.json,package-lock.json,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -415,6 +417,10 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_personal_armory_test.tscn 2>&1 | tee personal-armory-tests.log
           grep -q 'EP2_PERSONAL_ARMORY: ALL PASS' personal-armory-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' personal-armory-tests.log; then exit 1; fi
+          # A dead gunman's gun + its own rounds lie where he fell, taken once into the one armory (Ep2WeaponDrop).
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_weapon_drops_test.tscn 2>&1 | tee weapon-drops-tests.log
+          grep -q 'EP2_WEAPON_DROPS: ALL PASS' weapon-drops-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' weapon-drops-tests.log; then exit 1; fi
           # Rich & Utah's unlock chain and weapon tabs (founder 2026-11-03): Shipment -> Sharps -> the rest, saved; the bud in Tabs.
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_armory_chain_test.tscn 2>&1 | tee armory-chain-tests.log
           grep -q 'EP2_ARMORY_CHAIN: ALL PASS' armory-chain-tests.log
@@ -459,6 +465,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_river_cover_test.tscn > river-cover-tests.log 2>&1
           grep -q 'RIVER_COVER: ALL PASS' river-cover-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' river-cover-tests.log; then exit 1; fi
+          # Cargo check -> hill -> ridge in one motion (founder 2026-11-07): never held, no camera jump, no ridge built in view
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_cargo_hill_test.tscn > cargo-hill-tests.log 2>&1
+          grep -q 'CARGO_HILL: ALL PASS' cargo-hill-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' cargo-hill-tests.log; then exit 1; fi
           # The world obeys common sense (founder 2026-11-05): nobody walks through the praying Minister, Inferno asks at the body then
           # goes for the whiskey, the saloon batwings swing for anyone going through, a shot raft man goes into the river, rafts take hits.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_common_sense_test.tscn > common-sense-tests.log 2>&1
@@ -536,6 +546,10 @@ jobs:
           # The ride to Logan's Lake (fix pack 2026-10-27): Dude's horse, telegraphed bandits, UNHORSE, retry, the prebuilt lake hand-off.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_lake_trail_test.tscn 2>&1 | tee lake-trail-tests.log
           grep -q 'EP2_LAKE_TRAIL: ALL PASS' lake-trail-tests.log
+          # Desert -> Logan's Lake in one motion (founder 2026-11-07): no shore pause, a one-frame hand-over, water clearing by distance to Logan.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_seamless_test.tscn > lake-seamless-tests.log 2>&1
+          if grep -E '\[FAIL\]' lake-seamless-tests.log; then exit 1; fi
+          grep -q 'EP2_LAKE_SEAMLESS: 13 checks, 0 failed' lake-seamless-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
           grep -q 'EP2_WORLD_ROUTES: 29 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi

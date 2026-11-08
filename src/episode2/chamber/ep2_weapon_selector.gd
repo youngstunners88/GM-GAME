@@ -452,7 +452,7 @@ func _draw_ledger(band: Rect2, compact: bool) -> void:
 	style.set_border_width_all(1)
 	style.set_corner_radius_all(7)
 	draw_style_box(style, band)
-	var bear_line: String = "BEARS  %d" % GameManager.bear_total()
+	var bear_line: String = "BEARS DOWN %d · WOUNDED %d" % [GameManager.bear_total(), GameManager.bears_wounded]
 	var kinds: Array = GameManager.bear_tally.keys()
 	kinds.sort()
 	for kind in kinds:

@@ -259,7 +259,8 @@ func _on_setup() -> void:
 	if _skiff != null: _skiff.reset_routine()
 	Ep2Extras.start(self)
 	_vm.set_world_shadows(false)
-	_vm.set_own_light(0.65, _sun)
+	# the same key on the held gun as on the trail he rides in from (and the town and woods): the gun does not darken at the shore
+	_vm.set_own_light(WoodsQuadChamber.VM_KEY_ENERGY, _sun)
 	if not _hud.search_requested.is_connected(start_rig):
 		_hud.search_requested.connect(start_rig)
 	_build_dialogue()
@@ -270,20 +271,27 @@ func _on_setup() -> void:
 	# Ridden in: he stops where Lil Blunt slid off (the trail's dismount stepped him 1.3 m to the right) and walks to the water.
 	# On foot (UNHORSE on the trail): Dude's horse found the water first and is already drinking - never strand him at the lake.
 	var slid_off_at: Vector3 = _player_pos - Vector3(1.3, 0, 0)
+	var horse_yaw: float = float(handoff.get("lake_horse_yaw", _look_yaw))   # it keeps the heading it walked in on
 	_logan_draw_t = -1.0
 	if armory.horse_is_down():
 		_horse_state = "gone"                       # shot out from under him on the trail: there is no horse at the lake to water or ride
 		_horse.visible = false
 	elif not armory.horse_is_sound():
-		_place_horse(slid_off_at, _look_yaw)        # it carried him here, shot, and stands where he got down: it will not drink, and it cannot be ridden
+		_place_horse(slid_off_at, horse_yaw)        # it carried him here, shot, and stands where he got down: it will not drink, and it cannot be ridden
 		_horse_state = "hurt"
 		_set_horse_clip("horse_stand", 0.6)
 	elif bool(handoff.get("arrived_mounted", false)) and slid_off_at.distance_to(HORSE_DRINK) < 40.0:
-		_place_horse(slid_off_at, _look_yaw)
+		_place_horse(slid_off_at, horse_yaw)
 		_horse_state = "lead"
+		# mid-stride in the first frame, at the trail's own step (not blended in from the build's grazing pose)
+		_set_horse_clip("horse_walk", HORSE_WALK / HORSE_CLIP_SPEED)
+		if _horse_anim != null and _horse_anim.has_animation("horse_walk"):
+			_horse_anim.play("horse_walk", 0.0)
+			_horse_anim.seek(float(handoff.get("horse_anim_pos", 0.0)), true)
 	else:
 		_place_horse(HORSE_DRINK, HORSE_DRINK_YAW)
 		_horse_state = "drink"
+	_clear_water()
 	_advance_to(Beat.ARRIVE)
 
 func _build_dialogue() -> void:
@@ -338,6 +346,7 @@ func _on_beat_entered(b: int) -> void:
 	match b:
 		Beat.ARRIVE: _hud.objective = "Logan's Lake · Meet Logan at the shore."
 		Beat.INVESTIGATE:
+			prebuild_requested.emit("river_cover")          # the ridge builds off screen from the first word: ready long before he walks on
 			_hud.objective = "Investigate the depth. Listen to Logan."
 			_say(LINES[0], 6.5)
 			_gesture("Greet", 2.5)
@@ -358,7 +367,7 @@ func _on_beat_entered(b: int) -> void:
 
 func start_rig(_payment: String = "") -> bool:
 	if not has_player_control() or armory_open(): return false
-	if _beat == Beat.OVERLOOK and _staged and _talk_t <= 0 and _player_pos.z > 59:
+	if _beat == Beat.OVERLOOK and _staged and _player_pos.z > 59 and _handoff_ok():
 		# founder lock 2026-11-04: the lake hands on to the day-88 ridge (river_cover.gd); Logan stays here, Rich and Utah never come
 		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
 		return true
@@ -425,7 +434,7 @@ func _tick(delta: float) -> void:
 		prompt = "Meet Logan [E]"
 	elif _beat == Beat.STAGE and _player_pos.distance_to(STAGING_MARK) < 2.8:
 		prompt = "Check staged cargo [E]"
-	elif _beat == Beat.OVERLOOK and _talk_t <= 0 and _player_pos.z > 59:
+	elif _beat == Beat.OVERLOOK and _player_pos.z > 59:
 		prompt = "Finish lake visit [E]"
 	elif _riding:
 		prompt = "Dismount [E]"
@@ -444,8 +453,9 @@ func _tick(delta: float) -> void:
 		_skiff.advance(delta, _staged and _talk_t <= 0.0)
 	if _beat == Beat.HANDOFF and _player_pos.z > 59:
 		_advance_to(Beat.OVERLOOK)
-	# walking on up the path is enough: the ridge continues from here, [E] only says so sooner
-	if _beat == Beat.OVERLOOK and _staged and _talk_t <= 0 and _player_pos.z >= WALK_ON_Z and not _resolved and has_player_control():
+	# walking on up the path is enough: the ridge continues from here, [E] only says so sooner. Never waits on a line (founder
+	# 2026-11-07 "no pause climbing the hill from the cargo check"): the ridge carries the caption on (RiverCoverChamber.adopt_lake)
+	if _beat == Beat.OVERLOOK and _staged and _player_pos.z >= WALK_ON_Z and not _resolved and has_player_control() and _handoff_ok():
 		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
 
 func _collide(p: Vector3) -> Vector3:
@@ -453,7 +463,10 @@ func _collide(p: Vector3) -> Vector3:
 		return Ep2LoganCabin.collide(p)
 	var q := p
 	q.z = clampf(q.z, -16, 64)
-	q.x = clampf(q.x, -11.5, -4.1)
+	# up the overlook path the bank narrows to the ridge trail's own width (RiverCoverChamber.RIDGE_HALF about its first point), so the
+	# ridge takes him on where he stands instead of pushing him sideways in the frame it takes over
+	var narrow: float = clampf((q.z - 50.0) / 10.0, 0.0, 1.0)
+	q.x = clampf(q.x, lerpf(-11.5, -10.9, narrow), lerpf(-4.1, -5.2, narrow))
 	# Walk onto the dock only through its landward end; water stays impassable (and no horse on the planks).
 	if p.z > 8.85 and p.z < 11.15 and not _riding:
 		q.x = clampf(p.x, -11.5, 3.65)
@@ -565,7 +578,11 @@ func logan_is_drawing() -> bool: return _logan_draw_t >= 0.0
 func get_handoff() -> Dictionary:
 	var result: Dictionary = super.get_handoff()
 	result["ridge_from"] = _player_pos
+	result["eye"] = eye_height
 	return result
+
+## At the top of the shore path with the ridge not yet built: the root spends more of each frame on it (never seen when built early).
+func _wants_handoff() -> bool: return _beat == Beat.OVERLOOK and _staged and _player_pos.z > 59
 
 func staging_complete() -> bool: return _staged
 func staging_count() -> int: return _stage_calls
@@ -766,6 +783,7 @@ func get_horse_clip() -> String:
 ## A later visit from the trail (world routes, no fresh setup): ridden in, he is still in the saddle; on foot, the horse stays
 ## wherever he left it at the water.
 func arrive_from_trail(mounted: bool) -> void:
+	_clear_water()
 	if _logan_draw_t >= 0.0:                        # he rides back in after Logan shot him: Logan has put the gun away, and this is a new visit
 		_logan_draw_t = -1.0
 		_show_blocks_control = false
@@ -793,3 +811,9 @@ func arrive_from_trail(mounted: bool) -> void:
 		walk_speed = _foot_speed
 		eye_height = FPS_EYE_HEIGHT
 
+
+## The trail clears this same water material by his distance to Logan as he rides in (LakeTrailChamber.water_clarity); at the shore it is
+## clear, and it stays clear here whatever way he arrived.
+func _clear_water() -> void:
+	if _landscape.water_material != null:
+		_landscape.water_material.set_shader_parameter("clarity", 1.0)

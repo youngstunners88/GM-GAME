@@ -341,6 +341,8 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	# The handoff must render the new eye pose immediately, before its first physics tick.
 	_update_camera(0.0)
 	_sync_visuals()
+	if handoff_seamless:
+		_tick_viewmodel(0.0)                        # and the held gun and its ammo count, not the build's defaults (a 0 / 0 flash)
 	beat_changed.emit(_beat)
 
 
@@ -507,6 +509,19 @@ func _tick_queued_line(delta: float) -> void:
 func _bull_play(clip: String, speed: float = 1.0) -> void:
 	if _bull:
 		_bull.play(clip, speed)
+
+
+## Lil Blunt's round landed on a LIVING bear (founder 2026-11-08): one short coin clink, throttled so a fast gun never turns it
+## into a scream, plus the Tabs ledger - a non-lethal hit is a wound, the killing hit is tallied by the room's death path.
+var _money_sfx_at: int = -100000
+const MONEY_SFX_GAP_MS := 140
+func _bear_money_hit(killed: bool) -> void:
+	if not killed:
+		GameManager.tally_bear_wound()
+	var now: int = Time.get_ticks_msec()
+	if now - _money_sfx_at >= MONEY_SFX_GAP_MS:
+		_money_sfx_at = now
+		_sfx("coin")
 
 
 func _sfx(name: String) -> void:
