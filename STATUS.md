@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+- **2026-11-08 — Save/Continue repair, verification in progress:** fixed Godot 4.3’s integer browser confirmation being mistaken for failure and the missing lake-trail checkpoint allowlist entry. Native checkpoint suite: 67/67; save compatibility passes; web/release proof pending. See `docs/episode2-quality/save-resume-20261108/REPORT.md`.
+
 **2026-11-08 — Day-88 ridge cover, coin clink on bear hits, Tabs wounded/down — LIVE on itch, build `2026-11-07-d6e0003`; NOT founder-verified.**
 - At each ridge overlook press **C** (or Ctrl) to duck behind the sandbags: no damage from the bears, archers or Hammer's men out front, **R** reloads in cover, C or a click pops him back up to aim. Walking off the overlook stands him up. (Keyboard only; no touch button yet.) Every hit on a living bear plays one short coin clink (throttled). Tabs reads **BEARS DOWN N · WOUNDED M**, saved with the ledger; day-88 river kills now count too. Tests: EP2_TABS_LEDGER, RIVER_COVER (both ALL PASS). Shipment rewind untouched.
 

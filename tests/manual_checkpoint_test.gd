@@ -25,6 +25,18 @@ func playing() -> void:
 func _ready() -> void:
  var existed: bool = FileAccess.file_exists(GameManager.SAVE_PATH)
  var original: String = FileAccess.get_file_as_string(GameManager.SAVE_PATH) if existed else ""
+ for fixture in [[true,true],[1,true],[false,false],[0,false],[null,false],["true",false],["1",false],[2,false],[-1,false],[1.0,false]]:
+  var result: Variant = fixture[0]
+  check("browser write confirmation type %d value %s" % [typeof(result),str(result)],GameManager._browser_write_confirmed(result)==fixture[1])
+ GameManager.manual_resume = {};GameManager.reset_session()
+ # Every shipped chamber must survive the same validation used by Save AND load.
+ # The ride to the lake was added to the scene registry but omitted from this allowlist.
+ for room in Ep2SessionRoot.CHAMBER_SCENES:
+  var record: Dictionary = {"version":1,"episode":2,"state":GameManager.session_data().duplicate(true),"section":{"mode":2,"segment":0,"room":room}}
+  check("Save confirms the registered room " + room,GameManager.save_manual_checkpoint(record) and GameManager.manual_save_status()==1)
+  GameManager.manual_resume={}
+  check("disk reload retains the registered room " + room,GameManager.load_session() and GameManager.manual_resume.get("section",{}).get("room")==room)
+ check("unknown chamber remains rejected",not GameManager.valid_resume({"version":1,"episode":2,"state":{},"section":{"mode":2,"segment":0,"room":"untrusted_room"}}))
  GameManager.manual_resume = {};GameManager.reset_session()
  GameManager.highest_unlocked_level = 3
  GameManager.current_level = 1
@@ -111,6 +123,23 @@ func _ready() -> void:
  check("completed reward guards and totals survive JSON",restored._rewarded_chambers.has(100) and restored._totals.gold_awarded==23 and restored._chain_n==4)
  check("later transient spending rolls back with the section",GameManager.purse_balance("btc")==saved_btc and restored.armory.firearm(Ep2ArmoryState.WIN).rounds>1)
  check("Logan story restarts at its coherent section checkpoint",restored.get_active().has_method("get_beat") and restored.get_active().get_beat()==LogansLakeChamber.Beat.ARRIVE and restored.get_active().staging_count()==0)
+ # Exercise the previously rejected ride through the actual restore path, too.
+ restored._chain_id="lake_trail";restored._enter_chamber()
+ restored.get_active().set_physics_process(false)
+ check("ride to the lake Save succeeds",next._save_checkpoint())
+ GameManager.save_session()
+ next.queue_free();await get_tree().process_frame
+ GameManager.manual_resume={};GameManager.pending_episode2_resume={}
+ check("Continue routes the saved ride through Episode2 entry",GameManager.load_session() and menu_route()==GameManager.EPISODE2_SCENE)
+ GameManager.ep2_story_unlocked=false
+ var gated: Node = load("res://src/episode2/ep2_entry.tscn").instantiate()
+ add_child(gated);await get_tree().process_frame
+ check("saved ride waits behind the access gate",gated._gate!=null and gated._root==null and GameManager.pending_episode2_resume.get("section",{}).get("room")=="lake_trail")
+ gated.queue_free();await get_tree().process_frame
+ GameManager.ep2_story_unlocked=true # earned-access fixture; never serialized
+ next=load("res://src/episode2/ep2_entry.tscn").instantiate()
+ add_child(next);await get_tree().process_frame
+ check("Continue restores the ride instead of the opening mine",next._root.get_active() is LakeTrailChamber and GameManager.pending_episode2_resume.is_empty())
  var saves: Array = [0]
  next._run_controls.save_action = func() -> bool:
   saves[0] += 1
