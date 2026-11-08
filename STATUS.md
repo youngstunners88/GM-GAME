@@ -2,6 +2,9 @@
 
 - **2026-11-08 — Save/Continue repair, locally verified / publishing:** fixed successful Godot 4.3 browser writes being reported as failed and allowed the existing lake-trail checkpoint. Native 67/67 + save compatibility + full local regression gates pass (three documented pause-layout machine differences); both episodes pass actual web Save/reload/Continue and blocked-storage preservation. Clean pack 198,960,128 B. Production deployment proof pending; `docs/episode2-quality/save-resume-20261108/REPORT.md`.
 
+**2026-11-08 — Inferno rides to Flux, minds people — pushed; NOT founder-verified.**
+- After the bar Inferno walks only to his quad and rides out to Flux (even on runs that never saw the quad ride in — the walk-across-town fallback is gone); on foot he stops for anyone in his way and steps round them; the quad (riding in and out) stops for Lil Blunt, townsfolk or story cast in front and goes on once they clear. Gates: EP2_COMMON_SENSE 40/40, EP2_GOLD_TOWN all pass. Not checked: hard-refresh capture on itch.
+
 **2026-11-08 — Day-88 ridge cover, coin clink on bear hits, Tabs wounded/down — LIVE on itch, build `2026-11-07-d6e0003`; NOT founder-verified.**
 - At each ridge overlook press **C** (or Ctrl) to duck behind the sandbags: no damage from the bears, archers or Hammer's men out front, **R** reloads in cover, C or a click pops him back up to aim. Walking off the overlook stands him up. (Keyboard only; no touch button yet.) Every hit on a living bear plays one short coin clink (throttled). Tabs reads **BEARS DOWN N · WOUNDED M**, saved with the ledger; day-88 river kills now count too. Tests: EP2_TABS_LEDGER, RIVER_COVER (both ALL PASS). Shipment rewind untouched.
 

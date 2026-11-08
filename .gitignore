@@ -249,3 +249,7 @@ tripo-out/
 /src/episode2/assets/town/dude_stable_owner_*.jpg
 /src/episode2/assets/town/stable_assistant_*.jpg
 graphify-out/
+
+# Godot --import extracts these from horse_finished.glb / horse_rigged.glb; byproducts, not source assets
+src/assets/models/horse/assetfurnace/horse_*_detail_*.jpg
+src/assets/models/horse/assetfurnace/horse_*_retopo_albedo.jpg
