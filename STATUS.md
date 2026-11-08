@@ -1,5 +1,8 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-08 — Episode 2 access code now works on phones — pushed; NOT run on a device (no Godot here), founder to confirm.**
+- The code screen brings its own on-screen keypad on touch devices (digits, letters with Shift, symbols page, DEL/CLEAR, SHOW/HIDE), shows what you type, and fits narrow/short screens (scrolls). The OS keyboard no longer fights it. Desktop and physical keyboards are unchanged. `src/episode2/ep2_entry.gd`.
+
 **2026-11-08 — Back-lot miners now dig and talk shop — pushed; NOT founder-verified.**
 - The bearded miner swings a pick into his heap (new Meshy motion, 6 credits spent). The fork man stands on his pitchfork and now and then kneels to pull a rock from the dirt. Walk within earshot and the miners hold voiced conversations: day 88 and the 100-day miners, the river Shipment, Mike Dean's four licenses, the Gold Rush Auction, Jack Hammer's bounty. They go quiet during story scenes and stop to look at gunfire. Gate `ep2_back_lot_miners_test` (55 checks).
 
