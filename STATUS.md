@@ -1,5 +1,8 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-08 — Back-of-town gold miners — pushed; NOT founder-verified.**
+- Five local miners now work the dirt lots behind the false fronts (never Main Street, no door or duel lane blocked): a long-beard digger at his heap with his shovel, a strong man resting on a pitchfork, two miners talking over an ore pile with gold in it, and an old man sat on a crate with his pick and shovel stood by. They are solid, they stop and look when shots ring out, then go back to work. Reused townsfolk bodies (dirtied), no new models. No dig animation exists yet, so the digger pauses rather than digs. Gate `ep2_back_lot_miners_test`; ledger `docs/founder-feedback/2026-11-08_back_lot_miners.md`.
+
 **2026-11-08 — Day-88 ridge cover, coin clink on bear hits, Tabs wounded/down — LIVE on itch, build `2026-11-07-d6e0003`; NOT founder-verified.**
 - At each ridge overlook press **C** (or Ctrl) to duck behind the sandbags: no damage from the bears, archers or Hammer's men out front, **R** reloads in cover, C or a click pops him back up to aim. Walking off the overlook stands him up. (Keyboard only; no touch button yet.) Every hit on a living bear plays one short coin clink (throttled). Tabs reads **BEARS DOWN N · WOUNDED M**, saved with the ledger; day-88 river kills now count too. Tests: EP2_TABS_LEDGER, RIVER_COVER (both ALL PASS). Shipment rewind untouched.
 
