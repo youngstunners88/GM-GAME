@@ -40,6 +40,9 @@ func _ready() -> void:
 	var river: String = _text("res://src/episode2/chamber/river_cover.gd")
 	check("day-88 success hands on to Logan's Lake (after_day88), not end_session", "\"next_chamber\": \"logans_lake\", \"after_day88\": true" in river)
 	check("the session knows the auction road", "\"auction_road\"" in _text("res://src/episode2/session/ep2_session_root.gd"))
+	check("Save/Continue accepts the auction road", "\"auction_road\"]" in _text("res://src/autoload/game_manager.gd"))
+	check("a post-day-88 lake save resumes post-day-88", "\"after_day88\": is_instance_valid(_active)" in _text("res://src/episode2/session/ep2_session_root.gd")
+		and "_resume_handoff = {\"after_day88\": true}" in _text("res://src/episode2/session/ep2_session_root.gd"))
 	# 2. horse at the water + stock
 	GameManager.token_purse["btc"] = 0
 	var st := Ep2ArmoryState.post_hideout()

@@ -136,6 +136,9 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_teardown_active()
 	_mode = Mode.IDLE
 
+## One-shot handoff for a chamber restored from a save (restore_section -> _enter_chamber).
+var _resume_handoff: Dictionary = {}
+
 func capture_section_checkpoint() -> void:
 	if is_instance_valid(_active) and _active.has_method("remember_retaliation_entry"):
 		_active.remember_retaliation_entry()
@@ -147,7 +150,9 @@ func capture_section_checkpoint() -> void:
 	state["personal_armory"] = armory.snapshot()
 	section_checkpoint = {"version": 1, "episode": 2, "label": "Episode 2 — " + (room.replace("_", " ").capitalize() if room != "" else "mine run %d" % (_segment + 1)), "state": state,
 		"section": {"segment": _segment, "mode": _mode, "room": room, "chain_n": _chain_n,
-		"distance": _completed_distance, "rewarded": _rewarded_chambers.keys(), "totals": _totals.duplicate(true)}}
+		"distance": _completed_distance, "rewarded": _rewarded_chambers.keys(), "totals": _totals.duplicate(true),
+		# a save at the lake after Utah's dock resumes there, not at Logan's first meeting (founder brief 2026-11-08)
+		"after_day88": is_instance_valid(_active) and _active is LogansLakeChamber and bool(_active.after_day88)}}
 
 func restore_section(record: Dictionary) -> bool:
 	if not GameManager.valid_resume(record) or int(record.episode) != 2: return false
@@ -170,7 +175,9 @@ func restore_section(record: Dictionary) -> bool:
 	else:
 		_chain_id = str(section.room)
 		if not CHAMBER_SCENES.has(_chain_id): return false
+		_resume_handoff = {"after_day88": true} if bool(section.get("after_day88", false)) else {}
 		_enter_chamber()
+		_resume_handoff = {}
 	return true
 
 func start() -> void:
@@ -238,6 +245,8 @@ func _enter_chamber() -> void:
 		push_error("Ep2SessionRoot: unknown chamber id \"%s\"; falling back to %s" % [chamber_id, DEFAULT_CHAMBER])
 		chamber_id = DEFAULT_CHAMBER
 	var c: Node = CHAMBER_SCENES[chamber_id].instantiate()
+	if not _resume_handoff.is_empty() and "handoff" in c:
+		c.handoff = _resume_handoff.duplicate()
 	add_child(c)
 	_active = c
 	_wire_chamber(c)
