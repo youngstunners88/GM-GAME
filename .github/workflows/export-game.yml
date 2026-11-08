@@ -910,8 +910,11 @@ jobs:
           set -euo pipefail
           # Retry the whole installer: its own GitHub download can return 504
           # after all build gates have passed. Exhausted retries still block.
+          # Pinned: GitHub's releases/latest redirect for Bun returned 504 for hours on 2026-11-08 while pinned
+          # release assets served fine. Same audit, same --fail-on=high; only the download URL is fixed.
+          BUN_PIN=bun-v1.2.23
           for bun_attempt in 1 2 3; do
-            if curl -fsSL --retry 2 --retry-all-errors https://bun.sh/install | bash; then
+            if curl -fsSL --retry 2 --retry-all-errors https://bun.sh/install | bash -s "$BUN_PIN"; then
               break
             fi
             if [ "$bun_attempt" -eq 3 ]; then
