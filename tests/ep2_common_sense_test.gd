@@ -10,7 +10,7 @@ extends Node
 
 const TOWN := preload("res://src/episode2/chamber/gold_town.tscn")
 const RIVER := preload("res://src/episode2/chamber/river_cover.tscn")
-const EXPECTED_PASS := 36
+const EXPECTED_PASS := 40
 const BODY_WIDTH := 0.62                    # two Ep2TownPeople.BODY_R: shoulder to shoulder
 
 var _pass: int = 0
@@ -31,6 +31,7 @@ func _ready() -> void:
 	await test_town_minister_praying_walkers_keep_clear()
 	await test_town_inferno_meets_at_body_no_return_trip()
 	await test_town_saloon_doors_swing_and_settle()
+	await test_town_inferno_rides_to_flux_and_minds_people()
 	await test_river_shot_rider_falls_into_water()
 	await test_river_raft_health_falls_and_breaks()
 	var pinned: bool = _pass == EXPECTED_PASS
@@ -181,6 +182,48 @@ func test_town_inferno_meets_at_body_no_return_trip() -> void:
 	_check("he stops a talking distance from Lil Blunt, not on top of him (closest %.2f m)" % lb_gap, lb_gap >= 1.6)
 	_check("...and never walks through Mike Dean kneeling there (closest %.2f m)" % mike_gap, mike_gap >= BODY_WIDTH * 2.0)
 	_check("then he walks on to the bar", reached_bar, "%s %s" % [c.get_beat_name(), c._bull_task])
+	c.queue_free()
+	await get_tree().process_frame
+
+
+## Founder 2026-11-08 (PROMPT_INFERNO_QUAD_TO_FLUX_AWARENESS): after the bar Inferno walks only to his quad and rides to Flux - even on a run
+## that never saw the quad ride in - and neither on foot nor on the quad does he go through anybody.
+func test_town_inferno_rides_to_flux_and_minds_people() -> void:
+	var c: GoldTownChamber = await _town()
+	var bull: Ep2Actor = c._bull
+	if bull == null:
+		_check("Inferno exists in town", false)
+		c.queue_free()
+		return
+	bull.visible = true
+	# on foot: Lil Blunt standing square in his way on the street
+	bull.position = Vector3(-2.0, 0.0, 1440.0)
+	c._bull_task = "leaving"
+	c._player_pos = Vector3(-2.0, 0.0, 1441.6)
+	c._bull_route([Vector3(-2.0, 0.0, 1448.0)], 1.6)
+	var closest: float = INF
+	for i in 300:
+		c.step(1.0 / 60.0)
+		closest = minf(closest, Vector2(bull.position.x - c._player_pos.x, bull.position.z - c._player_pos.z).length())
+	_check("on foot he stops for Lil Blunt and steps round him, never through (closest %.2f m, now z %.1f)" % [closest, bull.position.z],
+		closest >= 0.6 and bull.position.z > 1442.5)
+	# a run with no quad in town: he still gets to a bike and rides, never the walk across town
+	c._quad = null
+	bull.stop()
+	c._bull_path = []
+	c._bull_task = "leaving"
+	c._player_pos = Vector3(-40.0, 0.0, 1400.0)
+	c.step(1.0 / 60.0)
+	_check("after the bar he mounts the quad and rides (task %s)" % c._bull_task, c._quad != null and c._bull_task == "riding_off")
+	# on the quad: someone in front -> it waits; they clear -> it rolls on
+	var fwd := Vector3(sin(c._quad.yaw), 0.0, cos(c._quad.yaw))
+	c._player_pos = c._quad.position + fwd * 2.5
+	var s0: float = c._quad.travelled()
+	_run(c, 2.0)
+	_check("the quad stops for a person in front (moved %.2f m)" % (c._quad.travelled() - s0), c._quad.travelled() - s0 < 0.05)
+	c._player_pos = Vector3(-40.0, 0.0, 1400.0)
+	_run(c, 2.0)
+	_check("...and carries on once they clear (moved %.2f m)" % (c._quad.travelled() - s0), c._quad.travelled() - s0 > 1.0)
 	c.queue_free()
 	await get_tree().process_frame
 
