@@ -13,6 +13,9 @@ if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(binding) || !process.env[binding]) {
 // characters or rate-limited moves on to the next key; any other error is raised at once.
 const apiKeys = [process.env[binding], ...Object.keys(process.env)
   .filter(k => /^ELEVENLABS_API_KEY_\d+$/.test(k)).sort().map(k => process.env[k]).filter(Boolean)];
+// Any other ELEVENLABS* variable holding an sk_ secret is a key too (the environment names them ELEVENLABS_API, ELEVENLABS_2, ...).
+// Only the shape is tested here; a value is never printed.
+for (const [k, v] of Object.entries(process.env)) if (/^ELEVENLABS/.test(k) && /^sk_/.test(v || '') && !apiKeys.includes(v)) apiKeys.push(v);
 const apiKey = apiKeys[0];
 // Functions can have their own key: ELEVENLABS_SPEECH_API_KEY for text-to-speech (the voices), ELEVENLABS_SFX_API_KEY for sound
 // effects. Each function tries its own key first, then every other key: the keys belong to different accounts, and a voice (Mike
@@ -42,7 +45,7 @@ function fetchClient(key) {
       const text = (await r.text()).slice(0, 300);
       last = `ElevenLabs ${r.status} on ${new URL(url).pathname}: ${text}`;
       const spent = r.status === 429 || /quota|credits|character|limit/i.test(text);
-      const elsewhere = /voice_not_found|missing_permissions/i.test(text);   // that voice or function is on another account's key
+      const elsewhere = /voice_not_found|missing_permissions|payment_required|paid_plan_required/i.test(text);   // that voice, function or paid plan is on another account's key
       if (!spent && !elsewhere) break;         // a bad key or a bad request: no point trying the other keys
       console.warn(`ElevenLabs key ${keys.indexOf(k) + 1} of ${keys.length}: ${elsewhere ? 'this voice or function is not on that account' : 'out of characters or rate-limited'}; trying the next`);
     }

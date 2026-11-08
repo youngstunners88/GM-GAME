@@ -485,6 +485,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_grounding_test.tscn > town-grounding-tests.log 2>&1
           grep -q 'TOWN_GROUNDING: ALL PASS' town-grounding-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-grounding-tests.log; then exit 1; fi
+          # The back-lot miners (founder 2026-11-08): behind the fronts, clear of doors and horses, solid, tools in hand, seated on a crate.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_back_lot_miners_test.tscn > back-lot-miners-tests.log 2>&1
+          grep -q 'BACK_LOT_MINERS: ALL PASS' back-lot-miners-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' back-lot-miners-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_lake_ecotone_test.tscn > lake-ecotone-tests.log 2>&1
           grep -q 'LAKE_ECOTONE: ALL PASS' lake-ecotone-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-ecotone-tests.log; then exit 1; fi

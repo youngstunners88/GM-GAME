@@ -274,6 +274,7 @@ var _shop_bought: bool = false
 var _town_audio: Ep2TownSoundscape = null
 var _bumps: TOWN_BUMPS = null
 var _law: Ep2TownLaw = null
+var _miners: Ep2BackLotMiners = null          # the local gold miners in the back lots behind the fronts (PROMPT_BACK_MINERS_2026-11-08)
 var _fine_toast_t: float = 0.0
 var _fine_toast_text: String = ""
 var _stable_yard: Ep2StableYard = null
@@ -363,7 +364,7 @@ func _build_steps() -> Array:
 	# The cast is five steps, not one (founder 2026-11-01, "a glitch delay by the quad bike"): this room is prebuilt behind the woods
 	# from the quad's reveal on, and every step runs inside one frame - the old single people step was the frozen frame at the quad.
 	return [_step_light, _step_ground, _step_town, _step_desert, _step_people_core, _step_people_armory, _step_people_space,
-		_step_people_crowd, _step_people_after, _step_town_audio]
+		_step_people_crowd, _step_people_after, _build_back_lot_miners, _step_town_audio]
 
 
 func _step_town_audio() -> void:
@@ -454,6 +455,7 @@ func _step_people() -> void:
 	_step_people_space()
 	_step_people_crowd()
 	_step_people_after()
+	_build_back_lot_miners()
 
 
 ## The draw's cast: the Sheriff, the barman, the stranger with his Borchardt, the glass, the coin and the muzzle light.
@@ -515,6 +517,18 @@ func _step_people_after() -> void:
 	_law.name = "TownLaw"
 	add_child(_law)
 	_law.setup(self)
+
+
+## The back-lot miners (founder 2026-11-08): digging, resting on a pitchfork, talking gold, sat on a crate - behind the fronts, off Main
+## Street. Their bodies are solid to Lil Blunt (the same props list the counter, the Gatling post and the quad join).
+func _build_back_lot_miners() -> void:
+	if _miners != null and is_instance_valid(_miners): _miners.queue_free()
+	_miners = Ep2BackLotMiners.new()
+	_miners.name = "BackLotMiners"
+	_visuals.add_child(_miners)
+	_miners.build()
+	if _town_col.has("props"):
+		(_town_col["props"] as Array).append_array(_miners.circles)
 
 
 ## The walk-in shops' keepers (founder fix pack 2026-10-27: "two more shopkeepers (women are fine) behind the counters"): the General
@@ -2701,6 +2715,10 @@ func _tick_people(delta: float) -> void:
 		_people.set_context("duel" if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW] else ("quiet" if _beat in [Beat.OFFICE, Beat.WON, Beat.JOB, Beat.BODY, Beat.JAIL] else "normal"))
 		_update_keep_clear()
 		_people.step(delta, _player_pos)
+	if _miners != null:
+		# the back-lot miners talk only when Lil Blunt is in earshot and no story scene is speaking (never over the draw or a briefing)
+		var free_talk: bool = not (_beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW, Beat.OFFICE, Beat.WON, Beat.JOB, Beat.BODY, Beat.JAIL])
+		_miners.player_pos = _player_pos if free_talk else Vector3(0.0, 0.0, -9999.0)
 	_step_doors(delta)
 	if _accomplice != null:
 		_accomplice.step(delta)
@@ -2823,6 +2841,7 @@ func shoot() -> bool:
 		if _gatling.fire_burst(0.7):
 			_mount_bursts += 1
 			if _people != null: _people.notify_danger(_player_pos, 32.0)
+			if _miners != null: _miners.notify_danger(_player_pos)
 			return true
 		if _hud != null:
 			_hud.toast("THE DRUM IS EMPTY", 1.4)
@@ -2842,6 +2861,7 @@ func shoot() -> bool:
 
 func _on_player_shot() -> void:
 	if _people != null: _people.notify_danger(_player_pos)
+	if _miners != null: _miners.notify_danger(_player_pos)
 	var eye: Vector3 = _camera.global_position if _camera != null else _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = -_camera.global_transform.basis.z if _camera != null else Vector3(sin(_look_yaw), 0.0, cos(_look_yaw))
 	var in_draw: bool = _beat == Beat.DRAW and _draw_state == "go"

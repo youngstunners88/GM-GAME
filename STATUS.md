@@ -1,5 +1,11 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-08 — Back-lot miners now dig and talk shop — pushed; NOT founder-verified.**
+- The bearded miner swings a pick into his heap (new Meshy motion, 6 credits spent). The fork man stands on his pitchfork and now and then kneels to pull a rock from the dirt. Walk within earshot and the miners hold voiced conversations: day 88 and the 100-day miners, the river Shipment, Mike Dean's four licenses, the Gold Rush Auction, Jack Hammer's bounty. They go quiet during story scenes and stop to look at gunfire. Gate `ep2_back_lot_miners_test` (55 checks).
+
+**2026-11-08 — Back-of-town gold miners — pushed; NOT founder-verified.**
+- Five local miners now work the dirt lots behind the false fronts (never Main Street, no door or duel lane blocked): a long-beard digger at his heap with his shovel, a strong man resting on a pitchfork, two miners talking over an ore pile with gold in it, and an old man sat on a crate with his pick and shovel stood by. They are solid, they stop and look when shots ring out, then go back to work. Reused townsfolk bodies (dirtied), no new models. No dig animation exists yet, so the digger pauses rather than digs. Gate `ep2_back_lot_miners_test`; ledger `docs/founder-feedback/2026-11-08_back_lot_miners.md`.
+
 **2026-11-08 — The Auction House: Renegade on the block, Jack Hammer's first touch and flee — IN CODE + SEEN locally; NOT founder-verified, not live until master CI deploys.**
 - Lake → road → auction grounds → hall is ONE room now: the gate is only a sign, no load, no teleport, no title card; the lake builds the road behind itself and the hand-over keeps your gaze. Light sinks from the lake's day to a warm dusk along the road; wind gives way to the saloon bed by distance.
 - CAD hall (FreeCAD → Blender, `tools/ep2_cad/auction_house_cad.py`): false-front facade with lit gallery windows, porch columns and bunting, trusses, stage + proscenium, rostrum, brass rail, side seating, claim board + Jack's wanted poster, XAUT strongbox, lamp posts, hitching rail (two horses tied). Big surfaces dressed with the existing tileable PBR sets (planks/dark wood/brass) — no paper seams.
