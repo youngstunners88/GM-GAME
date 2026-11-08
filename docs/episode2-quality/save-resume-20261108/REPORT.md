@@ -50,6 +50,12 @@ The early fixed GitHub-release download also returned HTTP 504 on every attempt 
 
 Actual-bootstrap tests pass for the verified package and reject a corrupt archive, failed download, and tampered extracted binary before PATH registration. The identical runtime’s broad audit again reports **13 pass / 0 fail / 2 manual / 32 skip**. This changes no game code or game package dependency.
 
+## Verified official Godot asset API
+
+Bun’s official npm bootstrap passed both hashes and its version check in production run `42469701893`. That run then hit the same HTTP 504 problem on Godot’s legacy browser-download URL. The alternate official `godotengine/godot-builds` release-asset API delivered the full editor (**50,276,070 B**) and templates (**1,073,228,327 B**); both match the original 4.3 release SHA-512 sums already used for local verification.
+
+The workflow now uses those fixed official API asset IDs, requests binary content, and pins both SHA-512 hashes directly. A missing checksum-manifest download can no longer skip verification. An engine-version change fails until IDs/hashes are deliberately updated. Actual helper tests accept the verified original editor and reject corruption, download failure and an unpinned version. The broad audit again has zero failures. Game source and tested game artifacts remain unchanged.
+
 ## Release
 
 Core save source `c8cc11d86be8ed2a7e2d0ce41dd899cfd5825bb4` passed [full branch CI 42458746840](https://github.com/youngstunners88/GM-GAME/actions/runs/42458746840). Combined runtime source `dd5755152b9d05a1ffa1bc26d798fd3bcffd6598` passed local release gates; later merge `748cfe3c` adds only CI export bookkeeping. Publishing through `scripts/ship-to-master.sh`; production CI/upload/public BUILD evidence pending. No physical-phone test or literal multi-day wait has been performed.

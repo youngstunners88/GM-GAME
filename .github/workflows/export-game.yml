@@ -184,49 +184,30 @@ jobs:
           mkdir -p godot
           cd godot
 
-          EDITOR_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
-          TEMPLATES_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
-
-          SUMS_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/SHA512-SUMS.txt"
-
-          echo "Downloading editor: $EDITOR_URL"
-          curl -fL --retry 3 -o godot-editor.zip "$EDITOR_URL"
-
-          # Supply-chain gate: verify both Godot downloads against the release's
-          # official SHA512 sums before executing anything (audit finding #6).
-          # Missing sums file = warn (release layout changed); MISMATCH = fail.
-          # Plain shell var, NOT $GITHUB_ENV: verify() runs in THIS same shell,
-          # and $GITHUB_ENV only propagates to *later* steps — so a missing sums
-          # file must be recorded here or verify() would still grep a nonexistent
-          # file and fail the export instead of skipping the gate as intended.
-          SUMS_MISSING=0
-          if ! curl -fL --retry 3 -o SHA512-SUMS.txt "$SUMS_URL"; then
-            echo "::warning::SHA512-SUMS.txt not found on release — skipping Godot checksum gate"
-            SUMS_MISSING=1
+          # Fixed official release-asset API URLs avoid stale browser-download
+          # redirects. Both archives match the original 4.3 release SHA-512 sums.
+          if [ "$GODOT_VERSION" != "4.3-stable" ]; then
+            echo "::error::Update the pinned Godot asset IDs and checksums for a version change"
+            exit 1
           fi
-          verify() {
-            [ "$SUMS_MISSING" = "1" ] && return 0
-            local file=$1 name=$2
-            local expected actual
-            expected=$(grep " ${name}\$" SHA512-SUMS.txt | awk '{print $1}')
-            if [ -z "$expected" ]; then
-              echo "::error::No checksum for $name in SHA512-SUMS.txt"; exit 1
-            fi
-            actual=$(sha512sum "$file" | awk '{print $1}')
-            if [ "$expected" != "$actual" ]; then
-              echo "::error::Checksum mismatch for $name"; exit 1
-            fi
-            echo "✓ checksum OK: $name"
+          EDITOR_URL="https://api.github.com/repos/godotengine/godot-builds/releases/assets/186100020"
+          TEMPLATES_URL="https://api.github.com/repos/godotengine/godot-builds/releases/assets/186099742"
+          EDITOR_SHA512="fd52bb4ba8acc30ca5accd1c566d470ad7282f891ccc0995dfafabcf92bcf76280ce182bf9d80ebd885f3ed2165d01e1fc3f2928436b15498dfbd98656c2a45a"
+          TEMPLATES_SHA512="476366caf0fd45a8f24136cf9cf1dc0bc2b96f7c82d53e5f82200b55aefd07b286d283fd6f1ce29e0de70648c5a51d3b12f96c6d4fafd4e8c4878ecda6406d6a"
+          download_checked() {
+            local url="$1" file="$2" expected="$3"
+            curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
+              --connect-timeout 30 --max-time 300 --retry-max-time 180 \
+              -H "Accept: application/octet-stream" -o "$file" "$url"
+            echo "$expected  $file" | sha512sum -c -
           }
-          verify godot-editor.zip "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          download_checked "$EDITOR_URL" godot-editor.zip "$EDITOR_SHA512"
           unzip -q godot-editor.zip
           EDITOR_BIN=$(find . -maxdepth 1 -name "Godot_v*_linux.x86_64" -type f | head -1)
           chmod +x "$EDITOR_BIN"
           echo "GODOT_BIN=$(pwd)/$EDITOR_BIN" >> "$GITHUB_ENV"
 
-          echo "Downloading export templates: $TEMPLATES_URL"
-          curl -fL --retry 3 -o templates.tpz "$TEMPLATES_URL"
-          verify templates.tpz "Godot_v${GODOT_VERSION}_export_templates.tpz"
+          download_checked "$TEMPLATES_URL" templates.tpz "$TEMPLATES_SHA512"
 
           # Templates must live at ~/.local/share/godot/export_templates/<version>/
           # NOTE: Godot names the dir "4.3.stable" (dot), not the release tag "4.3-stable".
