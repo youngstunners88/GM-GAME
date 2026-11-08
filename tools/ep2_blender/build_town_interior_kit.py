@@ -31,6 +31,7 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 CAD = argv[argv.index("--cad") + 1] if "--cad" in argv else ""
 OUT = argv[argv.index("--out") + 1] if "--out" in argv else "src/episode2/extras/town/town_furniture.glb"
 SHOTS = argv[argv.index("--shots") + 1] if "--shots" in argv else ""
+PREFIX = argv[argv.index("--prefix") + 1] if "--prefix" in argv else "Twn_"     # Auc_ = the auction house (tools/ep2_cad/auction_house_cad.py)
 if not CAD or not glob.glob(os.path.join(CAD, "*.obj")):
     sys.exit("build_town_interior_kit: --cad <dir> with the FreeCAD OBJs is required (run tools/ep2_cad/town_interior_cad.py first)")
 
@@ -57,11 +58,14 @@ K.mat("Whiskey", (0.42, 0.18, 0.04), 0.1, 0.0, alpha=0.85)
 K.mat("LampGlass", (0.85, 0.86, 0.84), 0.05, 0.0, alpha=0.25)
 K.mat("Flame", (1.0, 0.70, 0.30), 0.5, 0.0, emit=4.0)
 K.mat("Glow", (1.0, 0.42, 0.10), 0.5, 0.0, emit=3.0)
+for n, c, r, mt in [("Burlap", (0.42, 0.33, 0.20), 0.95, 0.0), ("Gold", (0.83, 0.62, 0.22), 0.25, 1.0), ("RedCloth", (0.50, 0.06, 0.05), 0.9, 0.0),
+                    ("GoldCloth", (0.78, 0.58, 0.18), 0.8, 0.0)]:          # the auction house's claim board, bars and bunting
+    K.mat(n, c, r, mt)
 SC = bpy.context.scene
 
 
 def root_name(piece):
-    return "Twn_" + "".join(w.capitalize() for w in piece.split("_"))
+    return PREFIX + "".join(w.capitalize() for w in piece.split("_"))
 
 
 PIECES = sorted({os.path.basename(p).split("__")[0] for p in glob.glob(os.path.join(CAD, "*__*.obj"))})

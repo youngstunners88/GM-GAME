@@ -1,0 +1,51 @@
+{
+  "build": "2026-11-07-d6e0003",
+  "extras_url": "https://html-classic.itch.zone/html/18305533-2323697/ep2_extras.pck?v=2026-11-07-d6e0003",
+  "http_status": 200,
+  "index_bytes_read": 4194304,
+  "entries": 1046,
+  "matched_texture_payloads": {
+    "res://.godot/imported/chill_bud.png-4faa43c05f4c437ffa1d184baf895032.ctex": {
+      "bytes": 123578,
+      "md5": "2598064ed0d85122af5f6a8aa63af665"
+    },
+    "res://.godot/imported/purple_bloom_grove_Haze_Color_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-cf3b6ec4718cd0df2ce38bdd462edd6c.ctex": {
+      "bytes": 1068376,
+      "md5": "6aa4410d7a1bdf497d289a4f62ddf518"
+    },
+    "res://.godot/imported/purple_bloom_grove_Haze_NormalGL_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-2a08cc6293bb738cb528f61bba09284a.ctex": {
+      "bytes": 98484,
+      "md5": "cf60dec9de21b9ac90a780f33e7be084"
+    },
+    "res://.godot/imported/purple_bloom_grove_Haze_ORM_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-abb84ebed886cda7a75b0023737a6f3a.ctex": {
+      "bytes": 91916,
+      "md5": "0dab2fa4606fa1e0d24a9dcbf3688db4"
+    },
+    "res://.godot/imported/purple_bloom_tree_Haze_Color_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-621ecc5c07bce7b79f82b6f35c9a3c01.ctex": {
+      "bytes": 1068376,
+      "md5": "6aa4410d7a1bdf497d289a4f62ddf518"
+    },
+    "res://.godot/imported/purple_bloom_tree_Haze_NormalGL_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-f63e7f7f2b0ab24e6996d305df5ad4af.ctex": {
+      "bytes": 98484,
+      "md5": "cf60dec9de21b9ac90a780f33e7be084"
+    },
+    "res://.godot/imported/purple_bloom_tree_Haze_ORM_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-4756e4a9d5276cb135fdcff78536b9b3.ctex": {
+      "bytes": 91916,
+      "md5": "0dab2fa4606fa1e0d24a9dcbf3688db4"
+    },
+    "res://.godot/imported/purple_frost_Haze_Color_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-8f52854093952da34fb35e13651c6d8c.ctex": {
+      "bytes": 1068376,
+      "md5": "6aa4410d7a1bdf497d289a4f62ddf518"
+    },
+    "res://.godot/imported/purple_frost_Haze_NormalGL_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-abecde8881326f6e08ea66a1367b238f.ctex": {
+      "bytes": 98484,
+      "md5": "cf60dec9de21b9ac90a780f33e7be084"
+    },
+    "res://.godot/imported/purple_frost_Haze_ORM_5fe79f47-5c7b-4753-8976-c390edbef6b8.jpg-11dee1710c0edd57884bb5124bf3c1e0.ctex": {
+      "bytes": 91916,
+      "md5": "0dab2fa4606fa1e0d24a9dcbf3688db4"
+    }
+  },
+  "all_three_models_present": true,
+  "actual_bud_present": true
+}

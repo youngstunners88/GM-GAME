@@ -2127,8 +2127,9 @@ func _tick_dock(delta: float) -> void:
 	if _dock_t >= 2.4 + _line_len() + 0.6:
 		_set_tabs_live(false)
 		_advance_to(Beat.DONE)
-		_resolve({"end_session": true, "river_complete": true, "gates": _gates_passed, "losses": _losses, "downs": _downs,
-			"companion": ""})
+		# founder brief 2026-11-08: Utah has it - back to Logan's Lake, where his horse is already drinking, then the road to the auction
+		_resolve({"next_chamber": "logans_lake", "after_day88": true, "river_complete": true, "gates": _gates_passed, "losses": _losses,
+			"downs": _downs, "companion": ""})
 
 
 func _hand_off_line() -> void:
@@ -2242,3 +2243,11 @@ func _tick_cover(delta: float) -> void:
 	elif _cover_rising:                          # pop up briskly; any other eye change keeps the room's own slow return
 		eye_height = move_toward(eye_height, FPS_EYE_HEIGHT, COVER_EYE_RATE * delta)
 		_cover_rising = eye_height < FPS_EYE_HEIGHT
+
+
+## After Utah's dock the lake comes back (founder brief 2026-11-08): it reads this flag and puts the horse at the water.
+func get_handoff() -> Dictionary:
+	var result: Dictionary = super.get_handoff()
+	if _beat == Beat.DONE:
+		result["after_day88"] = true
+	return result

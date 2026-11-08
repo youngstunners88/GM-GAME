@@ -1,0 +1,50 @@
+{
+  "source_sha": "1d561473434e8171a9901e414d1d3364e51a91d0",
+  "build_id": "2026-11-08-1d56147",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "evidence": [
+    {
+      "kind": "report",
+      "path": "docs/episode2-quality/save-resume-20261108/REPORT.md"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/save-resume-20261108/public-ep1-saved.png"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/save-resume-20261108/public-ep1-blocked.png"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/save-resume-20261108/public-ep2-gate.png"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/save-resume-20261108/public-ep2-saved.png"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/save-resume-20261108/public-ep2-blocked.png"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/save-resume-20261108/public-ep2-continued.png"
+    }
+  ],
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/42470600984",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-11-08-1d56147"
+  },
+  "open_blockers": []
+}

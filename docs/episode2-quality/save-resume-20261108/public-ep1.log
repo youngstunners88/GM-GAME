@@ -1,0 +1,6 @@
+PASS public BUILD 2026-11-08-1d56147
+PASS Episode1 Save confirms localStorage
+PASS hard reload preserves explicit checkpoint
+PASS Continue reaches gameplay after reload
+PASS blocked write preserves previous checkpoint
+PASS no browser script errors

@@ -105,7 +105,7 @@ func save_manual_checkpoint(record: Dictionary = {}) -> bool:
         var win: JavaScriptObject = JavaScriptBridge.get_interface("window")
         win.set("__gmCheckpointPayload", JSON.stringify(manual_resume))
         var confirmed: Variant = JavaScriptBridge.eval("(function(){try{window.localStorage.setItem('smokerealm_manual_checkpoint_v1',window.__gmCheckpointPayload);return true;}catch(e){return false;}finally{delete window.__gmCheckpointPayload;}})();", true)
-        _manual_status = 1 if confirmed == true else -1
+        _manual_status = 1 if _browser_write_confirmed(confirmed) else -1
         if _manual_status == 1:
             save_session() # compatibility copy; the confirmed explicit record is authoritative
             return true
@@ -115,6 +115,11 @@ func save_manual_checkpoint(record: Dictionary = {}) -> bool:
     manual_resume = previous
     _manual_status = -1
     return false
+
+static func _browser_write_confirmed(result: Variant) -> bool:
+    # Godot 4.3's JavaScriptBridge returns JS booleans via uint32_t, so its
+    # Variant is integer 1/0. Accept only true/1, never generic truthiness.
+    return (result is bool and result == true) or (result is int and result == 1)
 
 func manual_save_status() -> int:
     return _manual_status
@@ -134,7 +139,7 @@ func valid_resume(record: Dictionary) -> bool:
     if episode != 2 or not record.get("section") is Dictionary: return false
     var section: Dictionary = record.section
     var room: String = SaveSafe.to_str(section.get("room", ""))
-    return SaveSafe.to_int(section.get("segment"), -1) in range(8) and SaveSafe.to_int(section.get("mode"), -1) in [1, 2] and room in ["", "smelting_facility", "miner_shaft", "mine_lift", "woods_quad", "gold_town", "logans_lake", "river_cover"]
+    return SaveSafe.to_int(section.get("segment"), -1) in range(8) and SaveSafe.to_int(section.get("mode"), -1) in [1, 2] and room in ["", "smelting_facility", "miner_shaft", "mine_lift", "woods_quad", "gold_town", "lake_trail", "logans_lake", "river_cover", "auction_road"]
 
 func take_episode2_resume() -> Dictionary:
     var record: Dictionary = pending_episode2_resume

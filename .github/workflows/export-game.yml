@@ -159,55 +159,55 @@ jobs:
           python3 scripts/repair-fort-knox-backdrop.py --check
           python3 scripts/make-bg-seamless.py --check
 
+      # Install the audit runtime early from Bun's official npm distribution.
+      # Its binary is byte-identical to the independently verified GitHub release;
+      # pin both the published archive integrity and that binary's checksum.
+      - name: Install pinned security-audit runtime
+        run: |
+          set -euo pipefail
+          BUN_DIR="$RUNNER_TEMP/gm-security-bun"
+          mkdir -p "$BUN_DIR"
+          curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
+            --connect-timeout 30 --max-time 120 --retry-max-time 180 \
+            -o "$BUN_DIR/bun.tgz" \
+            "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.4.4.tgz"
+          echo "0876db9261d5336f13d4616afba18be00a38ba3c306308f50b1145c041732da9cf7cdb0877d0216c83f4438ade5ae5819068a6524a10ca0acaed1823b63defa2  $BUN_DIR/bun.tgz" | sha512sum -c -
+          tar -xzf "$BUN_DIR/bun.tgz" -C "$BUN_DIR" package/bin/bun
+          echo "1f38956013ee77e4d405333647c21040a0ecbbccf9d355fd1bb332b3ed8639eb4418c0cb0a5786501b4a10bea035de10267becd2904b36258be6335b67d799af  $BUN_DIR/package/bin/bun" | sha512sum -c -
+          chmod +x "$BUN_DIR/package/bin/bun"
+          "$BUN_DIR/package/bin/bun" --version
+          echo "$BUN_DIR/package/bin" >> "$GITHUB_PATH"
+
       - name: Download Godot editor + export templates
         run: |
           set -euo pipefail
           mkdir -p godot
           cd godot
 
-          EDITOR_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
-          TEMPLATES_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
-
-          SUMS_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/SHA512-SUMS.txt"
-
-          echo "Downloading editor: $EDITOR_URL"
-          curl -fL --retry 3 -o godot-editor.zip "$EDITOR_URL"
-
-          # Supply-chain gate: verify both Godot downloads against the release's
-          # official SHA512 sums before executing anything (audit finding #6).
-          # Missing sums file = warn (release layout changed); MISMATCH = fail.
-          # Plain shell var, NOT $GITHUB_ENV: verify() runs in THIS same shell,
-          # and $GITHUB_ENV only propagates to *later* steps — so a missing sums
-          # file must be recorded here or verify() would still grep a nonexistent
-          # file and fail the export instead of skipping the gate as intended.
-          SUMS_MISSING=0
-          if ! curl -fL --retry 3 -o SHA512-SUMS.txt "$SUMS_URL"; then
-            echo "::warning::SHA512-SUMS.txt not found on release — skipping Godot checksum gate"
-            SUMS_MISSING=1
+          # Fixed official release-asset API URLs avoid stale browser-download
+          # redirects. Both archives match the original 4.3 release SHA-512 sums.
+          if [ "$GODOT_VERSION" != "4.3-stable" ]; then
+            echo "::error::Update the pinned Godot asset IDs and checksums for a version change"
+            exit 1
           fi
-          verify() {
-            [ "$SUMS_MISSING" = "1" ] && return 0
-            local file=$1 name=$2
-            local expected actual
-            expected=$(grep " ${name}\$" SHA512-SUMS.txt | awk '{print $1}')
-            if [ -z "$expected" ]; then
-              echo "::error::No checksum for $name in SHA512-SUMS.txt"; exit 1
-            fi
-            actual=$(sha512sum "$file" | awk '{print $1}')
-            if [ "$expected" != "$actual" ]; then
-              echo "::error::Checksum mismatch for $name"; exit 1
-            fi
-            echo "✓ checksum OK: $name"
+          EDITOR_URL="https://api.github.com/repos/godotengine/godot-builds/releases/assets/186100020"
+          TEMPLATES_URL="https://api.github.com/repos/godotengine/godot-builds/releases/assets/186099742"
+          EDITOR_SHA512="fd52bb4ba8acc30ca5accd1c566d470ad7282f891ccc0995dfafabcf92bcf76280ce182bf9d80ebd885f3ed2165d01e1fc3f2928436b15498dfbd98656c2a45a"
+          TEMPLATES_SHA512="476366caf0fd45a8f24136cf9cf1dc0bc2b96f7c82d53e5f82200b55aefd07b286d283fd6f1ce29e0de70648c5a51d3b12f96c6d4fafd4e8c4878ecda6406d6a"
+          download_checked() {
+            local url="$1" file="$2" expected="$3"
+            curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
+              --connect-timeout 30 --max-time 300 --retry-max-time 180 \
+              -H "Accept: application/octet-stream" -o "$file" "$url"
+            echo "$expected  $file" | sha512sum -c -
           }
-          verify godot-editor.zip "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          download_checked "$EDITOR_URL" godot-editor.zip "$EDITOR_SHA512"
           unzip -q godot-editor.zip
           EDITOR_BIN=$(find . -maxdepth 1 -name "Godot_v*_linux.x86_64" -type f | head -1)
           chmod +x "$EDITOR_BIN"
           echo "GODOT_BIN=$(pwd)/$EDITOR_BIN" >> "$GITHUB_ENV"
 
-          echo "Downloading export templates: $TEMPLATES_URL"
-          curl -fL --retry 3 -o templates.tpz "$TEMPLATES_URL"
-          verify templates.tpz "Godot_v${GODOT_VERSION}_export_templates.tpz"
+          download_checked "$TEMPLATES_URL" templates.tpz "$TEMPLATES_SHA512"
 
           # Templates must live at ~/.local/share/godot/export_templates/<version>/
           # NOTE: Godot names the dir "4.3.stable" (dot), not the release tag "4.3-stable".
@@ -294,9 +294,11 @@ jobs:
 
       - name: Import project (first pass)
         run: |
-          # Exporting before the initial resource import settles can fail with a
-          # blank "configuration errors" message — import in a separate pass first.
-          timeout 300 "$GODOT_BIN" --headless --editor --quit 2>&1 | tee import.log | tail -20 || true
+          set -euo pipefail
+          # --editor --quit can abort the scan before textures are imported.
+          # Wait for a complete import and preserve failures instead of testing
+          # a partial cache (2026-11-08: aborted import caused 36 false portal failures).
+          timeout 1200 "$GODOT_BIN" --headless --import 2>&1 | tee import.log | tail -20
           # A corrupt project.godot silently truncates ProjectSettings in the
           # export (this is how the entire [input] section once vanished).
           # Fail loudly instead of shipping a broken pck.
@@ -308,9 +310,12 @@ jobs:
       - name: Portal room gameplay and rendered visibility
         run: |
           set -euo pipefail
-          # The first-pass import above quits before textures/class_names finish
-          # importing; tests on a half-imported project fail with bogus parse errors.
-          timeout 600 "$GODOT_BIN" --headless --import >/dev/null 2>&1 || true
+          # A second completed pass resolves newly extracted model textures/classes.
+          # Never hide an importer crash and continue with missing test assets.
+          timeout 600 "$GODOT_BIN" --headless --import > import-second-pass.log 2>&1 || {
+            tail -40 import-second-pass.log
+            exit 1
+          }
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_room_test.gd 2>&1 | tee portal-tests.log
           grep -q 'PORTAL ROOMS: ALL PASS' portal-tests.log
           timeout 60 "$GODOT_BIN" --headless --script res://tests/quiz_protocol_only_test.gd 2>&1 | tee quiz-tests.log
@@ -394,7 +399,7 @@ jobs:
           grep -q 'REGION_MAP: 10 checks, 0 failed' region-map-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' region-map-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/manual_checkpoint_test.tscn > manual-checkpoint-tests.log 2>&1
-          grep -q 'MANUAL_CHECKPOINT: 36 checks, 0 failed' manual-checkpoint-tests.log
+          grep -q 'MANUAL_CHECKPOINT: 69 checks, 0 failed' manual-checkpoint-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' manual-checkpoint-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/pause_menu_test.tscn 2>&1 | tee pause-tests.log
           grep -q 'PAUSE_MENU: ALL PASS' pause-tests.log
@@ -554,6 +559,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_seamless_test.tscn > lake-seamless-tests.log 2>&1
           if grep -E '\[FAIL\]' lake-seamless-tests.log; then exit 1; fi
           grep -q 'EP2_LAKE_SEAMLESS: 13 checks, 0 failed' lake-seamless-tests.log
+          # Lake -> road -> auction grounds -> hall as one room (founder 2026-11-08): no swap at the door, solid hall, Renegade, Jack Hammer's flee.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_auction_road_test.tscn > lake-auction-road-tests.log 2>&1
+          if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-auction-road-tests.log; then exit 1; fi
+          grep -q 'EP2_LAKE_AUCTION_ROAD: 48 checks, 0 FAIL' lake-auction-road-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
           grep -q 'EP2_WORLD_ROUTES: 29 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi
@@ -906,8 +915,8 @@ jobs:
         id: secaudit
         if: success()
         run: |
-          curl -fsSL https://bun.sh/install | bash
-          export PATH="$HOME/.bun/bin:$PATH"
+          set -euo pipefail
+          bun --version
           set +e
           bun .claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high --json > security-report.json
           CODE=$?
