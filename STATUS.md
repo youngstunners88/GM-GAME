@@ -5,6 +5,7 @@
 - ep2_extras.pck (gate 199,229,440 B, not raised): master build `2026-11-09-a8e3843` 199,224,704 B; branch as it was 201,334,944 B (over); branch now **196,214,688 B** = 5,120,256 B freed, 3,014,752 B margin.
 - How: the auction house now uses the shared Renegade (`Ep2Extras.RENEGADE`, the same founder Drive model with authored clips) and the duplicate copy is deleted (3.48 MB); display-only armory meshes (rack guns, armory2, three rack showcase guns) no longer ship mesh LODs/shadow meshes, which the web renderer never uses (0.002% pixel difference in 16 armory captures = render noise). Combat viewmodels, the Gatling and the "held" guns untouched.
 - Gates: armory real weapons / two-storey / guns, weapons, founder cast, auction road 48/48 all green.
+- Green branch export: Export Godot Game to Web run 42609218365 on `f75127a`, BUILD `2026-11-09-f75127a`, CI ep2_extras.pck 196,211,072 B (under 199,229,440). Branch runs do not deploy to itch; this build is not public.
 
 **2026-11-08 — Episode 2 access code now works on phones — merged to master 2026-11-09 (PR #108; access-code, touch-controls, reachability, checkpoint, transition gates green under pinned Godot 4.3); in the deploy after `2026-11-08-53e7f70`; NOT run on a phone yet, founder to confirm.**
 - The code screen brings its own on-screen keypad on touch devices (digits, letters with Shift, symbols page, DEL/CLEAR, SHOW/HIDE), shows what you type, and fits narrow/short screens (scrolls). The OS keyboard no longer fights it. Desktop and physical keyboards are unchanged. `src/episode2/ep2_entry.gd`.
