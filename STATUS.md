@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-09 — Founder playtest warp `dude`: start at Dude's stables with every gun — LIVE on itch, build `2026-11-09-e643b61`; NOT founder-verified.**
+- **On the itch page:** press **F3**, then **F8** (press F3 again to hide the debug text). itch never passes a query on its page URL (`…/smokerealm?playtest=dude`) through to the game iframe, so the key chord is the route there. `?playtest=dude` works on the game's own iframe URL (`html-classic.itch.zone/html/<build>/index.html?playtest=dude`). The Episode 2 access code still applies.
+- You land in the gold town on the Minister's referral beat, standing at Dude's under the STABLES sign with "Talk to Dude" up: buy a horse, mount, ride for the lake trail. The web warp waits for the streamed extras first, because Dude's model ships in them.
+- All 8 Episode 2 guns are owned (Lever Rifle, BTC Revolver, Bow, Lever Shotgun, Drum SMG, Golden Thompson, Borchardt, Buffalo Gun), each loaded with **2000 in reserve** (999 arrows). The Shipment and the Sharps are bought, and the purse is topped up to **64 BTC**. No prices changed, and everything runs through the real armory, Tabs and purse.
+- If you save in the warped town, Continue opens at Dude's again. Normal saves and a normal Episode 2 start are unchanged (gate `ep2_playtest_dude_test`, 22 checks, in CI). The gear and BTC go into that device's save.
+- Details: `docs/episode2-quality/playtest-dude-2026-11-09/README.md`. Follow-ups, not built yet: presets `lake_trail`, `day88_ridge`, `auction`.
+
 **2026-11-08 — Episode 2 access code now works on phones — merged to master 2026-11-09 (PR #108; access-code, touch-controls, reachability, checkpoint, transition gates green under pinned Godot 4.3); in the deploy after `2026-11-08-53e7f70`; NOT run on a phone yet, founder to confirm.**
 - The code screen brings its own on-screen keypad on touch devices (digits, letters with Shift, symbols page, DEL/CLEAR, SHOW/HIDE), shows what you type, and fits narrow/short screens (scrolls). The OS keyboard no longer fights it. Desktop and physical keyboards are unchanged. `src/episode2/ep2_entry.gd`.
 

@@ -20,6 +20,7 @@ The Episode 2 access code still applies (a device that has entered it once goes 
 - Ammo: each gun loaded full + **2000 in reserve** (the save's `RESERVE_CAP`, so it survives Save/Continue). The bow has 999 arrows.
   There is no refill: 2000 rounds per gun is effectively unlimited for a test.
 - The Shipment (`river_gear`) and the Sharps are bought, so after Dude's horse the town goes straight to GEARED and the horse can be mounted.
+- On the web the warp first waits for `ep2_extras.pck` (Dude and his stable hand are streamed; about 30 s in a test browser), logging `[PLAYTEST] waiting for the streamed extras (Dude)`.
 - Purse topped up to **64 BTC** (`GameManager.purse_add`), the region map owned. Prices are unchanged.
 
 ## Save / Continue
