@@ -33,6 +33,8 @@ func _ready() -> void:
 	var overlay: String = FileAccess.get_file_as_string("res://src/autoload/debug_overlay.gd")
 	check("the URL entry needs ?playtest=dude exactly", "get('playtest') || ''\", true)) == \"dude\"" in overlay)
 	check("the F8 chord only works with the F3 overlay on", "KEY_F8 and _on" in overlay)
+	var entry: String = FileAccess.get_file_as_string("res://src/episode2/ep2_entry.gd")
+	check("the web warp waits for the streamed extras so Dude is cast", entry.find("while Ep2Extras.state() == \"loading\"") > 0 and entry.find("while Ep2Extras.state() == \"loading\"") < entry.find("_root.start_playtest()"))
 	GameManager.token_purse["btc"] = 0
 	GameManager.personal_armory = {}
 	# 1. the warp
