@@ -153,6 +153,8 @@ func capture_section_checkpoint() -> void:
 		"distance": _completed_distance, "rewarded": _rewarded_chambers.keys(), "totals": _totals.duplicate(true),
 		# a save at the lake after Utah's dock resumes there, not at Logan's first meeting (founder brief 2026-11-08)
 		"after_day88": is_instance_valid(_active) and _active is LogansLakeChamber and bool(_active.after_day88)}}
+	if is_instance_valid(_active) and _active is GoldTownChamber and _active.handoff.has("playtest"):
+		section_checkpoint.section["playtest"] = Ep2Playtest.PRESET     # a save in the warped town resumes at Dude's (Ep2Playtest)
 
 func restore_section(record: Dictionary) -> bool:
 	if not GameManager.valid_resume(record) or int(record.episode) != 2: return false
@@ -175,10 +177,20 @@ func restore_section(record: Dictionary) -> bool:
 	else:
 		_chain_id = str(section.room)
 		if not CHAMBER_SCENES.has(_chain_id): return false
-		_resume_handoff = {"after_day88": true} if bool(section.get("after_day88", false)) else {}
+		_resume_handoff = Ep2Playtest.town_handoff() if section.get("playtest") == Ep2Playtest.PRESET and _chain_id == "gold_town" \
+			else {"after_day88": true} if bool(section.get("after_day88", false)) else {}
 		_enter_chamber()
 		_resume_handoff = {}
 	return true
+
+## Founder playtest preset (Ep2Playtest): gear up, then the town at Dude's stables through the same room entry Continue uses.
+func start_playtest() -> void:
+	Ep2Playtest.grant(armory)
+	_segment = 0
+	_chain_id = "gold_town"
+	_resume_handoff = Ep2Playtest.town_handoff()
+	_enter_chamber()
+	_resume_handoff = {}
 
 func start() -> void:
 	if _plan.is_empty():

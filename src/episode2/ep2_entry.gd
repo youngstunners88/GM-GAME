@@ -352,7 +352,11 @@ func _begin() -> void:
 		return Vector2(.74,.38)
 	add_child(chart)
 	var record: Dictionary = GameManager.take_episode2_resume()
-	if not record.is_empty():
+	if Ep2Playtest.take() != "":
+		_saved_offset = 0
+		_root.configure(TRACK_PLAN, true)
+		_root.start_playtest()      # founder preset: Dude's stables, every gun (no pending Continue overrides it)
+	elif not record.is_empty():
 		_saved_offset = clampi(SaveSafe.to_int(record.get("offset"), 0), 0, TRACK_PLAN.size()-1)
 		_root.configure(TRACK_PLAN.slice(_saved_offset), true)
 		if not _root.restore_section(record): _start_session()

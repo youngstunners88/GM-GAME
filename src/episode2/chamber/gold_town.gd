@@ -334,6 +334,7 @@ var _horse_bought: bool = false
 var _depart_mounted: bool = false
 var _depart_from := Vector3.ZERO
 const DEPART_HORSE := Ep2LakeRoad.ORIGIN
+const PLAYTEST_AT_DUDE := Vector3(0.0, 0.0, 2.2)
 
 
 func _init() -> void:
@@ -1358,7 +1359,13 @@ func _on_setup() -> void:
 		town_life.town_ambient = true
 	_bumps = TOWN_BUMPS.new()
 	_bumps.build(_people, town_life, _town_audio)
-	_advance_to(Beat.STREET)
+	var dude: Vector3 = _stable_yard.dude_position() if _stable_yard != null and handoff.has("playtest") else Vector3.INF
+	if dude.is_finite():
+		# founder playtest preset (Ep2Playtest): standing at Dude's, facing him, on the Minister's referral
+		_player_pos = Vector3(dude.x + PLAYTEST_AT_DUDE.x, 0.0, dude.z + PLAYTEST_AT_DUDE.z)
+		_look_yaw = atan2(-PLAYTEST_AT_DUDE.x, -PLAYTEST_AT_DUDE.z)
+		_player_yaw = _look_yaw
+	_advance_to(Beat.STABLES if handoff.has("playtest") else Beat.STREET)
 
 
 func _on_beat_entered(b: int) -> void:
