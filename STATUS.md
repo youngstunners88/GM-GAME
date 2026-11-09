@@ -1,15 +1,15 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-08 — Episode 2 access code now works on phones — pushed; NOT run on a device (no Godot here), founder to confirm.**
+**2026-11-08 — Episode 2 access code now works on phones — merged to master 2026-11-09 (PR #108; access-code, touch-controls, reachability, checkpoint, transition gates green under pinned Godot 4.3); in the deploy after `2026-11-08-53e7f70`; NOT run on a phone yet, founder to confirm.**
 - The code screen brings its own on-screen keypad on touch devices (digits, letters with Shift, symbols page, DEL/CLEAR, SHOW/HIDE), shows what you type, and fits narrow/short screens (scrolls). The OS keyboard no longer fights it. Desktop and physical keyboards are unchanged. `src/episode2/ep2_entry.gd`.
 
-**2026-11-08 — Back-lot miners now dig and talk shop — pushed; NOT founder-verified.**
+**2026-11-08 — Back-lot miners now dig and talk shop — LIVE on itch, build `2026-11-08-53e7f70`; NOT founder-verified.**
 - The bearded miner swings a pick into his heap (new Meshy motion, 6 credits spent). The fork man stands on his pitchfork and now and then kneels to pull a rock from the dirt. Walk within earshot and the miners hold voiced conversations: day 88 and the 100-day miners, the river Shipment, Mike Dean's four licenses, the Gold Rush Auction, Jack Hammer's bounty. They go quiet during story scenes and stop to look at gunfire. Gate `ep2_back_lot_miners_test` (55 checks).
 
-**2026-11-08 — Back-of-town gold miners — pushed; NOT founder-verified.**
+**2026-11-08 — Back-of-town gold miners — LIVE on itch, build `2026-11-08-53e7f70`; NOT founder-verified.**
 - Five local miners now work the dirt lots behind the false fronts (never Main Street, no door or duel lane blocked): a long-beard digger at his heap with his shovel, a strong man resting on a pitchfork, two miners talking over an ore pile with gold in it, and an old man sat on a crate with his pick and shovel stood by. They are solid, they stop and look when shots ring out, then go back to work. Reused townsfolk bodies (dirtied), no new models. No dig animation exists yet, so the digger pauses rather than digs. Gate `ep2_back_lot_miners_test`; ledger `docs/founder-feedback/2026-11-08_back_lot_miners.md`.
 
-**2026-11-08 — The Auction House: Renegade on the block, Jack Hammer's first touch and flee — IN CODE + SEEN locally; NOT founder-verified, not live until master CI deploys.**
+**2026-11-08 — The Auction House: Renegade on the block, Jack Hammer's first touch and flee — LIVE on itch, build `2026-11-08-53e7f70`; NOT founder-verified.**
 - Lake → road → auction grounds → hall is ONE room now: the gate is only a sign, no load, no teleport, no title card; the lake builds the road behind itself and the hand-over keeps your gaze. Light sinks from the lake's day to a warm dusk along the road; wind gives way to the saloon bed by distance.
 - CAD hall (FreeCAD → Blender, `tools/ep2_cad/auction_house_cad.py`): false-front facade with lit gallery windows, porch columns and bunting, trusses, stage + proscenium, rostrum, brass rail, side seating, claim board + Jack's wanted poster, XAUT strongbox, lamp posts, hitching rail (two horses tied). Big surfaces dressed with the existing tileable PBR sets (planks/dark wood/brass) — no paper seams.
 - Renegade (your Drive GLB, cut to 16k tris) hosts from the block with real clips (lent from Jack/Logan's rigs); three Gold Rush calls (seven days, one pool, GOLD in → XAUT pro-rata) and the floor cheers/claps with paddles. Four women serve the floor and porch; a doorman soft-checks your license (never a lock).
@@ -18,7 +18,7 @@
 - Not done: ComfyUI materials (local GPU is a 2 GB 920MX; existing PBR sets used instead — a Runpod Comfy pass is possible). The second Drive link ("whitepaper") is Jack Hammer's model, not a whitepaper; protocol wording came from our GoldMine design notes. No recorded voice (text lines).
 - Gate `tests/ep2_lake_auction_road_test.tscn` 48/48 (now in CI) + 8 neighbouring gates green. Captures: `tools/ep2_shots/auction_house_shot.tscn`.
 
-**2026-11-08 — After day-88: horse back at Logan's Lake, 0.5 BTC salve, road to the auction — pushed / deploying; NOT founder-verified.**
+**2026-11-08 — After day-88: horse back at Logan's Lake, 0.5 BTC salve, road to the auction — LIVE on itch, build `2026-11-08-53e7f70`; NOT founder-verified.**
 - Utah takes the Shipment → the game returns to Logan's Lake (no longer ends there) with your horse already drinking; 4 of Logan's horses stand on the far shore.
 - Shot horse: Logan's farrier salve, **0.5 BTC** (one coin face, half kept as change for next time); short of coin = a clear line, never a lock. Dude's swap stays, now **1 BTC** (on his auction credit if you're short).
 - Signpost by the arrival path → new short diagonal ride: a broken-down claim wagon checks your licenses and warns "the big ones are already taking numbers"; vultures burst off a bison carcass in a dust gust and the horse bolts; ends at the AUCTION GROUNDS gate. Zero Hammersmen. Auction interior untouched.
@@ -27,7 +27,7 @@
 
 - **2026-11-08 — Save/Continue repair — LIVE, BUILD `2026-11-08-1d56147`:** fixed successful browser saves falsely reporting failure and the missing lake-trail checkpoint allowlist entry. Native checkpoint 67/67, compatibility and full CI pass; production run 42470600984 deployed to itch. Public files verified in both episodes: visible Save confirmation, exact checkpoint retained through hard reload, actual Continue and successful re-save; blocked storage reports failure and preserves the old record. Episode 2 access gate and SaveSafe preserved. Receipt, screenshots and limits: `docs/episode2-quality/save-resume-20261108/REPORT.md`.
 
-**2026-11-08 — Inferno rides to Flux, minds people — pushed; NOT founder-verified.**
+**2026-11-08 — Inferno rides to Flux, minds people — LIVE on itch, build `2026-11-08-53e7f70`; NOT founder-verified.**
 - After the bar Inferno walks only to his quad and rides out to Flux (even on runs that never saw the quad ride in — the walk-across-town fallback is gone); on foot he stops for anyone in his way and steps round them; the quad (riding in and out) stops for Lil Blunt, townsfolk or story cast in front and goes on once they clear. Gates: EP2_COMMON_SENSE 40/40, EP2_GOLD_TOWN all pass. Not checked: hard-refresh capture on itch.
 
 **2026-11-08 — Day-88 ridge cover, coin clink on bear hits, Tabs wounded/down — LIVE on itch, build `2026-11-07-d6e0003`; NOT founder-verified.**
