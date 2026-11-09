@@ -1,5 +1,11 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-09 — Armory real weapons, rebased onto master with room made in the streamed pack — PR branch only, NOT merged, NOT live.**
+- The Armory branch (130 founder weapon GLBs on both floors) rebased onto master `83f7db2`. It adds to the MAIN pack only code (+4,739 B source) and to the EXTRAS pack `rack_guns.glb` (+2,903,708 B source) while `armory2.glb` shrinks 645,000 B.
+- ep2_extras.pck (gate 199,229,440 B, not raised): master build `2026-11-09-a8e3843` 199,224,704 B; branch as it was 201,334,944 B (over); branch now **196,214,688 B** = 5,120,256 B freed, 3,014,752 B margin.
+- How: the auction house now uses the shared Renegade (`Ep2Extras.RENEGADE`, the same founder Drive model with authored clips) and the duplicate copy is deleted (3.48 MB); display-only armory meshes (rack guns, armory2, three rack showcase guns) no longer ship mesh LODs/shadow meshes, which the web renderer never uses (0.002% pixel difference in 16 armory captures = render noise). Combat viewmodels, the Gatling and the "held" guns untouched.
+- Gates: armory real weapons / two-storey / guns, weapons, founder cast, auction road 48/48 all green.
+
 **2026-11-08 — Episode 2 access code now works on phones — merged to master 2026-11-09 (PR #108; access-code, touch-controls, reachability, checkpoint, transition gates green under pinned Godot 4.3); in the deploy after `2026-11-08-53e7f70`; NOT run on a phone yet, founder to confirm.**
 - The code screen brings its own on-screen keypad on touch devices (digits, letters with Shift, symbols page, DEL/CLEAR, SHOW/HIDE), shows what you type, and fits narrow/short screens (scrolls). The OS keyboard no longer fights it. Desktop and physical keyboards are unchanged. `src/episode2/ep2_entry.gd`.
 
