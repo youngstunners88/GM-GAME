@@ -1,15 +1,15 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-<<<<<<< HEAD
-**2026-11-08 — Rich & Utah's Armory stocked with your real weapon models on both floors — status in the next line.**
-- The grey box "sticks" are gone. The racks, glass cases, counter tray, corner barrels, gallery pegboards and fascia now carry 130 of your own guns (12 families: Winchester 1886, Sharps, coach gun, golden Tommy, machine gun, Bergmann, Borchardt, gold Remington, golden revolver, Remington 1875, bear longbow), with the real Gatling at the gallery rail. Same textures as the Tabs showcase. On the racks they stand butt-down, short guns low and long rifles high, turned and sized slightly differently. In the cases and the counter tray the pistols lie flat. Upstairs they hang on brass pegs. Shop rows, prices, Tabs, the Shipment chain and Rich & Utah are unchanged. Proof (before/after, both floors): `docs/episode2-quality/armory-real-weapons-2026-11-08/`. Test: EP2_ARMORY_REAL_WEAPONS (in CI).
-=======
-**2026-11-09 — Armory real weapons, rebased onto master with room made in the streamed pack — PR branch only, NOT merged, NOT live.**
-- The Armory branch (130 founder weapon GLBs on both floors) rebased onto master `83f7db2`. It adds to the MAIN pack only code (+4,739 B source) and to the EXTRAS pack `rack_guns.glb` (+2,903,708 B source) while `armory2.glb` shrinks 645,000 B.
-- ep2_extras.pck (gate 199,229,440 B, not raised): master build `2026-11-09-a8e3843` 199,224,704 B; branch as it was 201,334,944 B (over); branch now **196,214,688 B** = 5,120,256 B freed, 3,014,752 B margin.
-- How: the auction house now uses the shared Renegade (`Ep2Extras.RENEGADE`, the same founder Drive model with authored clips) and the duplicate copy is deleted (3.48 MB); display-only armory meshes (rack guns, armory2, three rack showcase guns) no longer ship mesh LODs/shadow meshes, which the web renderer never uses (0.002% pixel difference in 16 armory captures = render noise). Combat viewmodels, the Gatling and the "held" guns untouched.
-- Gates: armory real weapons / two-storey / guns, weapons, founder cast, auction road 48/48 all green.
-- Green branch export: Export Godot Game to Web run 42609218365 on `f75127a`, BUILD `2026-11-09-f75127a`, CI ep2_extras.pck 196,211,072 B (under 199,229,440). Branch runs do not deploy to itch; this build is not public.
+**2026-11-10 — Armory real weapons on both floors — merging to master.**
+- Founder rack/case/counter GLBs (no placeholders). Extras pack trimmed (~196.2 MB, ~3 MB margin); main ~9 KB headroom.
+- LIVE only after master Export + butler BUILD tag is on itch.
+
+**2026-11-09 — Founder playtest warp `dude`: start at Dude's stables with every gun — LIVE on itch, build `2026-11-09-e643b61`; NOT founder-verified.**
+- **On the itch page:** press **F3**, then **F8** (press F3 again to hide the debug text). itch never passes a query on its page URL (`…/smokerealm?playtest=dude`) through to the game iframe, so the key chord is the route there. `?playtest=dude` works on the game's own iframe URL (`html-classic.itch.zone/html/<build>/index.html?playtest=dude`). The Episode 2 access code still applies.
+- You land in the gold town on the Minister's referral beat, standing at Dude's under the STABLES sign with "Talk to Dude" up: buy a horse, mount, ride for the lake trail. The web warp waits for the streamed extras first, because Dude's model ships in them.
+- All 8 Episode 2 guns are owned (Lever Rifle, BTC Revolver, Bow, Lever Shotgun, Drum SMG, Golden Thompson, Borchardt, Buffalo Gun), each loaded with **2000 in reserve** (999 arrows). The Shipment and the Sharps are bought, and the purse is topped up to **64 BTC**. No prices changed, and everything runs through the real armory, Tabs and purse.
+- If you save in the warped town, Continue opens at Dude's again. Normal saves and a normal Episode 2 start are unchanged (gate `ep2_playtest_dude_test`, 22 checks, in CI). The gear and BTC go into that device's save.
+- Details: `docs/episode2-quality/playtest-dude-2026-11-09/README.md`. Follow-ups, not built yet: presets `lake_trail`, `day88_ridge`, `auction`.
 
 **2026-11-08 — Episode 2 access code now works on phones — merged to master 2026-11-09 (PR #108; access-code, touch-controls, reachability, checkpoint, transition gates green under pinned Godot 4.3); in the deploy after `2026-11-08-53e7f70`; NOT run on a phone yet, founder to confirm.**
 - The code screen brings its own on-screen keypad on touch devices (digits, letters with Shift, symbols page, DEL/CLEAR, SHOW/HIDE), shows what you type, and fits narrow/short screens (scrolls). The OS keyboard no longer fights it. Desktop and physical keyboards are unchanged. `src/episode2/ep2_entry.gd`.
@@ -40,7 +40,6 @@
 
 **2026-11-08 — Inferno rides to Flux, minds people — LIVE on itch, build `2026-11-08-53e7f70`; NOT founder-verified.**
 - After the bar Inferno walks only to his quad and rides out to Flux (even on runs that never saw the quad ride in — the walk-across-town fallback is gone); on foot he stops for anyone in his way and steps round them; the quad (riding in and out) stops for Lil Blunt, townsfolk or story cast in front and goes on once they clear. Gates: EP2_COMMON_SENSE 40/40, EP2_GOLD_TOWN all pass. Not checked: hard-refresh capture on itch.
->>>>>>> origin/claude/ep2-armory-real-weapons
 
 **2026-11-08 — Day-88 ridge cover, coin clink on bear hits, Tabs wounded/down — LIVE on itch, build `2026-11-07-d6e0003`; NOT founder-verified.**
 - At each ridge overlook press **C** (or Ctrl) to duck behind the sandbags: no damage from the bears, archers or Hammer's men out front, **R** reloads in cover, C or a click pops him back up to aim. Walking off the overlook stands him up. (Keyboard only; no touch button yet.) Every hit on a living bear plays one short coin clink (throttled). Tabs reads **BEARS DOWN N · WOUNDED M**, saved with the ledger; day-88 river kills now count too. Tests: EP2_TABS_LEDGER, RIVER_COVER (both ALL PASS). Shipment rewind untouched.
