@@ -1,0 +1,48 @@
+{
+  "source_sha": "d6e000389cd9f1a971496ea96cd51b202277960c",
+  "build_id": "2026-11-07-d6e0003",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "evidence": [
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/chill-bud-20261107/before-after.jpg"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/chill-bud-20261107/tabs-selected.jpg"
+    },
+    {
+      "kind": "native",
+      "path": "docs/episode2-quality/chill-bud-20261107/local-verification.json"
+    },
+    {
+      "kind": "live_input",
+      "path": "docs/episode2-quality/chill-bud-20261107/public-browser.json"
+    },
+    {
+      "kind": "public_assets",
+      "path": "docs/episode2-quality/chill-bud-20261107/public-pack-proof.json"
+    }
+  ],
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/42393020932",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-11-07-d6e0003"
+  },
+  "open_blockers": [],
+  "notes": [
+    "Plant source e1074e2 is an ancestor of deployed d6e0003; plant files unchanged, only later bear-tally text changes in selector.",
+    "Public input test rejects an invalid access code; healing transaction and ranch/shop visuals tested locally. No unlock shortcut used.",
+    "Original browser expectation e1074e2 was superseded; observed d6e0003 was independently validated through ancestry, successful CI/upload and 10 exact public texture hashes.",
+    "No physical-phone or founder verification claimed."
+  ]
+}

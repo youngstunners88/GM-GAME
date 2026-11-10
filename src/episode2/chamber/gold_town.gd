@@ -274,6 +274,7 @@ var _shop_bought: bool = false
 var _town_audio: Ep2TownSoundscape = null
 var _bumps: TOWN_BUMPS = null
 var _law: Ep2TownLaw = null
+var _miners: Ep2BackLotMiners = null          # the local gold miners in the back lots behind the fronts (PROMPT_BACK_MINERS_2026-11-08)
 var _fine_toast_t: float = 0.0
 var _fine_toast_text: String = ""
 var _stable_yard: Ep2StableYard = null
@@ -363,7 +364,7 @@ func _build_steps() -> Array:
 	# The cast is five steps, not one (founder 2026-11-01, "a glitch delay by the quad bike"): this room is prebuilt behind the woods
 	# from the quad's reveal on, and every step runs inside one frame - the old single people step was the frozen frame at the quad.
 	return [_step_light, _step_ground, _step_town, _step_desert, _step_people_core, _step_people_armory, _step_people_space,
-		_step_people_crowd, _step_people_after, _step_town_audio]
+		_step_people_crowd, _step_people_after, _build_back_lot_miners, _step_town_audio]
 
 
 func _step_town_audio() -> void:
@@ -454,6 +455,7 @@ func _step_people() -> void:
 	_step_people_space()
 	_step_people_crowd()
 	_step_people_after()
+	_build_back_lot_miners()
 
 
 ## The draw's cast: the Sheriff, the barman, the stranger with his Borchardt, the glass, the coin and the muzzle light.
@@ -515,6 +517,18 @@ func _step_people_after() -> void:
 	_law.name = "TownLaw"
 	add_child(_law)
 	_law.setup(self)
+
+
+## The back-lot miners (founder 2026-11-08): digging, resting on a pitchfork, talking gold, sat on a crate - behind the fronts, off Main
+## Street. Their bodies are solid to Lil Blunt (the same props list the counter, the Gatling post and the quad join).
+func _build_back_lot_miners() -> void:
+	if _miners != null and is_instance_valid(_miners): _miners.queue_free()
+	_miners = Ep2BackLotMiners.new()
+	_miners.name = "BackLotMiners"
+	_visuals.add_child(_miners)
+	_miners.build()
+	if _town_col.has("props"):
+		(_town_col["props"] as Array).append_array(_miners.circles)
 
 
 ## The walk-in shops' keepers (founder fix pack 2026-10-27: "two more shopkeepers (women are fine) behind the counters"): the General
@@ -1807,7 +1821,7 @@ func _seat_bull() -> void:
 func _tick_bull_back(delta: float) -> void:
 	match _bull_task:
 		"riding":
-			_quad.step(delta)
+			_quad_step_minding(delta)
 			_seat_bull()
 			# townspeople in the road step aside to the verge as he comes (the ride into town does the same)
 			_make_way_t -= delta
@@ -1927,18 +1941,26 @@ var _duck: Ep2DuckModifier = null
 func _bull_route(points: Array, speed: float) -> void:
 	_bull_path = points.duplicate()
 	_bull_speed = speed
+	_bull_wait_t = 0.0
 	if not _bull_path.is_empty():
-		_bull.walk_to(_bull_path.pop_front(), speed)
+		_bull_walk(_bull_path.pop_front())
+
+
+## One leg of Inferno's route; remembered so he can stop for someone in his way and carry on afterwards.
+func _bull_walk(p: Vector3) -> void:
+	_bull_goal = Vector3(p.x, 0.0, p.z)
+	_bull.walk_to(p, _bull_speed)
 
 
 func _tick_bull_route() -> void:
 	if _bull == null or _bull_task not in ["to_lb", "to_body", "to_bar", "leaving"]:
 		return
 	_duck_bull()
-	if _bull.is_walking():
+	if _bull.is_walking() or _bull_wait_t > 0.0:
+		_bull_mind_the_way()
 		return
 	if not _bull_path.is_empty():
-		_bull.walk_to(_bull_path.pop_front(), _bull_speed)
+		_bull_walk(_bull_path.pop_front())
 		return
 	match _bull_task:
 		"to_body":
@@ -1949,11 +1971,109 @@ func _tick_bull_route() -> void:
 			_bull.face_point(_player_pos)
 		"leaving":
 			_set_duck(0.0)
-			if _quad != null and _quad.visible:
-				_ride_off()
-			else:
-				_bull_task = ""
-				_bull.visible = false
+			_ensure_quad_parked()
+			_bull.position = _quad.dismount_spot()
+			_ride_off()
+
+
+const BULL_BLOCK_REACH := 1.3      # m ahead of Inferno on foot that must be clear of bodies
+const BULL_BLOCK_HALF := 0.6       # m either side of his line
+const BULL_WAIT_S := 1.6           # he waits this long for someone to move, then steps round them
+const BULL_STEP_ROUND := 1.3       # m beside the person he steps round
+const QUAD_BLOCK_REACH := 5.0      # m ahead of the quad's centre that must be clear before it rolls
+const QUAD_BLOCK_HALF := 1.6
+
+var _bull_goal: Vector3 = Vector3.ZERO
+var _bull_wait_t: float = 0.0
+
+
+## Every body in town that can stand in someone's way: Lil Blunt, the townspeople and the story cast (ep2-world-common-sense), minus `skip`.
+func _town_bodies(skip: Node3D, with_player: bool = true) -> Array:
+	var out: Array = []
+	if with_player:
+		out.append(_player_pos)
+	if _people != null:
+		for q in _people.people:
+			if q.folk != null and q.folk.visible:
+				out.append(q.folk.position)
+	for who in [_minister, _sheriff, _bull, _bartender, _accomplice, _rich, _utah, _opp]:
+		if who != null and who != skip and (who as Node3D).visible:
+			out.append((who as Node3D).position)
+	return out
+
+
+## The nearest body in a box `reach` long and `half` wide either side, ahead of `from` along unit `fwd`; Vector3.INF when clear.
+static func _first_ahead(bodies: Array, from: Vector3, fwd: Vector3, reach: float, half: float) -> Vector3:
+	var best: Vector3 = Vector3.INF
+	var best_d: float = INF
+	var side := Vector3(fwd.z, 0.0, -fwd.x)
+	for b in bodies:
+		var d: Vector3 = (b as Vector3) - from
+		d.y = 0.0
+		var along: float = d.dot(fwd)
+		if along > 0.05 and along < reach and absf(d.dot(side)) < half and along < best_d:
+			best_d = along
+			best = b
+	return best
+
+
+## Inferno on foot never walks through anybody (founder 2026-11-08): someone in his way, he stops and looks at them; still there after
+## BULL_WAIT_S, he steps round on the far side of them and carries on to where he was going.
+func _bull_mind_the_way() -> void:
+	var to_goal: Vector3 = _bull_goal - _bull.position
+	to_goal.y = 0.0
+	var dist: float = to_goal.length()
+	if dist < 0.35:
+		if _bull_wait_t > 0.0:
+			_bull_wait_t = 0.0
+			_bull.walk_to(_bull_goal, _bull_speed)
+		return
+	var fwd: Vector3 = to_goal / dist
+	# walking up to Lil Blunt (or to a spot beside him), Lil Blunt is where he is going, not in his way
+	var with_lb: bool = _bull_task != "to_lb" and _player_pos.distance_to(_bull_goal) > 1.8
+	var blocker: Vector3 = _first_ahead(_town_bodies(_bull, with_lb), _bull.position, fwd, minf(BULL_BLOCK_REACH, dist - 0.3), BULL_BLOCK_HALF)
+	if blocker == Vector3.INF:
+		if _bull_wait_t > 0.0:
+			_bull_wait_t = 0.0
+			_bull.walk_to(_bull_goal, _bull_speed)
+		return
+	if _bull_wait_t == 0.0:
+		_bull.stop()
+		_bull.play(BULL_IDLE, 1.0, 0.25)
+		_bull.face_point(blocker)
+	_bull_wait_t += get_process_delta_time()
+	if _bull_wait_t >= BULL_WAIT_S:
+		var side := Vector3(fwd.z, 0.0, -fwd.x)
+		var off: float = (blocker - _bull.position).dot(side)
+		var around: Vector3 = blocker - side * (signf(off) if off != 0.0 else -1.0) * BULL_STEP_ROUND
+		_bull_path.push_front(_bull_goal)
+		_bull_wait_t = 0.0
+		_bull_walk(around)
+
+
+## The quad rolls only while nobody is in front of it (founder 2026-11-08): it stops for Lil Blunt, a townsperson or the story cast,
+## idles until they clear, then carries on. No ramming, no sliding through anyone.
+func _quad_step_minding(delta: float) -> void:
+	var fwd := Vector3(sin(_quad.yaw), 0.0, cos(_quad.yaw))
+	var from: Vector3 = _quad.position - fwd * 0.5
+	if _first_ahead(_town_bodies(_bull), from, fwd, QUAD_BLOCK_REACH, QUAD_BLOCK_HALF) == Vector3.INF:
+		_quad.step(delta)
+
+
+## The quad parked outside Rich's, built if this run never saw it ride in (a warp, a skipped Gatling beat): the ride-out needs it.
+func _ensure_quad_parked() -> void:
+	if _quad == null:
+		_quad = Ep2TownQuad.new()
+		_quad.name = "InfernoQuad"
+		_visuals.add_child(_quad)
+		_quad.build()
+	if not _quad.visible or not _quad.is_parked:
+		var park: Vector3 = Ep2GoldTown.local_to_world("Bldg_Armory", QUAD_PARK_LOCAL)
+		var last: Vector3 = QUAD_RETURN[QUAD_RETURN.size() - 1]
+		_quad.drive([park])
+		_quad.position = Vector3(park.x, 0.0, park.z)
+		_quad.yaw = atan2(park.x - last.x, park.z - last.z)
+		_quad.rotation = Vector3(0.0, _quad.yaw, 0.0)
 
 
 ## Inferno back in the saddle and away: the ride in, reversed (the lane, the street's end, the road out of town). The quad stops being
@@ -1980,11 +2100,7 @@ func _ride_off() -> void:
 func _tick_ride_off(delta: float) -> void:
 	if _bull_task != "riding_off" or _quad == null:
 		return
-	var ahead: Vector3 = _player_pos - _quad.position
-	var fwd := Vector3(sin(_quad.yaw), 0.0, cos(_quad.yaw))
-	var in_way: bool = ahead.dot(fwd) > -0.5 and ahead.dot(fwd) < 4.5 and absf(ahead.dot(Vector3(fwd.z, 0.0, -fwd.x))) < 1.6
-	if not in_way:
-		_quad.step(delta)
+	_quad_step_minding(delta)
 	_seat_bull()
 	_make_way_t -= delta
 	if _people != null and _make_way_t <= 0.0:
@@ -2290,12 +2406,19 @@ static func upgrade_license_wall(wall: Node3D) -> bool:
 
 
 ## A shot horse stays shot until he brings it to Dude (founder 2026-11-04); walking up to Dude is all it takes.
+## Founder brief 2026-11-08: this is the dear reset - Dude takes the wrecked mount and ONE Bitcoin (Logan's salve at the lake is the
+## half-Bitcoin local fix). Short of a coin he still swaps it, on his auction credit (as the horse itself can be): never a soft-lock.
+const DUDE_SWAP_BTC := 1
 func _dude_treats_horse() -> void:
 	if armory.horse_is_sound() or _player_pos.distance_to(_stable_yard.dude_position()) > DUDE_TREATS_WITHIN:
 		return
+	var paid: bool = GameManager.purse_spend("btc", DUDE_SWAP_BTC)
+	if not paid:
+		GameManager.record_dude_credit(DUDE_SWAP_BTC)
 	armory.treat_horse()
 	if _hud != null:
-		_hud.toast("DUDE PATCHES UP THE HORSE - IT CAN DRINK AND CARRY YOU AGAIN", 3.0)
+		_hud.toast(("DUDE SWAPS THE WRECKED HORSE FOR A FRESH ONE · -1 BTC" if paid
+			else "DUDE SWAPS THE WRECKED HORSE FOR A FRESH ONE · 1 BTC ON CREDIT TILL THE AUCTION"), 3.0)
 
 
 func _show_finished() -> void:
@@ -2481,11 +2604,11 @@ func _tick(delta: float) -> void:
 				# Inferno heads off to his cousin's; the story's next thread is the second visit to Mike Dean. He rode in, so he rides out:
 				# back to his quad outside Rich's and away up the road he came in on (he used to walk off and leave it parked for good)
 				_bull_task = "leaving"
+				# founder 2026-11-08: walking is only bar -> bike; he never crosses town on foot to Flux. A warped/skipped run that has no quad
+				# in town yet gets it parked where the story leaves it (outside Rich's) so the ride-out always happens.
 				var out_door: Vector3 = Ep2GoldTown.door_world("Bldg_Saloon", 3.0)
-				if _quad != null:
-					_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), out_door] + _bull_way_to(_quad.dismount_spot(), out_door), 1.6)
-				else:
-					_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), out_door, Vector3(1.5, 0.0, 1470.0), Vector3(16.0, 0.0, 1480.0)], 1.6)
+				_ensure_quad_parked()
+				_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), out_door] + _bull_way_to(_quad.dismount_spot(), out_door), 1.6)
 				_advance_to(Beat.MINISTER2)
 		Beat.MINISTER2:
 			# the second visit: in at the counter - the license / bond close, then the referral to Dude (steps 9-10)
@@ -2592,6 +2715,10 @@ func _tick_people(delta: float) -> void:
 		_people.set_context("duel" if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW] else ("quiet" if _beat in [Beat.OFFICE, Beat.WON, Beat.JOB, Beat.BODY, Beat.JAIL] else "normal"))
 		_update_keep_clear()
 		_people.step(delta, _player_pos)
+	if _miners != null:
+		# the back-lot miners talk only when Lil Blunt is in earshot and no story scene is speaking (never over the draw or a briefing)
+		var free_talk: bool = not (_beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW, Beat.OFFICE, Beat.WON, Beat.JOB, Beat.BODY, Beat.JAIL])
+		_miners.player_pos = _player_pos if free_talk else Vector3(0.0, 0.0, -9999.0)
 	_step_doors(delta)
 	if _accomplice != null:
 		_accomplice.step(delta)
@@ -2714,6 +2841,7 @@ func shoot() -> bool:
 		if _gatling.fire_burst(0.7):
 			_mount_bursts += 1
 			if _people != null: _people.notify_danger(_player_pos, 32.0)
+			if _miners != null: _miners.notify_danger(_player_pos)
 			return true
 		if _hud != null:
 			_hud.toast("THE DRUM IS EMPTY", 1.4)
@@ -2733,6 +2861,7 @@ func shoot() -> bool:
 
 func _on_player_shot() -> void:
 	if _people != null: _people.notify_danger(_player_pos)
+	if _miners != null: _miners.notify_danger(_player_pos)
 	var eye: Vector3 = _camera.global_position if _camera != null else _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = -_camera.global_transform.basis.z if _camera != null else Vector3(sin(_look_yaw), 0.0, cos(_look_yaw))
 	var in_draw: bool = _beat == Beat.DRAW and _draw_state == "go"

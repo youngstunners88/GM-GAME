@@ -118,6 +118,21 @@ func _debug_unlock_requested() -> bool:
 	return OS.has_feature("web") and bool(JavaScriptBridge.eval(
 		"new URLSearchParams(window.location.search).get('ep2unlock') === '1'", true))
 
+## Founder 2026-11-08: the code could not be entered on a phone (no keyboard came up - the field was focused
+## without a tap, and the 440 px box ran off a narrow screen). On any touch device the gate now brings its OWN
+## on-screen keypad (digits, letters with Shift, a symbols page), shows what was typed, and fits the viewport.
+## The LineEdit stays the single source of truth, so a physical keyboard and the desktop path are unchanged.
+const KEY_ROWS_ALPHA: Array[String] = ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
+const KEY_ROWS_SYMBOL: Array[String] = ["@#$%&*()_+", "-=!?.,:;/\\", "~^[]{}<>|'"]
+var _kp_shift := false
+var _kp_symbols := false
+var _kp_rows: VBoxContainer = null
+var _kp_key_size := Vector2(40, 44)
+var _kp_show_text := true
+
+static func gate_wants_keypad() -> bool:
+	return TouchUi.is_touch()      # the one shared touch test (harness rule H6)
+
 func _show_gate() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 20
@@ -126,44 +141,149 @@ func _show_gate() -> void:
 	(_gate as ColorRect).color = Color(0.05, 0.03, 0.02, 0.96)
 	_gate.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(_gate)
+	var touch := gate_wants_keypad()
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	var width: float = clampf(vp.x - 24.0, 280.0, 440.0 if not touch else 640.0)
+	# Scroll + center so a short landscape phone can still reach every control.
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_gate.add_child(scroll)
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	center.custom_minimum_size = Vector2(vp.x, vp.y)
+	scroll.add_child(center)
 	var box := VBoxContainer.new()
-	box.set_anchors_preset(Control.PRESET_CENTER)
-	box.position = Vector2(-220, -110)
-	box.custom_minimum_size = Vector2(440, 220)
-	box.add_theme_constant_override("separation", 14)
-	_gate.add_child(box)
+	box.custom_minimum_size = Vector2(width, 0)
+	box.add_theme_constant_override("separation", 8 if touch else 14)
+	center.add_child(box)
 	var title := Label.new()
-	title.text = "EPISODE 2 — GOLD MINE
-Enter the access code"
+	title.text = "EPISODE 2 — GOLD MINE\nEnter the access code"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 26)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.add_theme_font_size_override("font_size", 20 if touch else 26)
 	title.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
 	box.add_child(title)
 	_gate_input = LineEdit.new()
-	_gate_input.secret = true
 	_gate_input.placeholder_text = "access code"
 	_gate_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_gate_input.add_theme_font_size_override("font_size", 24)
+	_gate_input.custom_minimum_size = Vector2(0, 48 if touch else 0)
 	_gate_input.text_submitted.connect(_try_code)
+	if touch:
+		# Our keypad replaces the OS keyboard (which never opened reliably and hid the field).
+		_gate_input.virtual_keyboard_enabled = false
+		_gate_input.secret = not _kp_show_text
+	else:
+		_gate_input.secret = true
 	box.add_child(_gate_input)
+	_gate_msg = Label.new()
+	_gate_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gate_msg.add_theme_color_override("font_color", Color(1, 0.45, 0.35))
+	box.add_child(_gate_msg)
+	if touch:
+		_kp_key_size = Vector2(clampf((width - 9.0 * 4.0) / 10.0, 26.0, 60.0), clampf(vp.y / 13.0, 34.0, 54.0))
+		_kp_rows = VBoxContainer.new()
+		_kp_rows.add_theme_constant_override("separation", 4)
+		box.add_child(_kp_rows)
+		_build_keypad()
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 16)
 	box.add_child(row)
 	var go := Button.new()
 	go.text = "ENTER"
+	go.custom_minimum_size = Vector2(110, 48 if touch else 0)
 	go.pressed.connect(func() -> void: _try_code(_gate_input.text))
 	row.add_child(go)
 	var back := Button.new()
 	back.text = "BACK TO MENU"
+	back.custom_minimum_size = Vector2(150, 48 if touch else 0)
 	back.pressed.connect(func() -> void: SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND))
 	row.add_child(back)
-	_gate_msg = Label.new()
-	_gate_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_gate_msg.add_theme_color_override("font_color", Color(1, 0.45, 0.35))
-	box.add_child(_gate_msg)
 	_gate_input.grab_focus()
 	print("[EP2] code prompt")
+
+## (Re)builds the keypad rows for the current page (letters / symbols) and Shift state.
+func _build_keypad() -> void:
+	for c in _kp_rows.get_children():
+		c.queue_free()
+	_kp_rows.add_child(_kp_row("1234567890"))
+	var rows: Array[String] = KEY_ROWS_SYMBOL if _kp_symbols else KEY_ROWS_ALPHA
+	for i in rows.size():
+		var extra_l: Array = []
+		var extra_r: Array = []
+		if i == 2:
+			if not _kp_symbols:
+				extra_l.append(["SHIFT", _kp_toggle_shift])
+			extra_r.append(["DEL", _kp_backspace])
+		_kp_rows.add_child(_kp_row(rows[i], extra_l, extra_r))
+	var bottom := HBoxContainer.new()
+	bottom.alignment = BoxContainer.ALIGNMENT_CENTER
+	bottom.add_theme_constant_override("separation", 4)
+	_kp_rows.add_child(bottom)
+	var page := _kp_button("ABC" if _kp_symbols else "#+=", _kp_key_size.x * 1.6)
+	page.pressed.connect(func() -> void:
+		_kp_symbols = not _kp_symbols
+		_build_keypad.call_deferred())
+	bottom.add_child(page)
+	var clear := _kp_button("CLEAR", _kp_key_size.x * 1.6)
+	clear.pressed.connect(func() -> void: _gate_input.clear())
+	bottom.add_child(clear)
+	var eye := _kp_button("HIDE" if _kp_show_text else "SHOW", _kp_key_size.x * 1.6)
+	eye.pressed.connect(func() -> void:
+		_kp_show_text = not _kp_show_text
+		_gate_input.secret = not _kp_show_text
+		_build_keypad.call_deferred())
+	bottom.add_child(eye)
+
+func _kp_row(chars: String, left: Array = [], right: Array = []) -> HBoxContainer:
+	var r := HBoxContainer.new()
+	r.alignment = BoxContainer.ALIGNMENT_CENTER
+	r.add_theme_constant_override("separation", 4)
+	for e in left:
+		var b := _kp_button(str(e[0]), _kp_key_size.x * 1.5)
+		b.pressed.connect(e[1])
+		if str(e[0]) == "SHIFT" and _kp_shift:
+			b.modulate = Color(1.0, 0.85, 0.3)
+		r.add_child(b)
+	for ch in chars:
+		var shown: String = ch.to_upper() if (_kp_shift and not _kp_symbols) else ch
+		var k := _kp_button(shown, _kp_key_size.x)
+		k.pressed.connect(func() -> void: _kp_type(shown))
+		r.add_child(k)
+	for e in right:
+		var b2 := _kp_button(str(e[0]), _kp_key_size.x * 1.5)
+		b2.pressed.connect(e[1])
+		r.add_child(b2)
+	return r
+
+func _kp_button(label: String, w: float) -> Button:
+	var b := Button.new()
+	b.text = label
+	b.focus_mode = Control.FOCUS_NONE        # tapping a key must not steal focus from the field
+	b.custom_minimum_size = Vector2(w, _kp_key_size.y)
+	b.add_theme_font_size_override("font_size", 20)
+	return b
+
+func _kp_toggle_shift() -> void:
+	_kp_shift = not _kp_shift
+	_build_keypad.call_deferred()
+
+func _kp_type(ch: String) -> void:
+	_gate_input.text += ch
+	_gate_input.caret_column = _gate_input.text.length()
+	_gate_msg.text = ""
+	if _kp_shift:                              # one-shot Shift, like a phone keyboard
+		_kp_shift = false
+		_build_keypad.call_deferred()
+
+func _kp_backspace() -> void:
+	var t: String = _gate_input.text
+	if t.length() > 0:
+		_gate_input.text = t.substr(0, t.length() - 1)
+		_gate_input.caret_column = _gate_input.text.length()
 
 func _try_code(code: String) -> void:
 	if not code_ok(code):

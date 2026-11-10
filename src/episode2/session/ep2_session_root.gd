@@ -65,6 +65,8 @@ const CHAMBER_SCENES := {
 	"logans_lake": preload("res://src/episode2/chamber/logans_lake.tscn"),
 	# Logan's overlook -> the day-88 ridge (founder lock 2026-11-04): cover the Shipment down the river to Utah's dock.
 	"river_cover": preload("res://src/episode2/chamber/river_cover.tscn"),
+	# Back at the lake after Utah's dock -> the short diagonal ride to the auction grounds (founder brief 2026-11-08).
+	"auction_road": preload("res://src/episode2/chamber/auction_road.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
 
@@ -134,6 +136,9 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_teardown_active()
 	_mode = Mode.IDLE
 
+## One-shot handoff for a chamber restored from a save (restore_section -> _enter_chamber).
+var _resume_handoff: Dictionary = {}
+
 func capture_section_checkpoint() -> void:
 	if is_instance_valid(_active) and _active.has_method("remember_retaliation_entry"):
 		_active.remember_retaliation_entry()
@@ -145,7 +150,9 @@ func capture_section_checkpoint() -> void:
 	state["personal_armory"] = armory.snapshot()
 	section_checkpoint = {"version": 1, "episode": 2, "label": "Episode 2 — " + (room.replace("_", " ").capitalize() if room != "" else "mine run %d" % (_segment + 1)), "state": state,
 		"section": {"segment": _segment, "mode": _mode, "room": room, "chain_n": _chain_n,
-		"distance": _completed_distance, "rewarded": _rewarded_chambers.keys(), "totals": _totals.duplicate(true)}}
+		"distance": _completed_distance, "rewarded": _rewarded_chambers.keys(), "totals": _totals.duplicate(true),
+		# a save at the lake after Utah's dock resumes there, not at Logan's first meeting (founder brief 2026-11-08)
+		"after_day88": is_instance_valid(_active) and _active is LogansLakeChamber and bool(_active.after_day88)}}
 
 func restore_section(record: Dictionary) -> bool:
 	if not GameManager.valid_resume(record) or int(record.episode) != 2: return false
@@ -168,7 +175,9 @@ func restore_section(record: Dictionary) -> bool:
 	else:
 		_chain_id = str(section.room)
 		if not CHAMBER_SCENES.has(_chain_id): return false
+		_resume_handoff = {"after_day88": true} if bool(section.get("after_day88", false)) else {}
 		_enter_chamber()
+		_resume_handoff = {}
 	return true
 
 func start() -> void:
@@ -236,6 +245,8 @@ func _enter_chamber() -> void:
 		push_error("Ep2SessionRoot: unknown chamber id \"%s\"; falling back to %s" % [chamber_id, DEFAULT_CHAMBER])
 		chamber_id = DEFAULT_CHAMBER
 	var c: Node = CHAMBER_SCENES[chamber_id].instantiate()
+	if not _resume_handoff.is_empty() and "handoff" in c:
+		c.handoff = _resume_handoff.duplicate()
 	add_child(c)
 	_active = c
 	_wire_chamber(c)
@@ -309,7 +320,7 @@ func _enter_chamber_chained(segment: int) -> void:
 			built_vp.queue_free()
 	else:
 		add_child(c)
-		if c is RiverCoverChamber:
+		if c is RiverCoverChamber or bool(gaze.get("after_day88", false)) or c is AuctionRoadChamber:
 			c.handoff = gaze                                # not prebuilt in time: the ridge still continues his walk
 		c.setup(0, [], 0)
 	if c is RiverCoverChamber and old is LogansLakeChamber:

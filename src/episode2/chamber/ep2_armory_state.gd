@@ -135,6 +135,10 @@ var river_gear: bool = false
 ## every room hand-over and every save. Dude's care (treat_horse) is the one thing that clears it.
 const HORSE_WOUNDS_MAX := 3
 var horse_wounds: int = 0
+## Half a Bitcoin of change Logan owes back (founder brief 2026-11-08, lake salve). The purse holds whole BTC faces
+## (founder ruling 2026-10-21: one face is one Bitcoin), so a 0.5 BTC price takes a face and banks the other half here;
+## the next half-Bitcoin price spends this change first. Never minted from nothing, never negative.
+var btc_half_change: bool = false
 ## Guns the Sheriff is holding (jail). Each one comes back when the story returns the irons, or the moment Lil Blunt buys it again
 ## at Rich & Utah's (founder 2026-11-01: "upon release Lil Blunt needs to be able to acquire them").
 var held: Dictionary = {}
@@ -491,6 +495,24 @@ func treat_horse() -> void:
 	changed.emit()
 
 
+## Pay half a Bitcoin (Logan's salve): the banked half first, else one whole BTC face with the other half kept as change.
+## False, and nothing taken, when he holds neither.
+func pay_half_btc() -> bool:
+	if btc_half_change:
+		btc_half_change = false
+		changed.emit()
+		return true
+	if not GameManager.purse_spend("btc", 1):
+		return false
+	btc_half_change = true
+	changed.emit()
+	return true
+
+
+func can_pay_half_btc() -> bool:
+	return btc_half_change or GameManager.purse_balance("btc") >= 1
+
+
 func horse_is_sound() -> bool: return horse_wounds == 0
 func horse_is_down() -> bool: return horse_wounds >= HORSE_WOUNDS_MAX
 
@@ -504,7 +526,7 @@ func snapshot() -> Dictionary:
 			"locked": gun.locked, "reload_locked": gun.reload_locked, "training_complete": gun.training_complete}
 	return {"version": VERSION, "weapons": weapons, "equipped": equipped, "previous": previous,
 		"arrows": arrows, "corpses": corpses.duplicate(true), "switch_t": _switch_t,
-		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear, "horse_wounds": horse_wounds,
+		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear, "horse_wounds": horse_wounds, "btc_half_change": btc_half_change,
 		"confiscated": firearms_confiscated, "held": held.keys()}
 
 
@@ -572,6 +594,7 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 		sharps.reload_locked = false
 	river_gear = valid and bool(data.get("river_gear", false))
 	horse_wounds = clampi(SaveSafe.to_int(data.get("horse_wounds", 0)), 0, HORSE_WOUNDS_MAX) if valid else 0
+	btc_half_change = bool(data.get("btc_half_change", false)) if valid else false
 	_switch_t = clampf(SaveSafe.to_float(data.get("switch_t", 0)), 0.0, SWITCH_TIME) if valid else 0.0
 	changed.emit()
 

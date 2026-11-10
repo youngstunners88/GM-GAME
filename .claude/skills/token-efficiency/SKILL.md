@@ -34,6 +34,18 @@ description: Spend fewer tokens on this repo without losing quality - what actua
 - Combine captures into one sheet, and print only measured numbers from a capture run.
 - Ship once: run the gates that can fail before the full ship, because a failed ship repeats a long gate run.
 
+## Founder-brief loop (2026-11-08, the Inferno->Flux brief: ~15 tool calls end to end)
+1. Drive link: `get_file_metadata` with `excludeContentSnippets` first (title + size), then read it once. Honour its "Token rules" section.
+2. `grep -n` the brief's nouns in the one file it names -> `sed -n A,Bp` 40-120 line slices -> patch with one scripted multi-replace (asserts each anchor is unique).
+3. Gates to a log, print only `[PASS]/[FAIL]/ALL PASS` lines; extend the existing gate with a regression check instead of a new test scene.
+4. STATUS: one bullet. Reply: a few lines. No plan essays, no re-reads after edits.
+
+## Feature-brief loop at scale (2026-11-08, lake repair + auction road: 1 new room, 6 files, ~60 tool calls)
+- Locate with greps of the brief's nouns + `grep -n "^func "` on the big files; read 30-80 line slices only. Never open river_cover/gold_town whole.
+- Copy an existing room's shape (setup, collide, shot ray) from grep hits instead of reading interlude_base.
+- One gate for the brief's acceptance table (source checks + headless steps); run it plus the 8-10 neighbouring gates in parallel, printing only FAIL/ALL PASS counts per log.
+- No .godot cache in a fresh container: bootstrap (retry on GitHub 504) and one `--import` before any test, all output to a log.
+
 ## DietCode / ScaleDown (npm `dietcode` 0.5.0, https://docs.scaledown.ai) - evaluated 2026-10-14, NOT installed by the agent
 What it is (read from the package, nothing was executed): Claude Code hooks (`UserPromptSubmit`, `PostToolUse`, `PreCompact`) + a status line + an optional local proxy
 (`dietcode claude`) that rewrites each outgoing request and keeps a running summary of old turns. Compression is done by **Scaledown's cloud API (`api.scaledown.xyz`)**

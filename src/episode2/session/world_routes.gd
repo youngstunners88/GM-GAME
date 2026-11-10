@@ -9,7 +9,12 @@ func id_of(room: Node) -> String:
  return room.get_script().resource_path.get_file().get_basename()
 func park(session: Node, room: Node) -> void:
  var id: String = id_of(room)
- if rooms.has(id): return
+ if rooms.has(id):
+  if rooms[id].node == room: return
+  # A newer visit to the same place (Logan's Lake again after day-88) replaces the stale copy instead of staying live in the tree.
+  var stale: Dictionary = rooms[id]
+  rooms.erase(id)
+  if is_instance_valid(stale.viewport): stale.viewport.queue_free()
  # A retained room must not call an obsolete forward chain on a later visit.
  if room.chamber_cleared.is_connected(session._on_chamber_cleared): room.chamber_cleared.disconnect(session._on_chamber_cleared)
  if room.chamber_failed.is_connected(session._on_chamber_failed): room.chamber_failed.disconnect(session._on_chamber_failed)
