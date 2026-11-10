@@ -334,6 +334,7 @@ var _horse_bought: bool = false
 var _depart_mounted: bool = false
 var _depart_from := Vector3.ZERO
 const DEPART_HORSE := Ep2LakeRoad.ORIGIN
+const PLAYTEST_AT_DUDE := Vector3(2.0, 0.0, 1.5)     # beside his 3 m walk, within talk range of both ends
 
 
 func _init() -> void:
@@ -1358,7 +1359,13 @@ func _on_setup() -> void:
 		town_life.town_ambient = true
 	_bumps = TOWN_BUMPS.new()
 	_bumps.build(_people, town_life, _town_audio)
-	_advance_to(Beat.STREET)
+	if handoff.has("playtest"):
+		# founder playtest preset (Ep2Playtest): standing at Dude's, facing him, on the Minister's referral. His route start, not his
+		# node: on the web his model can still be streaming when the town sets up.
+		_player_pos = Ep2StableYard.DUDE_PATH[0] + PLAYTEST_AT_DUDE
+		_look_yaw = atan2(-PLAYTEST_AT_DUDE.x, -PLAYTEST_AT_DUDE.z)
+		_player_yaw = _look_yaw
+	_advance_to(Beat.STABLES if handoff.has("playtest") else Beat.STREET)
 
 
 func _on_beat_entered(b: int) -> void:

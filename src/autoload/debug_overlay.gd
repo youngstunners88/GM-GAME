@@ -21,6 +21,8 @@ var _label: Label
 var _on: bool = false           # label + beacon (?debug=1 / F3)
 var _beacon_only: bool = false  # ?debug=beacon: beacon + verbose logging, no label
 
+## Founder playtest preset (Ep2Playtest), loaded only when asked for: the title screen never loads Episode 2 code.
+const PLAYTEST := "res://src/episode2/session/ep2_playtest.gd"
 const BEACON_INTERVAL_USEC: int = 250000
 const WORDS_MAX: int = 300
 const FRAME_RING: int = 120
@@ -58,6 +60,8 @@ func _ready() -> void:
 			_label.visible = true
 		elif q == "beacon":
 			_beacon_only = true
+		if str(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('playtest') || ''", true)) == "dude":
+			load(PLAYTEST).warp.call_deferred()      # ?playtest=dude: founder preset, straight into Episode 2 at Dude's
 	_frame_ms.resize(FRAME_RING)
 	# Synchronous console marks for the probe's timeline. The StateMachine postMessage beacon is queued as a browser task,
 	# so under a main-thread stall its page timestamp is LATE (exactly when it matters); a console line is stamped when it
@@ -82,6 +86,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if k != null and k.pressed and not k.echo and k.keycode == KEY_F3:
 		_on = not _on
 		_label.visible = _on
+	elif k != null and k.pressed and not k.echo and k.keycode == KEY_F8 and _on:
+		load(PLAYTEST).warp()      # F3 then F8: founder playtest preset "dude" (works on the itch page, whose query never reaches the game)
 
 func _process(_delta: float) -> void:
 	if not is_on():

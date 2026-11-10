@@ -352,7 +352,16 @@ func _begin() -> void:
 		return Vector2(.74,.38)
 	add_child(chart)
 	var record: Dictionary = GameManager.take_episode2_resume()
-	if not record.is_empty():
+	if Ep2Playtest.take() != "":
+		_saved_offset = 0
+		_root.configure(TRACK_PLAN, true)
+		# Dude and his stable hand stream in ep2_extras.pck, and the yard only casts them if it is mounted when the town is built
+		# (normal play reaches the town long after it is). Ep2Extras gives up by itself after 5 minutes.
+		if Ep2Extras.state() == "loading": print("[PLAYTEST] waiting for the streamed extras (Dude)")
+		while Ep2Extras.state() == "loading":
+			await get_tree().create_timer(0.5).timeout
+		_root.start_playtest()      # founder preset: Dude's stables, every gun (no pending Continue overrides it)
+	elif not record.is_empty():
 		_saved_offset = clampi(SaveSafe.to_int(record.get("offset"), 0), 0, TRACK_PLAN.size()-1)
 		_root.configure(TRACK_PLAN.slice(_saved_offset), true)
 		if not _root.restore_section(record): _start_session()

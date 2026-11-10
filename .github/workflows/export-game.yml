@@ -567,6 +567,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_auction_road_test.tscn > lake-auction-road-tests.log 2>&1
           if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-auction-road-tests.log; then exit 1; fi
           grep -q 'EP2_LAKE_AUCTION_ROAD: 48 checks, 0 FAIL' lake-auction-road-tests.log
+          # Founder playtest preset "dude" (2026-11-09): Dude's stables, every gun, 2000 rounds, 64 BTC; Save/Continue; no change without it.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_playtest_dude_test.tscn > playtest-dude-tests.log 2>&1
+          if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' playtest-dude-tests.log; then exit 1; fi
+          grep -q 'EP2_PLAYTEST_DUDE: 22 checks, 0 failed' playtest-dude-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
           grep -q 'EP2_WORLD_ROUTES: 29 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi
