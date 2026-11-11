@@ -266,6 +266,9 @@ static func shop_floor_y(piece: String, world: Vector3) -> float:
 
 
 ## The buildings whose kit front carries a porch (build_town_kit.py building(): boards w + 0.4 wide and PORCH_DEPTH deep, two steps 1.8 m wide).
+## The trough the road farmer's donkey drinks at: behind the left row, below the Armory yard - clear of the Armory door, the lane Inferno
+## and the quad use, the grazing horse, the skiff and the Gatling post. Long side across the cart's line (the donkey comes up to it head on).
+const DONKEY_TROUGH := Vector3(-25.5, 0.0, 1456.4)
 const REST_BENCHES: Array = [Vector2(-5.2, 1401.0), Vector2(5.2, 1444.2)]
 const PORCH_PIECES: Array = ["Bldg_Certificates", "Bldg_Saloon", "Bldg_A", "Bldg_B", "Bldg_C", "Bldg_D", "Bldg_E", "Bldg_F"]
 const PORCH_STEP_DEPTH := 0.8
@@ -409,6 +412,8 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		["Bench", Vector3(REST_BENCHES[0].x, 0.0, REST_BENCHES[0].y), PI * 0.5], ["Bench", Vector3(REST_BENCHES[1].x, 0.0, REST_BENCHES[1].y), -PI * 0.5],
 		# the armory lane, off the left row past the STATS block: a lamp, and river gear staged at the lean-to
 		["LampPost", Vector3(-10.0, 0.0, 1450.0), 0.0],
+		# the water trough in the yard below Rich & Utah's, where the farmer's donkey ends its trip into town (Ep2FarmerTrip.PARK)
+		["Trough", DONKEY_TROUGH, 0.0],
 		# the jailhouse yard (south edge of town, west of the road): a lamp, a hitching rail and a bench by the door
 		["LampPost", Vector3(-23.2, 0.0, 1396.4), 0.0], ["HitchRail", Vector3(-22.4, 0.0, 1403.6), PI * 0.5], ["Bench", Vector3(-24.0, 0.0, 1394.4), PI * 0.5],
 		["Arm_PowderKeg", Vector3(-17.0, 0.0, 1465.2), 0.0], ["Arm_PowderKeg", Vector3(-16.1, 0.0, 1465.7), 0.0],

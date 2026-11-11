@@ -1353,7 +1353,21 @@ func _exit_open() -> bool:
 ## The EXIT show's last step: "made it", spoken while he walks on to the door (the show ends here, so the companion lead in
 ## `_follow_player_in_fps` takes him through the open door at once).
 func _exit_made_it() -> void:
-	_hold = 0.0              # a nudge still running is replaced by the praise; nothing holds his lead to the door
+	_hold = 0.0              # nothing holds his lead to the door
+	var left: float = _line_end - _elapsed
+	if left > 0.05:
+		# He is still finishing a warning or a nudge Lil Blunt did not wait for (he hopped over mid-sentence): the door is open NOW,
+		# the line plays to its end and the praise follows it. Cutting him off mid-word was the old behaviour for a nudge; holding
+		# Lil Blunt at the open door until he had finished was the forced wait (mobile sprint 2026-11-10).
+		_exit_line_end = _line_end
+		_later(left + 0.15, _say_made_it)
+		return
+	_say_made_it()
+
+
+func _say_made_it() -> void:
+	if _resolved or _beat != Beat.EXIT:
+		return               # he was already through the door: the lift's own line is next (it waits out `voice_left`)
 	_speak("vo_bull_lava_made_it")
 	_exit_line_end = _line_end
 

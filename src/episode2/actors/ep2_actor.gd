@@ -258,6 +258,13 @@ func stop() -> void:
 	_walking = false
 
 
+## Pick the pace up on the walk he is already on (never slows him): a companion who has fallen behind runs to catch up instead of
+## strolling while the player stands waiting for him. A later walk_to() sets its own speed again.
+func hurry(speed: float) -> void:
+	if _walking:
+		_speed = maxf(_speed, speed)
+
+
 ## A scripted HOP: leap from where he stands to `p` over `duration` seconds along a parabola `height` metres high
 ## (the lava river, a ledge). Emits `arrived` on landing. Skill: ep2-lava-hop.
 func hop_to(p: Vector3, duration: float = 0.9, height: float = 1.5) -> void:

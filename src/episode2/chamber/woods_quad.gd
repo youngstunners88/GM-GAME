@@ -1620,6 +1620,14 @@ func _tick_sneak(delta: float) -> void:
 				_bull.stop()
 			_bull.face_point(_player_pos)
 			_bull_chat(BULL_WAIT, 12.0, 20.0)
+		else:
+			# Lil Blunt has caught up. `at_end` starts 1.6 m short of the last trail point and the wait above STOPS him there, so the
+			# arrival check below (within 0.35 m of the point) could never pass again: he stood and stared for good and the quad
+			# could not be mounted (a delayed arrival, mobile sprint 2026-11-10). The reveal walks him to the quad from wherever he is.
+			_bull_wait_t = 0.0
+			_bull_waiting = false
+			_advance_to(Beat.REVEAL)
+			return
 	elif gap > 3.5 and dist_player > 4.0:
 		# he is out in front: Inferno lets him scout, says so once in a while, and keeps his own pace
 		_bull_wait_t = 0.0

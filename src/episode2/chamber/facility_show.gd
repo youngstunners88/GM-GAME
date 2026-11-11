@@ -48,6 +48,10 @@ func _next() -> void:
 func _begin(s: Dictionary) -> void:
 	match str(s["do"]):
 		"say":
+			if _skipped(s):
+				# the moment this line was for has already passed (he hopped the lava before the warning): it is never started
+				s["len"] = 0.0
+				return
 			var id: String = str(s["id"])
 			s["len"] = f._vo_len(id) + float(s.get("gap", 0.18))
 			s["_ev"] = 0
@@ -82,6 +86,10 @@ func _begin(s: Dictionary) -> void:
 
 
 func _tick(s: Dictionary, delta: float) -> bool:
+	# `skip_if`: a Callable that turns true when the step has nothing left to wait for. A line already being said plays on to its
+	# end (the voice is never cut); only the show stops waiting on it.
+	if _skipped(s):
+		return true
 	match str(s["do"]):
 		"say":
 			# `events`: [[seconds_into_the_line, Callable], ...] fire in order while the line plays (shell clicks,
@@ -125,6 +133,10 @@ func _tick(s: Dictionary, delta: float) -> bool:
 			return false
 		_:
 			return true
+
+
+func _skipped(s: Dictionary) -> bool:
+	return s.has("skip_if") and bool((s["skip_if"] as Callable).call())
 
 
 # --- items ----------------------------------------------------------------------------------------------
@@ -250,14 +262,17 @@ static func _steps_for_raw(f: Node, beat: int) -> Array:
 			# then tells Lil Blunt to hop over; he nags until it is done, then leads on to the lift.
 			var near := Vector3(-2.4, 0.0, f.CHANNEL_Z - f.LAVA_HALF - 1.2)   # off to the side, so his body never blocks the landing
 			var far := Vector3(-2.4, 0.0, f.CHANNEL_Z + f.LAVA_HALF + 1.2)
+			# Lil Blunt already over (he did not wait for the talk): Inferno drops the warning he no longer needs, hops over and leads
+			# on. Nobody stands at the open door waiting for a lecture about a river he has crossed.
+			var over: Callable = f._lava_crossed
 			return [
 				{"do": "call", "fn": f._lava_begin},
 				{"do": "walk", "to": near, "speed": 3.2},
-				{"do": "face", "at": far},
-				_say("vo_bull_lava1", 0.25),
+				{"do": "face", "at": far, "skip_if": over},
+				{"do": "say", "id": "vo_bull_lava1", "gap": 0.25, "skip_if": over},
 				{"do": "hop", "to": far, "t": 0.95, "h": 1.7},
-				{"do": "face", "at": near},
-				_say("vo_bull_lava2", 0.2),
+				{"do": "face", "at": near, "skip_if": over},
+				{"do": "say", "id": "vo_bull_lava2", "gap": 0.2, "skip_if": over},
 				{"do": "until", "pred": f._lava_crossed, "nudge": "vo_bull_lava_nudge", "every": 11.0},
 				# He praises it ON THE MOVE, leading on through the open door (founder 2026-10-25: "no arbitrary pause between the
 				# facility and the doorway"): the show ends here, so the door is open while the line still plays.

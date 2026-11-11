@@ -55,6 +55,14 @@ func _ready() -> void:
 	restored.clear()
 	var stages: Dictionary={}
 	var clear_of_walls: bool=true
+	var clear_of_props: bool=true
+	var miner_gap: float=INF
+	var own_circles: Array=trip._collision.map(func(row):return row[0])
+	var street_props: Array=town._town_col.props.filter(func(p):return not own_circles.has(p))
+	var miner_spots: Array=[]
+	for row in Ep2BackLotMiners.MINERS:
+		miner_spots.append(row["at"])
+		if row.has("mound"):miner_spots.append(Vector2(row["mound"].x,row["mound"].z))
 	var carrying_save: Dictionary={}
 	var carrying_town: Dictionary={}
 	var carrying_position: Vector3
@@ -71,11 +79,13 @@ func _ready() -> void:
 			for j in 140:
 				town.get_people().step(.05,Vector3(50,0,1300))
 				trip.tick(session,.05)
+				stages[trip.phase]=true
 			duel_safe=trip.phase=="collect" and trip.parcel.get_parent()==original and not trip.delivered
 			town.get_people().set_context("normal")
 			for j in 480:
 				town.get_people().step(.05,Vector3(50,0,1300))
 				trip.tick(session,.05)
+				stages[trip.phase]=true      # the worker may already be standing by the trough: the hand-over can happen in here
 			resumed=trip.worker!=null and trip.worker.state not in ["flee","shelter"] and (trip.worker.folk.is_walking() or trip.phase!="collect")
 		if carrying_save.is_empty() and trip.phase=="deliver" and trip._inside_store(trip.worker.folk.position):
 			carrying_save=trip.snapshot()
@@ -88,12 +98,31 @@ func _ready() -> void:
 				if Ep2GoldTown.collide(centre,row[0][1],town._town_col.walls,[]).distance_to(centre)>.001:
 					if clear_of_walls: print("FARMER_WALL_CONTACT ",original.position," circle=",centre)
 					clear_of_walls=false
+				if Ep2GoldTown.collide(centre,row[0][1],[],street_props).distance_to(centre)>.001:
+					if clear_of_props: print("FARMER_PROP_CONTACT ",original.position," circle=",centre)
+					clear_of_props=false
+				for spot in miner_spots:miner_gap=minf(miner_gap,centre.distance_to(spot)-float(row[0][1]))
 		if i%60==0:await get_tree().process_frame
 		if trip.phase=="complete":break
 	print("FARMER_PHASES ",stages," phase=",trip.phase," position=",original.position)
 	check("he actually reaches the service yard",original.position.distance_to(Ep2FarmerTrip.PARK)<.01)
 	check("a real town duel interrupts the errand without moving goods",duel_tested and duel_safe)
 	check("his full approach remains outside the real building walls",clear_of_walls)
+	# mobile sprint 2026-11-10: the cart used to park in the back-lot miners' dirt (the donkey in the digger's swing) and drove over the jail's rail
+	check("...and clear of every rail, lamp, horse, keg and miner in the survey",clear_of_props)
+	for row in trip._collision:
+		for spot in miner_spots:miner_gap=minf(miner_gap,(row[0][0] as Vector2).distance_to(spot)-float(row[0][1]))
+	print("FARMER_MINER_GAP ",miner_gap)
+	check("the cart never comes within 2.5 m of a back-lot miner or his heap, on the way in or parked",miner_gap>=2.5)
+	var trough: Vector3=Ep2GoldTown.DONKEY_TROUGH
+	var nose: Vector3=original.position+original.basis*Vector3(0,0,2.95)
+	check("the donkey stands nose-to at a real water trough",nose.distance_to(trough)<1.0 and street_props.any(func(p):return (p[0] as Vector2).distance_to(Vector2(trough.x,trough.z))<.01))
+	var shop_door: Vector3=Ep2GoldTown.door_world("Bldg_Armory",0.0)
+	check("...the one in the yard below Rich & Utah's, off their doorstep",trough.distance_to(shop_door)<16.0 and original.position.distance_to(shop_door)>8.0)
+	var lane_gap: float=INF
+	for row in trip._collision:
+		lane_gap=minf(lane_gap,Geometry2D.get_closest_point_to_segment(row[0][0],Vector2(-12,1452),Vector2(-20,1462)).distance_to(row[0][0])-float(row[0][1]))
+	check("...and out of the lane Inferno and his quad use to reach the shop",lane_gap>=2.0)
 	check("a real existing worker collects the delivery",stages.has("collect") and stages.has("handover"))
 	check("the worker walks into the actual store and back",stages.has("deliver") and stages.has("inspect") and stages.has("return") and trip.phase=="complete")
 	check("the same parcel ends on the store counter",trip.delivered and trip.parcel==parcel and parcel.get_parent()==town._visuals)

@@ -1,7 +1,12 @@
 class_name Ep2FarmerTrip
 extends RefCounted
 ## One simulation owner carries the actual road cart into town and a shop delivery.
-const PARK := Vector3(-22,0,1421.5)
+## Where the cart stops for good: the donkey nose-to at the water trough in the yard below Rich & Utah's (Ep2GoldTown.DONKEY_TROUGH).
+## It used to stop behind the general store at (-22,1421.5) - the dirt lot the back-lot miners now dig, the donkey standing in the
+## digger's swing. The road there now swings wide of both miners' heaps and goes on up the back of the row to the water.
+const PARK := Vector3(-25.5,0,1452.6)
+## The last bends of every way in: west of the miners' lot (their heaps reach x -23.6, z 1423-1430), then up to the trough.
+const BACK_LOT_BENDS := [Vector2(-25,1417),Vector2(-27.5,1422),Vector2(-27.5,1433),Vector2(-26,1444)]
 const PHASES := ["inbound","waiting","collect","handover","deliver","inspect","return","complete","interrupted"]
 var cart: Ep2RoadCart
 var town: GoldTownChamber
@@ -55,12 +60,21 @@ func _make_path(woods: Node) -> void:
 		var tangent: Vector3=(road[i+1]-road[i-1]).normalized()
 		points.append(road[i]+Vector3(-tangent.z,0,tangent.x)*WoodsQuadChamber.CART_LATERAL)
 	var last: Vector3=points[-1]
-	var bends: Array=[Vector2(last.x,last.z)]
+	var bends: Array=[]
+	# x -20 past the jail yard: clear of its hitching rail (-22.4,1403.6), which the old line through (-22,1402) drove over
 	if last.z<1374:
-		bends.append_array([Vector2(-3.1,1379),Vector2(-4.5,1385),Vector2(-13,1388),Vector2(-20,1392),Vector2(-22,1402)])
+		bends.append_array([Vector2(-3.1,1379),Vector2(-4.5,1385),Vector2(-13,1388),Vector2(-20,1392),Vector2(-20,1404),Vector2(-20.5,1411)])
 	else:
-		bends.append_array([Vector2(-5,1404),Vector2(-13,1404),Vector2(-20,1405),Vector2(-22,1412)])
+		bends.append_array([Vector2(-5,1404),Vector2(-13,1404),Vector2(-20,1405.5),Vector2(-21,1411)])
+	bends.append_array(BACK_LOT_BENDS)
 	bends.append(Vector2(PARK.x,PARK.z))
+	if last.x< -8 and last.z>1376:
+		# already off the road and in the back lots (a save from before the trough existed): on from the bend nearest him, never back
+		var near: int=0
+		for i in bends.size():
+			if (bends[i] as Vector2).distance_to(Vector2(last.x,last.z))<(bends[near] as Vector2).distance_to(Vector2(last.x,last.z)):near=i
+		bends=bends.slice(mini(near+1,bends.size()-1))
+	bends.push_front(Vector2(last.x,last.z))
 	var curve: PackedVector3Array=Ep2LakeRoad.smooth(bends,1.5)
 	for i in range(1,curve.size()):points.append(curve[i])
 	arc=_lengths(points)
@@ -267,6 +281,14 @@ func _restore(data: Dictionary) -> void:
 	travelled=_number(data.get("s",0),0,0,arc[-1])
 	phase=str(data.get("phase","inbound"))
 	if phase not in PHASES:phase="inbound"
+	if points[-1].distance_to(PARK)>.5:
+		# A save from before the cart went on to the trough: its road ends in the miners' lot. Still coming in, he carries on from
+		# where he is; already parked there, he is found at the water (a load is a cut - nobody watches him cross the yard).
+		var here: Array=_sample(points,arc,travelled)
+		cart.position=here[0]
+		cart.rotation.y=here[1]
+		_make_path(null)
+		travelled=0.0 if phase=="inbound" else arc[-1]
 	timer=_number(data.get("timer",0),0,0,10)
 	delivered=bool(data.get("delivered",false))
 	cart.distance_m=_number(data.get("distance",0),0,0,10000000)

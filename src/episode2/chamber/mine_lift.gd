@@ -43,6 +43,9 @@ const CAGE_STAND_BULL := Vector3(-0.95, 0.0, 0.95)    # inside the cage, in the 
 const CAGE_DOOR_HALF := 1.05        # the doorways' half width (cut out of the Tripo cage by tools/ep2_blender/cage_open_doorways.py)
 const BODY_R := 0.3                  # Lil Blunt's body radius against the cage bars
 const EXIT_Z := 8.0
+## Inferno's run when Lil Blunt is ahead of him on the walkway or already standing on the cage (the hideout's own catch-up pace). He has to
+## pull the lever, so a player who got there first was left standing on the lift for the length of his stroll ("a pause at the elevator").
+const BULL_HUSTLE := 4.6
 ## Lift mouth z=6 matches woods mouth z=4.
 const SURFACE_OFFSET := Vector3(0.0, TOP_Y, 2.0)
 var _surface_environment: Environment = null
@@ -809,7 +812,8 @@ func _on_beat_entered(b: int) -> void:
 				{"do": "walk", "to": Vector3(0.0, 0.0, -3.4), "speed": 3.0},
 				{"do": "walk", "to": Vector3(0.0, 0.0, -1.0), "speed": 2.4},
 				{"do": "walk", "to": CAGE_STAND_BULL, "speed": 2.0},
-				{"do": "face", "at": Vector3(0.0, 0.0, -4.0)}])
+				# the turn back toward the walkway is for a Lil Blunt who is still coming; one already aboard is not kept waiting for it
+				{"do": "face", "at": Vector3(0.0, 0.0, -4.0), "skip_if": func() -> bool: return _on_cage}])
 		Beat.LEVER:
 			# both aboard: the walkway gate drops shut behind them, Inferno turns to the lever on the cage wall and pulls it. He never
 			# leaves the cage. Not control-locking (one motion): Lil Blunt keeps the rifle and can look around.
@@ -822,8 +826,9 @@ func _on_beat_entered(b: int) -> void:
 				{"do": "reach", "at": LEVER_POS + Vector3(0.12, 0.2, 0.0), "ramp": 0.45, "hold": 0.3, "lean": 0.0},
 				{"do": "call", "fn": _pull_lever},
 				{"do": "wait", "t": 0.6},
-				{"do": "release", "ramp": 0.45, "t": 0.4},
-				{"do": "face", "at": Vector3(0.0, 0.0, 1.0)}])
+				# the cage starts as his hand comes off the lever: the RISE show turns him to Lil Blunt, so no separate turn is waited
+				# out here with the lift standing still
+				{"do": "release", "ramp": 0.45, "t": 0.4}])
 		Beat.RISE:
 			release_look()
 			_rise_t = 0.0
@@ -914,6 +919,7 @@ func _tick(delta: float) -> void:
 	_on_cage = _player_on_cage()
 	match _beat:
 		Beat.ARRIVE:
+			_bull_keeps_up()
 			if _on_cage and not _show_active:
 				_advance_to(Beat.BOARD)
 		Beat.BOARD:
@@ -949,6 +955,15 @@ func _tick(delta: float) -> void:
 		_set_ground(TOP_Y)
 	if _bull_on_cage and _bull != null:
 		_bull.position.y = _cage_y
+
+
+## Lil Blunt got to the cage first, or is past him on the walkway: Inferno runs the rest of the way to his corner (re-applied every
+## tick, because each walk step of the arrival show sets its own strolling speed).
+func _bull_keeps_up() -> void:
+	if _bull == null or not _show_active or not _bull.is_walking():
+		return
+	if _on_cage or _player_pos.z > _bull.position.z + 0.5:
+		_bull.hurry(BULL_HUSTLE)
 
 
 ## THE CAGE IS SOLID (founder 2026-10-13: "why are they walking through the pole bars"): from outside, Lil Blunt can only get in

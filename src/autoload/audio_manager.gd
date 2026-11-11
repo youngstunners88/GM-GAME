@@ -168,8 +168,9 @@ func _update_music_clock() -> void:
 func get_music_position() -> float:
     _update_music_clock()
     return _clock_seconds
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
     _update_music_clock()
+    _smooth_duck(delta)
     if _region_tracks.is_empty() or _override_active or not is_instance_valid(current_music_player): return
     var deck: AudioStreamPlayer = current_music_player
     if not deck.playing or deck.stream_paused or deck.stream == null: return
@@ -215,14 +216,15 @@ func crossfade_music(path: String, seconds: float = 4.0) -> void:
     _retiring = decks.duplicate()
     var refs: Array = []
     var amplitudes: Array[float] = []
-    var outgoing_power: float = 0.0
+    # Each outgoing deck's level with the speech duck taken OUT (its share of an un-ducked mix), so the blend can put the
+    # duck back in as one smooth gain on every deck. A deck that starts the blend ducked comes back up with the line's end
+    # instead of staying 12 dB down to the last second.
+    var duck_at_start: float = maxf(db_to_linear(_duck_smooth_db), 0.00001)
     for deck in decks:
         if deck.finished.is_connected(_on_music_track_finished): deck.finished.disconnect(_on_music_track_finished)
         refs.append(weakref(deck))
         var amplitude: float = db_to_linear(deck.volume_db)
-        amplitudes.append(amplitude)
-        outgoing_power += amplitude * amplitude
-    var outgoing_level: float = sqrt(outgoing_power)
+        amplitudes.append(minf(amplitude / duck_at_start, 4.0))
     _playlist = [path]
     _last_track = path
     var fresh := AudioStreamPlayer.new()
@@ -233,21 +235,29 @@ func crossfade_music(path: String, seconds: float = 4.0) -> void:
     fresh.play()
     fresh.finished.connect(_on_music_track_finished)
     current_music_player = fresh
+    _crossfade_deck_id = fresh.get_instance_id()
     _reset_music_clock()
     var fresh_ref: WeakRef = weakref(fresh)
+    # The speech duck is ONE smoothed gain over both sides of the blend (`_duck_smooth_db`, ramped in _process). It used to
+    # be read as a step (`_music_rest_db()`: 0 dB or -12/-16 dB): every line that started or ended inside the 8 s blend
+    # jumped both songs by 12-16 dB in a single frame - the ride and lake songs "do not blend", they lurch (mobile sprint
+    # 2026-11-10, measured: 0.22 -> 0.86 amplitude in one frame). Equal power still holds: (g sin)^2 + (g cos)^2 = g^2.
     var step := func(t: float) -> void:
         var incoming: AudioStreamPlayer = fresh_ref.get_ref()
         if incoming == null or current_music_player != incoming: return
-        var rest: float = db_to_linear(_music_rest_db())
-        incoming.volume_db = linear_to_db(maxf(rest * sin(t * PI * 0.5), 0.00001))
-        var duck_scale: float = minf(1.0,rest/maxf(outgoing_level,0.00001))
+        var duck: float = db_to_linear(_duck_smooth_db)
+        incoming.volume_db = linear_to_db(maxf(duck * sin(t * PI * 0.5), 0.00001))
         for i in refs.size():
             var outgoing: AudioStreamPlayer = refs[i].get_ref()
             if outgoing != null:
-                outgoing.volume_db = linear_to_db(maxf(amplitudes[i] * duck_scale * cos(t * PI * 0.5),0.00001))
+                outgoing.volume_db = linear_to_db(maxf(minf(amplitudes[i] * duck, 1.0) * cos(t * PI * 0.5),0.00001))
     _crossfade_tween = fresh.create_tween()
     _crossfade_tween.tween_method(step, 0.0, 1.0, maxf(seconds, 0.5))
     _crossfade_tween.finished.connect(func() -> void:
+        # the blend owned the level until now: settle on the duck's real target (a line may have ended mid-ramp)
+        if fresh_ref.get_ref() != null and current_music_player == fresh_ref.get_ref():
+            _crossfade_deck_id = 0
+            _tween_music_to(_music_rest_db(), 0.3)
         for reference in refs:
             var outgoing: AudioStreamPlayer = reference.get_ref()
             if outgoing != null and _retiring.has(outgoing):
@@ -667,6 +677,24 @@ func _music_rest_db() -> float:
     return _duck_target_db if _voice_ducking else 0.0
 
 
+## The speech duck as a RAMP (dB), for anything that follows it frame by frame (a crossfade). Down in ~0.2 s, back up in
+## ~0.5 s: the same times the plain duck / restore tweens use on a single deck.
+const DUCK_DOWN_DB_PER_S := 80.0
+const DUCK_UP_DB_PER_S := 32.0
+var _duck_smooth_db: float = 0.0
+var _crossfade_deck_id: int = 0
+
+func _smooth_duck(delta: float) -> void:
+    var target: float = _music_rest_db()
+    _duck_smooth_db = move_toward(_duck_smooth_db, target, (DUCK_DOWN_DB_PER_S if target < _duck_smooth_db else DUCK_UP_DB_PER_S) * delta)
+
+
+## Is a crossfade still bringing the CURRENT deck in?
+func _crossfading() -> bool:
+    return _crossfade_tween != null and _crossfade_tween.is_valid() and _crossfade_tween.is_running() \
+        and is_instance_valid(current_music_player) and current_music_player.get_instance_id() == _crossfade_deck_id
+
+
 func _kill_music_level_tween() -> void:
     if _music_level_tween != null and _music_level_tween.is_valid():
         _music_level_tween.kill()
@@ -677,6 +705,8 @@ func _tween_music_to(db: float, seconds: float) -> void:
     _kill_music_level_tween()
     if current_music_player == null or not is_instance_valid(current_music_player):
         return
+    if _crossfading():
+        return      # the blend sets this deck's level every frame and follows the duck itself: a second writer only fights it
     _music_level_tween = current_music_player.create_tween()
     _music_level_tween.tween_property(current_music_player, "volume_db", db, maxf(seconds, 0.01))
 

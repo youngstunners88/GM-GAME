@@ -1808,6 +1808,8 @@ func _quad_comes_back() -> void:
 		_visuals.add_child(_quad)
 		_quad.build()
 	_quad.drive(QUAD_RETURN + [Ep2GoldTown.local_to_world("Bldg_Armory", QUAD_PARK_LOCAL)])
+	_quad_points_behind = QUAD_RETURN.size()
+	_quad_lb_wait = 0.0
 	_bull.visible = true
 	if _bull.anim != null and not _bull.anim.has_animation(WoodsQuadChamber.BULL_SIT_CLIP):
 		_bull.add_all_clips(SmeltingFacilityChamber.BULL_SIT_CLIPS)
@@ -1852,18 +1854,30 @@ func _tick_bull_back(delta: float) -> void:
 					meet = _bull_body_spot()
 				else:
 					meet = _stand_off(_bull.position, _player_pos, 2.3)
+					if _body_on_way(_bull_way_to(meet)):
+						# Lil Blunt is further down the street than the man he shot (waiting by the saloon, say): Inferno comes to
+						# the body first and stops THERE. He used to walk past it to Lil Blunt, say "first whiskey's on me", walk
+						# BACK up the street to the body, then down again to the bar (founder: "walks to player, then backwards,
+						# then rewalks to bar"). The talk happens once, where it belongs, and the bar is straight on from it.
+						meet = _body_stand()
 				_bull_route(_bull_way_to(meet), 1.5)
 		"to_lb":
 			if not _bull.is_walking() and _bull_path.is_empty() and not _show_active:
-				if _player_pos.distance_to(_bull.position) > 6.5:
+				var by_body: bool = _opp != null and _bull.position.distance_to(_opp.position) < 4.5
+				# stopped by the fallen stranger, he waits for Lil Blunt to come to the body; anywhere else, to come to him
+				var met: bool = _lb_at_body() if by_body else _player_pos.distance_to(_bull.position) <= 6.5
+				if not met:
 					_bull.face_point(_player_pos)
 					if _hud != null:
-						_hud.objective = "Inferno's back - he's outside Rich's." if _bull.position.distance_to(_quad.position) < 8.0 else "Inferno's back."
+						if by_body:
+							_hud.objective = "Inferno's back - he's in the street with Mike Dean."
+						else:
+							_hud.objective = "Inferno's back - he's outside Rich's." if _bull.position.distance_to(_quad.position) < 8.0 else "Inferno's back."
 					return
 				_bull_task = "greeted"
 				_bull.face_point(_player_pos)
 				look_toward(_bull.head_world(), 2.4)
-				if _lb_at_body() and _bull.position.distance_to(_opp.position) < 4.5:
+				if by_body:
 					# met at the body (Lil Blunt was already standing with Mike Dean): the same lines, in the order a person would say them
 					# where he stands - hello, what happened here, THEN the whiskey - and no walk back to the quad and down again
 					_body_at_meet = true
@@ -1882,6 +1896,34 @@ func _tick_bull_back(delta: float) -> void:
 ## Lil Blunt is standing with the fallen stranger (and Mike Dean praying by him): where Inferno's "what happened" belongs.
 func _lb_at_body() -> bool:
 	return _opp != null and _player_pos.distance_to(_opp.position) < BODY_NEAR and not _in_room("Bldg_Armory", -0.5)
+
+
+## Does Inferno's walk along `way` (from where he stands) pass the fallen stranger well before it ends? Then the body is on his way to
+## Lil Blunt, and a person stops there first instead of walking past it and coming back.
+const BODY_PASS := 5.0             # m: a route this close to the body passes it
+const BODY_PASS_BEFORE_END := 4.0  # m of route still to go after the body for it to count as "on the way", not "where he is going"
+func _body_on_way(way: Array) -> bool:
+	if _opp == null or way.is_empty():
+		return false
+	var body := Vector2(_opp.position.x, _opp.position.z)
+	var pts: Array = [Vector2(_bull.position.x, _bull.position.z)]
+	for p in way:
+		pts.append(Vector2((p as Vector3).x, (p as Vector3).z))
+	var total: float = 0.0
+	for i in pts.size() - 1:
+		total += (pts[i] as Vector2).distance_to(pts[i + 1])
+	var best_d: float = INF
+	var best_s: float = 0.0
+	var s: float = 0.0
+	for i in pts.size() - 1:
+		var a: Vector2 = pts[i]
+		var b: Vector2 = pts[i + 1]
+		var near: Vector2 = Geometry2D.get_closest_point_to_segment(body, a, b)
+		if near.distance_to(body) < best_d:
+			best_d = near.distance_to(body)
+			best_s = s + a.distance_to(near)
+		s += a.distance_to(b)
+	return best_d < BODY_PASS and total - best_s > BODY_PASS_BEFORE_END
 
 
 ## Where Inferno stops by the fallen stranger when Lil Blunt is already standing there: by the body, a talking distance from Lil Blunt
@@ -1989,6 +2031,10 @@ const BULL_WAIT_S := 1.6           # he waits this long for someone to move, the
 const BULL_STEP_ROUND := 1.3       # m beside the person he steps round
 const QUAD_BLOCK_REACH := 5.0      # m ahead of the quad's centre that must be clear before it rolls
 const QUAD_BLOCK_HALF := 1.6
+const QUAD_LB_WAIT := 1.2          # s the quad idles in front of Lil Blunt before Inferno parks it right there
+
+var _quad_lb_wait: float = 0.0
+var _quad_points_behind: int = QUAD_RETURN.size()    # QUAD_RETURN points behind the parked quad (fewer when it parked short)
 
 var _bull_goal: Vector3 = Vector3.ZERO
 var _bull_wait_t: float = 0.0
@@ -2063,8 +2109,21 @@ func _bull_mind_the_way() -> void:
 func _quad_step_minding(delta: float) -> void:
 	var fwd := Vector3(sin(_quad.yaw), 0.0, cos(_quad.yaw))
 	var from: Vector3 = _quad.position - fwd * 0.5
-	if _first_ahead(_town_bodies(_bull), from, fwd, QUAD_BLOCK_REACH, QUAD_BLOCK_HALF) == Vector3.INF:
+	var blocker: Vector3 = _first_ahead(_town_bodies(_bull), from, fwd, QUAD_BLOCK_REACH, QUAD_BLOCK_HALF)
+	if blocker == Vector3.INF:
+		_quad_lb_wait = 0.0
 		_quad.step(delta)
+		return
+	# Riding IN, stopped for Lil Blunt himself: he has found who he came for. He used to sit there, engine running, for as long as
+	# Lil Blunt stood in the lane - which is exactly where a player waits for him, and nothing told him to move (a stare that never
+	# ended). Now he cuts the engine and gets off where he is.
+	if _bull_task == "riding" and blocker.is_equal_approx(_player_pos):
+		_quad_lb_wait += delta
+		if _quad_lb_wait >= QUAD_LB_WAIT:
+			_quad_points_behind = _quad.points_behind()
+			_quad.park_here()
+	else:
+		_quad_lb_wait = 0.0
 
 
 ## The quad parked outside Rich's, built if this run never saw it ride in (a warp, a skipped Gatling beat): the ride-out needs it.
@@ -2078,6 +2137,7 @@ func _ensure_quad_parked() -> void:
 		var park: Vector3 = Ep2GoldTown.local_to_world("Bldg_Armory", QUAD_PARK_LOCAL)
 		var last: Vector3 = QUAD_RETURN[QUAD_RETURN.size() - 1]
 		_quad.drive([park])
+		_quad_points_behind = QUAD_RETURN.size()
 		_quad.position = Vector3(park.x, 0.0, park.z)
 		_quad.yaw = atan2(park.x - last.x, park.z - last.z)
 		_quad.rotation = Vector3(0.0, _quad.yaw, 0.0)
@@ -2093,7 +2153,7 @@ func _ride_off() -> void:
 			if (props[i][0] as Vector2).distance_to(Vector2(_quad.position.x, _quad.position.z)) < 0.05:
 				props.remove_at(i)
 	var back: Array = [_quad.position]
-	for i in range(QUAD_RETURN.size() - 1, -1, -1):
+	for i in range(mini(_quad_points_behind, QUAD_RETURN.size()) - 1, -1, -1):      # only the road behind it: never on to Rich's first
 		back.append(QUAD_RETURN[i])
 	_quad.drive(back)
 	if _bull.anim != null and _bull.anim.has_animation(WoodsQuadChamber.BULL_SIT_CLIP):

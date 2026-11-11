@@ -20,6 +20,7 @@ var is_parked: bool = false
 var speed: float = 0.0
 var _s: float = 0.0
 var _len: float = 0.0
+var _seg: int = 0                      # index of the path point it last passed (it is between path[_seg] and path[_seg + 1])
 var _wheels: Array = []
 var _modelled: bool = false
 var _engine: AudioStreamPlayer3D = null
@@ -66,6 +67,7 @@ func drive(points: Array) -> void:
 	for i in path.size() - 1:
 		_len += (path[i] as Vector3).distance_to(path[i + 1])
 	_s = 0.0
+	_seg = 0
 	speed = CRUISE * 0.8
 	is_parked = path.size() < 2
 	visible = true
@@ -89,6 +91,7 @@ func step(delta: float) -> void:
 	while i < path.size() - 2 and acc + (path[i] as Vector3).distance_to(path[i + 1]) < _s:
 		acc += (path[i] as Vector3).distance_to(path[i + 1])
 		i += 1
+	_seg = i
 	var a: Vector3 = path[i]
 	var b: Vector3 = path[i + 1]
 	var t: float = clampf((_s - acc) / maxf(a.distance_to(b), 0.01), 0.0, 1.0)
@@ -105,6 +108,23 @@ func step(delta: float) -> void:
 		if _engine != null:
 			_engine.stop()
 		parked.emit()
+
+
+## Stop for good where it stands, short of the end of its path (the one he rode in to meet is standing in the road in front of him):
+## the engine cuts and `parked` fires exactly as it does at the end of the path.
+func park_here() -> void:
+	if is_parked:
+		return
+	is_parked = true
+	speed = 0.0
+	if _engine != null:
+		_engine.stop()
+	parked.emit()
+
+
+## How many of the path's points are behind it (passed), for a ride back out the way it came from wherever it stopped.
+func points_behind() -> int:
+	return mini(_seg + 1, path.size())
 
 
 ## Inferno's actor origin on the saddle for the quad's current pose (the woods ride's seat: WoodsQuadChamber._bull_seat_position).
