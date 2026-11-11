@@ -1110,6 +1110,7 @@ func _on_setup() -> void:
 		_blocked_reason = "shipment"
 	elif not armory.sniper_owned:
 		_blocked_reason = "sniper"
+	_build_cover_touch()
 	_advance_to(Beat.APPROACH)
 	if Ep2Extras.has("res://src/episode2/extras/audio/lake/water.ogg"):
 		_water_loop = _loop_player("res://src/episode2/extras/audio/lake/water.ogg", -14.0)
@@ -2187,6 +2188,41 @@ const COVER_EYE := 0.82                      # eye below the sandbag berm's cres
 const COVER_EYE_RATE := 4.5                  # m/s the eye drops/rises
 var _in_cover: bool = false
 var _cover_rising: bool = false
+var _cover_button: VirtualButton
+
+
+# One ridge-only thumb verb, using the standard virtual control and the SAME C/Ctrl cover toggle.
+# Above the look pad (60), hidden immediately on pause/transition and when away from sandbags.
+func _build_cover_touch() -> void:
+	if _cover_button != null: return
+	var layer := CanvasLayer.new()
+	layer.name = "RidgeCoverTouch"
+	layer.layer = 61
+	add_child(layer)
+	_cover_button = VirtualButton.new()
+	_cover_button.name = "Cover"
+	_cover_button.anchor_corner = VirtualControl.ScreenAnchor.TOP_CENTER
+	_cover_button.offset_dp = Vector2(0, 100)
+	_cover_button.radius_dp = 28
+	_cover_button.hit_pad_dp = 8
+	_cover_button.glyph = VirtualButton.Glyph.COVER
+	_cover_button.role = &"grab"
+	_cover_button.hide()
+	layer.add_child(_cover_button)
+	_cover_button.activated.connect(toggle_cover)
+	StateMachine.state_changed.connect(_on_cover_state_changed)
+
+
+func _on_cover_state_changed(_from: String, _to: String) -> void:
+	_sync_cover_touch()
+
+
+func _sync_cover_touch() -> void:
+	if _cover_button == null: return
+	_cover_button.visible = not TouchUi.keys_shown() and StateMachine.is_playing() and has_player_control() and at_barrack()
+	if _cover_button.visible:
+		_cover_button.apply_layout(TouchUi.metrics(), 1.0)
+		_cover_button.set_cue(_in_cover)
 
 
 func in_cover() -> bool:
@@ -2223,7 +2259,7 @@ func _set_cover(on: bool) -> void:
 		return
 	_in_cover = on
 	if _hud != null:
-		_hud.toast("IN COVER · R TO RELOAD · C TO AIM OVER THE BAGS" if on else "UP OVER THE BAGS", 1.4)
+		_hud.toast(("IN COVER · R TO RELOAD · C TO AIM OVER THE BAGS" if TouchUi.keys_shown() else "IN COVER") if on else "UP OVER THE BAGS", 1.4)
 
 
 ## A click while ducked stands him up instead of firing into the sandbags.
@@ -2235,6 +2271,7 @@ func shoot() -> bool:
 
 
 func _tick_cover(delta: float) -> void:
+	_sync_cover_touch()
 	if _in_cover and not at_barrack():
 		_set_cover(false)
 	if _in_cover:

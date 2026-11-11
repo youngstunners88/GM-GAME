@@ -1,0 +1,21 @@
+[BUILD] Lil Blunt Adventure — build 2026-11-11-7567dce
+PACKED_DUDE before: allowed=true can_talk=true actors=2 hold=0 show=false quiet=false distance=2.5 intro=0
+PACKED_DUDE after raw E: conversation=true
+  [PASS] published pack sells Dude's horse through the real conversation
+  [PASS] mount starts the forward handoff
+  [PASS] mount reaches the real lake trail
+  [PASS] the horse can ride out of the ranch onto the trail
+  [PASS] the trail reaches Logan's first visit, no day-88 skip
+  [PASS] cold lake handoff keeps his shore position and held forward
+  [PASS] Logan is reachable from the trail arrival
+  [PASS] Logan's investigation starts
+  [PASS] the staging marker is reachable
+  [PASS] cargo can be checked once
+  [PASS] checked cargo reaches the real day-88 ridge with its gear
+  [PASS] the founder must launch the shipment at the overlook
+  [PASS] only day-88 success returns to the lake with the auction sign
+  [PASS] the drinking horse is reachable from the bank
+  [PASS] the returned horse can be mounted
+  [PASS] the auction sign opens the road
+  [PASS] the real auction road and house are reachable
+PUBLIC_PACKED_FORWARD: 17 checks, 0 failed; BUILD 2026-11-11-7567dce

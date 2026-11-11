@@ -1,0 +1,62 @@
+{
+  "source_sha": "7567dce53bd59a3e29b73c4a9504969e5279af14",
+  "build_id": "2026-11-11-7567dce",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "evidence": [
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/playtest-dude-2026-11-09/evidence/ridge-touch-phone.png"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/episode2-quality/playtest-dude-2026-11-09/evidence/public-dude-input.png"
+    },
+    {
+      "kind": "live_input",
+      "path": "docs/episode2-quality/playtest-dude-2026-11-09/evidence/public-browser.json"
+    },
+    {
+      "kind": "gameplay",
+      "path": "docs/episode2-quality/playtest-dude-2026-11-09/evidence/published-forward.txt"
+    }
+  ],
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/42950916056",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-11-11-7567dce",
+    "job_id": 130294740837,
+    "upload_log": "2026-11-11T03:46:27.7957831Z ##[notice]Pushed to https://youngstunners88.itch.io/smokerealm"
+  },
+  "open_blockers": [],
+  "limitations": [
+    "Automated touch simulation; no physical-phone test",
+    "Forward reachability gate accelerates travel and defeats threats through production damage methods; not a manual combat playthrough",
+    "Automated browser uses the existing device-unlock fixture; access code was not manually typed"
+  ],
+  "public_frame": "https://html-classic.itch.zone/html/18305533-2353689/index.html?v=1794369037",
+  "published_pack_bytes": {
+    "index.pck": 199189216,
+    "ep2_extras.pck": 196210784
+  },
+  "verification": {
+    "selected_local_suites": 13,
+    "local_founder_checks": 41,
+    "published_pack_forward_checks": 17,
+    "public_viewport": [
+      960,
+      540
+    ],
+    "input": "F3, F8, keyboard movement and interact; original device-unlock fixture",
+    "renderer": "Chromium SwiftShader"
+  },
+  "verified_at_utc": "2026-11-11T03:58:30.089601+00:00"
+}

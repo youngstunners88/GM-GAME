@@ -1,0 +1,114 @@
+{
+  "url": "https://html-classic.itch.zone/html/18305533-2353689/index.html?v=1794369037",
+  "expected": "2026-11-11-7567dce",
+  "passed": true,
+  "build": "[BUILD] Lil Blunt Adventure \u2014 build 2026-11-11-7567dce",
+  "assets": [
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2353689/index.pck",
+      "status": 200
+    },
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2353689/index.wasm",
+      "status": 200
+    },
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2353689/ep2_extras.pck?v=2026-11-11-7567dce",
+      "status": 200
+    }
+  ],
+  "held": {
+    "avg_ms": 493.5,
+    "build": "2026-11-11-7567dce",
+    "frames": 346,
+    "harness": false,
+    "held": {
+      "jump": 1,
+      "move_up": 1
+    },
+    "mem_mb": 0,
+    "mem_peak_mb": 0,
+    "paused": false,
+    "scene": "res://src/episode2/ep2_entry.tscn",
+    "state": "PLAYING",
+    "t": 83462,
+    "td": "IDLE",
+    "td_frozen": false,
+    "tex_mb": 595.1,
+    "tex_peak_mb": 595.1,
+    "time_scale": 1,
+    "touch": {
+      "held": 0,
+      "layout": "phone_landscape",
+      "profile": "ep2_foot",
+      "shown": false,
+      "susp": false
+    },
+    "win": [
+      960,
+      540
+    ],
+    "worst_all_ms": 12626.2,
+    "worst_ms": 0
+  },
+  "final": {
+    "keys": [
+      {
+        "key": "F3",
+        "code": "F3",
+        "target": "CANVAS"
+      },
+      {
+        "key": "F8",
+        "code": "F8",
+        "target": "CANVAS"
+      },
+      {
+        "key": "w",
+        "code": "KeyW",
+        "target": "CANVAS"
+      },
+      {
+        "key": "e",
+        "code": "KeyE",
+        "target": "CANVAS"
+      }
+    ],
+    "beacon": {
+      "avg_ms": 756.2,
+      "build": "2026-11-11-7567dce",
+      "frames": 356,
+      "harness": false,
+      "held": {},
+      "mem_mb": 0,
+      "mem_peak_mb": 0,
+      "paused": false,
+      "scene": "res://src/episode2/ep2_entry.tscn",
+      "state": "PLAYING",
+      "t": 115450,
+      "td": "IDLE",
+      "td_frozen": false,
+      "tex_mb": 597.1,
+      "tex_peak_mb": 597.1,
+      "time_scale": 1,
+      "touch": {
+        "held": 0,
+        "layout": "phone_landscape",
+        "profile": "ep2_foot",
+        "shown": false,
+        "susp": false
+      },
+      "win": [
+        960,
+        540
+      ],
+      "worst_all_ms": 12626.2,
+      "worst_ms": 0
+    }
+  },
+  "playtest": [
+    "[PLAYTEST] waiting for the streamed extras (Dude)",
+    "[PLAYTEST] dude: 8 guns, reserve 2000, 64 BTC"
+  ],
+  "errors": []
+}

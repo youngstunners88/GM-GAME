@@ -260,6 +260,19 @@ func _test_ridge_cover() -> void:
 	var c := _room(st)
 	_arm_and_launch(c)
 	check("on the gate overlook he is at a barrack", c.at_barrack())
+	check("ridge creates exactly one standard touch Cover", c._cover_button != null and c._cover_button.glyph == VirtualButton.Glyph.COVER and c.find_children("Cover", "", true, false).size() == 1)
+	var finger := InputEventScreenTouch.new()
+	finger.index = 1
+	finger.pressed = true
+	c._cover_button._gui_input(finger)
+	check("a Cover touch enters the existing cover state", c.in_cover())
+	finger.pressed = false
+	c._cover_button._gui_input(finger)
+	finger.pressed = true
+	c._cover_button._gui_input(finger)
+	check("a second Cover touch peeks out through the same toggle", not c.in_cover())
+	finger.pressed = false
+	c._cover_button._gui_input(finger)
 	check("C drops him into cover", c.toggle_cover() and c.in_cover())
 	_advance(c, 0.6)
 	check("...his eye sinks below the sandbag crest", c.eye_height <= RiverCoverChamber.COVER_EYE + 0.01, "%.2f" % c.eye_height)

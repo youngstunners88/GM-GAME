@@ -52,3 +52,36 @@ Nothing changes: no menu, pause or HUD element; a normal town save still opens o
 
 ## Follow-ups (not built)
 Preset `lake_trail` (the ride itself; today it is `dude` + buy the horse + mount).
+
+## Forward route repair (2026-11-11)
+
+Keep the same `dude` entry. Only the pre-Dude mine/hideout/draw are skipped. **Day-88 is played**, never flagged complete at spawn.
+
+| Link | Production requirement / finding |
+|---|---|
+| `start_playtest()` → town `STABLES` | Existing `playtest: dude` handoff refers the player to Dude. No missing prerequisite flag reproduced. `grant()` unchanged. |
+| Dude → `GEARED` → `lake_trail` | Talk to Dude; the real horse transaction costs 2 BTC. After his conversation, walk to the saddled horse and interact to mount. Existing Shipment purchase satisfies `_after_story()`; no return to Rich required. |
+| Trail → Logan's Lake | Ride out through the ranch gate along the surveyed road. Cold room creation previously dropped the shore arrival and reset held movement. It now consumes the same handoff as a prebuilt room. |
+| Lake → `river_cover` | Meet Logan, hear his investigation, check the cargo once, then follow the bank uphill. No license/item gate here beyond the existing staging beat. Shipment + Sharps already satisfy the ridge's gear checks. |
+| Ridge → post-day-88 lake | Cross the DAY-88 marker; look down at the launch pool from the first overlook. Fight through all three gates and relocate to the next overlooks. Utah's successful dock handoff alone sets `after_day88`. Cold handoffs now also retain held movement; the input router only resends movement when the input changes. |
+| Post-day-88 lake → `auction_road` → house | The return lake opens on `ROAD` with its auction sign and drinking horse. Mount at the bank (salve first if hurt), interact at the sign, ride the road, talk at the claim wagon, hitch and enter the hall. License conversation is a soft check, never an extra unlock. |
+
+At ridge sandbags, **C/Ctrl** toggles the existing cover; **R** reloads; fire peeks out. Touch gets one ridge-only **head-behind-bags icon** using that same toggle, shown only at an overlook, hidden on pause/transition and away from the bags. Existing touch reload and fire stay in use.
+
+### Verification
+
+- Extended the existing `ep2_playtest_dude_test` gate: **41 checks**, real horse purchase/mount, movement out of the ranch, lake investigation/cargo, cold shore handoff with held forward, all three day-88 gates, post-success lake/sign/horse and auction-road reachability. Existing warp, loadout, Save/Continue and normal town save checks retained.
+- Travel/time and combat are accelerated in this deterministic gate; it defeats spawned threats through their production damage methods. This is reachability evidence, not a claim of a manual combat playthrough. The existing river and auction-road gates cover their detailed gameplay.
+- Added touch enter/peek assertions to the existing ridge cover gate, alongside its protection, reload and walk-away checks.
+- No new preset, grant path, progression flag, room, asset, menu or save format. Physical-phone confirmation remains separate from automated touch evidence.
+
+### Local release evidence (2026-11-11)
+
+- Pinned Godot `4.3.stable.official.77dcf97d8`, Compatibility; non-threaded release export, **zero script/parse errors**. Core pack **199,220,896 bytes**, extras **197,863,296 bytes**, both below **199,229,440 bytes**. Excluded only unused backend source, reference sprite copies and verification reports; no runtime asset additions or replacements.
+- 13 selected suites passed: compile, founder preset (41), ridge, trail, lake, auction road/house, seamless chain, session root, manual checkpoint (69), save compatibility, Episode 2 touch, mobile controls and touch profiles. Security, founder title lock, harness-inert and background checks passed.
+- Actual Compatibility render and GUI-delivered second-finger input: enters the existing cover once; pause hides the icon immediately; resume restores it; leaving the sandbags hides it and stands up. Gameplay camera at 1280×720 and 844×390 reviewed. [Phone-sized cover capture](evidence/ridge-touch-phone.png). This is an automated desktop touch simulation, not physical-phone verification.
+- The Game Development Studio CLI and project `scripts/preflight.py` were unavailable; verification used the repository's existing Godot, export and browser tooling.
+- **Released and publicly verified: BUILD `2026-11-11-7567dce`, source `7567dce53bd59a3e29b73c4a9504969e5279af14`.** [Master run 42950916056](https://github.com/youngstunners88/GM-GAME/actions/runs/42950916056): full gameplay, visual, export and security gates passed; actual butler upload logged at 03:46:27 UTC. itch extraction completed before verification.
+- Published core pack **199,189,216 bytes**, extras **196,210,784 bytes**, both HTTP 200. Downloaded those exact public packs and replayed the real horse conversation/purchase and forward route through the auction road: **17/17 checks**, including the cold shore handoff and played three-gate ridge success. [Published-pack result](evidence/published-forward.txt).
+- Public Chromium at **960×540**, original **F3→F8** entry, correct BUILD, actual keyboard movement and interact; core/Wasm/extras HTTP 200, no script/parse errors. [Public input capture](evidence/public-dude-input.png), [browser result](evidence/public-browser.json), [release receipt](release-receipt.json). The browser used the existing device-unlock fixture; code handling was unchanged, and code entry was not manually typed.
+- Existing Chromium IDB warning about the large streamed extras cache also reproduced before this repair; streamed assets still mounted and played. Caching was not changed. Browser checks are not a physical-phone or performance claim.
