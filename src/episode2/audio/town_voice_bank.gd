@@ -1461,8 +1461,15 @@ static func seconds(id: String, fallback: float = 4.2) -> float:
 	var recording: AudioStream = stream(id)
 	return recording.get_length() + 0.25 if recording != null else fallback
 
+## Decoded once and kept: a line used to go back through the resource loader every time it was spoken, so a repeated shout could
+## hitch on the frame the character opened their mouth. Held streams are small next to the pack they come from.
+static var _streams: Dictionary = {}
 static func stream(id: String) -> AudioStream:
 	if not LINES.has(id) or not LINES[id]["ready"]:
 		return null
+	if _streams.has(id):
+		return _streams[id] as AudioStream
 	var path: String = LINES[id]["path"]
-	return load(path) as AudioStream if ResourceLoader.exists(path) else null
+	var s: AudioStream = load(path) as AudioStream if ResourceLoader.exists(path) else null
+	_streams[id] = s
+	return s
