@@ -424,6 +424,8 @@ func _start_video_film() -> bool:
 	vf.drive_externally()
 	add_child(vf)
 	vf.finished.connect(_on_video_film_finished, CONNECT_ONE_SHOT)
+	get_viewport().disable_3d = true        # before the first frame of picture, not on top of it (the teardown cost landed in the film)
+	_film_3d_off = true
 	vf.start()
 	# The film covers the whole screen, so the 3D world behind it is invisible - but it was still being RENDERED every frame
 	# (lights, shadows, the half-built hideout). On a weak GPU / the web that starves the Theora decoder: the film stutters or
