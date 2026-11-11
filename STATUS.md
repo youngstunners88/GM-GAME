@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+- **2026-11-11 — `dude` forward route repair — BUILD pending deployment:** existing Dude → horse → lake trail → Logan's Lake → played day-88 ridge → return lake/auction sign → auction road/house retained. Cold room handoffs now preserve arrival and held movement; one ridge-only touch cover icon calls the existing cover toggle. Only pre-Dude play is skipped; no `after_day88` at spawn, new presets or loadout paths. Expanded existing playtest gate (41 checks); release evidence pending below in `docs/episode2-quality/playtest-dude-2026-11-09/README.md`.
+
 **2026-11-09 — Founder playtest warp `dude`: start at Dude's stables with every gun — LIVE on itch, build `2026-11-09-e643b61`; NOT founder-verified.**
 - **On the itch page:** press **F3**, then **F8** (press F3 again to hide the debug text). itch never passes a query on its page URL (`…/smokerealm?playtest=dude`) through to the game iframe, so the key chord is the route there. `?playtest=dude` works on the game's own iframe URL (`html-classic.itch.zone/html/<build>/index.html?playtest=dude`). The Episode 2 access code still applies.
 - You land in the gold town on the Minister's referral beat, standing at Dude's under the STABLES sign with "Talk to Dude" up: buy a horse, mount, ride for the lake trail. The web warp waits for the streamed extras first, because Dude's model ships in them.

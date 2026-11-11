@@ -333,8 +333,10 @@ func _enter_chamber_chained(segment: int) -> void:
 			built_vp.queue_free()
 	else:
 		add_child(c)
-		if c is RiverCoverChamber or bool(gaze.get("after_day88", false)) or c is AuctionRoadChamber:
-			c.handoff = gaze                                # not prebuilt in time: the ridge still continues his walk
+		# Cold and prebuilt rooms consume the same production handoff. In particular a cold
+		# trail -> lake must retain the shore arrival, rather than reset him to its default spawn.
+		if "handoff" in c: c.handoff = gaze
+		if c is Ep2Interlude: c.handoff_seamless = true
 		c.setup(0, [], 0)
 	if c is RiverCoverChamber and old is LogansLakeChamber:
 		c.adopt_lake(old)                                  # the lake he just walked out of stays behind him
