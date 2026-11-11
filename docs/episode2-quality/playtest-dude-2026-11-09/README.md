@@ -1,4 +1,22 @@
-# Founder playtest preset `dude` (2026-11-09)
+# Founder playtest presets `dude`, `auction`, `day88_ridge` (2026-11-09, extended 2026-11-11)
+
+| Preset | Where you land | Then |
+|---|---|---|
+| `dude` | the gold town at Dude's stables (described below) | buy the horse, ride the lake trail |
+| `auction` | Logan's Lake **after day-88** (Utah has the Shipment): the horse is at the water, the AUCTION GROUNDS signpost is up beside you | mount the horse, ride to the signpost, interact: the road, the auction grounds and the hall follow as one room |
+| `day88_ridge` | the overlook above the river, Shipment bought, Sharps in hand | walk to the marker and launch the Shipment |
+
+All three give the same gear (below). `auction` and `day88_ridge` change no room content: they enter the room through the session's
+Continue path with the handoff a save of that moment would carry (`{"after_day88": true}` for the lake).
+
+**How to enter (2026-11-11):**
+- Desktop, itch page: press **F3**, then **F8** (dude), **F9** (auction) or **F2** (ridge) - or click the button row F3 puts at the top-left.
+- Phone / tablet, itch page: tap the **top-left corner of the screen five times quickly**; the same three buttons appear. Tap one.
+  Five more corner taps hide the row.
+- The game's own URL: `?playtest=dude`, `?playtest=auction`, `?playtest=day88_ridge`.
+- A save at the warped lake is a normal after-day-88 lake checkpoint: Continue opens there again with the signpost up.
+
+The rest of this page is the original `dude` write-up.
 
 Starts Episode 2 in the gold town at Dude's stables, on the Minister's referral beat (`STABLES`), fully geared.
 Code: `src/episode2/session/ep2_playtest.gd` (`Ep2Playtest`). Gate: `tests/ep2_playtest_dude_test.tscn` (in CI).
@@ -33,4 +51,4 @@ The Episode 2 access code still applies (a device that has entered it once goes 
 Nothing changes: no menu, pause or HUD element; a normal town save still opens on the STREET beat (gated).
 
 ## Follow-ups (not built)
-Presets `lake_trail`, `day88_ridge`, `auction` once `dude` is founder-verified.
+Preset `lake_trail` (the ride itself; today it is `dude` + buy the horse + mount).

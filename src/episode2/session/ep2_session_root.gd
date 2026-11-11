@@ -184,12 +184,13 @@ func restore_section(record: Dictionary) -> bool:
 		_resume_handoff = {}
 	return true
 
-## Founder playtest preset (Ep2Playtest): gear up, then the town at Dude's stables through the same room entry Continue uses.
-func start_playtest() -> void:
-	Ep2Playtest.grant(armory)
+## Founder playtest preset (Ep2Playtest): gear up, then the preset's room (Dude's stables, the lake after day-88, the day-88 ridge)
+## through the same room entry Continue uses, with the handoff a save of that moment would carry.
+func start_playtest(preset: String = Ep2Playtest.PRESET) -> void:
+	Ep2Playtest.grant(armory, preset)
 	_segment = 0
-	_chain_id = "gold_town"
-	_resume_handoff = Ep2Playtest.town_handoff()
+	_chain_id = Ep2Playtest.room(preset)
+	_resume_handoff = Ep2Playtest.handoff(preset)
 	_enter_chamber()
 	_resume_handoff = {}
 

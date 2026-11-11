@@ -21,8 +21,18 @@ var _label: Label
 var _on: bool = false           # label + beacon (?debug=1 / F3)
 var _beacon_only: bool = false  # ?debug=beacon: beacon + verbose logging, no label
 
-## Founder playtest preset (Ep2Playtest), loaded only when asked for: the title screen never loads Episode 2 code.
+## Founder playtest presets (Ep2Playtest), loaded only when asked for: the title screen never loads Episode 2 code.
 const PLAYTEST := "res://src/episode2/session/ep2_playtest.gd"
+## The presets, in the order of the on-screen row: [name for Ep2Playtest.warp, button text, key (with the overlay on)].
+const PLAYTEST_ROW: Array = [["dude", "DUDE'S STABLES", KEY_F8], ["auction", "AUCTION", KEY_F9], ["day88_ridge", "DAY-88 RIDGE", KEY_F2]]
+## A phone has no F3: five quick taps in the top-left corner of the screen bring the preset row up (and take it away again).
+const CORNER_TAPS := 5
+const CORNER_TAP_WINDOW_MS := 3000
+const CORNER_W := 0.16            # of the screen's width
+const CORNER_H := 0.24            # of its height
+
+var _row: HBoxContainer = null     # the preset buttons: only ever shown after F3 or the corner taps, never by ?debug=1
+var _corner_taps: Array = []       # msec of the recent taps in the corner
 const BEACON_INTERVAL_USEC: int = 250000
 const WORDS_MAX: int = 300
 const FRAME_RING: int = 120
@@ -51,6 +61,7 @@ func _ready() -> void:
 	_label.position = Vector2(12, 70)
 	add_child(_label)
 	_label.visible = false
+	_build_playtest_row()
 	# Web: allow ?debug=1 to force the overlay on for a founder capture session.
 	if OS.has_feature("web"):
 		var q: String = str(JavaScriptBridge.eval(
@@ -60,8 +71,9 @@ func _ready() -> void:
 			_label.visible = true
 		elif q == "beacon":
 			_beacon_only = true
-		if str(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('playtest') || ''", true)) == "dude":
-			load(PLAYTEST).warp.call_deferred()      # ?playtest=dude: founder preset, straight into Episode 2 at Dude's
+		var asked: String = str(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('playtest') || ''", true))
+		if PLAYTEST_ROW.any(func(row: Array) -> bool: return row[0] == asked):
+			_warp.call_deferred(asked)      # ?playtest=dude | auction | day88_ridge: founder preset, straight into Episode 2
 	_frame_ms.resize(FRAME_RING)
 	# Synchronous console marks for the probe's timeline. The StateMachine postMessage beacon is queued as a browser task,
 	# so under a main-thread stall its page timestamp is LATE (exactly when it matters); a console line is stamped when it
@@ -86,8 +98,52 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if k != null and k.pressed and not k.echo and k.keycode == KEY_F3:
 		_on = not _on
 		_label.visible = _on
-	elif k != null and k.pressed and not k.echo and k.keycode == KEY_F8 and _on:
-		load(PLAYTEST).warp()      # F3 then F8: founder playtest preset "dude" (works on the itch page, whose query never reaches the game)
+		_row.visible = _on
+	elif k != null and k.pressed and not k.echo and _on:
+		# F3 then F8 / F9 / F2: the founder playtest presets (works on the itch page, whose query never reaches the game)
+		for row in PLAYTEST_ROW:
+			if k.keycode == row[2]:
+				_warp(str(row[0]))
+
+
+## The corner taps (a phone's F3). Counted on raw touches so no game control has to exist under the finger.
+func _input(event: InputEvent) -> void:
+	var touch := event as InputEventScreenTouch
+	if touch == null or not touch.pressed:
+		return
+	var size: Vector2 = get_viewport().get_visible_rect().size
+	if touch.position.x > size.x * CORNER_W or touch.position.y > size.y * CORNER_H:
+		_corner_taps.clear()
+		return
+	var now: int = Time.get_ticks_msec()
+	_corner_taps.append(now)
+	while not _corner_taps.is_empty() and now - int(_corner_taps[0]) > CORNER_TAP_WINDOW_MS:
+		_corner_taps.pop_front()
+	if _corner_taps.size() >= CORNER_TAPS:
+		_corner_taps.clear()
+		_row.visible = not _row.visible
+
+
+func _build_playtest_row() -> void:
+	_row = HBoxContainer.new()
+	_row.name = "PlaytestRow"
+	_row.position = Vector2(12, 12)
+	_row.add_theme_constant_override("separation", 10)
+	_row.visible = false
+	add_child(_row)
+	for row in PLAYTEST_ROW:
+		var b := Button.new()
+		b.text = str(row[1])
+		b.focus_mode = Control.FOCUS_NONE          # never takes the keyboard from the game
+		b.custom_minimum_size = Vector2(150, 48)   # a thumb-sized target
+		b.add_theme_font_size_override("font_size", 16)
+		b.pressed.connect(_warp.bind(str(row[0])))
+		_row.add_child(b)
+
+
+func _warp(preset: String) -> void:
+	_row.visible = false
+	load(PLAYTEST).warp(preset)
 
 func _process(_delta: float) -> void:
 	if not is_on():

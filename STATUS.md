@@ -1,5 +1,20 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-11 — Open the AUCTION without replaying Episode 2 (new playtest presets), Dude's sunglasses black, six Episode 2 waits / soft-locks fixed — PUSHED, deploying; NOT founder-verified, no phone has run it.**
+- **Auction, on the itch page.** Desktop: press **F3**, then **F9** (or click AUCTION in the row F3 shows at the top-left). Phone / tablet: **tap the top-left corner of the screen five times quickly**, then tap AUCTION. You land at Logan's Lake *after day-88* with every gun, the horse at the water and the AUCTION GROUNDS signpost beside you: mount the horse, ride to the signpost, interact. The road, the grounds and the hall are the game's own, unchanged. The Episode 2 access code still applies.
+- **Day-88 ridge:** same row, DAY-88 RIDGE (desktop F3 then **F2**): the overlook with the Shipment bought and the Sharps in hand. Dude's stables is still F3 then F8. On the game's own URL: `?playtest=auction`, `?playtest=day88_ridge`, `?playtest=dude`.
+- A save at the warped lake is a normal after-day-88 lake save: Continue opens there again. Gate `ep2_playtest_dude_test` (44 checks, in CI). Details: `docs/episode2-quality/playtest-dude-2026-11-09/README.md`.
+- **Dude's sunglasses are black.** His lenses were half skin, half jagged black patches in the model's own texture; they are solid black now. Nothing else on him changed (369 pixels of one texture). Before/after: `docs/episode2-quality/dude-sunglasses-2026-11-11/`.
+- **Episode 2 waits and soft-locks (mobile sprint, 2026-11-10):**
+  - *Lava jump:* you are no longer held at the open door while Inferno finishes his warning (13.8 s → 2.8 s; 1.0 s if you jump mid-warning). No line is cut.
+  - *Elevator:* Inferno runs to the lever when you board first; the cage starts as his hand leaves it.
+  - *Quad:* arriving late at the thicket no longer leaves Inferno standing and staring; the reveal starts when you catch up.
+  - *Inferno back in town:* he stops at the fallen stranger on his way to you and talks there, then walks on to the bar (he used to walk to you, back up the street, then to the bar again). If you stand in the lane to Rich's he parks the quad and gets off instead of idling in front of you.
+  - *Donkey:* the farmer's cart goes wide of the back-lot miners and ends nose-to at a water trough in the yard below Rich & Utah's (an existing trough piece placed there; it used to park in the miners' dirt).
+  - *Horse music:* the ride song and the lake song now blend in under speech instead of jumping 12 dB each time someone talks.
+  - Gate `ep2_mobile_critical_path_test` (31 checks, in CI; 17 of them fail on the previous build). Farmer gate 29 → 34 checks.
+- **Not done:** the mine-cart exit film's stutter on phones (not measured yet); a touch-only pass of the whole path in a browser; the texture facelift (needs a room-by-room capture pass, and the main pack has about 1.5 KB of headroom, so any bigger texture has to be paid for elsewhere).
+
 **2026-11-09 — Founder playtest warp `dude`: start at Dude's stables with every gun — LIVE on itch, build `2026-11-09-e643b61`; NOT founder-verified.**
 - **On the itch page:** press **F3**, then **F8** (press F3 again to hide the debug text). itch never passes a query on its page URL (`…/smokerealm?playtest=dude`) through to the game iframe, so the key chord is the route there. `?playtest=dude` works on the game's own iframe URL (`html-classic.itch.zone/html/<build>/index.html?playtest=dude`). The Episode 2 access code still applies.
 - You land in the gold town on the Minister's referral beat, standing at Dude's under the STABLES sign with "Talk to Dude" up: buy a horse, mount, ride for the lake trail. The web warp waits for the streamed extras first, because Dude's model ships in them.
