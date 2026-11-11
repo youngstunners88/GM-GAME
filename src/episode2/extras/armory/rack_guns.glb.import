@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://d3vg6ipoy80it"
-path="res://.godot/imported/renegade.glb-d04c0868cb6cda01877c0a69f6369237.scn"
+uid="uid://cc6nwl8y4eli0"
+path="res://.godot/imported/rack_guns.glb-e8968f4400ce947efe27b9967f02acce.scn"
 
 [deps]
 
-source_file="res://src/episode2/extras/people/renegade.glb"
-dest_files=["res://.godot/imported/renegade.glb-d04c0868cb6cda01877c0a69f6369237.scn"]
+source_file="res://src/episode2/extras/armory/rack_guns.glb"
+dest_files=["res://.godot/imported/rack_guns.glb-e8968f4400ce947efe27b9967f02acce.scn"]
 
 [params]
 
@@ -19,8 +19,8 @@ nodes/apply_root_scale=true
 nodes/root_scale=1.0
 nodes/import_as_skeleton_bones=false
 meshes/ensure_tangents=true
-meshes/generate_lods=true
-meshes/create_shadow_meshes=true
+meshes/generate_lods=false
+meshes/create_shadow_meshes=false
 meshes/light_baking=1
 meshes/lightmap_texel_size=0.2
 meshes/force_disable_compression=false

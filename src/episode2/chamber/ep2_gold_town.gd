@@ -966,6 +966,7 @@ static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null, props: Array 
 			f.transform = building_xform(entry("Bldg_Armory"))
 			f.name = "Arm2_Fit_Bldg_Armory"
 			root.add_child(f)
+		Ep2ArmoryRacks.fill(root, a2, building_xform(entry("Bldg_Armory")))      # the founder's own guns on every rack, case and board
 		var shp: Node3D = a2.find_child("Arm2_Sharps", true, false) as Node3D        # the Sharps in the lit case: its own node, Rich lifts it out
 		if shp != null:
 			var sn: Node3D = shp.duplicate() as Node3D

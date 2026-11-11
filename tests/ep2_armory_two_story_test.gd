@@ -44,7 +44,12 @@ func _ready() -> void:
 					and mat.albedo_color.a < 0.5, "alpha %.2f" % mat.albedo_color.a)
 	check("two storeys: the false front stands above 9 m", top > 9.0, "top %.2f" % top)
 	check("the windows are glazed", glass >= 1)
-	for mi in fit.find_children("*", "MeshInstance3D", true, false):
+	# the fit-out's furniture and stock plus the founder's guns on its racks, cases and boards (Ep2ArmoryRacks, 2026-11-08)
+	var stock: Array = fit.find_children("*", "MeshInstance3D", true, false)
+	var guns: Node = world.find_child("Arm2_Guns_Bldg_Armory", true, false)
+	if guns != null:
+		stock.append_array(guns.find_children("*", "MeshInstance3D", true, false))
+	for mi in stock:
 		var am: ArrayMesh = (mi as MeshInstance3D).mesh as ArrayMesh
 		for si in am.get_surface_count():
 			tris_fit += am.surface_get_array_len(si) / 3 if am.surface_get_format(si) & Mesh.ARRAY_FORMAT_INDEX == 0 else am.surface_get_array_index_len(si) / 3

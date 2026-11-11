@@ -11,9 +11,8 @@ extends Node3D
 signal phase_changed(phase: String)
 
 const KIT := "res://src/episode2/extras/town/auction_house.glb"
-const RENEGADE := "res://src/episode2/extras/people/renegade.glb"
+const RENEGADE := Ep2Extras.RENEGADE                # the founder's Drive GLB, shared with the cast record (Ep2JackHammer): authored clips
 const JACK := "res://src/episode2/extras/people/jack_hammer.glb"
-const LOGAN := "res://src/episode2/extras/lake/logan.glb"
 const DUDE := "res://src/episode2/assets/town/dude_stable_owner.glb"
 const POSTER := "res://src/episode2/extras/town/posters/poster_jack_hammer.jpg"
 const AUDIO := "res://src/episode2/extras/audio/town/"
@@ -336,7 +335,7 @@ func _person(model: String, pos: Vector3, height: float = 1.74) -> Ep2TownFolk:
 	return f
 
 
-## Lend Mixamo clips between two Tripo rigs with the same bone names (Renegade has none of his own; Jack has no run). Rotation tracks only,
+## Lend Mixamo clips between two Tripo rigs with the same bone names (Renegade has no cheer/clap; Jack has no run). Rotation tracks only,
 ## so a different rest height never lifts or sinks the body. The clips go into this person's own player, never the source model's library.
 static func lend(folk: Ep2TownFolk, src_path: String, clips: Dictionary) -> void:
 	if folk.model == null or not ResourceLoader.exists(src_path):
@@ -376,10 +375,9 @@ static func lend(folk: Ep2TownFolk, src_path: String, clips: Dictionary) -> void
 
 
 func _people() -> void:
-	renegade = _person(RENEGADE, RENEGADE_MARK, 1.86)
+	renegade = _person(RENEGADE, RENEGADE_MARK, 1.82)
 	renegade.name = "Renegade"
-	lend(renegade, JACK, {"Idle": "Idle", "Talk": "Talk", "Greet": "Greet", "Cheer": "cheer", "Clap": "clap", "Agree": "agree"})
-	lend(renegade, LOGAN, {"Point": "Point", "Approve": "Approve"})
+	lend(renegade, JACK, {"Cheer": "cheer", "Clap": "clap", "Agree": "agree"})   # his own Idle/Talk/Greet/Point; the floor-work gestures lent
 	jack = _person(JACK, JACK_MARK, 1.84)
 	jack.name = "JackHammer"
 	lend(jack, DUDE, {"Run": "run_001"})
