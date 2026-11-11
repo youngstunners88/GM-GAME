@@ -1,22 +1,30 @@
 {
-  "objective": "Completed Save/Continue repair and verified public release",
-  "branch": "codex/save-resume-1108",
-  "source_sha": "1d561473434e8171a9901e414d1d3364e51a91d0",
-  "build_id": "2026-11-08-1d56147",
-  "run_id": 42470600984,
-  "outcome": "success; actual itch upload confirmed; public BUILD matched",
+  "objective": "Completed existing dude forward-route repair and verified public release",
+  "branch": "codex/dude-forward-path",
+  "source_sha": "7567dce53bd59a3e29b73c4a9504969e5279af14",
+  "observed_master_sha": "94df01c7",
+  "build_id": "2026-11-11-7567dce",
+  "run_id": 42950916056,
+  "outcome": "success; actual butler upload, public BUILD/input and published-pack forward arc verified",
+  "touched": [
+    "src/episode2/session/ep2_session_root.gd",
+    "src/episode2/chamber/river_cover.gd",
+    "src/input/mobile/virtual_button.gd",
+    "tests/ep2_playtest_dude_test.gd",
+    "tests/ep2_river_cover_test.gd",
+    ".github/workflows/export-game.yml"
+  ],
   "verified": [
-    "67 checkpoint tests and save compatibility",
-    "Full CI game/render/export/security/deploy passed",
-    "Public Episode1 Save, exact reload, Continue, blocked write preservation, retry, no script errors",
-    "Public Episode2 access gate, actual lake-trail Save, blocked write preservation, exact reload, Continue and re-save, no script errors",
-    "Combined runtime preserves concurrent town work, SaveSafe and title locks"
+    "13 selected local suites; founder gate 41/41",
+    "Actual ridge GUI touch, pause/resume, leave-cover and camera review",
+    "Full master CI and successful butler deploy",
+    "Public F3/F8, BUILD and keyboard movement; published packs forward arc 17/17"
   ],
-  "report": "docs/episode2-quality/save-resume-20261108/REPORT.md",
-  "receipt": "docs/episode2-quality/save-resume-20261108/release-receipt.json",
+  "receipt": "docs/episode2-quality/playtest-dude-2026-11-09/release-receipt.json",
   "limitations": [
-    "No physical-phone test",
-    "No literal multi-day wait"
+    "Automated touch simulation; no physical-phone test",
+    "Forward reachability gate accelerates travel and defeats threats through production damage methods; not a manual combat playthrough",
+    "Automated browser uses the existing device-unlock fixture; access code was not manually typed"
   ],
-  "next": "No open blockers; final documentation shipment only"
+  "next": "Founder device playtest; no open release blockers"
 }
