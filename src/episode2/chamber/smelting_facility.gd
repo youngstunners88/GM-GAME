@@ -302,6 +302,8 @@ var _visuals: Node3D = null
 var _portal_quad: MeshInstance3D = null
 var _portal_live: bool = false          # the doorway is showing the built lift room (the session root drives it)
 var _exit_line_end: float = 0.0          # when Inferno's "made it" ends (he says it walking on; the lift waits for it)
+var _exit_praised: bool = false          # "made it" has been committed this run (fires once)
+var _praise_at: float = -1.0             # clock second the praise starts (queued behind a line that is still playing)
 var _line_end: float = 0.0               # when the line he is saying now ends (any line: lava2, a nudge, "made it")
 var _camera: Camera3D = null
 var _cam_target_pos: Vector3 = CAM_WIDE[0]
@@ -368,6 +370,10 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_player_pos = ENTRY_POSITION
 	_hold = 0.0
 	_elapsed = 0.0
+	_exit_praised = false
+	_praise_at = -1.0
+	_exit_line_end = 0.0
+	_line_end = 0.0
 	_has_winchester = false
 	_molds_left = MOLD_TARGETS
 	_in_cover = false
@@ -424,12 +430,14 @@ func _start_video_film() -> bool:
 	vf.drive_externally()
 	add_child(vf)
 	vf.finished.connect(_on_video_film_finished, CONNECT_ONE_SHOT)
-	vf.start()
 	# The film covers the whole screen, so the 3D world behind it is invisible - but it was still being RENDERED every frame
 	# (lights, shadows, the half-built hideout). On a weak GPU / the web that starves the Theora decoder: the film stutters or
-	# crawls ("the video isn't playing"). Switch the 3D pass off while the film plays; it comes back the moment it ends.
+	# crawls ("the video isn't playing"). Switch the 3D pass off BEFORE the first picture, never a frame into it (the tear-down
+	# used to land on the film's opening frames - the first hitch the founder saw).
 	_film_3d_off = true
-	get_viewport().disable_3d = true
+	if is_inside_tree():
+		get_viewport().disable_3d = true
+	vf.start()
 	return true
 
 
@@ -589,6 +597,10 @@ func step(delta: float) -> void:
 	if _beat == Beat.CINEMATIC:
 		if _vfilm and is_instance_valid(_vfilm):
 			_vfilm.step(delta)      # the facility owns the film's clock (physics time), never both
+			# The picture is gone and black is on screen: re-enable the 3D pass NOW, so the hideout's shaders compile behind that
+			# black instead of on the first frame the room is visible (the freeze at the cut).
+			if _vfilm.is_finishing() or _vfilm.is_done():
+				_restore_3d_after_film()
 			# Build the hideout WHILE the film plays over it, not after. The room (walls, furnace, the rigged
 			# Bull, the five-target range, all the dressing) used to be built only when the film ended, on black
 			# - a 1-2 s frozen blank screen at the cut (founder 2026-10-04: "a long period of blank screen that
@@ -651,7 +663,10 @@ func step(delta: float) -> void:
 			_tick_lesson(delta)
 		Beat.EXIT:
 			# They leave TOGETHER: the Bull leads to the Fort Knox door and you follow in first person.
-			# Resolve once you reach the door, never before his line has finished.
+			# The praise (and the open doorway) land the frame he is over the lava, not after a line ends.
+			_exit_praise_tick()
+			if _lava_crossed():
+				_exit_made_it()
 			_try_exit()
 		_:
 			pass
@@ -1345,15 +1360,34 @@ func _try_exit() -> void:
 ## while he leads on, and the lift waits for whatever he is saying to end before his next line (`voice_left`), so nobody is cut off.
 func _exit_open() -> bool:
 	if _world_revisit: return true
-	if _beat != Beat.EXIT or not _lava_crossed():
-		return false
-	return _exit_line_end > 0.0 or not _show_active
+	# FOUNDER 2026-11-10: "after Lil Blunt jumps the flaming liquid he is forced to wait for Inferno to finish speaking before he can walk
+	# the walkway". The doorway used to wait for the start of the "made it" line, and that line is sequenced AFTER "hop over" - so a
+	# player who jumped early stood at an open-looking door until Inferno finished talking. The path now opens on the CROSSING alone.
+	# Inferno still says his line: it starts the moment Lil Blunt lands (see _exit_praise_tick) or as soon as the line he is on ends.
+	return _beat == Beat.EXIT and _lava_crossed()
 
 
 ## The EXIT show's last step: "made it", spoken while he walks on to the door (the show ends here, so the companion lead in
 ## `_follow_player_in_fps` takes him through the open door at once).
 func _exit_made_it() -> void:
+	# Called the instant Lil Blunt is across (never gated on a line), and again by the show's own last step: fires ONCE.
+	if _exit_praised:
+		return
+	_exit_praised = true
 	_hold = 0.0              # a nudge still running is replaced by the praise; nothing holds his lead to the door
+	if _elapsed < _line_end - 0.05:
+		# he is still on "hop over": the praise follows it rather than talking over it (and never cancels it)
+		_praise_at = _line_end
+		return
+	_speak("vo_bull_lava_made_it")
+	_exit_line_end = _line_end
+
+
+## The praise queued behind a line that was still playing when Lil Blunt landed.
+func _exit_praise_tick() -> void:
+	if _praise_at < 0.0 or _elapsed < _praise_at:
+		return
+	_praise_at = -1.0
 	_speak("vo_bull_lava_made_it")
 	_exit_line_end = _line_end
 

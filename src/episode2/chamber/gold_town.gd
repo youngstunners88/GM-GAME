@@ -198,6 +198,8 @@ const DRAW_WAIT_MAX := 4.2
 const OPP_REACTION := 1.45                            # seconds from the bell to his shot on the first try (the rifle must come up)
 const OPP_REACTION_STEP := 0.3                        # ...a little more each time he wins (never a wall)
 const OPP_HIT_R := 0.5
+## How close Inferno must already be to the body's standing mark for the talk to happen there (no walk back).
+const BODY_AT_REACH := 4.5
 ## The Armory (Rich & Utah, down the side lane). Bodies are on-box Blender figures (tools/ep2_blender/
 ## build_armory_folk.py); Rich is taller and broader in a long duster and wide-brim hat, Utah slimmer in a
 ## short open jacket with a flat brim and a bandana, so the two read apart at a glance (and at the river later).
@@ -314,6 +316,8 @@ var _armory_t: float = 0.0
 var _armory_return: bool = false                      # back at Rich's after the jail, only to gear up for the river
 var _quad: Ep2TownQuad = null
 var _bull_riding: bool = false
+var _meet_wait_t: float = 0.0                        # seconds Inferno has stood waiting for Lil Blunt to come over
+const MEET_PATIENCE := 8.0                           # after this he walks to him instead of waiting
 var _bull_task: String = ""                           # "" | "riding" | "to_lb" | "greeted" | "to_body" | "at_body" | "to_bar" | "at_bar" | "leaving"
 var _body_said: bool = false
 var _drinks_said: bool = false
@@ -1524,7 +1528,14 @@ func _on_beat_entered(b: int) -> void:
 			else:
 				_body_said = false
 				_bull_task = "to_body"
-				_bull_route(_bull_way_to(_body_stand()), 1.5)
+				# FOUNDER 2026-11-10: "he ... delivers his line, then walks backwards only to re-walk toward the bar". When Inferno had
+				# greeted Lil Blunt already standing by the fallen stranger, this routed him back to the body first: a reverse, then the
+				# walk to the saloon again. If he is already at the body's mark, the talk happens where he stands.
+				if _opp != null and _bull != null and _bull.position.distance_to(_body_stand()) <= BODY_AT_REACH:
+					_bull_task = "at_body"
+					_bull.face_point(_minister.position if _minister != null else _opp.position)
+				else:
+					_bull_route(_bull_way_to(_body_stand()), 1.5)
 		Beat.DRINKS:
 			# section 2 steps 7-9: whiskey at the bar - they really drink - Inferno's pointer to Mike Dean for a real license, then cousin Flux's new kettle
 			if _hud:
@@ -1856,10 +1867,19 @@ func _tick_bull_back(delta: float) -> void:
 		"to_lb":
 			if not _bull.is_walking() and _bull_path.is_empty() and not _show_active:
 				if _player_pos.distance_to(_bull.position) > 6.5:
+					# He waits for Lil Blunt to come over - but only so long. FOUNDER 2026-11-10 (quad meet-up race): a player who
+					# took his time could find Inferno planted, facing him, refusing to start. After MEET_PATIENCE he walks over
+					# instead of waiting, and the greeting runs wherever they meet.
+					_meet_wait_t += delta
+					if _meet_wait_t >= MEET_PATIENCE:
+						_meet_wait_t = 0.0
+						_bull_route(_bull_way_to(_stand_off(_bull.position, _player_pos, 2.3)), 1.6)
+						return
 					_bull.face_point(_player_pos)
 					if _hud != null:
 						_hud.objective = "Inferno's back - he's outside Rich's." if _bull.position.distance_to(_quad.position) < 8.0 else "Inferno's back."
 					return
+				_meet_wait_t = 0.0
 				_bull_task = "greeted"
 				_bull.face_point(_player_pos)
 				look_toward(_bull.head_world(), 2.4)

@@ -136,6 +136,7 @@ var _rise_t: float = -1.0
 var _rise_len: float = RISE_SECONDS
 var _reply_started: bool = false
 var _on_cage: bool = false
+var _arrive_hurried: bool = false        # Lil Blunt stepped aboard while Inferno was still walking in: his lead-in is cut to one direct walk
 var _bull_on_cage: bool = false
 var _gate_open: float = 0.0
 var _loop: AudioStreamPlayer = null
@@ -762,6 +763,7 @@ func get_handoff() -> Dictionary:
 
 
 func _on_setup() -> void:
+	_arrive_hurried = false
 	prebuild_requested.emit(NEXT_CHAMBER)      # the bear woods build behind the shaft while the cage is boarded and rises
 	_beat = Beat.ARRIVE
 	_player_pos = START_POS
@@ -916,6 +918,13 @@ func _tick(delta: float) -> void:
 		Beat.ARRIVE:
 			if _on_cage and not _show_active:
 				_advance_to(Beat.BOARD)
+			elif _on_cage and not _arrive_hurried:
+				# FOUNDER 2026-11-10: "a noticeable pause at the elevator itself". Standing on the cage used to mean watching Inferno
+				# stroll the three staged legs of his lead-in before the lift would take him. He now comes straight to the lever mark
+				# at a stride, so boarding is one motion; the gate still only drops once the show has ended and he is aboard.
+				_arrive_hurried = true
+				if _bull != null:
+					_bull.walk_to(CAGE_STAND_BULL, 4.2)
 		Beat.BOARD:
 			# a short breath, then the Bull pulls the hidden lever
 			if _elapsed > 0.0 and _on_cage:

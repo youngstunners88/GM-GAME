@@ -69,6 +69,8 @@ const RIDE_BEND_SPEED := 7.5                        # Inferno brakes into the be
 ## (hub-centred, axle = local X). Landmarks measured on the mesh: seat top 1.37-1.42, rack deck ~1.43 (z -1.84..-1.05), grips x +-0.5 y 1.72 z 0.5.
 const QUAD_MODEL := "res://src/episode2/assets/vehicles/flame_quad_ai.glb"
 const QUAD_WHEEL_R := 0.5
+## How long Inferno waits at the quad for Lil Blunt before the reveal plays anyway (the mount still waits for him).
+const QUAD_REVEAL_PATIENCE := 10.0
 const SEAT_TOP := 1.43                              # the rack deck (Lil Blunt kneels on it)
 const SEAT_TOP_DRIVER := 1.38                       # the bench Inferno sits on, at his hips
 ## Inferno rides SEATED (his Chair_Sit_Idle_M clip frozen at 4 s); Lil Blunt kneels on the rear of the seat / rack, eye just above
@@ -225,6 +227,7 @@ var _cart: Node3D = null                             # the farmer on his donkey 
 var _cart_external: bool = false                     # the session owns his continuing town trip after the pass
 var _cart_s: float = CART_S0
 var _cart_warned: bool = false
+var _quad_wait_t: float = 0.0                            # seconds Inferno has stood at the quad waiting for Lil Blunt
 var _cart_state: int = 0                             # 0 ahead, 1 approached (slowing), 2 greeted, 3 passed
 var _bull_ride_cd: float = 0.0
 var _bull_ride_shots: int = 0
@@ -1297,6 +1300,7 @@ func _on_beat_entered(b: int) -> void:
 	match b:
 		Beat.SNEAK:
 			_sneak_i = 0
+			_quad_wait_t = 0.0
 			if _hud:
 				_hud.objective = "Stay close to Inferno. Walk soft - the bears' scouts hear a runner."
 			if _retry_line_pending or not handoff.has("surface_player"):
@@ -1325,10 +1329,12 @@ func _on_beat_entered(b: int) -> void:
 			# swings onto the saddle, in one continuous move
 			_start_show([
 				{"do": "call", "fn": _approach_quad},
-				{"do": "until", "pred": func() -> bool: return not is_gliding() and not _bull.is_walking() and _hold <= 0.0},
+				# the timeouts are deadlock guards only: in normal play both conditions go true long before they expire
+				{"do": "until", "pred": func() -> bool: return not is_gliding() and not _bull.is_walking() and _hold <= 0.0,
+					"timeout": 9.0},
 				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_quad_mount")},
 				{"do": "call", "fn": _mount},
-				{"do": "until", "pred": func() -> bool: return not is_gliding() and _bull_swing.is_empty()}], true)
+				{"do": "until", "pred": func() -> bool: return not is_gliding() and _bull_swing.is_empty(), "timeout": 9.0}], true)
 		Beat.RIDE:
 			_begin_ride()
 		Beat.DROPOFF:
@@ -1655,7 +1661,12 @@ func _tick_sneak(delta: float) -> void:
 		_intro_scout_at(_sneak_i)
 		if _sneak_i >= trail.size():
 			_sneak_i = trail.size() - 1
-			if dist_player < 8.0:
+			# FOUNDER 2026-11-10 (quad meet-up race): the reveal used to need the player inside 8 m on the frame Inferno reached the
+			# end of the trail, so a player who stopped to fight bears (or simply dawdled) left him standing at the quad staring.
+			# The distance is re-read every frame he waits and a patience window ends the wait regardless: the reveal is his scene,
+			# and the mount only ever runs once the player is actually there.
+			_quad_wait_t += delta
+			if dist_player < 8.0 or _quad_wait_t >= QUAD_REVEAL_PATIENCE:
 				_advance_to(Beat.REVEAL)
 			return
 

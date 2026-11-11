@@ -115,7 +115,11 @@ func _tick(s: Dictionary, delta: float) -> bool:
 			return not f._bull.is_hopping()
 		"until":
 			# Wait for a condition (`pred`), repeating a nudge line every `every` seconds meanwhile.
+			# `timeout` (seconds) is a deadlock guard: a wait on someone else's walk or glide must never be able to hang the story
+			# (founder 2026-11-10: "the game sometimes refuses to let Lil Blunt mount/proceed. Inferno just stares").
 			if (s["pred"] as Callable).call():
+				return true
+			if s.has("timeout") and _t >= float(s["timeout"]):
 				return true
 			var every: float = float(s.get("every", 0.0))
 			var n: int = int(s.get("_n", 0))

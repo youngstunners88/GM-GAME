@@ -62,6 +62,9 @@ func _ready() -> void:
 	var duel_safe: bool=false
 	var resumed: bool=false
 	var parcel: Node3D=trip.parcel
+	var laid_up: bool=false
+	var trough_gap: float=99.0
+	var lot_gap: float=99.0
 	for i in 12000:
 		trip.tick(session,.1)
 		stages[trip.phase]=true
@@ -92,6 +95,24 @@ func _ready() -> void:
 		if trip.phase=="complete":break
 	print("FARMER_PHASES ",stages," phase=",trip.phase," position=",original.position)
 	check("he actually reaches the service yard",original.position.distance_to(Ep2FarmerTrip.PARK)<.01)
+	# FOUNDER 2026-11-10: he used to park ON the back-lot miners' dig (his old mark, -22 1421.5, sat in the left lot). The trough he
+	# now stands at must be clear of every working miner and of every heap / rest / ore mark they hold.
+	var truck := Vector2(original.position.x, original.position.z)
+	for m in Ep2BackLotMiners.MINERS:
+		lot_gap = minf(lot_gap, truck.distance_to(m["at"]))
+		for key in ["mound", "rest", "ore"]:
+			if m.has(key):
+				var v: Vector3 = m[key]
+				lot_gap = minf(lot_gap, truck.distance_to(Vector2(v.x, v.z)))
+	check("he parks clear of every back-lot miner's work area (%.1f m)" % lot_gap, lot_gap > 6.0)
+	# the donkey's nose is what stands at the water; the cart body sits 1.6 m behind it
+	var nose := truck
+	if is_instance_valid(original._donkey):
+		nose = Vector2(original._donkey.global_position.x, original._donkey.global_position.z)
+	else:
+		nose = truck + Vector2(sin(original.rotation.y), cos(original.rotation.y)) * 1.6
+	trough_gap = Vector2(-6.0, 1425.0).distance_to(nose)   # the street-side water trough on Rich & Utah's side of Main Street
+	check("he reaches the water trough by Rich & Utah (%.1f m)" % trough_gap, trough_gap < 3.0)
 	check("a real town duel interrupts the errand without moving goods",duel_tested and duel_safe)
 	check("his full approach remains outside the real building walls",clear_of_walls)
 	check("a real existing worker collects the delivery",stages.has("collect") and stages.has("handover"))

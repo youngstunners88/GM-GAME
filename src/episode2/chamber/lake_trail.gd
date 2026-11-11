@@ -153,6 +153,8 @@ var _attempt: int = 0
 var _armory_snapshot: Dictionary = {}
 ## Tests only: a full-travel run that must not be ended by the fight. Combat and damage are tested separately.
 var debug_invulnerable: bool = false
+var _lake_music: bool = false                          # the lake bed has been asked for (once)
+var _trail_music: bool = false                         # the ride song has been asked for (once)
 
 
 func _init() -> void:
@@ -852,6 +854,10 @@ func _bandit_world_position(b: Dictionary) -> Vector3:
 # --- setup and movement ----------------------------------------------------------------------------------------------
 
 func _on_setup() -> void:
+	# The ride song blends in over the town music with the manager's equal-power crossfade (never a cut): the mount frame is the
+	# start of one 8 s blend, and the per-frame request in _tick is latched off from here on.
+	_trail_music = true
+	_lake_music = false
 	Ep2DrawMusic.begin_trail(self)
 	_armory_snapshot = armory.snapshot()
 	_beat = Beat.RIDE
@@ -1038,8 +1044,14 @@ func _tick(delta: float) -> void:
 	_blend_lake_light()
 	_clear_lake_water()
 	if _route_s >= _route_total-LAKE_REVEAL_DISTANCE:
-		Ep2DrawMusic.begin_lake(self)
-	else:
+		# FOUNDER 2026-11-10 (horse music): this asked for a track EVERY FRAME, so a ride that crossed the lake boundary more than
+		# once (reining back over it, a retry) restarted an eight-second blend on top of the one already running - heard as the music
+		# pumping and jumping. The request is now latched: one equal-power blend per stage, and the ride song is never re-triggered.
+		if not _lake_music:
+			_lake_music = true
+			Ep2DrawMusic.begin_lake(self)
+	elif not _trail_music:
+		_trail_music = true
 		Ep2DrawMusic.begin_trail(self)
 	_invuln = maxf(0.0, _invuln - delta)
 	_tick_flashes(delta)

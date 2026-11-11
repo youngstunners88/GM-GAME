@@ -1,7 +1,13 @@
 class_name Ep2FarmerTrip
 extends RefCounted
 ## One simulation owner carries the actual road cart into town and a shop delivery.
-const PARK := Vector3(-22,0,1421.5)
+## THE WATER TROUGH BY RICH & UTAH (founder 2026-11-10): the cart used to park at (-22, 1421.5), which is the LEFT BACK LOT where the
+## digger (-21.4, 1424.2) and the forkman (-20.6, 1427.6) work - it drove over their heaps and then stood on them, so the miners had a
+## solid cart in their dig. It now keeps to the street, comes up the west lane and stops at the street-side water trough nearest Rich &
+## Utah's lane (-6.0, 1425.0): the donkey drinks, and no miner's lot is touched.
+const PARK := Vector3(-3.0,0,1426.2)
+## Every point of the town leg stays east of x -8 (the street side): the left lot runs x -23..-20, z 1422..1430.
+const PARK_LOT_CLEAR := -8.0
 const PHASES := ["inbound","waiting","collect","handover","deliver","inspect","return","complete","interrupted"]
 var cart: Ep2RoadCart
 var town: GoldTownChamber
@@ -56,11 +62,9 @@ func _make_path(woods: Node) -> void:
 		points.append(road[i]+Vector3(-tangent.z,0,tangent.x)*WoodsQuadChamber.CART_LATERAL)
 	var last: Vector3=points[-1]
 	var bends: Array=[Vector2(last.x,last.z)]
-	if last.z<1374:
-		bends.append_array([Vector2(-3.1,1379),Vector2(-4.5,1385),Vector2(-13,1388),Vector2(-20,1392),Vector2(-22,1402)])
-	else:
-		bends.append_array([Vector2(-5,1404),Vector2(-13,1404),Vector2(-20,1405),Vector2(-22,1412)])
-	bends.append(Vector2(PARK.x,PARK.z))
+	# Up the west side of Main Street, never round the back of the false fronts: the old bends ran through the left back lot
+	# (-13,-20,-22) where the miners now dig. The last two bends turn him WEST so his nose (the donkey, local +z) ends at the trough.
+	bends.append_array([Vector2(-2.4,1408),Vector2(-3.2,1416),Vector2(-3.6,1421),Vector2(PARK.x+1.6,PARK.z),Vector2(PARK.x,PARK.z)])
 	var curve: PackedVector3Array=Ep2LakeRoad.smooth(bends,1.5)
 	for i in range(1,curve.size()):points.append(curve[i])
 	arc=_lengths(points)
