@@ -421,6 +421,7 @@ func _start_video_film() -> bool:
 	_vfilm = vf
 	vf.continue_track = STAGE_THEME
 	vf.song_video_offset = FILM_SONG_OFFSET
+	vf.defer_song = true          # the theme comes back in after the room's first frame, not under it (see _on_video_film_finished)
 	vf.drive_externally()
 	add_child(vf)
 	vf.finished.connect(_on_video_film_finished, CONNECT_ONE_SHOT)
@@ -444,6 +445,7 @@ func _prebuild_room() -> void:
 	_sync_visuals()
 	_room_ready = true
 	room_ready.emit()
+	_trace("room ready")
 
 
 ## A small corner line right after the film saying how it ended (end / skip_hold / stall / decoder_early ...), so "the video
@@ -522,7 +524,17 @@ func _on_video_film_finished() -> void:
 		sun.visible = true
 	if _camera and is_instance_valid(_camera):
 		_camera.make_current()
+	if _vfilm and is_instance_valid(_vfilm) and _vfilm.is_inside_tree() and DisplayServer.get_name() != "headless":
+		# The room's FIRST drawn frame after a minute of film compiles its shaders and uploads its buffers: about a second on a
+		# desktop, four at a phone-class CPU (measured, scripts/ep2-mobile-film-probe.mjs). It used to land after the stage theme had
+		# already started and Inferno had begun to speak, so the song and the line stalled with the picture. Now it happens here,
+		# behind the film's black with nothing playing; only then does the theme come back in, the black lift and the lesson begin.
+		await get_tree().process_frame
+		await get_tree().process_frame
+		if not is_inside_tree() or _resolved:
+			return
 	if _vfilm and is_instance_valid(_vfilm):
+		_vfilm.start_song()
 		_vfilm.release(0.6)         # the room is already built behind the film: a quick clean dissolve, no blank wait
 	_vfilm = null
 	_beat = Beat.HELMET
@@ -1452,7 +1464,15 @@ func _mesh(m: Mesh, mat: StandardMaterial3D, pos: Vector3) -> MeshInstance3D:
 	return mi
 
 
+## One console line per build stage while the F3 overlay / ?debug=beacon is on. The room is built BEHIND the cart-exit film, and a
+## stage that takes a long frame freezes the film's picture and sound: scripts/ep2-mobile-film-probe.mjs reads these to name it.
+func _trace(stage: String) -> void:
+	if DebugOverlay.is_on():
+		print("[EP2] hideout build: %s @%d" % [stage, Time.get_ticks_msec()])
+
+
 func _build_visuals() -> void:
+	_trace("shell begin")
 	_room_built = true
 	_room_ready = false
 	if _visuals and is_instance_valid(_visuals):
@@ -1629,13 +1649,16 @@ func _build_visuals() -> void:
 	bull_key.shadow_enabled = true
 	bull_key.position = BULL_POSITION + Vector3(-1.8, 2.8, -2.2)
 	_visuals.add_child(bull_key)
+	_trace("shell end")
 	if _build_slice: await get_tree().process_frame
 	await _build_bull(timber)
+	_trace("bull end")
 	if _build_slice: await get_tree().process_frame
 
 	# --- TARGET PRACTICE (skill ep2-range-lesson): three steel plates at 5.8 / 8.8 / 11.8 m down a marked lane.
 	# RangeDressing owns how it looks; this scene owns the lesson and only reads the contract.
 	var range_parts: Dictionary = RangeDressing.build(_visuals, timber)
+	_trace("range end")
 	if _build_slice: await get_tree().process_frame
 	for plate in range_parts["targets"]:
 		_mold_nodes.append(plate)
@@ -1643,6 +1666,7 @@ func _build_visuals() -> void:
 
 	# --- LIL BLUNT: the real hero (not the old primitive), standing in the room, lying when he comes to.
 	_player_node = _build_player()
+	_trace("hero end")
 	if _build_slice: await get_tree().process_frame
 	# The helmet hangs on its peg at the end of the gun wall; the Winchester is the middle rifle on the rack.
 	_helmet_node = _build_helmet()
@@ -1651,6 +1675,7 @@ func _build_visuals() -> void:
 
 	# --- the hangout: alcove, trophies, armory, Gatling, poster, braziers (see HideoutDressing).
 	_dressing = await HideoutDressing.build(_visuals, _build_slice)
+	_trace("dressing end")
 	_blockers = (_dressing.get("blockers", []) as Array).duplicate()
 	for sx in [-1.0, 1.0]:
 		_blockers.append([Vector2(sx * 2.3, 15.4), 0.45])   # the open elevator-door leaves standing into the room
@@ -1674,6 +1699,7 @@ func _build_visuals() -> void:
 	sign.position = Vector3(0.0, 5.9, EXIT_POSITION.z + 0.6)
 	sign.rotation.y = PI
 	_visuals.add_child(sign)
+	Ep2HideoutWarm.release()       # the room now holds what it uses: the warm-up's own references can go
 
 
 ## The hero, set up like the runner's (mirrored model, brightened, pose modifier) but STANDING, and at a
@@ -1922,6 +1948,7 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_settle = 0.0
 	var ok: bool = _bull.setup(BULL_RIG_MODEL, BULL_RIG_H, BULL_HEIGHT,
 		{"walk": BULL_WALK_CLIP, "run": BULL_RUN_CLIP}, [BULL_IDLE, BULL_SIT, BULL_SIP])
+	_trace("bull rig")
 	if _build_slice: await get_tree().process_frame
 	if not ok:
 		# No model: a visible stand-in, never nothing.
@@ -1934,6 +1961,7 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 		_bull.add_child(fb)
 		return
 	_bull.add_all_clips(BULL_SIT_CLIPS)
+	_trace("bull clips")
 	if _build_slice: await get_tree().process_frame
 	if _bull.anim:
 		for c in [BULL_SIT, BULL_STAND_UP]:
@@ -1946,6 +1974,7 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_bull.play(BULL_SIT if _bull.anim and _bull.anim.has_animation(BULL_SIT) else BULL_IDLE, 1.0, 0.0)
 	if _build_slice: await get_tree().process_frame
 	_fix_bull_materials(_bull.model, true)
+	_trace("bull materials")
 	if _build_slice: await get_tree().process_frame
 	# His seat: a sturdy crate under the Sit_and_Drink hips (0.70 rig units -> 0.85 m), behind him.
 	var seat := _box(Vector3(1.0, 0.66, 0.9), Vector3.ZERO, timber)

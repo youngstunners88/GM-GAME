@@ -33,6 +33,10 @@ var continue_track: String = ""
 var song_video_offset: float = 26.53
 ## The song position the last hand-off continued from (tests and the shot rig read it).
 var last_song_position: float = -1.0
+## The owner starts the song itself with start_song(), after whatever heavy frame follows the film (the hideout's first drawn
+## frame): a song started under that frame stalls with it. False = the song starts the moment the film ends, as it always did.
+var defer_song: bool = false
+var _song_pending: bool = false
 var _video: VideoStreamPlayer = null
 var _t: float = 0.0
 var _skip_held: float = 0.0
@@ -266,6 +270,20 @@ func _continue_song(video_t: float) -> void:
 	last_song_position = song_position_for(video_t)
 	if continue_track == "":
 		return
+	if defer_song:
+		_song_pending = true
+		return
+	_play_song()
+
+
+## The deferred hand-off (defer_song): bring the stage theme in now, from where the film left it. A no-op otherwise.
+func start_song() -> void:
+	if _song_pending:
+		_song_pending = false
+		_play_song()
+
+
+func _play_song() -> void:
 	var am: Node = get_node_or_null("/root/AudioManager")
 	if am and am.has_method("play_track_from"):
 		am.play_track_from(continue_track, last_song_position, 0.12)
@@ -306,3 +324,4 @@ func _unmute_music() -> void:
 func _exit_tree() -> void:
 	# Never leave the Music bus muted if we are torn down off the normal path.
 	_unmute_music()
+	start_song()        # ...nor the room silent: a deferred theme nobody started still comes in

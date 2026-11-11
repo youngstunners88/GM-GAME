@@ -361,8 +361,10 @@ func _begin() -> void:
 		if Ep2Extras.state() == "loading": print("[PLAYTEST] waiting for the streamed extras (Dude, Logan, the auction hall)")
 		while Ep2Extras.state() == "loading":
 			await get_tree().create_timer(0.5).timeout
+		Ep2HideoutWarm.release()            # no hideout on this path
 		_root.start_playtest(playtest)      # founder preset: Dude's stables / the lake after day-88 / the ridge, every gun (no pending Continue overrides it)
 	elif not record.is_empty():
+		Ep2HideoutWarm.release()            # a Continue lands past the film (or builds its room without one)
 		_saved_offset = clampi(SaveSafe.to_int(record.get("offset"), 0), 0, TRACK_PLAN.size()-1)
 		_root.configure(TRACK_PLAN.slice(_saved_offset), true)
 		if not _root.restore_section(record): _start_session()
@@ -413,6 +415,10 @@ func _start_session() -> void:
 		if gm != null:
 			gm.personal_armory = {}
 	_root.configure(_plan().slice(_leg_offset), true)   # commit_to_economy: real GOLD in play
+	if _leg_offset == 0 and Ep2HideoutWarm.wanted() and not Ep2HideoutWarm.done():
+		_warm_hold = true          # the film is ahead on this run: _tick_hideout_warm starts the cart when the hideout is read
+		_warm_hold_ms = Time.get_ticks_msec()
+		return
 	_root.start()
 
 
@@ -460,7 +466,31 @@ func _physics_process(_delta: float) -> void:
 		if a and a.has_method("get_carts_alive") and a.is_running():
 			RunnerAutopilot.tick(a)
 
+## The hideout's models and textures are read here, before the cart starts, so the cart-exit film does not have to share its one
+## thread with that reading (Ep2HideoutWarm). While the access-code screen is up: one resource a frame, the keypad stays live. Once
+## the code is in and a fresh run is waiting on it: a fuller frame's worth, with a bar, and the cart starts the frame it is done.
+const WARM_GATE_MS := 4.0
+const WARM_WAIT_MS := 24.0
+var _warm_hold: bool = false           # a fresh run is configured and waits for the warm-up before the cart starts
+var _warm_hold_ms: int = 0             # when that wait began (one console line says how long it was)
+
+func _tick_hideout_warm() -> void:
+	if not Ep2HideoutWarm.wanted() or Ep2HideoutWarm.done():
+		if _warm_hold:
+			_warm_hold = false
+			_banner.text = ""
+			print("[EP2] hideout warm: %d resources held, the cart waited %d ms" % [Ep2HideoutWarm.held_count(), Time.get_ticks_msec() - _warm_hold_ms])
+			_root.start()
+		return
+	if _warm_hold:
+		Ep2HideoutWarm.step(WARM_WAIT_MS)
+		_banner.text = _bar(Ep2HideoutWarm.progress())      # a bar, no words (touch rule)
+	elif _gate != null and GameManager.pending_episode2_resume.is_empty() and Ep2Playtest.preset == "":
+		Ep2HideoutWarm.step(WARM_GATE_MS)
+
+
 func _process(delta: float) -> void:
+	_tick_hideout_warm()
 	_keys_t = maxf(0.0, _keys_t - delta)
 	_refresh_hud()
 	if GameManager.has_region_map: _hud.position.x = 158.0
@@ -816,6 +846,7 @@ func _sync_mini_pause() -> void:
 		_overlay.hide_mini_pause()
 
 func _exit_tree() -> void:
+	Ep2HideoutWarm.release()      # leaving Episode 2: nothing is held for a hideout that will not be built
 	# the card pauses the StateMachine: never leave it paused behind a scene that is going away
 	if _pause_open:
 		_pause_open = false
