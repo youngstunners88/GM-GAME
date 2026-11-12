@@ -1,0 +1,25 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+[BUILD] Lil Blunt Adventure — build dev-local
+[Touch] layout build phone_landscape (releases all) (state MENU)
+SESSION 6 VAULT UTILITY:
+  [PASS] Blaze Diamonds clamp to the stack limit on collection
+  [PASS] crush clamps to held (can't crush more than owned)
+  [PASS] crush mints the right number of $DIAMONDS tokens into the balance
+  [PASS] crushing zero is a safe no-op
+  [PASS] old save without a blaze_diamonds key loads as 0 (no crash)
+WARNING: Invalid state transition: MENU → PLAYING
+     at: push_warning (core/variant/variant_utility.cpp:1112)
+  [PASS] Diamond Vault has a vault clerk NPC to talk to
+  [PASS] clerk stake consumed the staked $DIAMONDS and minted shares
+  [PASS] clerk crush cleared the Blaze Diamonds
+  [PASS] net $DIAMONDS balance reflects stake-all then crush-mint
+WARNING: Invalid state transition: MENU → PLAYING
+     at: push_warning (core/variant/variant_utility.cpp:1112)
+  [PASS] Fort Knox has a second-chamber Assay Scale interactable
+  [PASS] weighing gold at the Assay Scale mints Fort Knox shares
+S6_VAULT_UTILITY: ALL PASS
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2284)
+ERROR: 3 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:604)

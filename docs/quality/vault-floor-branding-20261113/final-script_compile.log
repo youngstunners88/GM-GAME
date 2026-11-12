@@ -1,0 +1,24 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+[BUILD] Lil Blunt Adventure — build dev-local
+[Touch] layout build phone_landscape (releases all) (state MENU)
+WARNING: res://src/level/level_01_smoke_realm.tscn:4 - ext_resource, invalid UID: uid://hud001 - using text path instead: res://src/ui/hud.tscn
+     at: load (scene/resources/resource_format_text.cpp:453)
+WARNING: res://src/level/level_02_crystal_caverns.tscn:4 - ext_resource, invalid UID: uid://hud001 - using text path instead: res://src/ui/hud.tscn
+     at: load (scene/resources/resource_format_text.cpp:453)
+WARNING: res://src/level/level_03_gold_rush.tscn:5 - ext_resource, invalid UID: uid://hud001 - using text path instead: res://src/ui/hud.tscn
+     at: load (scene/resources/resource_format_text.cpp:453)
+WARNING: res://src/level/level_01_smoke_realm.tscn:4 - ext_resource, invalid UID: uid://hud001 - using text path instead: res://src/ui/hud.tscn
+     at: load (scene/resources/resource_format_text.cpp:453)
+WARNING: res://src/level/level_02_crystal_caverns.tscn:4 - ext_resource, invalid UID: uid://hud001 - using text path instead: res://src/ui/hud.tscn
+     at: load (scene/resources/resource_format_text.cpp:453)
+WARNING: res://src/level/level_03_gold_rush.tscn:5 - ext_resource, invalid UID: uid://hud001 - using text path instead: res://src/ui/hud.tscn
+     at: load (scene/resources/resource_format_text.cpp:453)
+checked 505 scripts, 353 scenes
+  [PASS] every GDScript compiles
+  [PASS] every scene instantiates with its script attached
+SCRIPT_COMPILE: ALL PASS
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2284)
+ERROR: 5 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:604)
