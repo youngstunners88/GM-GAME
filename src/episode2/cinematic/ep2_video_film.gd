@@ -218,7 +218,9 @@ func _check_stall() -> void:
 	if _video == null or not is_instance_valid(_video) or _stall_at >= 0.0:
 		return
 	var real_s: float = float(Time.get_ticks_msec() - _real_start_ms) / 1000.0
-	if _real_start_ms > 0 and real_s >= 5.0 and _video.stream_position < 0.3:
+	# ...and the film's own clock has run too: one long freeze at the start (5 real seconds, a handful of frames) is not a decoder
+	# that never started, and used to end the film 2.6 s in.
+	if _real_start_ms > 0 and real_s >= 5.0 and _t >= 3.0 and _video.stream_position < 0.3:
 		_stall_at = _t
 		print("[VIDEO] Ep2 film: STALLED - clock %.1f s but the stream position is %.2f (playing=%s). Continuing." % [_t, _video.stream_position, str(_video.is_playing())])
 		_diag = Label.new()

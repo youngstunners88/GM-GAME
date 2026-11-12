@@ -42,6 +42,7 @@ filmStart = await page.evaluate(() => { window.__fr.all = []; return performance
 await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });  // the phone-class CPU, for the film only
 const tFilm = Date.now();
 while (!has(/\[VIDEO\] Ep2 film: finished at clock/) && Date.now() - tFilm < 240000) await page.waitForTimeout(250);
+await page.waitForTimeout(1500);                                       // the hand-off behind the film's black prints its own timings
 filmEnd = await page.evaluate(() => performance.now());
 summary = lines.filter((l) => /\[VIDEO\]/.test(l)).join(' | ').slice(0, 400);
 await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
@@ -70,3 +71,4 @@ console.log('  build stages >= 30 ms (engine ms since the previous mark, include
 const inWin = logT.filter(([t, text]) => t >= filmStart - 2000 && t <= filmEnd && /extras|hideout build: (shell begin|room ready)/.test(text)).map(([t, text]) => [Math.round((t - filmStart) / 100) / 10, text.slice(0, 60)]);
 console.log('  marks [film s]: ' + JSON.stringify(inWin));
 console.log('  ' + (lines.find((l) => /hideout warm:/.test(l)) || 'no hideout warm line (warm-up not run)'));
+for (const l of lines.filter((x) => /film end, behind black|\[EP2\] extras /.test(x))) console.log('  ' + l.slice(0, 160));

@@ -142,6 +142,8 @@ const PATHS: PackedStringArray = [
 
 static var _held: Array = []
 static var _next: int = 0
+static var _missing: PackedStringArray = PackedStringArray()     # listed but not in the build yet (the streamed extras, before their pack mounts)
+static var _retry: PackedStringArray = PackedStringArray()       # ...and now there: read these too
 ## Tests only: behave as the web build does on any platform.
 static var force: bool = false
 
@@ -152,7 +154,13 @@ static func wanted() -> bool:
 
 
 static func done() -> bool:
-	return _next >= PATHS.size()
+	return _next >= PATHS.size() and _retry.is_empty()
+
+
+## The streamed pack has just mounted: what was skipped for not being there is read after all.
+static func extras_arrived() -> void:
+	_retry.append_array(_missing)
+	_missing.clear()
 
 
 ## 0..1, for the wait's progress bar.
@@ -164,13 +172,20 @@ static func progress() -> float:
 ## build (a streamed extra, a stripped file) is skipped; the room copes with that exactly as it does today.
 static func step(budget_ms: float) -> void:
 	var t0: int = Time.get_ticks_usec()
-	while _next < PATHS.size():
-		var path: String = PATHS[_next]
-		_next += 1
+	while not done():
+		var path: String
+		if _next < PATHS.size():
+			path = PATHS[_next]
+			_next += 1
+		else:
+			path = _retry[_retry.size() - 1]
+			_retry.remove_at(_retry.size() - 1)
 		if ResourceLoader.exists(path):
 			var res: Resource = load(path)
 			if res != null:
 				_held.append(res)
+		else:
+			_missing.append(path)
 		if float(Time.get_ticks_usec() - t0) / 1000.0 >= budget_ms:
 			return
 
@@ -179,6 +194,8 @@ static func step(budget_ms: float) -> void:
 static func release() -> void:
 	_held.clear()
 	_next = 0
+	_missing.clear()
+	_retry.clear()
 
 
 static func held_count() -> int:

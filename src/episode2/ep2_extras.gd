@@ -116,8 +116,29 @@ static func start(from: Node) -> void:
 	win.set("__ep2x_path", ProjectSettings.globalize_path(LOCAL))
 	win.set("__ep2x_tag", GameManager.BUILD_TAG)       # CI stamps it per build, so a new pack is never served stale
 	# Pure literal (security-sentinel INJ-003 form (a)): page base + pack name + the tag read from window, never interpolated.
-	JavaScriptBridge.eval("(function(){if(window.__ep2x_abort){window.__ep2x_abort.abort();}var controller=new AbortController();window.__ep2x_abort=controller;var base=window.location.href.substring(0,window.location.href.lastIndexOf('/')+1);fetch(base+'ep2_extras.pck?v='+encodeURIComponent(window.__ep2x_tag),{signal:controller.signal}).then(function(r){if(!r.ok){throw new Error('http '+r.status);}return r.arrayBuffer();}).then(function(b){if(controller.signal.aborted){return;}engine.copyToFS(window.__ep2x_path,b);window.__ep2x_state='ready';}).catch(function(e){if(controller.signal.aborted){return;}window.__ep2x_state='failed: '+e;});})();", true)
+	JavaScriptBridge.eval("(function(){if(window.__ep2x_abort){window.__ep2x_abort.abort();}var controller=new AbortController();window.__ep2x_abort=controller;var base=window.location.href.substring(0,window.location.href.lastIndexOf('/')+1);fetch(base+'ep2_extras.pck?v='+encodeURIComponent(window.__ep2x_tag),{signal:controller.signal}).then(function(r){if(!r.ok){throw new Error('http '+r.status);}return r.arrayBuffer();}).then(function(b){if(controller.signal.aborted){return;}window.__ep2x_buf=b;window.__ep2x_state='fetched';}).catch(function(e){if(controller.signal.aborted){return;}window.__ep2x_state='failed: '+e;});})();", true)
 	_watch(from.get_tree())
+
+
+## May the fetched pack be written and mounted NOW? Set by Episode 2's entry (false while the cart runs or a film plays). Unset = yes.
+static var mount_gate: Callable = Callable()
+
+
+## Write the fetched bytes into the engine's file system (the stall), free the browser's copy, and report the JS state.
+static func _write_fetched() -> String:
+	JavaScriptBridge.eval("(function(){try{engine.copyToFS(window.__ep2x_path,window.__ep2x_buf);window.__ep2x_state='ready';}catch(e){window.__ep2x_state='failed: '+e;}window.__ep2x_buf=null;})();", true)
+	return str(JavaScriptBridge.eval("window.__ep2x_state", true))
+
+
+## A safe moment has come (the black after the film): if the pack is fetched and waiting, mount it in this frame.
+static func mount_now() -> void:
+	if _state != "loading" or not OS.has_feature("web"):
+		return
+	if str(JavaScriptBridge.eval("window.__ep2x_state", true)) != "fetched":
+		return
+	var st: String = _write_fetched()
+	_state = "ready" if st == "ready" and ProjectSettings.load_resource_pack(LOCAL, false) and has(ARMORY) else "failed"
+	print("[EP2] extras ", _state, " (", st, ", mounted at a safe moment)")
 
 
 ## Poll the JS side twice a second until the file is written (or it failed / 5 minutes passed), then mount it.
@@ -129,6 +150,15 @@ static func _watch(tree: SceneTree) -> void:
 		var st: String = str(JavaScriptBridge.eval("window.__ep2x_state", true))
 		if st == "loading":
 			continue
+		if st == "fetched":
+			# The bytes are here. Writing 198 MB into the engine's file system and mounting it stops the one thread for about a
+			# second on a desktop and five at a phone-class CPU (measured 2026-11-11): never in the runner or under the film.
+			if mount_gate.is_valid() and not bool(mount_gate.call()):
+				waited = minf(waited, 290.0)       # the download is done: waiting for a safe moment is not a timeout
+				continue
+			st = _write_fetched()
+		if _state != "loading":
+			return                                 # mount_now() already did it
 		if st == "ready" and ProjectSettings.load_resource_pack(LOCAL, false):
 			_state = "ready" if has(ARMORY) else "failed"
 		else:

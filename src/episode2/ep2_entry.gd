@@ -85,6 +85,7 @@ func _ready() -> void:
 	_build_hud()
 	if OS.has_feature("web") and bool(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('ep2lakeprobe') === '1'", true)):
 		_probe_lake_assets()
+	Ep2Extras.mount_gate = _extras_mount_ok
 	Ep2Extras.start(self)          # web: fetch ep2_extras.pck (two-storey Armory, Tripo Rich & Utah) long before the town
 	# TEST-ONLY (?ep2unlock=1 on web): remember the unlock on this device exactly as a correct code
 	# does, so a phone can enter without a keyboard. The prompt and the code path are untouched.
@@ -474,7 +475,25 @@ const WARM_WAIT_MS := 24.0
 var _warm_hold: bool = false           # a fresh run is configured and waits for the warm-up before the cart starts
 var _warm_hold_ms: int = 0             # when that wait began (one console line says how long it was)
 
+## The streamed extras may be written and mounted now: a static screen is up or he is on foot. Never while the cart runs or a film
+## plays (Ep2Extras.mount_gate); the hideout mounts a pack that arrived under its film in the black after it.
+func _extras_mount_ok() -> bool:
+	if _gate != null or _warm_hold or _root == null:
+		return true
+	if _root.get_mode() == Ep2SessionRoot.Mode.RUNNER:
+		return false
+	var room: Node = _root.get_active()
+	return not (room != null and room.has_method("get_beat_name") and str(room.call("get_beat_name")) == "CINEMATIC")
+
+
+var _extras_seen: String = ""
+
 func _tick_hideout_warm() -> void:
+	var extras: String = Ep2Extras.state()
+	if extras != _extras_seen:
+		_extras_seen = extras
+		if extras == "ready":
+			Ep2HideoutWarm.extras_arrived()
 	if not Ep2HideoutWarm.wanted() or Ep2HideoutWarm.done():
 		if _warm_hold:
 			_warm_hold = false
@@ -846,6 +865,7 @@ func _sync_mini_pause() -> void:
 		_overlay.hide_mini_pause()
 
 func _exit_tree() -> void:
+	Ep2Extras.mount_gate = Callable()
 	Ep2HideoutWarm.release()      # leaving Episode 2: nothing is held for a hideout that will not be built
 	# the card pauses the StateMachine: never leave it paused behind a scene that is going away
 	if _pause_open:
