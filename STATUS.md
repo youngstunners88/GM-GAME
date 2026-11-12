@@ -1,5 +1,13 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-12 — Texture facelift, part 1: the worst grounds — PUSHED, deploying; NOT founder-verified.**
+- **How it was chosen:** every Episode 2 room was captured from Lil Blunt's eye, four directions each, with the real renderer (`tools/ep2_shots/texture_survey_shot.tscn`). The hideout, the lift and the woods held up. The worst were the big flat grounds.
+- **Auction road:** the desert was one flat colour and the road a plain brown strip. They now use the photographed dry-earth and packed-trail materials, and the roadside rocks a real stone surface.
+- **Town street (and the desert by the woods' road):** the sand blurred and showed a ring pattern a few metres ahead. It is now filtered properly at a walker's low angle and has relief (small ruts and stones that catch the light).
+- **Trail yard by Dude's ranch:** the same fix for its sand; the change is subtle there.
+- No new textures and nothing new to download: the materials were already in the streamed pack. Before/after: `docs/episode2-quality/texture-facelift-2026-11-12/`.
+- **Not done yet:** the rest of the list (the yellow plaster fronts in town, the lake's grass, the lift's rock). The main game file is at its size limit, so each further step has to free room first.
+
 **2026-11-12 — The mine-cart exit film plays much more smoothly on slow devices, and Dude's sunglasses are really black now — LIVE on itch, build `2026-11-12-70987b9` (CI run 43181230526, butler "Pushed to"); NOT founder-verified, no phone has run it.**
 - **What you should see:** the film after the cart flies out no longer freezes for seconds in its first 20 seconds. Measured in a phone-sized browser on the real web build, its longest freeze went from 1.1 s to 0.3 s on a normal computer, and from 5.5 s to 1.2 s with the CPU slowed 4x to stand in for a mid-range phone.
 - **Why it froze:** the web game has one thread for the film's picture, its sound, and building Inferno's hideout behind it. Reading the hideout's 84 models and textures, and unpacking the 198 MB streamed pack of extra art, landed in the middle of the film.
