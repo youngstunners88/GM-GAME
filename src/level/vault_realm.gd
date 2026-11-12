@@ -1260,7 +1260,9 @@ func _build_clerk_panel() -> void:
 	root.add_child(leave)
 
 	_clerk_msg = Label.new()
-	_clerk_msg.position = Vector2(-236, 236)
+	# Keep Mira's persistent holdings hint below the floor inlay, rather than
+	# drawing it across the protocol URL while her dialogue is open.
+	_clerk_msg.position = Vector2(-236, 312)
 	style_label(_clerk_msg, 24)
 	root.add_child(_clerk_msg)
 
