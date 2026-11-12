@@ -208,6 +208,7 @@ func _ready() -> void:
 		# only, where it is on-theme.
 	else:
 		_setup_fort_knox_depth()   # second chamber: the GOLD Rush Assay Hall (T4)
+	_setup_protocol_branding_strip()
 	# S10 T1/T2: ONE readable, threatening Security Sentinel per vault — it
 	# replaces BOTH the oversized faint background "emblem" AND the abstract
 	# sweeping "triangle" hazard the founder called useless. It patrols the
@@ -450,6 +451,43 @@ func _setup_floor() -> void:
 		if b.is_in_group("player") and b.has_method("pit_death"):
 			b.pit_death())
 	add_child(kz)
+
+func _setup_protocol_branding_strip() -> void:
+	# World-space floor inlay: below the attendant's feet, above the deck (-2),
+	# behind characters (0). No input, collision or camera-following HUD layer.
+	var logo_path := "res://src/assets/logos/diamonds.png" if _diamonds else "res://src/assets/logos/goldmine.png"
+	if _diamonds and not ResourceLoader.exists(logo_path):
+		logo_path = "res://src/assets/logos/founder/diamonds_correct.png"
+	if not ResourceLoader.exists(logo_path):
+		push_error("Vault floor branding logo missing: " + logo_path)
+		return
+	var texture: Texture2D = load(logo_path)
+	var logo_height := 88.0
+	var logo_width: float = logo_height * float(texture.get_width()) / float(texture.get_height())
+	var gap := 24.0
+	var strip := Node2D.new()
+	strip.name = "ProtocolFloorBranding"
+	strip.z_index = -1
+	add_child(strip)
+	var url := Label.new()
+	url.name = "ProtocolURL"
+	url.text = "diamonds1111.win" if _diamonds else "mine4gold.app"
+	style_label(url, 48)
+	url.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Resolve the inherited font/theme in the scene tree before measuring.
+	strip.add_child(url)
+	var text_size: Vector2 = url.get_minimum_size()
+	var width: float = text_size.x + 2.0 * (logo_width + gap)
+	var attendant_x: float = _clerk_x if _diamonds else _gideon_x
+	strip.position = Vector2(clampf(attendant_x, width / 2.0 + 24.0, BOUNDS - width / 2.0 - 24.0), FLOOR_Y + 60.0)
+	url.position = Vector2(-text_size.x / 2.0, -text_size.y / 2.0)
+	for side: float in [-1.0, 1.0]:
+		var logo := Sprite2D.new()
+		logo.name = "LeftLogo" if side < 0.0 else "RightLogo"
+		logo.texture = texture
+		logo.scale = Vector2.ONE * (logo_height / float(texture.get_height()))
+		logo.position.x = side * (text_size.x / 2.0 + gap + logo_width / 2.0)
+		strip.add_child(logo)
 
 func _setup_walls() -> void:
 	for x: float in [-8.0, BOUNDS + 8.0]:

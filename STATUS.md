@@ -1,5 +1,8 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-13 — Vault floor protocol branding strip (diamonds1111.win / mine4gold.app) under Mira + Gideon — local validation in progress; publication pending.**
+- Separate Episode 1 vault rooms now build one world-space logo | URL | logo strip below the attendant, using existing logo textures, 88px logo height and 48px outlined protocol-coloured text. Decoration only; dialogue/stake/crush, return paths, music and Episode 2 unchanged. Evidence and release state: `docs/quality/vault-floor-branding-20261113/REPORT.md`.
+
 **2026-11-12 — Texture facelift, part 1: the worst grounds — LIVE on itch, build `2026-11-12-22539a7` (CI run 43227607754, butler "Pushed to"); NOT founder-verified.**
 - **How it was chosen:** every Episode 2 room was captured from Lil Blunt's eye, four directions each, with the real renderer (`tools/ep2_shots/texture_survey_shot.tscn`). The hideout, the lift and the woods held up. The worst were the big flat grounds.
 - **Auction road:** the desert was one flat colour and the road a plain brown strip. They now use the photographed dry-earth and packed-trail materials, and the roadside rocks a real stone surface.
