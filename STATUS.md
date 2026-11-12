@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-13 — Vault floor protocol branding strip (diamonds1111.win / mine4gold.app) under Mira + Gideon — local validation in progress; publication pending.**
+**2026-11-13 — Vault floor protocol branding strip (diamonds1111.win / mine4gold.app) under Mira + Gideon — local validation complete; publication pending.**
 - Separate Episode 1 vault rooms now build one world-space logo | URL | logo strip below the attendant, using existing logo textures, 88px logo height and 48px outlined protocol-coloured text. Decoration only; dialogue/stake/crush, return paths, music and Episode 2 unchanged. Evidence and release state: `docs/quality/vault-floor-branding-20261113/REPORT.md`.
 
 **2026-11-12 — Texture facelift, part 1: the worst grounds — LIVE on itch, build `2026-11-12-22539a7` (CI run 43227607754, butler "Pushed to"); NOT founder-verified.**

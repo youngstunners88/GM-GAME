@@ -1,0 +1,367 @@
+[
+  {
+    "vault": "diamond",
+    "url": "http://localhost:8898/game/index.html?stage=2&spawn_x=2320&debug=beacon",
+    "errors": [],
+    "words": [
+      {
+        "path": "/root/@CanvasLayer@20/Banner",
+        "rect": [
+          12,
+          6,
+          450,
+          20
+        ],
+        "text": "OFFLINE MODE — scores saved locally, will sync when reconnected"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/Altar_short/@Label@342",
+        "rect": [
+          820,
+          322,
+          182,
+          36
+        ],
+        "text": "288-DAY POOL"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/Altar_long/@Label@346",
+        "rect": [
+          1560,
+          292,
+          592,
+          47
+        ],
+        "text": "★ 2888-DAY POOL — PRIMARY (2x) ★"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/VaultClerk/@Label@349",
+        "rect": [
+          334,
+          310,
+          265,
+          75
+        ],
+        "text": "MIRA \"LEDGER\" VOSS\n[E] TALK"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/ProtocolFloorBranding/ProtocolURL",
+        "rect": [
+          212,
+          586,
+          436,
+          67
+        ],
+        "text": "diamonds1111.win"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/SecuritySentinel/@Label@355",
+        "rect": [
+          1196,
+          278,
+          300,
+          71
+        ],
+        "text": "DIAMOND VAULT\nSECURITY SENTINEL"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@Label@356",
+        "rect": [
+          2370,
+          342,
+          90,
+          39
+        ],
+        "text": "EXIT ->"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@CanvasLayer@357/@Label@358",
+        "rect": [
+          24,
+          24,
+          551,
+          87
+        ],
+        "text": "DIAMONDS 0   |   DIAMOND SHARES 0\nWalk to an altar, press E to STAKE 25%"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@CanvasLayer@362/PanelClose",
+        "rect": [
+          12,
+          12,
+          48,
+          48
+        ],
+        "text": "×"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@CanvasLayer@362/@Control@363/@Label@367",
+        "rect": [
+          404,
+          180,
+          618,
+          42
+        ],
+        "text": "$DIAMONDS: 0      BLAZE DIAMONDS: 0 / 20"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@CanvasLayer@362/@Control@363/@Label@368",
+        "rect": [
+          404,
+          224,
+          720,
+          81
+        ],
+        "text": "MIRA: Ready to stake? Hit STAKE and lock those diamonds in."
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@CanvasLayer@362/@Control@363/@Label@369",
+        "rect": [
+          1080,
+          170,
+          154,
+          34
+        ],
+        "text": "[E] / tap: next"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@CanvasLayer@362/@Control@363/@Button@378",
+        "rect": [
+          940,
+          500,
+          180,
+          72
+        ],
+        "text": "LEAVE"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@CanvasLayer@362/@Control@363/@Label@379",
+        "rect": [
+          404,
+          672,
+          710,
+          34
+        ],
+        "text": "MIRA: Empty pockets, full vibes. Grab some $DIAMONDS first."
+      }
+    ],
+    "logs": [
+      "[BUILD] Lil Blunt Adventure — build dev-local",
+      "[BUILD] Lil Blunt Adventure — build dev-local",
+      "[SceneRouter] Loading res://src/level/diamond_vault_realm.tscn (nodes before: 623)",
+      "[SceneRouter] Loaded res://src/level/diamond_vault_realm.tscn (sync web path)",
+      "[MEM] scene=res://src/level/diamond_vault_realm.tscn static=0MB (peak 0) tex=41MB (peak 41) video=102MB"
+    ]
+  },
+  {
+    "vault": "fort",
+    "url": "http://localhost:8898/game/index.html?stage=3&spawn_x=2560&debug=beacon",
+    "errors": [],
+    "words": [
+      {
+        "path": "/root/@CanvasLayer@340/Banner",
+        "rect": [
+          12,
+          6,
+          450,
+          20
+        ],
+        "text": "OFFLINE MODE — scores saved locally, will sync when reconnected"
+      },
+      {
+        "path": "/root/FortKnoxRealm/Altar_short/@Label@393",
+        "rect": [
+          820,
+          322,
+          182,
+          36
+        ],
+        "text": "288-DAY POOL"
+      },
+      {
+        "path": "/root/FortKnoxRealm/Altar_long/@Label@397",
+        "rect": [
+          1560,
+          292,
+          592,
+          47
+        ],
+        "text": "★ 2888-DAY POOL — PRIMARY (2x) ★"
+      },
+      {
+        "path": "/root/FortKnoxRealm/GideonVale/@Label@399",
+        "rect": [
+          250,
+          280,
+          360,
+          75
+        ],
+        "text": "GIDEON \"GOLDWATER\" VALE\n[E] TALK"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@Label@402",
+        "rect": [
+          1780,
+          82,
+          293,
+          114
+        ],
+        "text": "FORT KNOX ASSAY —\nWEIGH IT. STAKE IT.\n100-DAY MINERS ONLY."
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@424",
+        "rect": [
+          2220,
+          -68,
+          320,
+          47
+        ],
+        "text": "ASSAY SCALE"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@428",
+        "rect": [
+          2210,
+          282,
+          96,
+          36
+        ],
+        "text": "STAKED"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@429",
+        "rect": [
+          2210,
+          382,
+          17,
+          42
+        ],
+        "text": "0"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@430",
+        "rect": [
+          2432,
+          282,
+          102,
+          36
+        ],
+        "text": "RETURN"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@431",
+        "rect": [
+          2432,
+          382,
+          17,
+          42
+        ],
+        "text": "1"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@432",
+        "rect": [
+          2220,
+          487,
+          320,
+          36
+        ],
+        "text": "[E] WEIGH GOLD"
+      },
+      {
+        "path": "/root/FortKnoxRealm/ProtocolFloorBranding/ProtocolURL",
+        "rect": [
+          187,
+          586,
+          345,
+          67
+        ],
+        "text": "mine4gold.app"
+      },
+      {
+        "path": "/root/FortKnoxRealm/SecuritySentinel/@Label@436",
+        "rect": [
+          1150,
+          278,
+          300,
+          71
+        ],
+        "text": "FORT KNOX\nSECURITY SENTINEL"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@Label@437",
+        "rect": [
+          2370,
+          342,
+          90,
+          39
+        ],
+        "text": "EXIT ->"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@CanvasLayer@438/@Label@439",
+        "rect": [
+          24,
+          24,
+          551,
+          87
+        ],
+        "text": "GOLD 1   |   FORT KNOX SHARES 0\nWalk to an altar, press E to STAKE 25%"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@CanvasLayer@444/PanelClose",
+        "rect": [
+          12,
+          12,
+          48,
+          48
+        ],
+        "text": "×"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@CanvasLayer@444/@Control@445/@Label@449",
+        "rect": [
+          404,
+          276,
+          720,
+          81
+        ],
+        "text": "GIDEON: Step up to the assay scale, friend — let's weigh that glitter proper."
+      },
+      {
+        "path": "/root/FortKnoxRealm/@CanvasLayer@444/@Control@445/@Button@450",
+        "rect": [
+          404,
+          396,
+          190,
+          96
+        ],
+        "text": "LEAVE"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@CanvasLayer@444/@Control@445/@Button@452",
+        "rect": [
+          976,
+          396,
+          170,
+          96
+        ],
+        "text": "NEXT"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@CanvasLayer@444/@Control@445/@Label@453",
+        "rect": [
+          404,
+          500,
+          281,
+          34
+        ],
+        "text": "[E] / NEXT   [ESC] / LEAVE"
+      }
+    ],
+    "logs": [
+      "[BUILD] Lil Blunt Adventure — build dev-local",
+      "[BUILD] Lil Blunt Adventure — build dev-local"
+    ]
+  }
+]
