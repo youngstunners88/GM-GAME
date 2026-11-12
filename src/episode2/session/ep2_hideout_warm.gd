@@ -11,7 +11,7 @@ extends RefCounted
 ## wait before the cart starts. The resources are HELD until the room has been built from them (a load is only a cache hit while
 ## something still holds the resource), then released. Nothing about the room or the film changes; only when the disk work happens.
 ##
-## The list is generated: `<godot> --headless --path . res://tools/ep2_perf/hideout_warm_manifest.tscn -- write` observes every load
+## The list is generated: `<godot> --headless --path . tools/ep2_perf/hideout_warm_manifest.tscn -- write` observes every load
 ## the facility asks for while it builds. tests/ep2_hideout_warm_test fails when the room starts loading something the list misses.
 
 # --- generated: begin (tools/ep2_perf/hideout_warm_manifest.tscn -- write; 121 paths)

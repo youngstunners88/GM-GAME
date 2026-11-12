@@ -2,8 +2,8 @@ extends Node
 ## Lists every resource the Smelting Facility loads while it builds (the room that is built BEHIND the cart-exit film), with what each
 ## costs to load cold, and writes them into Ep2HideoutWarm.LIST so Episode 2 can load them before the run starts instead of inside
 ## the film (mobile sprint 2026-11-10: on a phone-class CPU the film froze for 27 of its 61 seconds while the room loaded).
-##   <godot> --headless --path . res://tools/ep2_perf/hideout_warm_manifest.tscn            # print the list
-##   <godot> --headless --path . res://tools/ep2_perf/hideout_warm_manifest.tscn -- write   # ...and rewrite the PATHS block
+##   <godot> --headless --path . tools/ep2_perf/hideout_warm_manifest.tscn            # print the list
+##   <godot> --headless --path . tools/ep2_perf/hideout_warm_manifest.tscn -- write   # ...and rewrite the PATHS block
 const FACILITY := "res://src/episode2/chamber/smelting_facility.tscn"
 const TARGET := "res://src/episode2/session/ep2_hideout_warm.gd"
 const EXT := ["glb", "gltf", "res", "tres", "scn", "tscn", "png", "jpg", "jpeg", "webp", "ogg", "mp3", "wav", "gdshader"]
