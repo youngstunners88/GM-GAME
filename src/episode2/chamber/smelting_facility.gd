@@ -447,7 +447,6 @@ func _prebuild_room() -> void:
 	_sync_visuals()
 	_room_ready = true
 	room_ready.emit()
-	_trace("room ready")
 
 
 ## A small corner line right after the film saying how it ended (end / skip_hold / stall / decoder_early ...), so "the video
@@ -1482,7 +1481,6 @@ func _trace(stage: String) -> void:
 
 
 func _build_visuals() -> void:
-	_trace("shell begin")
 	_room_built = true
 	_room_ready = false
 	if _visuals and is_instance_valid(_visuals):
@@ -1659,16 +1657,13 @@ func _build_visuals() -> void:
 	bull_key.shadow_enabled = true
 	bull_key.position = BULL_POSITION + Vector3(-1.8, 2.8, -2.2)
 	_visuals.add_child(bull_key)
-	_trace("shell end")
 	if _build_slice: await get_tree().process_frame
 	await _build_bull(timber)
-	_trace("bull end")
 	if _build_slice: await get_tree().process_frame
 
 	# --- TARGET PRACTICE (skill ep2-range-lesson): three steel plates at 5.8 / 8.8 / 11.8 m down a marked lane.
 	# RangeDressing owns how it looks; this scene owns the lesson and only reads the contract.
 	var range_parts: Dictionary = RangeDressing.build(_visuals, timber)
-	_trace("range end")
 	if _build_slice: await get_tree().process_frame
 	for plate in range_parts["targets"]:
 		_mold_nodes.append(plate)
@@ -1676,7 +1671,6 @@ func _build_visuals() -> void:
 
 	# --- LIL BLUNT: the real hero (not the old primitive), standing in the room, lying when he comes to.
 	_player_node = _build_player()
-	_trace("hero end")
 	if _build_slice: await get_tree().process_frame
 	# The helmet hangs on its peg at the end of the gun wall; the Winchester is the middle rifle on the rack.
 	_helmet_node = _build_helmet()
@@ -1685,7 +1679,6 @@ func _build_visuals() -> void:
 
 	# --- the hangout: alcove, trophies, armory, Gatling, poster, braziers (see HideoutDressing).
 	_dressing = await HideoutDressing.build(_visuals, _build_slice)
-	_trace("dressing end")
 	_blockers = (_dressing.get("blockers", []) as Array).duplicate()
 	for sx in [-1.0, 1.0]:
 		_blockers.append([Vector2(sx * 2.3, 15.4), 0.45])   # the open elevator-door leaves standing into the room
@@ -1958,7 +1951,6 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_settle = 0.0
 	var ok: bool = _bull.setup(BULL_RIG_MODEL, BULL_RIG_H, BULL_HEIGHT,
 		{"walk": BULL_WALK_CLIP, "run": BULL_RUN_CLIP}, [BULL_IDLE, BULL_SIT, BULL_SIP])
-	_trace("bull rig")
 	if _build_slice: await get_tree().process_frame
 	if not ok:
 		# No model: a visible stand-in, never nothing.
@@ -1971,7 +1963,6 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 		_bull.add_child(fb)
 		return
 	_bull.add_all_clips(BULL_SIT_CLIPS)
-	_trace("bull clips")
 	if _build_slice: await get_tree().process_frame
 	if _bull.anim:
 		for c in [BULL_SIT, BULL_STAND_UP]:
@@ -1984,7 +1975,6 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_bull.play(BULL_SIT if _bull.anim and _bull.anim.has_animation(BULL_SIT) else BULL_IDLE, 1.0, 0.0)
 	if _build_slice: await get_tree().process_frame
 	_fix_bull_materials(_bull.model, true)
-	_trace("bull materials")
 	if _build_slice: await get_tree().process_frame
 	# His seat: a sturdy crate under the Sit_and_Drink hips (0.70 rig units -> 0.85 m), behind him.
 	var seat := _box(Vector3(1.0, 0.66, 0.9), Vector3.ZERO, timber)

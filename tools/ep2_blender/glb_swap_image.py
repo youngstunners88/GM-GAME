@@ -48,6 +48,21 @@ def main() -> int:
         f.write(text)
         f.write(struct.pack("<II", len(out), 0x004E4942))
         f.write(out)
+    # Godot's glTF import (embedded_image_handling=1, "extract") writes each embedded image ONCE, next to the GLB, as
+    # <glb stem>_<image name>.<ext>, and renders from that file from then on: it never re-extracts over an existing one. Swapping
+    # the image inside the GLB alone therefore changes nothing in the game (2026-11-12: Dude's black sunglasses shipped this way).
+    import os
+    stem = os.path.splitext(src)[0]
+    name = images[index].get("name", "")
+    for ext in (".png", ".jpg", ".jpeg", ".webp"):
+        extracted = "%s_%s%s" % (stem, name, ext)
+        if os.path.exists(extracted):
+            if ext == (".png" if images[index]["mimeType"] == "image/png" else ".jpg"):
+                with open(extracted, "wb") as f:
+                    f.write(new_bytes)
+                print("GLB_SWAP also updated the extracted texture the engine renders: %s" % extracted)
+            else:
+                print("GLB_SWAP WARNING: %s is what the engine renders and is a different format: update it by hand" % extracted)
     print("GLB_SWAP image %d (%s): %d -> %d bytes; file %d -> %d bytes" % (index, images[index].get("name", "")[:24],
         doc["bufferViews"][target_view]["byteLength"], len(new_bytes), 12 + 8 + jlen + 8 + blen, 12 + 8 + len(text) + 8 + len(out)))
     return 0

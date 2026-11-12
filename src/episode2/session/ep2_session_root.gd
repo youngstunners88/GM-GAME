@@ -463,18 +463,12 @@ func _wire_chamber(c: Node) -> void:
 	if "handoff_ready" in c:
 		c.set("handoff_ready", func() -> bool: return _pb_node == null or not is_instance_valid(_pb_node) or bool(_pb_node.call("is_prebuilt")))
 
-## The next scene's models are requested on a worker thread while Lil Blunt is still panicking on the cart, so
-## the cut to the film and the hideout never stalls on a disk read (the "ridiculously delayed" film).
-const WARM_DIRS := ["res://src/episode2/assets/", "res://src/episode2/assets/hideout/"]
-
+## The film is requested while Lil Blunt is still panicking on the cart, so the cut to it never waits on a read. The hideout's own
+## models used to be requested here too (every .glb in two folders); Ep2HideoutWarm now reads exactly the ones the room uses before
+## the cart starts, and on the non-threaded web build that request did its work on the game thread at the end of the runner.
 func _warm_chamber_assets(_level: int = 0) -> void:
-	# The Seedance transition film first: it is what the very next cut shows, and it must start the frame it is asked to.
 	if ResourceLoader.exists(SmeltingFacilityChamber.FILM_VIDEO):
 		ResourceLoader.load_threaded_request(SmeltingFacilityChamber.FILM_VIDEO)
-	for d in WARM_DIRS:
-		for f in DirAccess.get_files_at(d):
-			if f.ends_with(".glb"):
-				ResourceLoader.load_threaded_request(d + f)
 
 ## Founder 2026-10-04: the mine music must phase out BEFORE Lil Blunt goes into the film (the film brings the stage
 ## theme in itself). Panic level 2 is ~90 m before the mouth (~3.5 s at speed): a 3 s fade ends right at the cut.
