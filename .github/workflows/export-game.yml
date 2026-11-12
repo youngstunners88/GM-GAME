@@ -481,6 +481,10 @@ jobs:
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' common-sense-tests.log; then exit 1; fi
           # Mobile sprint 2026-11-10: no forced wait at the lava door or on the lift, the quad reveal after a late arrival, Inferno's
           # one-way walk to the bar, the quad never idling in front of Lil Blunt, the ride/lake songs blending under speech.
+          # The cart-exit film (mobile sprint 2026-11-12): every resource the hideout loads behind the film is read before the cart starts.
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_hideout_warm_test.tscn > hideout-warm-tests.log 2>&1
+          grep -q 'EP2_HIDEOUT_WARM: ALL PASS' hideout-warm-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' hideout-warm-tests.log; then exit 1; fi
           timeout 420 "$GODOT_BIN" --headless res://tests/ep2_mobile_critical_path_test.tscn > mobile-critical-path-tests.log 2>&1
           grep -q 'EP2_MOBILE_CRITICAL_PATH: ALL PASS' mobile-critical-path-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' mobile-critical-path-tests.log; then exit 1; fi

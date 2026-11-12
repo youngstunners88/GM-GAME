@@ -13,7 +13,11 @@ extends RefCounted
 ## disk (has() is true at once, nothing downloads).
 
 const PACK := "ep2_extras.pck"
-const LOCAL := "user://ep2_extras.pck"
+## In MEMORY only, never under user:// (mobile sprint 2026-11-11). user:// is mirrored to IndexedDB on the web: the first save after the
+## pack landed copied all 198 MB into the browser's storage (a long stall at a Save, and a quota failure on phones, iOS Safari above
+## all). Nothing ever read that copy back - every run fetches the pack again (the browser's HTTP cache serves a repeat) - so it lives
+## in the engine's plain in-memory /tmp.
+const LOCAL := "/tmp/ep2_extras.pck"
 const ARMORY := "res://src/episode2/extras/armory/armory2.glb"
 const BORCHARDT_GUN := "res://src/episode2/extras/armory/borchardt_c93.glb"   # gun only (Meshy image-to-3D of the founder's C93 reference): the stranger's, in the draw
 ## The trade counter's display pieces (founder 2026-11-03, tools/ep2_forge/meshy_prop_to_game.py ... solid): his gun-only and in-hand models and the Shipment crate.
@@ -113,7 +117,7 @@ static func start(from: Node) -> void:
 	_state = "loading"
 	var win: JavaScriptObject = JavaScriptBridge.get_interface("window")
 	win.set("__ep2x_state", "loading")
-	win.set("__ep2x_path", ProjectSettings.globalize_path(LOCAL))
+	win.set("__ep2x_path", LOCAL)
 	win.set("__ep2x_tag", GameManager.BUILD_TAG)       # CI stamps it per build, so a new pack is never served stale
 	# Pure literal (security-sentinel INJ-003 form (a)): page base + pack name + the tag read from window, never interpolated.
 	JavaScriptBridge.eval("(function(){if(window.__ep2x_abort){window.__ep2x_abort.abort();}var controller=new AbortController();window.__ep2x_abort=controller;var base=window.location.href.substring(0,window.location.href.lastIndexOf('/')+1);fetch(base+'ep2_extras.pck?v='+encodeURIComponent(window.__ep2x_tag),{signal:controller.signal}).then(function(r){if(!r.ok){throw new Error('http '+r.status);}return r.arrayBuffer();}).then(function(b){if(controller.signal.aborted){return;}window.__ep2x_buf=b;window.__ep2x_state='fetched';}).catch(function(e){if(controller.signal.aborted){return;}window.__ep2x_state='failed: '+e;});})();", true)

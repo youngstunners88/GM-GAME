@@ -532,17 +532,15 @@ func _on_video_film_finished() -> void:
 		var t_mounted: int = Time.get_ticks_msec()
 		if Ep2KitProps.pending_count() > 0:
 			Ep2KitProps.upgrade_pending()
-		print("[EP2] film end, behind black: extras mount %d ms, kit upgrade %d ms" % [t_mounted - t_black, Time.get_ticks_msec() - t_mounted])
+		_trace("behind the film's black: extras mount %d ms, kit upgrade %d ms" % [t_mounted - t_black, Time.get_ticks_msec() - t_mounted])
 		# The room's FIRST drawn frame after a minute of film compiles its shaders and uploads its buffers: about a second on a
 		# desktop, four at a phone-class CPU (measured, scripts/ep2-mobile-film-probe.mjs). It used to land after the stage theme had
 		# already started and Inferno had begun to speak, so the song and the line stalled with the picture. Now it happens here,
 		# behind the film's black with nothing playing; only then does the theme come back in, the black lift and the lesson begin.
-		var t_frame: int = Time.get_ticks_msec()
 		await get_tree().process_frame
 		await get_tree().process_frame
 		if not is_inside_tree() or _resolved:
 			return
-		print("[EP2] film end, behind black: the room's first frames %d ms" % (Time.get_ticks_msec() - t_frame))
 	if _vfilm and is_instance_valid(_vfilm):
 		_vfilm.start_song()
 		_vfilm.release(0.6)         # the room is already built behind the film: a quick clean dissolve, no blank wait
