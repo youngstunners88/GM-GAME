@@ -879,8 +879,11 @@ func _process(_delta: float) -> void:
 	world_routes.tick(self,_delta)
 	if _mode==Mode.CHAMBER:farmer_trip.tick(self,_delta)
 	_town_save_due -= _delta
-	if _town_save_due <= 0:
-		_town_save_due = 20.0
+	if _town_save_due <= 0.0 and _town_save_ok():
+		# Twenty seconds of town state (every body's pose and errand, the cart) plus a JSON write is ~1.5 ms measured, but it used to
+		# land on whatever frame it fell due on - mid-duel, mid-cutscene, mid-ride. It now waits for a frame where the player actually
+		# has control, and the next window is jittered so it cannot lock onto a beat boundary.
+		_town_save_due = 20.0 + randf() * 4.0
 		_persist_town()
 	if _armory_save_due >= 0.0:
 		_armory_save_due -= _delta
@@ -928,6 +931,15 @@ func _restore_town(chamber: Node) -> void:
 		var saved: Variant=manager.town_people_state.get("farmer_trip",{})
 		farmer_trip.enter_town(chamber,world_routes.rooms.get("woods_quad",{}).get("node",null),saved if saved is Dictionary else {})
 	_town_save_due = 20.0
+
+## Quiet frames only: never inside a transition, a film, a cutscene or a scripted show.
+func _town_save_ok() -> bool:
+	if _mode != Mode.CHAMBER:
+		return false
+	if is_instance_valid(_active) and _active.has_method("has_player_control"):
+		return _active.has_player_control()
+	return true
+
 
 func _persist_town() -> void:
 	var town: GoldTownChamber=farmer_trip.town

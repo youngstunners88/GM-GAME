@@ -1325,10 +1325,11 @@ func _on_beat_entered(b: int) -> void:
 			# swings onto the saddle, in one continuous move
 			_start_show([
 				{"do": "call", "fn": _approach_quad},
-				{"do": "until", "pred": func() -> bool: return not is_gliding() and not _bull.is_walking() and _hold <= 0.0},
+				{"do": "until", "pred": func() -> bool: return not is_gliding() and not _bull.is_walking() and _hold <= 0.0,
+					"timeout": 10.0},
 				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_quad_mount")},
 				{"do": "call", "fn": _mount},
-				{"do": "until", "pred": func() -> bool: return not is_gliding() and _bull_swing.is_empty()}], true)
+				{"do": "until", "pred": func() -> bool: return not is_gliding() and _bull_swing.is_empty(), "timeout": 10.0}], true)
 		Beat.RIDE:
 			_begin_ride()
 		Beat.DROPOFF:

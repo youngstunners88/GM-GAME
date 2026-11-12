@@ -978,23 +978,43 @@ func _spawn_chips(at: Vector3, normal: Vector3, glass: bool) -> void:
 	_effects.append([particles, 1.4])
 
 
+## Gunfire, impacts and shouts. A duel fires these in bursts, so the stream is decoded once and the players are a small reused
+## ring: building an AudioStreamPlayer3D and going through the resource loader on every shot was a per-shot hitch mid-fight.
+const SOUND_VOICES := 6
+var _sound_streams: Dictionary = {}
+var _sound_ring: Array = []
+var _sound_next: int = 0
+
 func _play_sound(file: String, at: Vector3, volume: float) -> void:
 	var path: String = SOUND_DIR + file
-	if not ResourceLoader.exists(path):
-		return
-	var stream: AudioStream = load(path) as AudioStream
+	var stream: AudioStream = _sound_streams.get(path) as AudioStream
 	if stream == null:
-		return
-	var player := AudioStreamPlayer3D.new()
-	player.stream = stream
-	player.bus = "SFX"
-	player.volume_db = volume
-	player.unit_size = 8.0
-	player.max_distance = 90.0
-	add_child(player)
-	player.global_position = at
-	player.finished.connect(player.queue_free)
-	player.play()
+		if not ResourceLoader.exists(path):
+			return
+		stream = load(path) as AudioStream
+		if stream == null:
+			return
+		_sound_streams[path] = stream
+	var voice: AudioStreamPlayer3D = null
+	for v in _sound_ring:
+		if v != null and is_instance_valid(v) and not (v as AudioStreamPlayer3D).playing:
+			voice = v
+			break
+	if voice == null:
+		if _sound_ring.size() < SOUND_VOICES:
+			voice = AudioStreamPlayer3D.new()
+			voice.bus = "SFX"
+			voice.unit_size = 8.0
+			voice.max_distance = 90.0
+			add_child(voice)
+			_sound_ring.append(voice)
+		else:
+			voice = _sound_ring[_sound_next % _sound_ring.size()]
+			_sound_next += 1
+	voice.stream = stream
+	voice.volume_db = volume
+	voice.global_position = at
+	voice.play()
 
 
 # --- optional blood (the parallel FX packet may not be mounted) ----------------------------------------------
