@@ -16,6 +16,9 @@ const WOODS := preload("res://src/episode2/chamber/woods_quad.tscn")
 const TOWN := preload("res://src/episode2/chamber/gold_town.tscn")
 const EXPECTED_PASS := 31
 const DT := 1.0 / 60.0
+## The music checks run on wall-clock frames: under a loaded CI box the steepest legitimate step measured 255 dB/s. The bug they guard
+## (a speech duck applied as a step) moved 720-960 dB/s, so 400 keeps a clear margin on both sides.
+const MAX_DB_PER_S := 400.0
 
 var _pass: int = 0
 var _fail: int = 0
@@ -404,10 +407,10 @@ func test_music_blend_under_speech() -> void:
 	await get_tree().create_timer(3.0).timeout
 	var after_lake: Dictionary = _music_decks()
 	# Assert (before the fix both songs stepped 12 dB in a single frame when the line began and again when it ended: >= 720 dB/s)
-	_check("mounting: no song jumps while a line is spoken inside the blend (fastest %.0f dB/s; the duck ramps at 80)" % mount_rate, mount_rate < 250.0)
+	_check("mounting: no song jumps while a line is spoken inside the blend (fastest %.0f dB/s; the duck ramps at 80)" % mount_rate, mount_rate < MAX_DB_PER_S)
 	_check("...the two songs together hold one loudness mid-blend (power %.2f)" % mid_power, mid_power > 0.7 and mid_power < 1.25)
 	_check("...and it ends on the ride song alone, at full level", after_mount.size() == 1 and float(after_mount.values()[0]) > 0.9, str(after_mount))
-	_check("the lake: no song jumps either (fastest %.0f dB/s)" % lake_rate, lake_rate < 250.0)
+	_check("the lake: no song jumps either (fastest %.0f dB/s)" % lake_rate, lake_rate < MAX_DB_PER_S)
 	_check("...and it ends on the lake song alone, at full level", after_lake.size() == 1 and float(after_lake.values()[0]) > 0.9, str(after_lake))
 	AudioManager.fade_out_music(0.1)
 	await get_tree().create_timer(0.3).timeout
