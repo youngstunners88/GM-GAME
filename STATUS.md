@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-12 — Texture facelift, part 1: the worst grounds — PUSHED, deploying; NOT founder-verified.**
+**2026-11-12 — Texture facelift, part 1: the worst grounds — LIVE on itch, build `2026-11-12-22539a7` (CI run 43227607754, butler "Pushed to"); NOT founder-verified.**
 - **How it was chosen:** every Episode 2 room was captured from Lil Blunt's eye, four directions each, with the real renderer (`tools/ep2_shots/texture_survey_shot.tscn`). The hideout, the lift and the woods held up. The worst were the big flat grounds.
 - **Auction road:** the desert was one flat colour and the road a plain brown strip. They now use the photographed dry-earth and packed-trail materials, and the roadside rocks a real stone surface.
 - **Town street (and the desert by the woods' road):** the sand blurred and showed a ring pattern a few metres ahead. It is now filtered properly at a walker's low angle and has relief (small ruts and stones that catch the light).
