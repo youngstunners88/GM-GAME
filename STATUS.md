@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-12 — The mine-cart exit film plays much more smoothly on slow devices — PUSHED, deploying; NOT founder-verified, no phone has run it.**
+**2026-11-12 — The mine-cart exit film plays much more smoothly on slow devices, and Dude's sunglasses are really black now — LIVE on itch, build `2026-11-12-70987b9` (CI run 43181230526, butler "Pushed to"); NOT founder-verified, no phone has run it.**
 - **What you should see:** the film after the cart flies out no longer freezes for seconds in its first 20 seconds. Measured in a phone-sized browser on the real web build, its longest freeze went from 1.1 s to 0.3 s on a normal computer, and from 5.5 s to 1.2 s with the CPU slowed 4x to stand in for a mid-range phone.
 - **Why it froze:** the web game has one thread for the film's picture, its sound, and building Inferno's hideout behind it. Reading the hideout's 84 models and textures, and unpacking the 198 MB streamed pack of extra art, landed in the middle of the film.
 - **What changed:** the hideout's files are read before the cart starts (a short bar, about 2 s, on a fresh run; nothing on Continue or the playtest presets). The streamed pack is never unpacked while the cart runs or the film plays; it is unpacked in the black after the film. The stage theme comes in after the hideout's first frame instead of under it. The streamed pack is now kept in memory only, so a Save no longer copies 198 MB into the browser's storage.
