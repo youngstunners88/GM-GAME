@@ -11,135 +11,23 @@ extends RefCounted
 ## wait before the cart starts. The resources are HELD until the room has been built from them (a load is only a cache hit while
 ## something still holds the resource), then released. Nothing about the room or the film changes; only when the disk work happens.
 ##
-## PATHS is generated: `<godot> --headless --path . res://tools/ep2_perf/hideout_warm_manifest.tscn -- write` observes every load
+## The list is generated: `<godot> --headless --path . res://tools/ep2_perf/hideout_warm_manifest.tscn -- write` observes every load
 ## the facility asks for while it builds. tests/ep2_hideout_warm_test fails when the room starts loading something the list misses.
 
-# --- generated: begin (tools/ep2_perf/hideout_warm_manifest.tscn -- write)
-const PATHS: PackedStringArray = [
-	"res://src/episode2/art/molten_flow.gdshader",
-	"res://src/episode2/assets/boulder_rock.glb",
-	"res://src/episode2/assets/boulder_rock_normal.jpg",
-	"res://src/episode2/assets/gold_pile.glb",
-	"res://src/episode2/assets/hideout/armory_architecture.glb",
-	"res://src/episode2/assets/hideout/bear_head.glb",
-	"res://src/episode2/assets/hideout/bear_head_0.jpg",
-	"res://src/episode2/assets/hideout/bear_standing.glb",
-	"res://src/episode2/assets/hideout/bear_standing_0.jpg",
-	"res://src/episode2/assets/hideout/cast_ingot.glb",
-	"res://src/episode2/assets/hideout/finish_oak_normal.png",
-	"res://src/episode2/assets/hideout/finish_stone_normal.png",
-	"res://src/episode2/assets/hideout/firing_bench.glb",
-	"res://src/episode2/assets/hideout/forge_crucible.glb",
-	"res://src/episode2/assets/hideout/furnace_stonework.glb",
-	"res://src/episode2/assets/hideout/ore_cart.glb",
-	"res://src/episode2/assets/hideout/ore_cart_0.jpg",
-	"res://src/episode2/assets/hideout/pour_ladle.glb",
-	"res://src/episode2/assets/hideout/range_plaque.glb",
-	"res://src/episode2/assets/hideout/range_plaque_range_plank_b.png",
-	"res://src/episode2/assets/hideout/range_wall.glb",
-	"res://src/episode2/assets/inferno_bull_rigged.glb",
-	"res://src/episode2/assets/inferno_bull_rigged_0.jpg",
-	"res://src/episode2/assets/inferno_bull_rigged_1.jpg",
-	"res://src/episode2/assets/inferno_bull_rigged_2.jpg",
-	"res://src/episode2/assets/inferno_bull_rigged_3.jpg",
-	"res://src/episode2/assets/inferno_bull_running_clip.glb",
-	"res://src/episode2/assets/inferno_bull_sit_clips.glb",
-	"res://src/episode2/assets/inferno_bull_sit_clips_texture_0.jpg",
-	"res://src/episode2/assets/inferno_bull_walking_clip.glb",
-	"res://src/episode2/assets/ingot_rack.glb",
-	"res://src/episode2/assets/lantern.glb",
-	"res://src/episode2/assets/lil_blunt_hero.glb",
-	"res://src/episode2/assets/lil_blunt_hero_texture_0.jpg",
-	"res://src/episode2/assets/lil_blunt_running_clip.glb",
-	"res://src/episode2/assets/lil_blunt_walking_clip.glb",
-	"res://src/episode2/assets/miner_helmet.glb",
-	"res://src/episode2/assets/miner_helmet_0.jpg",
-	"res://src/episode2/assets/miner_helmet_1.jpg",
-	"res://src/episode2/assets/miner_helmet_2.jpg",
-	"res://src/episode2/assets/textures/bull_albedo.jpg",
-	"res://src/episode2/assets/textures/bull_metal_rough.png",
-	"res://src/episode2/assets/textures/bull_normal.png",
-	"res://src/episode2/assets/textures/logos/logo_blaze_diamonds.png",
-	"res://src/episode2/assets/textures/logos/logo_diamonds.png",
-	"res://src/episode2/assets/textures/logos/logo_gold_mine.png",
-	"res://src/episode2/assets/textures/logos/logo_titanx.png",
-	"res://src/episode2/assets/textures/tex_cowhide.png",
-	"res://src/episode2/assets/textures/tex_gravel.jpg",
-	"res://src/episode2/assets/textures/tex_pinup_poster.jpg",
-	"res://src/episode2/assets/textures/tex_rock_wall.jpg",
-	"res://src/episode2/assets/textures/tex_timber.jpg",
-	"res://src/episode2/assets/weapons/armory/bear_arrow.glb",
-	"res://src/episode2/assets/weapons/armory/bear_longbow.glb",
-	"res://src/episode2/assets/weapons/armory/bergmann_mp18_icon.png",
-	"res://src/episode2/assets/weapons/armory/borchardt_icon.png",
-	"res://src/episode2/assets/weapons/armory/bow_icon.png",
-	"res://src/episode2/assets/weapons/armory/coach_shotgun_icon.png",
-	"res://src/episode2/assets/weapons/armory/golden_revolver_founder.glb",
-	"res://src/episode2/assets/weapons/armory/golden_revolver_founder_rev_albedo.jpg",
-	"res://src/episode2/assets/weapons/armory/golden_revolver_founder_rev_normal.jpg",
-	"res://src/episode2/assets/weapons/armory/golden_revolver_gun.glb",
-	"res://src/episode2/assets/weapons/armory/golden_revolver_gun_rev_albedo.jpg",
-	"res://src/episode2/assets/weapons/armory/golden_revolver_gun_rev_normal.jpg",
-	"res://src/episode2/assets/weapons/armory/remington_1875_gold.glb",
-	"res://src/episode2/assets/weapons/armory/remington_1875_gold_Remington color.png",
-	"res://src/episode2/assets/weapons/armory/remington_1875_gold_Remington normal.png",
-	"res://src/episode2/assets/weapons/armory/remington_1875_gold_Walnut grain.png",
-	"res://src/episode2/assets/weapons/armory/remington_grip_hand.glb",
-	"res://src/episode2/assets/weapons/armory/remington_grip_hand_fp_leather.png",
-	"res://src/episode2/assets/weapons/armory/remington_grip_hand_fp_yarn.png",
-	"res://src/episode2/assets/weapons/armory/remington_icon.png",
-	"res://src/episode2/assets/weapons/armory/sharps_buffalo_icon.png",
-	"res://src/episode2/assets/weapons/armory/thompson_gold_icon.png",
-	"res://src/episode2/assets/weapons/armory/weapon_hand_olive_glove.png",
-	"res://src/episode2/assets/weapons/armory/winchester_icon.png",
-	"res://src/episode2/assets/whiskey_glass.glb",
-	"res://src/episode2/assets/whiskey_glass_0.jpg",
-	"res://src/episode2/assets/whiskey_glass_1.jpg",
-	"res://src/episode2/assets/whiskey_glass_2.jpg",
-	"res://src/episode2/assets/winchester_1886.glb",
-	"res://src/episode2/assets/winchester_1886_0.jpg",
-	"res://src/episode2/assets/winchester_1886_1.jpg",
-	"res://src/episode2/assets/winchester_1886_2.jpg",
-	"res://src/episode2/extras/armory/gatling_post.glb",
-	"res://src/episode2/extras/hideout/smelter_kit.glb",
-	"res://src/episode2/extras/pbr/brass_worn/albedo.jpg",
-	"res://src/episode2/extras/pbr/brass_worn/normal.jpg",
-	"res://src/episode2/extras/pbr/brass_worn/orm.jpg",
-	"res://src/episode2/extras/pbr/fabric_burlap/albedo.jpg",
-	"res://src/episode2/extras/pbr/fabric_burlap/normal.jpg",
-	"res://src/episode2/extras/pbr/fabric_burlap/orm.jpg",
-	"res://src/episode2/extras/pbr/iron_painted/albedo.jpg",
-	"res://src/episode2/extras/pbr/iron_painted/normal.jpg",
-	"res://src/episode2/extras/pbr/iron_painted/orm.jpg",
-	"res://src/episode2/extras/pbr/leather_brown/albedo.jpg",
-	"res://src/episode2/extras/pbr/leather_brown/normal.jpg",
-	"res://src/episode2/extras/pbr/leather_brown/orm.jpg",
-	"res://src/episode2/extras/pbr/planks_raw/albedo.jpg",
-	"res://src/episode2/extras/pbr/planks_raw/normal.jpg",
-	"res://src/episode2/extras/pbr/planks_raw/orm.jpg",
-	"res://src/episode2/extras/pbr/planks_weathered/albedo.jpg",
-	"res://src/episode2/extras/pbr/planks_weathered/normal.jpg",
-	"res://src/episode2/extras/pbr/planks_weathered/orm.jpg",
-	"res://src/episode2/extras/pbr/rope/albedo.jpg",
-	"res://src/episode2/extras/pbr/rope/normal.jpg",
-	"res://src/episode2/extras/pbr/rope/orm.jpg",
-	"res://src/episode2/extras/pbr/steel_blued/albedo.jpg",
-	"res://src/episode2/extras/pbr/steel_blued/normal.jpg",
-	"res://src/episode2/extras/pbr/steel_blued/orm.jpg",
-	"res://src/episode2/extras/pbr/stone_dressed/albedo.jpg",
-	"res://src/episode2/extras/pbr/stone_dressed/normal.jpg",
-	"res://src/episode2/extras/pbr/stone_dressed/orm.jpg",
-	"res://src/episode2/extras/pbr/wood_dark/albedo.jpg",
-	"res://src/episode2/extras/pbr/wood_dark/normal.jpg",
-	"res://src/episode2/extras/pbr/wood_dark/orm.jpg",
-	"res://src/episode2/extras/pbr/wood_walnut/albedo.jpg",
-	"res://src/episode2/extras/pbr/wood_walnut/normal.jpg",
-	"res://src/episode2/extras/pbr/wood_walnut/orm.jpg",
-	"res://src/episode2/extras/town/posters/poster_jack_hammer.jpg",
-	"res://src/episode2/extras/town/posters/poster_masked_riders.jpg",
-]
+# --- generated: begin (tools/ep2_perf/hideout_warm_manifest.tscn -- write; 121 paths)
+const LIST := "H4sIAAAAAAAAA52XQZbjKAyG93OKPkFlMv26u84xm1nyZBvbdDCiBY675vQjbKdiEmFXzaZS8f+hX2CECFA8DWijdqq1OL10Teih0fQHhKBjOFU4Wv6qCOvLS2cr6blySAPYl5++u8kd2kZ5Y/V2TG8ajWM8AQ1Ibwqo7k3UdRxJxCoNpHoNza6o/tz6ZnKI4BrjuuL4GyDHqCFExSpGKUBrnAm9QnifvndPIVYoRHR6F6OURaVd3YteSJ1WNY21qeQlbUdyUOvFaUK6SBASBwESp3PT5KXwOJKy0MjmBI7T8xZ+jYe6ev/iLqqSFmMBJrB2G8u4VpNDVY3WKjJdp5sDOZ+JBJyPgL+OgK9lYHQuvdPaGl9MNJg4A+GYUFH/ToWyMytesotsyVuY1z0vYH4Bkcdmj4xVlR1d5MIiLCtyLnemNPc7UUp1ME6nsraDjqXnuWumnItK9ibX9PkQS8sGttINlnUeDvw+cez67XbNoefaftctdrj85cnDv1o1BgZ0TTiiP8rNZ22a7REYDZ93v0WK/1E1TqkGi3pHcNVWXKgke+NGrzwG3lZFaG4Xc22XiGiGKg8wafDowto2lpMbiFKzuu8QCbLouuoAo24A59Tgz6/K1Oi2s3+EkRsWUBOPwekIqRFq7gs9xm50R3B6wdyfSV/RXnlPtzg67r078yqMSA+E/f6Jwc+d/mAwT+8TeabF+F853gYe5keaK6XjLqnOrz++zbWzk59Aq79vz77UaJF23tv+6Ocj4wPD/wHrxviFS9Hs7Zj70I6MVz1fcz40y3datV5ZDZGP+8/ZpIFvQB9L7mDf802UuPNVY9uCxSM69jj4kHJJC3UAL1+XjNGaq1adxaveG2H4cqbT4fYcuzfhot84BD/I1nkr5H0rl85lKetcmyTOr6/fM69cenB7EM974uLIZzLBvd4g2tSw0/E+u67y7dIWBm1TgIvJZF/RqaI0Db6TutOmrGVgU74ywPqj2kJFpuZdQhZ8wSJnZJecEYwM8Y7xXHhRNwWfDJFtMkRwWatOVdzgSiuWM7JPzghG8xU88L1wKrhsANliA5TjT0sexSV7wna97pjgSOh1wWWW5MizJETjgtDzfbWY+paQY28J0SL9Lmz46hN2TLZMyWbLCEYTYqMaoEvB5K7LBne9FHyaG9Ne+JXYMViJB4uY9u9yrQzrp/rJP2b48B6G9aa4gw7Ah2nDP9j4ChMS/B+bSxM28hAAAA=="
 # --- generated: end
 
+## The paths, read once from LIST (one gzip-compressed string: 121 separate string constants cost 16 KB of the main pack, which has
+## almost none to spare).
+static func paths() -> PackedStringArray:
+	if _paths.is_empty() and LIST != "":
+		var raw: PackedByteArray = Marshalls.base64_to_raw(LIST).decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
+		for rel in raw.get_string_from_utf8().split("\n", false):
+			_paths.append("res://src/episode2/" + rel)
+	return _paths
+
+static var _paths: PackedStringArray = PackedStringArray()
 static var _held: Array = []
 static var _next: int = 0
 static var _missing: PackedStringArray = PackedStringArray()     # listed but not in the build yet (the streamed extras, before their pack mounts)
@@ -154,7 +42,7 @@ static func wanted() -> bool:
 
 
 static func done() -> bool:
-	return _next >= PATHS.size() and _retry.is_empty()
+	return _next >= paths().size() and _retry.is_empty()
 
 
 ## The streamed pack has just mounted: what was skipped for not being there is read after all.
@@ -165,7 +53,7 @@ static func extras_arrived() -> void:
 
 ## 0..1, for the wait's progress bar.
 static func progress() -> float:
-	return 1.0 if PATHS.is_empty() else float(_next) / float(PATHS.size())
+	return 1.0 if paths().is_empty() else float(_next) / float(paths().size())
 
 
 ## Load the next resources: always at least one, then more until `budget_ms` of this frame is spent. A resource that is not in this
@@ -174,8 +62,8 @@ static func step(budget_ms: float) -> void:
 	var t0: int = Time.get_ticks_usec()
 	while not done():
 		var path: String
-		if _next < PATHS.size():
-			path = PATHS[_next]
+		if _next < paths().size():
+			path = paths()[_next]
 			_next += 1
 		else:
 			path = _retry[_retry.size() - 1]

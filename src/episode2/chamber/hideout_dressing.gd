@@ -67,12 +67,7 @@ static func build(visuals: Node3D, slice: bool = false) -> Dictionary:
 var _slice: bool = false
 
 
-var _breaths: int = 0
-
 func _breathe() -> void:
-	_breaths += 1
-	if DebugOverlay.is_on():
-		print("[EP2] hideout build: dressing %d @%d" % [_breaths, Time.get_ticks_msec()])      # see SmeltingFacilityChamber._trace
 	if _slice and _v and _v.is_inside_tree():
 		await _v.get_tree().process_frame
 

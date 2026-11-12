@@ -1,6 +1,6 @@
 extends Node
 ## Lists every resource the Smelting Facility loads while it builds (the room that is built BEHIND the cart-exit film), with what each
-## costs to load cold, and writes them into Ep2HideoutWarm.PATHS so Episode 2 can load them before the run starts instead of inside
+## costs to load cold, and writes them into Ep2HideoutWarm.LIST so Episode 2 can load them before the run starts instead of inside
 ## the film (mobile sprint 2026-11-10: on a phone-class CPU the film froze for 27 of its 61 seconds while the room loaded).
 ##   <godot> --headless --path . res://tools/ep2_perf/hideout_warm_manifest.tscn            # print the list
 ##   <godot> --headless --path . res://tools/ep2_perf/hideout_warm_manifest.tscn -- write   # ...and rewrite the PATHS block
@@ -61,11 +61,12 @@ func _ready() -> void:
 			push_error("markers missing in " + TARGET)
 			get_tree().quit(1)
 			return
-		var block: String = "# --- generated: begin (tools/ep2_perf/hideout_warm_manifest.tscn -- write)\nconst PATHS: PackedStringArray = [\n"
-		# the main pack first, then the streamed extras: those are skipped at run time until their pack is mounted
+		# the main pack first, then the streamed extras (skipped at run time until their pack is mounted); one compressed string
+		var rel := PackedStringArray()
 		for p in main + extras:
-			block += "\t\"%s\",\n" % p
-		block += "]\n"
+			rel.append(p.trim_prefix("res://src/episode2/"))
+		var packed: String = Marshalls.raw_to_base64("\n".join(rel).to_utf8_buffer().compress(FileAccess.COMPRESSION_GZIP))
+		var block: String = "# --- generated: begin (tools/ep2_perf/hideout_warm_manifest.tscn -- write; %d paths)\nconst LIST := \"%s\"\n" % [rel.size(), packed]
 		var f := FileAccess.open(TARGET, FileAccess.WRITE)
 		f.store_string(src.substr(0, a) + block + src.substr(b))
 		f.close()

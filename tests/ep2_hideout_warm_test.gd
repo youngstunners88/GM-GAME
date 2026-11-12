@@ -53,7 +53,7 @@ func test_warm_off_the_web_is_inert() -> void:
 	Ep2HideoutWarm.release()
 	# Assert
 	_check("off the web the warm-up is not wanted (native builds do not share one thread with the film)", not Ep2HideoutWarm.wanted() or OS.has_feature("web"))
-	_check("the generated list is there", Ep2HideoutWarm.PATHS.size() >= 60, str(Ep2HideoutWarm.PATHS.size()))
+	_check("the generated list is there", Ep2HideoutWarm.paths().size() >= 60, str(Ep2HideoutWarm.paths().size()))
 	await get_tree().process_frame
 
 
@@ -67,19 +67,19 @@ func test_warm_is_budgeted_and_complete() -> void:
 	while not Ep2HideoutWarm.done() and frames < 2000:
 		var before: float = Ep2HideoutWarm.progress()
 		Ep2HideoutWarm.step(4.0)
-		most_in_a_frame = maxi(most_in_a_frame, roundi((Ep2HideoutWarm.progress() - before) * Ep2HideoutWarm.PATHS.size()))
+		most_in_a_frame = maxi(most_in_a_frame, roundi((Ep2HideoutWarm.progress() - before) * Ep2HideoutWarm.paths().size()))
 		frames += 1
 		if frames % 8 == 0:
 			await get_tree().process_frame
 	var held: int = Ep2HideoutWarm.held_count()
-	_check("it finishes, over several frames (%d), never the whole list at once (most in one frame: %d of %d)" % [frames, most_in_a_frame, Ep2HideoutWarm.PATHS.size()],
-		Ep2HideoutWarm.done() and frames >= 4 and most_in_a_frame < Ep2HideoutWarm.PATHS.size())
+	_check("it finishes, over several frames (%d), never the whole list at once (most in one frame: %d of %d)" % [frames, most_in_a_frame, Ep2HideoutWarm.paths().size()],
+		Ep2HideoutWarm.done() and frames >= 4 and most_in_a_frame < Ep2HideoutWarm.paths().size())
 	_check("it holds what it loaded (%d resources), so the room's own loads are cache hits" % held, held >= 60)
 	_check("every listed file exists in this checkout (a renamed asset fails here, not silently on a phone)",
-		Array(Ep2HideoutWarm.PATHS).all(func(p: String) -> bool: return ResourceLoader.exists(p)))
+		Array(Ep2HideoutWarm.paths()).all(func(p: String) -> bool: return ResourceLoader.exists(p)))
 	# Act 2: build the room and watch what it still has to read
 	var cached_before: Dictionary = {}
-	for p in Ep2HideoutWarm.PATHS:
+	for p in Ep2HideoutWarm.paths():
 		cached_before[p] = ResourceLoader.has_cached(p)
 	var spy := Spy.new()
 	ResourceLoader.add_resource_format_loader(spy, true)
@@ -94,7 +94,7 @@ func test_warm_is_budgeted_and_complete() -> void:
 	# Assert: a load the spy saw is a real disk read only if the resource was not already in the cache
 	var cold: Array = []
 	for p in spy.seen:
-		if not p.ends_with(".tscn") and not Ep2HideoutWarm.PATHS.has(p):
+		if not p.ends_with(".tscn") and not Ep2HideoutWarm.paths().has(p):
 			cold.append(p)
 	_check("the room reads nothing from disk that the warm-up had not loaded (%d unlisted)" % cold.size(), cold.is_empty(), str(cold.slice(0, 6)))
 	_check("...and the warmed resources were still in the cache when it asked for them", cached_before.values().count(false) == 0,
