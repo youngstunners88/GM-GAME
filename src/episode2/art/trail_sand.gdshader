@@ -1,9 +1,11 @@
 shader_type spatial;
-uniform sampler2D sand : source_color,repeat_enable;
+uniform sampler2D sand : source_color,repeat_enable,filter_linear_mipmap_anisotropic;
 uniform sampler2D forest : source_color,repeat_enable;
 uniform mat4 lake_inverse;
 uniform bool lake_visible=false;
 uniform bool has_forest=false;
+uniform sampler2D relief:hint_normal,repeat_enable;   // the streamed dry-earth relief (Ep2Pbr.relief); flat until set
+uniform bool has_relief=false;
 uniform vec2 approach_dir=vec2(0.,0.);   // in the lake's axes: unit vector from the lake back up the trail
 varying vec3 world;
 void vertex(){world=(MODEL_MATRIX*vec4(VERTEX,1.)).xyz;}
@@ -20,5 +22,6 @@ void fragment(){
  float green=has_forest?1.-smoothstep(reach-220.,reach,length(from_lake)):0.;
  vec3 grass=has_forest?texture(forest,world.xz*.20).rgb*vec3(.62,.86,.45):dry;
  ALBEDO=mix(dry,grass,green);ROUGHNESS=.97;
+ if(has_relief)NORMAL_MAP=mix(texture(relief,world.xz*.22).rgb,vec3(.5,.5,1.),green);
  SPECULAR=mix(.5,.06,green);   // grass does not glare toward the low sun (lake_ground): the same green on both sides of the lake's edge
 }

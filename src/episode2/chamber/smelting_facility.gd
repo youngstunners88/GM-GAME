@@ -528,12 +528,9 @@ func _on_video_film_finished() -> void:
 	if _vfilm and is_instance_valid(_vfilm) and _vfilm.is_inside_tree() and DisplayServer.get_name() != "headless":
 		# A streamed pack that finished downloading under the film was held back (Ep2Extras.mount_gate): it is mounted here, and the
 		# stand-ins built without it are swapped for its pieces, in the same black.
-		var t_black: int = Time.get_ticks_msec()
 		Ep2Extras.mount_now()
-		var t_mounted: int = Time.get_ticks_msec()
 		if Ep2KitProps.pending_count() > 0:
 			Ep2KitProps.upgrade_pending()
-		_trace("behind the film's black: extras mount %d ms, kit upgrade %d ms" % [t_mounted - t_black, Time.get_ticks_msec() - t_mounted])
 		# The room's FIRST drawn frame after a minute of film compiles its shaders and uploads its buffers: about a second on a
 		# desktop, four at a phone-class CPU (measured, scripts/ep2-mobile-film-probe.mjs). It used to land after the stage theme had
 		# already started and Inferno had begun to speak, so the song and the line stalled with the picture. Now it happens here,
@@ -1471,13 +1468,6 @@ func _mesh(m: Mesh, mat: StandardMaterial3D, pos: Vector3) -> MeshInstance3D:
 	mi.position = pos
 	_visuals.add_child(mi)
 	return mi
-
-
-## One console line per build stage while the F3 overlay / ?debug=beacon is on. The room is built BEHIND the cart-exit film, and a
-## stage that takes a long frame freezes the film's picture and sound: scripts/ep2-mobile-film-probe.mjs reads these to name it.
-func _trace(stage: String) -> void:
-	if DebugOverlay.is_on():
-		print("[EP2] hideout build: %s @%d" % [stage, Time.get_ticks_msec()])
 
 
 func _build_visuals() -> void:

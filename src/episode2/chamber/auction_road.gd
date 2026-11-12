@@ -172,7 +172,8 @@ func _ground() -> void:
 	var mesh := PlaneMesh.new()
 	mesh.size = Vector2(900, 900)
 	plane.mesh = mesh
-	plane.material_override = _plain(Color(0.62, 0.50, 0.34), 0.97)
+	var pbr: bool = Ep2Pbr.available()        # the streamed photo sets: dry earth, the packed trail, rock (a flat colour without them)
+	plane.material_override = Ep2Pbr.make("bank_dry", Color(0.62, 0.50, 0.34), 8.0) if pbr else _plain(Color(0.62, 0.50, 0.34), 0.97)
 	plane.position = at(170.0)
 	_visuals.add_child(plane)
 	var road := MeshInstance3D.new()
@@ -180,7 +181,7 @@ func _ground() -> void:
 	var strip := PlaneMesh.new()
 	strip.size = Vector2(ROAD_HALF * 2.0, ARRIVE_S + 40.0)
 	road.mesh = strip
-	road.material_override = _plain(Color(0.50, 0.38, 0.25), 0.99)
+	road.material_override = Ep2Pbr.make("trail_packed", Color(0.50, 0.38, 0.25), 3.0) if pbr else _plain(Color(0.50, 0.38, 0.25), 0.99)
 	road.position = at((ARRIVE_S + 40.0) * 0.5 - 10.0) + Vector3(0, 0.02, 0)
 	road.rotation.y = ROAD_YAW
 	_visuals.add_child(road)
@@ -199,7 +200,7 @@ func _ground() -> void:
 func _road_props() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 881
-	var rock: StandardMaterial3D = _plain(Color(0.47, 0.38, 0.30), 0.95)
+	var rock: StandardMaterial3D = Ep2Pbr.make("stone_rustic", Color(0.47, 0.38, 0.30), 1.6) if Ep2Pbr.available() else _plain(Color(0.47, 0.38, 0.30), 0.95)
 	var scrub: StandardMaterial3D = _plain(Color(0.42, 0.44, 0.26), 0.95)
 	for i in 90:
 		var s: float = rng.randf_range(-20.0, ARRIVE_S + 60.0)

@@ -77,6 +77,18 @@ static func natural(set_id: String, tile_m: float, gain: float = 1.0, rough_scal
 	return make(set_id, Color(mean.r * gain, mean.g * gain, mean.b * gain).linear_to_srgb(), tile_m, 0.0, rough_scale)
 
 
+## A big ground's facelift (founder 2026-11-11 "textures that just suck"): anisotropic filtering always (the street blurred and ringed
+## at a walker's grazing angle), and the set's relief and roughness over the ground's own albedo once the pack is streamed in.
+static func relief(m: StandardMaterial3D, set_id: String) -> StandardMaterial3D:
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	if available():
+		m.normal_enabled = true
+		m.normal_texture = _load(set_id, "normal")
+		m.roughness_texture = _load(set_id, "orm")
+		m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+	return m
+
+
 ## The set a material name maps to ("" = not dressed).
 static func set_for(material_name: String) -> String:
 	var e: Variant = BY_NAME.get(_base_name(material_name))

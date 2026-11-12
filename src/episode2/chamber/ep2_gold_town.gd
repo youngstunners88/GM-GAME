@@ -1043,7 +1043,7 @@ static func apply_desert_grade(env: Environment, sun: DirectionalLight3D, k: flo
 static func desert_ground_mat() -> StandardMaterial3D:
 	var m: StandardMaterial3D = _tex_mat("tex_desert.jpg", Color(0.92, 0.82, 0.66), 0.22, "res://src/episode2/assets/textures/tex_gravel.jpg")
 	m.roughness = 0.97
-	return m
+	return Ep2Pbr.relief(m, "bank_dry")
 
 
 # --- the desert around the town (built identically by the woods and the town chamber) -------------------------------------

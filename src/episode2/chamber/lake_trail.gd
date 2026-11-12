@@ -263,6 +263,9 @@ func _step_ground() -> void:
 	_sand_material=ShaderMaterial.new()
 	_sand_material.shader=load("res://src/episode2/art/trail_sand.gdshader")
 	_sand_material.set_shader_parameter("sand",load("res://src/episode2/assets/town/tex_desert.jpg"))
+	if Ep2Pbr.available():
+		_sand_material.set_shader_parameter("relief",Ep2Pbr._load("bank_dry","normal"))
+		_sand_material.set_shader_parameter("has_relief",true)
 	_sand_material.set_shader_parameter("lake_inverse",lake_transform().affine_inverse())
 	if ResourceLoader.exists(Ep2LakeLandscape.FLOOR):
 		_sand_material.set_shader_parameter("forest",load(Ep2LakeLandscape.FLOOR))
