@@ -6,7 +6,7 @@
 - **Town street (and the desert by the woods' road):** the sand blurred and showed a ring pattern a few metres ahead. It is now filtered properly at a walker's low angle and has relief (small ruts and stones that catch the light).
 - **Trail yard by Dude's ranch:** the same fix for its sand; the change is subtle there.
 - No new textures and nothing new to download: the materials were already in the streamed pack. Before/after: `docs/episode2-quality/texture-facelift-2026-11-12/`.
-- **Not done yet:** the rest of the list (the yellow plaster fronts in town, the lake's grass, the lift's rock). The main game file is at its size limit, so each further step has to free room first.
+- **Part 2 (2026-11-13), tried and reverted:** the photographed dressed-stone on the yellow Treasury front, and a photographed grass on Logan's Lake. In captures both looked worse than what is there (the stone came out smooth with no blocks, the grass blurrier than the old one), so the game keeps the originals. The lift's rock walls already read well. What did ship: 2.4 KB of room in the main game file for later art work, with nothing visible changed.
 
 **2026-11-12 — The mine-cart exit film plays much more smoothly on slow devices, and Dude's sunglasses are really black now — LIVE on itch, build `2026-11-12-70987b9` (CI run 43181230526, butler "Pushed to"); NOT founder-verified, no phone has run it.**
 - **What you should see:** the film after the cart flies out no longer freezes for seconds in its first 20 seconds. Measured in a phone-sized browser on the real web build, its longest freeze went from 1.1 s to 0.3 s on a normal computer, and from 5.5 s to 1.2 s with the CPU slowed 4x to stand in for a mid-range phone.
