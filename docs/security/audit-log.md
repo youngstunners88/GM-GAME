@@ -3141,3 +3141,9 @@ fail-on=high | total=18 pass=17 fail=1 blockers=0
 | CI-002 | medium | PASS | Security Sentinel wired into CI |
 | CI-003 | medium | PASS | .gitleaks.toml allowlist stays narrow |
 | CI-004 | low | PASS | .gitleaksignore fingerprint count reasonable |
+
+## 2026-11-13 — SEC-005 exemption for release-receipt checksum fields (founder decision)
+- Trigger: commit 1bd85b67 (`docs/quality/tree-jumps-20261113/release-receipt.json`) recorded `base_sha256` / `extras_sha256`, the SHA-256 of the public packs it verified. SEC-005 read them as private-key-shaped and blocked every master deploy (CI run on 5b2e7f10 failed at Security Sentinel).
+- Change: `scripts/security-sentinel.sh` exempts only lines `"<name>sha256": "<64 hex>"` in `docs/**/release-receipt.json`, the same field-level form already used for `assets/town-audio-generated.json`. Not a whole-file exclusion.
+- Checked: SEC-005 passes on the tree; a 64-hex value in any other field of a receipt still fails (tested against the pattern).
+- Founder chose this over excluding one file (would re-break on the next receipt) or deleting the checksums (loses the proof).

@@ -132,8 +132,12 @@ fi
 # Town audio receipts contain public SHA-256 file/source checksums. Exclude only
 # those two exact JSON fields in that generated manifest, never the whole file.
 # Any other private-key-shaped literal in the same manifest still fails.
+# Release receipts (docs/**/release-receipt.json, written when a build is verified live) record the SHA-256 of the PUBLIC packs
+# they checked, in fields named *sha256 (founder decision 2026-11-13: commit 1bd85b67's receipt had blocked every master deploy).
+# Same rule: only a "<name>sha256": "<64 hex>" field line is exempt; any other 64-hex literal in a receipt still fails.
 key_hits=$(git ls-files | xargs grep -nE "\b(0x)?[a-fA-F0-9]{64}\b" 2>/dev/null \
   | grep -vE '^assets/town-audio-generated\.json:[0-9]+:[[:space:]]*"(sha256|source_hash)": "[a-f0-9]{64}",?$' \
+  | grep -vE '^docs/.*/release-receipt\.json:[0-9]+:[[:space:]]*"[a-z_]*sha256": "[a-f0-9]{64}",?$' \
   | cut -d: -f1 | sort -u \
   | grep -vE "\.(wasm|pck|png|jpg|jpeg|ogg|import)$" \
   | grep -v "\.github/workflows/export-game\.yml" \
