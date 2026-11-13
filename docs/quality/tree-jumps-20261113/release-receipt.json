@@ -1,0 +1,48 @@
+{
+  "source_sha": "f2a8e79ffc4d36f4c9d01ef412884e6d01f07198",
+  "build_id": "2026-11-13-f2a8e79",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "evidence": [
+    {
+      "kind": "visual",
+      "path": "docs/quality/tree-jumps-20261113/perch.png"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/quality/tree-jumps-20261113/air.png"
+    },
+    {
+      "kind": "public-browser",
+      "path": "docs/quality/tree-jumps-20261113/public-browser.json"
+    },
+    {
+      "kind": "public-browser-visual",
+      "path": "docs/quality/tree-jumps-20261113/public-browser.png"
+    }
+  ],
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/43344183332",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-11-13-f2a8e79"
+  },
+  "public_pack_checks": {
+    "tree_jump_checks": 36,
+    "result": "PASS",
+    "base_sha256": "3961feb735711a7cb5160faff91981095a680b2930941045e5bf2a457f50c0f7",
+    "extras_sha256": "0bba5ca2ff2e3a47b15b409c7176bce06b132720438bc4a6e96b5210300bb42f"
+  },
+  "limits": [
+    "Public browser smoke covers pack loading and access-screen input; the complete rail ride and all three waves were verified natively against the exact downloaded public packs.",
+    "The full legacy interlude test has the same single hideout-door assertion failure on unmodified master f33e9583."
+  ],
+  "open_blockers": []
+}

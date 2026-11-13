@@ -271,7 +271,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json,src/episode2/config/grounded_walk.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,assets/*.json,package.json,package-lock.json,lil-blunt-icp/*,assets/pixellab/*,game-verify*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,assets/*.json,package.json,package-lock.json,lil-blunt-icp/*,assets/pixellab/*,game-verify*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_fud_reject.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -441,6 +441,10 @@ jobs:
           cat bear-attacks-tests.log
           grep -q 'EP2_BEAR_ATTACKS: ALL PASS' bear-attacks-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' bear-attacks-tests.log | grep -v VirtualJoystick; then exit 1; fi
+          # Three sparse, warned canopy jumps share the road combat and retry contracts.
+          timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_tree_jumps_test.tscn > tree-jumps-tests.log 2>&1
+          grep -q 'EP2_TREE_JUMPS: 36 checks, 0 failures' tree-jumps-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|FAIL ' tree-jumps-tests.log; then exit 1; fi
           # The town's life (founder 2026-10-18: the train, the river and the horses belong in Episode 2).
           timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_town_life_test.tscn > town-life-tests.log 2>&1
           cat town-life-tests.log

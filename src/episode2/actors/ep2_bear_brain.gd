@@ -24,6 +24,15 @@ signal died(bear: Ep2BearBrain)
 signal spotted(bear: Ep2BearBrain)
 signal swing_started(bear: Ep2BearBrain)
 
+# A tree_jump is a road bear routine, with one finite, shootable flight per attempt.
+var tree_phase: String = "perch"
+var _tree_t: float = 0.0
+var _tree_warning: float = 1.2
+var _tree_duration: float = 1.15
+var _tree_from: Vector3 = Vector3.ZERO
+var _tree_to: Vector3 = Vector3.ZERO
+var _fall_velocity: Vector3 = Vector3.ZERO
+
 var actor: Ep2Actor = null
 ## Personality (see PERSONALITIES in woods_quad.gd): name, routine, sight, fov, ears, react, role, hp, speeds, voice pitch.
 var p: Dictionary = {}
@@ -171,7 +180,7 @@ func _ear() -> float:
 ## A sound at `at` that carries `radius` metres (footstep, run, shot, engine, a roar). `exact` = a sound that gives away
 ## the source itself (a gunshot close by) rather than just a direction.
 func hear(at: Vector3, radius: float, kind: String) -> void:
-	if aware == Aware.DEAD or aware == Aware.ALERT:
+	if routine() == "tree_jump" or aware == Aware.DEAD or aware == Aware.ALERT:
 		return
 	var d: float = Vector2(at.x - actor.position.x, at.z - actor.position.z).length()
 	var reach: float = radius * _ear()
@@ -208,7 +217,7 @@ func gaze_yaw() -> float:
 ## Called a few times a second by the chamber: can he see Lil Blunt at `eye` (feet `pos`)? `exposure` 0..1 (still / walking /
 ## running), `blocked` = a trunk is in the way.
 func look(pos: Vector3, exposure: float, blocked: bool, delta: float) -> void:
-	if aware == Aware.DEAD:
+	if routine() == "tree_jump" or aware == Aware.DEAD:
 		return
 	var to: Vector3 = pos - actor.position
 	to.y = 0.0
@@ -261,7 +270,7 @@ func _go_alert(pos: Vector3) -> void:
 
 ## Something (the quad's engine, a shot right next to him) leaves no doubt: straight to alert.
 func alarm(pos: Vector3) -> void:
-	if aware != Aware.DEAD and aware != Aware.ALERT:
+	if routine() != "tree_jump" and aware != Aware.DEAD and aware != Aware.ALERT:
 		_go_alert(pos)
 
 
@@ -292,6 +301,9 @@ func take_hit(from: Vector3) -> bool:
 func step(delta: float, player: Vector3) -> void:
 	_t += delta
 	Ep2BearKit.tick_pose(actor, delta)
+	if routine() == "tree_jump":
+		_step_tree_jump(delta, player)
+		return
 	if aware == Aware.DEAD:
 		actor.step(delta)
 		return
@@ -334,6 +346,55 @@ func step(delta: float, player: Vector3) -> void:
 						actor.walk_to(target + Vector3(cos(a), 0.0, sin(a)) * 5.0, float(p.get("walk", 1.1)))
 						Ep2BearKit.pose(actor, "walk")
 						_pause = 2.0
+	actor.step(delta)
+
+
+## Chamber owns rail/proximity and the audible warning; senses cannot pull a perched bear off his branch early.
+func warn_tree_jump(landing: Vector3, warning: float, duration: float) -> void:
+	if is_dead() or tree_phase != "perch":
+		return
+	tree_phase = "warning"
+	_tree_t = 0.0
+	_tree_warning = warning
+	_tree_duration = duration
+	_tree_from = actor.position
+	_tree_to = landing
+	_tree_to.y = 0.0
+	actor.stop()
+	actor.face_point(landing)
+	Ep2BearKit.set_mark(actor, "!", Color(1.0, 0.7, 0.2))
+
+
+func _step_tree_jump(delta: float, player: Vector3) -> void:
+	actor.stop()
+	if is_dead():
+		# A shot cancels all damage immediately. Momentum carries a falling corpse to the ground, where it stays.
+		if actor.position.y > 0.0:
+			_fall_velocity.y -= 18.0 * delta
+			actor.position += _fall_velocity * delta
+			actor.position.y = maxf(0.0, actor.position.y)
+		actor.step(delta)
+		return
+	if tree_phase == "warning":
+		_tree_t += delta
+		if _tree_t >= _tree_warning:
+			tree_phase = "air"
+			_tree_t = 0.0
+			Ep2BearKit.pose(actor, "leap")
+			swing_started.emit(self)
+	elif tree_phase == "air":
+		_tree_t += delta
+		var k: float = clampf(_tree_t / _tree_duration, 0.0, 1.0)
+		var before: Vector3 = actor.position
+		actor.position = _tree_from.lerp(_tree_to, k) + Vector3.UP * (2.2 * 4.0 * k * (1.0 - k))
+		_fall_velocity = (actor.position - before) / maxf(delta, 0.00001)
+		if k >= 1.0:
+			tree_phase = "landed"
+			Ep2BearKit.pose(actor, "idle")
+			Ep2BearKit.set_mark(actor, "", Color.WHITE)
+			# One contact attempt, subject to the chamber's ordinary claw/i-frame/three-heart rules.
+			if has_los and Vector2(player.x - actor.position.x, player.z - actor.position.z).length() < 2.6:
+				swiped.emit(self)
 	actor.step(delta)
 
 
