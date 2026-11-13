@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+- 2026-11-13: Vault logo correction — supplied GOLD MINE and transparent DIAMONDS artwork flank each protocol URL in complete entrance, middle and far-end floor groups; native/exported layout and alpha, both browser walks to the far-end groups, vault regressions, compilation, security and web pack gate PASS; publication pending.
+
 - 2026-11-13: Three logging-road canopy jump sections reuse road bears, branch perches, Inferno’s recorded tree warning, shootable arcs and existing hearts/retry/tally; 36 tree-jump checks, bear combat, protected woods/retry, quad music, compile and local web size gate PASS; full interlude FAIL also reproduced on master (stale hideout doorway assertion); LIVE build `2026-11-13-f2a8e79` (CI 43344183332 upload confirmed; public browser BUILD/extras and 36 checks against downloaded public packs PASS).
 
 **2026-11-13 — Vault floor protocol branding strip (diamonds1111.win / mine4gold.app) under Mira + Gideon — local validation complete; publication pending.**

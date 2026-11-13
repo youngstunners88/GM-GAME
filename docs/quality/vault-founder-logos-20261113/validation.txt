@@ -1,0 +1,11 @@
+PASS native layout / alpha / complete end groups
+PASS vault_scene
+PASS s6_vault_utility
+PASS vault_touch_dialogue
+PASS s11_vault_music
+PASS script_compile
+PASS native entrance / middle / end / dialogue visual review
+PASS exported pack layout / alpha checks
+PASS nonthreaded web export / 190 MiB gate (199169824 bytes)
+PASS Chromium 154: both vault entrances / dialogue / keyboard walk to complete far-end groups; zero script errors
+PASS security sentinel

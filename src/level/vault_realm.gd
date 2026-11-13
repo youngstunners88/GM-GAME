@@ -453,41 +453,46 @@ func _setup_floor() -> void:
 	add_child(kz)
 
 func _setup_protocol_branding_strip() -> void:
-	# World-space floor inlay: below the attendant's feet, above the deck (-2),
-	# behind characters (0). No input, collision or camera-following HUD layer.
-	var logo_path := "res://src/assets/logos/diamonds.png" if _diamonds else "res://src/assets/logos/goldmine.png"
-	if _diamonds and not ResourceLoader.exists(logo_path):
-		logo_path = "res://src/assets/logos/founder/diamonds_correct.png"
+	# Founder-provided artwork, isolated from the lounge's existing signs.
+	# Runtime regions remove transparent padding only; the original PNGs retain their alpha.
+	var logo_path := "res://src/assets/logos/vault/diamonds.png" if _diamonds else "res://src/assets/logos/vault/goldmine.png"
 	if not ResourceLoader.exists(logo_path):
 		push_error("Vault floor branding logo missing: " + logo_path)
 		return
 	var texture: Texture2D = load(logo_path)
-	var logo_height := 88.0
-	var logo_width: float = logo_height * float(texture.get_width()) / float(texture.get_height())
+	var art_rect: Rect2i = texture.get_image().get_used_rect()
+	if art_rect.size.y <= 0:
+		return
+	var logo_height := 96.0
+	var logo_width: float = logo_height * float(art_rect.size.x) / float(art_rect.size.y)
 	var gap := 24.0
-	var strip := Node2D.new()
-	strip.name = "ProtocolFloorBranding"
-	strip.z_index = -1
-	add_child(strip)
-	var url := Label.new()
-	url.name = "ProtocolURL"
-	url.text = "diamonds1111.win" if _diamonds else "mine4gold.app"
-	style_label(url, 48)
-	url.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Resolve the inherited font/theme in the scene tree before measuring.
-	strip.add_child(url)
-	var text_size: Vector2 = url.get_minimum_size()
-	var width: float = text_size.x + 2.0 * (logo_width + gap)
-	var attendant_x: float = _clerk_x if _diamonds else _gideon_x
-	strip.position = Vector2(clampf(attendant_x, width / 2.0 + 24.0, BOUNDS - width / 2.0 - 24.0), FLOOR_Y + 60.0)
-	url.position = Vector2(-text_size.x / 2.0, -text_size.y / 2.0)
-	for side: float in [-1.0, 1.0]:
-		var logo := Sprite2D.new()
-		logo.name = "LeftLogo" if side < 0.0 else "RightLogo"
-		logo.texture = texture
-		logo.scale = Vector2.ONE * (logo_height / float(texture.get_height()))
-		logo.position.x = side * (text_size.x / 2.0 + gap + logo_width / 2.0)
-		strip.add_child(logo)
+	# Entrance, middle and far end each show a complete logo / URL / logo group.
+	# Keep them on the existing floor band, behind actors and outside all input/collision paths.
+	for index in 3:
+		var strip := Node2D.new()
+		strip.name = "ProtocolFloorBranding" if index == 0 else ("ProtocolFloorBrandingMiddle" if index == 1 else "ProtocolFloorBrandingEnd")
+		strip.z_index = -1
+		add_child(strip)
+		var url := Label.new()
+		url.name = "ProtocolURL"
+		url.text = "diamonds1111.win" if _diamonds else "mine4gold.app"
+		style_label(url, 48)
+		url.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		strip.add_child(url)
+		var text_size: Vector2 = url.get_minimum_size()
+		var width: float = text_size.x + 2.0 * (logo_width + gap)
+		var edge: float = width / 2.0 + 24.0
+		strip.position = Vector2(lerpf(edge, BOUNDS - edge, float(index) / 2.0), FLOOR_Y + 60.0)
+		url.position = Vector2(-text_size.x / 2.0, -text_size.y / 2.0)
+		for side: float in [-1.0, 1.0]:
+			var logo := Sprite2D.new()
+			logo.name = "LeftLogo" if side < 0.0 else "RightLogo"
+			logo.texture = texture
+			logo.region_enabled = true
+			logo.region_rect = Rect2(art_rect)
+			logo.scale = Vector2.ONE * (logo_height / float(art_rect.size.y))
+			logo.position.x = side * (text_size.x / 2.0 + gap + logo_width / 2.0)
+			strip.add_child(logo)
 
 func _setup_walls() -> void:
 	for x: float in [-8.0, BOUNDS + 8.0]:
