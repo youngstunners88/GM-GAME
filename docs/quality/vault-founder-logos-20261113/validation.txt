@@ -9,3 +9,6 @@ PASS exported pack layout / alpha checks
 PASS nonthreaded web export / 190 MiB gate (199169824 bytes)
 PASS Chromium 154: both vault entrances / dialogue / keyboard walk to complete far-end groups; zero script errors
 PASS security sentinel
+PASS full CI / actual butler upload
+PASS public Chromium: both vault walks / complete end groups / exact BUILD / no script errors
+PASS downloaded public pack: 32 layout and alpha checks

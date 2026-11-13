@@ -1,0 +1,332 @@
+[
+  {
+    "kind": "diamond",
+    "url": "https://html-classic.itch.zone/html/18305533-2374987/index.html?v=1794578718&vault=diamond&debug=beacon",
+    "pass": true,
+    "endVisible": true,
+    "state": {
+      "avg_ms": 95.8,
+      "build": "2026-11-13-6317817",
+      "frames": 296,
+      "harness": false,
+      "held": {},
+      "mem_mb": 0,
+      "mem_peak_mb": 0,
+      "paused": false,
+      "scene": "res://src/level/diamond_vault_realm.tscn",
+      "state": "PLAYING",
+      "t": 28639,
+      "td": "IDLE",
+      "td_frozen": false,
+      "tex_mb": 37.7,
+      "tex_peak_mb": 37.9,
+      "time_scale": 1,
+      "touch": {
+        "held": 0,
+        "layout": "phone_landscape",
+        "profile": "platformer",
+        "shown": false,
+        "susp": false
+      },
+      "win": [
+        1280,
+        720
+      ],
+      "worst_all_ms": 402.1,
+      "worst_ms": 0
+    },
+    "errors": [],
+    "words": [
+      {
+        "path": "/root/DiamondVaultRealm/Altar_short/@Label@36",
+        "rect": [
+          -499,
+          322,
+          182,
+          36
+        ],
+        "text": "288-DAY POOL"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/Altar_long/@Label@40",
+        "rect": [
+          240,
+          292,
+          592,
+          47
+        ],
+        "text": "★ 2888-DAY POOL — PRIMARY (2x) ★"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/VaultClerk/@Label@43",
+        "rect": [
+          -985,
+          310,
+          265,
+          75
+        ],
+        "text": "MIRA \"LEDGER\" VOSS\n[E] TALK"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/ProtocolFloorBranding/ProtocolURL",
+        "rect": [
+          -1175,
+          586,
+          436,
+          67
+        ],
+        "text": "diamonds1111.win"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/ProtocolFloorBrandingMiddle/ProtocolURL",
+        "rect": [
+          -237,
+          586,
+          436,
+          67
+        ],
+        "text": "diamonds1111.win"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/ProtocolFloorBrandingEnd/ProtocolURL",
+        "rect": [
+          700,
+          586,
+          436,
+          67
+        ],
+        "text": "diamonds1111.win"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/SecuritySentinel/@Label@49",
+        "rect": [
+          -2,
+          278,
+          300,
+          71
+        ],
+        "text": "DIAMOND VAULT\nSECURITY SENTINEL"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@Label@50",
+        "rect": [
+          1050,
+          342,
+          90,
+          39
+        ],
+        "text": "EXIT ->"
+      },
+      {
+        "path": "/root/DiamondVaultRealm/@CanvasLayer@51/@Label@52",
+        "rect": [
+          24,
+          24,
+          551,
+          87
+        ],
+        "text": "DIAMONDS 0   |   DIAMOND SHARES 0\nWalk to an altar, press E to STAKE 25%"
+      }
+    ]
+  },
+  {
+    "kind": "fort",
+    "url": "https://html-classic.itch.zone/html/18305533-2374987/index.html?v=1794578718&vault=fort&debug=beacon",
+    "pass": true,
+    "endVisible": true,
+    "state": {
+      "avg_ms": 104.8,
+      "build": "2026-11-13-6317817",
+      "frames": 285,
+      "harness": false,
+      "held": {},
+      "mem_mb": 0,
+      "mem_peak_mb": 0,
+      "paused": false,
+      "scene": "res://src/level/fort_knox_realm.tscn",
+      "state": "PLAYING",
+      "t": 29566,
+      "td": "IDLE",
+      "td_frozen": false,
+      "tex_mb": 41.5,
+      "tex_peak_mb": 41.7,
+      "time_scale": 1,
+      "touch": {
+        "held": 0,
+        "layout": "phone_landscape",
+        "profile": "platformer",
+        "shown": false,
+        "susp": false
+      },
+      "win": [
+        1280,
+        720
+      ],
+      "worst_all_ms": 754.9,
+      "worst_ms": 0
+    },
+    "errors": [],
+    "words": [
+      {
+        "path": "/root/FortKnoxRealm/Altar_short/@Label@36",
+        "rect": [
+          -500,
+          322,
+          182,
+          36
+        ],
+        "text": "288-DAY POOL"
+      },
+      {
+        "path": "/root/FortKnoxRealm/Altar_long/@Label@40",
+        "rect": [
+          239,
+          292,
+          592,
+          47
+        ],
+        "text": "★ 2888-DAY POOL — PRIMARY (2x) ★"
+      },
+      {
+        "path": "/root/FortKnoxRealm/GideonVale/@Label@42",
+        "rect": [
+          -1070,
+          280,
+          360,
+          75
+        ],
+        "text": "GIDEON \"GOLDWATER\" VALE\n[E] TALK"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@Label@45",
+        "rect": [
+          459,
+          82,
+          293,
+          114
+        ],
+        "text": "FORT KNOX ASSAY —\nWEIGH IT. STAKE IT.\n100-DAY MINERS ONLY."
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@67",
+        "rect": [
+          899,
+          -68,
+          320,
+          47
+        ],
+        "text": "ASSAY SCALE"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@71",
+        "rect": [
+          889,
+          282,
+          96,
+          36
+        ],
+        "text": "STAKED"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@72",
+        "rect": [
+          889,
+          382,
+          17,
+          42
+        ],
+        "text": "0"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@73",
+        "rect": [
+          1111,
+          282,
+          102,
+          36
+        ],
+        "text": "RETURN"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@74",
+        "rect": [
+          1111,
+          382,
+          17,
+          42
+        ],
+        "text": "0"
+      },
+      {
+        "path": "/root/FortKnoxRealm/AssayScale/@Label@75",
+        "rect": [
+          899,
+          487,
+          320,
+          36
+        ],
+        "text": "[E] WEIGH GOLD"
+      },
+      {
+        "path": "/root/FortKnoxRealm/ProtocolFloorBranding/ProtocolURL",
+        "rect": [
+          -1172,
+          586,
+          345,
+          67
+        ],
+        "text": "mine4gold.app"
+      },
+      {
+        "path": "/root/FortKnoxRealm/ProtocolFloorBrandingMiddle/ProtocolURL",
+        "rect": [
+          -192,
+          586,
+          345,
+          67
+        ],
+        "text": "mine4gold.app"
+      },
+      {
+        "path": "/root/FortKnoxRealm/ProtocolFloorBrandingEnd/ProtocolURL",
+        "rect": [
+          787,
+          586,
+          345,
+          67
+        ],
+        "text": "mine4gold.app"
+      },
+      {
+        "path": "/root/FortKnoxRealm/SecuritySentinel/@Label@79",
+        "rect": [
+          -2,
+          278,
+          300,
+          71
+        ],
+        "text": "FORT KNOX\nSECURITY SENTINEL"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@Label@80",
+        "rect": [
+          1049,
+          342,
+          90,
+          39
+        ],
+        "text": "EXIT ->"
+      },
+      {
+        "path": "/root/FortKnoxRealm/@CanvasLayer@81/@Label@82",
+        "rect": [
+          24,
+          24,
+          551,
+          87
+        ],
+        "text": "GOLD 0   |   FORT KNOX SHARES 0\nWalk to an altar, press E to STAKE 25%"
+      }
+    ]
+  }
+]

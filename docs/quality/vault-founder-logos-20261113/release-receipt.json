@@ -1,0 +1,47 @@
+{
+  "source_sha": "6317817e6e8819edb2c7f96a1e39c1612181ed5e",
+  "build_id": "2026-11-13-6317817",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "evidence": [
+    {
+      "kind": "visual",
+      "path": "docs/quality/vault-founder-logos-20261113/diamond-end.png"
+    },
+    {
+      "kind": "visual",
+      "path": "docs/quality/vault-founder-logos-20261113/gold-end.png"
+    },
+    {
+      "kind": "public-browser",
+      "path": "docs/quality/vault-founder-logos-20261113/public-browser.json"
+    },
+    {
+      "kind": "upload",
+      "path": "docs/quality/vault-founder-logos-20261113/upload-proof.txt"
+    }
+  ],
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/43432805311",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-11-13-6317817"
+  },
+  "public_pack_checks": {
+    "count": 32,
+    "result": "PASS",
+    "base_sha256": "a5db7d44a89202ea6f5c5b11217b6cc13df848c82cffa3bc0c1c63dc093ca038",
+    "bytes": 199138288
+  },
+  "limitations": [
+    "Desktop automated browser and native checks; no physical-phone test."
+  ],
+  "open_blockers": []
+}
