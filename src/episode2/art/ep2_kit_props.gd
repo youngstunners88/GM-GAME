@@ -127,12 +127,23 @@ static func place(parent: Node3D, prop: String, at: Transform3D, local: Transfor
 
 
 ## Swap every fallback holder to its CAD prop once the kit is mounted. Returns how many were upgraded (0 while still waiting).
+## FOUNDER 2026-11-10: "moments of not smooth". When the streamed pack finished mounting, the next poll rebuilt EVERY stand-in
+## in the room in one frame - dozens of GLB instantiations and mesh uploads landing on a random gameplay frame, right after
+## entering a town or the smelter. The swap is now budgeted per call: a few milliseconds of pieces, the rest on the next poll
+## (the chambers poll four times a second, so the room still resolves in well under a second of wall time).
+const UPGRADE_US := 4000
+
 static func upgrade_pending() -> int:
 	if _pending.is_empty():
 		return 0
+	var t0: int = Time.get_ticks_usec()
 	var done: int = 0
 	var keep: Array = []
-	for slot in _pending:
+	for _i in _pending.size():
+		if done > 0 and Time.get_ticks_usec() - t0 >= UPGRADE_US:
+			keep.append_array(_pending.slice(_i))
+			break
+		var slot: Array = _pending[_i]
 		var holder: Node3D = slot[0]
 		if not is_instance_valid(holder):
 			continue

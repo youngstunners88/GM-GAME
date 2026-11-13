@@ -365,7 +365,7 @@ func step(delta: float) -> void:
 	if Ep2KitProps.pending_count() > 0:
 		_kit_poll -= delta
 		if _kit_poll <= 0.0:
-			_kit_poll = 0.5
+			_kit_poll = 0.2
 			Ep2KitProps.upgrade_pending()
 	if has_player_control():
 		_move_player(delta)
