@@ -1,8 +1,5 @@
 shader_type spatial;
 render_mode unshaded, cull_disabled;
-// Molten gold running in a channel (Smelting Facility). Two scrolling value-noise layers: bright gold veins
-// on a deep orange melt, with a slow crust. Unshaded + emissive-looking so it IS the room's light source.
-// Compatibility-renderer safe (no screen/depth reads).
 
 uniform vec3 hot = vec3(1.0, 0.82, 0.32);
 uniform vec3 melt = vec3(0.95, 0.38, 0.06);

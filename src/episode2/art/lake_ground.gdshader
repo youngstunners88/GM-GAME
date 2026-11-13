@@ -3,7 +3,7 @@ render_mode diffuse_burley, specular_schlick_ggx;
 uniform sampler2D forest_floor : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D gravel_tex : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D gravel_normal : hint_normal, filter_linear_mipmap, repeat_enable;
-uniform float clip_z = 100000.0; // the ridge room stops these hills here once it has taken the lake behind him
+uniform float clip_z = 100000.0;
 varying vec3 world_pos;
 varying float slope;
 void vertex(){world_pos=VERTEX;slope=1.0-abs(NORMAL.y);}
@@ -20,15 +20,12 @@ void fragment(){
  float wet=1.0-smoothstep(-0.18,0.08,world_pos.y);
  float patches=noise(p*0.13)*0.25;
  vec3 earthy=mix(floor_col*vec3(0.80,0.84,0.70),stone*vec3(0.48,0.39,0.27),clamp(path*0.68+wet*.6+slope*.65+patches,0.0,1.0));
- // Preserve colour variation at hill distance after detail textures mip out.
  float moss=smoothstep(.26,.68,noise(p*.075+vec2(19.3,4.7)))*(1.0-path*.75)*(1.0-wet*.65);
  earthy=mix(earthy,earthy*vec3(.48,.67,.37),.78*moss);
  earthy*=mix(.66,.90,noise(p*.041));
  vec3 grass=floor_col*vec3(.46,.92,.30);
- // Founder 2026-11-04: lush greenery down to the water. Hills and banks are grass, thinning only on the wet edge and the worn path.
  float growth=(1.0-path)*(1.0-wet)*(.80+.20*noise(p*.11+vec2(3.,7.)));
  ALBEDO=mix(earthy,grass,growth)*mix(1.0,0.55,wet);
- // Grass does not glare. Looking toward the low sun, the default specular washed these hills to a pale rippled khaki that read as a sand dune.
  SPECULAR=0.06;
  ROUGHNESS=mix(0.94,0.65,wet);
  NORMAL_MAP=texture(gravel_normal,p*0.35).rgb;

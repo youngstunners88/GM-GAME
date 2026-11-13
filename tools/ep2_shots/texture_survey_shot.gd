@@ -15,12 +15,17 @@ const ROOMS := {
 }
 var _out := ".farm/texsurvey"
 var _only: PackedStringArray = PackedStringArray()
+var _at: Array = []          # at=x,z,yaw[;x,z,yaw...]: extra views from these spots (the room's own floor height)
 
 
 func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="): _out = a.substr(4)
 		if a.begins_with("rooms="): _only = a.substr(6).split(",", false)
+		if a.begins_with("at="):
+			for spot in a.substr(3).split(";", false):
+				var v: PackedStringArray = spot.split(",")
+				_at.append([float(v[0]), float(v[1]), float(v[2])])
 	DirAccess.make_dir_recursive_absolute(_out)
 	for id in ROOMS:
 		if not _only.is_empty() and not _only.has(id): continue
@@ -47,7 +52,13 @@ func _room(id: String) -> void:
 	for i in 90: c.call("step", 1.0 / 30.0)
 	var yaw0: float = float(c.get("_look_yaw"))
 	var n: int = 0
-	for spec in [[0.0, -0.05], [1.3, -0.05], [-1.3, -0.05], [PI, -0.05], [0.0, -0.45]]:
+	var specs: Array = [[0.0, -0.05], [1.3, -0.05], [-1.3, -0.05], [PI, -0.05], [0.0, -0.45]]
+	if not _at.is_empty():
+		specs = []
+		yaw0 = 0.0
+		for spot in _at: specs.append([spot[2], 0.0, Vector3(spot[0], 0.0, spot[1])])
+	for spec in specs:
+		if spec.size() > 2: c.set("_player_pos", spec[2])
 		c.set("_look_yaw", yaw0 + float(spec[0]))
 		c.set("_look_pitch", float(spec[1]))
 		if c.has_method("_update_camera"): c.call("_update_camera", 0.0)
