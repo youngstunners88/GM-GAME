@@ -150,7 +150,14 @@ const ROAD_BEARS: Array = [
 	{"name": "Moose", "role": "brawler", "routine": "road", "at": 0.74, "lat": 6.5, "react": 0.8, "run": 4.4, "hp": 3, "height": 2.65, "pitch": 0.65},
 	{"name": "Gnasher", "role": "brawler", "routine": "road", "at": 0.85, "lat": -6.5, "react": 0.6, "run": 4.8, "hp": 2, "height": 2.3, "pitch": 0.85},
 	{"name": "Wren", "role": "archer", "routine": "watch", "at": 0.87, "lat": 19.0, "sweep": 0.5, "sight": 36.0, "react": 0.7, "hp": 1, "arrows": 8, "range": 42.0, "reload": 1.9, "height": 1.95, "pitch": 1.2},
+	# Three canopy set-pieces between ground pickets; append to preserve existing corpse IDs.
+	{"name": "Bough", "role": "brawler", "routine": "tree_jump", "at": 0.22, "lat": -4.0, "hp": 1, "height": 2.2},
+	{"name": "Needle", "role": "brawler", "routine": "tree_jump", "at": 0.50, "lat": 4.0, "hp": 1, "height": 2.2},
+	{"name": "Canopy", "role": "brawler", "routine": "tree_jump", "at": 0.79, "lat": -4.0, "hp": 1, "height": 2.2},
 ]
+const TREE_JUMPERS_AT_ONCE := 1
+const TREE_WARNING_TIME := 1.2
+const TREE_FLIGHT_TIME := 1.15
 
 # --- the old-growth wood (founder target artifacts/episode2-gold-mine/references/founder_2026-10-10/woods_exterior_target.jpg:
 # "it looks like cartoon junk ... the realism edge as a standard ... birds flying randomly and trees moving with the wind";
@@ -1186,6 +1193,46 @@ func _spawn_batch(k: int, count: int) -> void:
 			_spawned = i + 1
 
 
+## A large branch projects from an existing giant toward the road, keeping the silhouette outside foliage/trunk.
+func _tree_perch(near: Vector2) -> Vector3:
+	var tree: Array = []
+	var best: float = 18.0
+	for t in _trees_near(near, 4):
+		var d: float = (t[0] as Vector2).distance_to(near)
+		if float(t[2]) >= 20.0 and d < best and (t[0] as Vector2).y < FOREST_END_Z - 40.0:
+			best = d
+			tree = t
+	# Primitive-forest fallback still supplies a real trunk and branch, never a floating bear.
+	if tree.is_empty():
+		tree = [near + Vector2(4.0, 0.0), 0.8, 30.0]
+		_add_tree(tree[0], tree[1], tree[2])
+		var trunk := MeshInstance3D.new()
+		var cylinder := CylinderMesh.new()
+		cylinder.top_radius = 0.45
+		cylinder.bottom_radius = 0.8
+		cylinder.height = 30.0
+		trunk.mesh = cylinder
+		trunk.material_override = _bark_mat
+		_visuals.add_child(trunk)
+		trunk.position = Vector3(tree[0].x, 15.0, tree[0].y)
+	var base := Vector3(tree[0].x, clampf(float(tree[2]) * 0.19, 5.0, 8.0), tree[0].y)
+	var toward := Vector3(near.x, base.y, near.y) - base
+	if toward.length() < 0.1:
+		toward = Vector3.LEFT
+	var perch := Vector3(near.x, base.y, near.y) # branch tip at the road opening, against sky rather than dense needles
+	var limb := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.30
+	mesh.bottom_radius = 0.48
+	mesh.height = base.distance_to(perch) + 1.6
+	limb.mesh = mesh
+	limb.material_override = _bark_mat
+	_visuals.add_child(limb)
+	limb.position = (base + perch) * 0.5 - Vector3.UP * 0.35
+	limb.quaternion = Quaternion(Vector3.UP, (perch - base).normalized())
+	return perch
+
+
 func _spawn_bear(spec: Dictionary, idx: int) -> Ep2BearBrain:
 	if _bears_root == null:
 		_bears_root = Node3D.new()
@@ -1193,7 +1240,13 @@ func _spawn_bear(spec: Dictionary, idx: int) -> Ep2BearBrain:
 		_visuals.add_child(_bears_root)
 	var home: Vector2 = spec["pos"]
 	var h: float = float(spec.get("height", 2.2))
-	var a: Ep2Actor = Ep2BearKit.make_bear(_bears_root, Vector3(home.x, 0.0, home.y), h)
+	var spawn := Vector3(home.x, 0.0, home.y)
+	if str(spec.get("routine", "")) == "tree_jump":
+		# Resolve once after forest construction; retries reuse the same branch and transform.
+		if not spec.has("perch"):
+			spec["perch"] = _tree_perch(home)
+		spawn = spec["perch"]
+	var a: Ep2Actor = Ep2BearKit.make_bear(_bears_root, spawn, h)
 	a.name = "Bear_" + str(spec["name"]).replace(" ", "")
 	if spec.has("face"):
 		a.facing = float(spec["face"])
@@ -1206,6 +1259,7 @@ func _spawn_bear(spec: Dictionary, idx: int) -> Ep2BearBrain:
 	if armory.corpses.has("woods:%d" % idx):
 		brain.aware = Ep2BearBrain.Aware.DEAD
 		brain.hp = 0
+		a.position.y = 0.0
 		brain.arrows = int(armory.corpses["woods:%d" % idx]["arrows"])
 		a.stop()
 		Ep2BearKit.pose(a, "dead")
@@ -2074,10 +2128,41 @@ func _tick_ride(delta: float) -> void:
 	if _engine_acc >= 0.25:
 		_engine_acc = 0.0
 		_engine_noise()
+	_tick_tree_waves()
 	_road_barks()
 	if _ride_s >= _ride_total - 0.01:
 		_ride_done = true
 		_advance_to(Beat.DROPOFF)
+
+
+## Rail distance AND physical proximity gate three sparse waves. Only a spoken warning arms a leap.
+func _tick_tree_waves() -> void:
+	if not _riding or _quad.position.z >= FOREST_END_Z:
+		return
+	var active: int = 0
+	for b in _bears:
+		if not b.is_dead() and b.tree_phase in ["warning", "air"]:
+			active += 1
+	if active >= TREE_JUMPERS_AT_ONCE or _hold > 0.0:
+		return
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if br.routine() != "tree_jump" or br.is_dead() or br.tree_phase != "perch":
+			continue
+		var section: float = float(br.p["at"]) * PICKET_ROAD_LEN
+		if _ride_s < section - 34.0 or _ride_s > section + 12.0:
+			continue
+		if br.actor.position.distance_to(_quad.position) > 45.0:
+			continue
+		# Reuse Inferno's recorded trees/shoot warning through the scout speech path.
+		_begin_carry_line("vo_bull_road_bows")
+		_road_lines["bows"] = _elapsed
+		var landing: Vector3 = _ride_sample(_ride_s + _ride_speed * (TREE_WARNING_TIME + TREE_FLIGHT_TIME))[0]
+		if landing.z >= FOREST_END_Z:
+			continue
+		br.warn_tree_jump(landing, TREE_WARNING_TIME, TREE_FLIGHT_TIME)
+		_sfx3d("ep2_bear_growl_1", br.actor.global_position, 0.0, 1.0, 65.0)
+		return
 
 
 func _engine_noise() -> void:
@@ -2115,7 +2200,7 @@ func _road_barks() -> void:
 	elif charger and float(_road_lines.get("charge", -100.0)) < _elapsed - 16.0:
 		_road_lines["charge"] = _elapsed
 		_begin_carry_line("vo_bull_road_charge")
-	elif not _road_lines.has("clear") and _ride_s > (float(ROAD_BEARS[ROAD_BEARS.size() - 1]["at"]) * _ride_total + 70.0):
+	elif not _road_lines.has("clear") and _ride_s > (0.87 * PICKET_ROAD_LEN + 70.0):
 		_road_lines["clear"] = _elapsed
 		_begin_carry_line("vo_bull_road_clear")
 

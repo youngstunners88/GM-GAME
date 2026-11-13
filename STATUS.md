@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+- 2026-11-13: Three logging-road canopy jump sections reuse road bears, branch perches, Inferno’s recorded tree warning, shootable arcs and existing hearts/retry/tally; 36 tree-jump checks, bear combat, protected woods/retry, quad music, compile and local web size gate PASS; full interlude FAIL also reproduced on master (stale hideout doorway assertion); release pending.
+
 **2026-11-13 — Vault floor protocol branding strip (diamonds1111.win / mine4gold.app) under Mira + Gideon — local validation complete; publication pending.**
 - Separate Episode 1 vault rooms now build one world-space logo | URL | logo strip below the attendant, using existing logo textures, 88px logo height and 48px outlined protocol-coloured text. Decoration only; dialogue/stake/crush, return paths, music and Episode 2 unchanged. Evidence and release state: `docs/quality/vault-floor-branding-20261113/REPORT.md`.
 

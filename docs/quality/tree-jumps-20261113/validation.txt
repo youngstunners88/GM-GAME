@@ -1,0 +1,8 @@
+PASS tree-jumps (36 checks, including complete rail ride)
+PASS bear-attacks
+PASS protected-woods
+PASS quad-music
+PASS script-compile
+PASS local nonthreaded web export / pack gate
+PASS perch and arc gameplay-camera captures
+FAIL full-interlude (same single hideout-door assertion on unmodified f33e9583 master)

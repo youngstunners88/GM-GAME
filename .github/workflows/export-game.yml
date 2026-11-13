@@ -441,6 +441,10 @@ jobs:
           cat bear-attacks-tests.log
           grep -q 'EP2_BEAR_ATTACKS: ALL PASS' bear-attacks-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' bear-attacks-tests.log | grep -v VirtualJoystick; then exit 1; fi
+          # Three sparse, warned canopy jumps share the road combat and retry contracts.
+          timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_tree_jumps_test.tscn > tree-jumps-tests.log 2>&1
+          grep -q 'EP2_TREE_JUMPS: 36 checks, 0 failures' tree-jumps-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|FAIL ' tree-jumps-tests.log; then exit 1; fi
           # The town's life (founder 2026-10-18: the train, the river and the horses belong in Episode 2).
           timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_town_life_test.tscn > town-life-tests.log 2>&1
           cat town-life-tests.log
