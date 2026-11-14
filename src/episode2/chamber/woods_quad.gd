@@ -2302,6 +2302,29 @@ func _on_player_shot() -> void:
 	_noise(_player_pos, SHOT_HEARING, "shot")
 
 
+## A landed pickaxe swing: the bear in front of him within the pick's reach takes it like a round (the same wound, blood, tally and brain reaction),
+## but it is quiet: only what is close hears it.
+func _on_pickaxe_hit() -> void:
+	var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
+	var cp: float = cos(_look_pitch)
+	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
+	var hit_info: Dictionary = _bear_hit_on_ray(eye, dir, shot_reach(170.0), true)
+	var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
+	if hit == null:
+		return
+	var was_alive: bool = not hit.is_dead()
+	if was_alive:
+		hit.set_meta("killed_by", "player")
+	_bear_blood(hit, hit_info["point"], dir, hit_info["normal"])
+	var killed: bool = hit.take_hit(eye)
+	if was_alive:
+		_bear_money_hit(killed)
+	if _hud:
+		_hud.hit_marker(killed)
+	_sfx3d("ep2_bear_hit", hit.actor.global_position + Vector3(0.0, 1.4, 0.0), 0.0, float(hit.p.get("pitch", 1.0)), 60.0)
+	_noise(_player_pos, 8.0, "bow")
+
+
 ## The camera's aim with the Winchester's current spread (a gaussian cone: wide from the hip, tight down the sights).
 func _fire_dir() -> Vector3:
 	var sigma: float = _vm.gun.spread_deg(_moving, false) if _vm != null else 0.0

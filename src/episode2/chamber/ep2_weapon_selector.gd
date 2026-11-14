@@ -43,6 +43,12 @@ var shipment_live: bool = false
 var _ship_vp: SubViewport
 var _ship_turn: Node3D
 var _ship_source: String = ""
+## HIS OWN PICKAXE (founder 2026-11-14: the native melee is always usable): a tile of its own in the top right corner, opposite the Shipment,
+## never one of the gun cards (the mystery rule and the eight-gun grid are untouched). Pointing at it previews it like a card; release equips it.
+## Its picture streams with the extras (the war pick in his glove); until then the tile is the leather alone, with its name where keys are shown.
+const PICK_ICON := "res://src/episode2/extras/armory/showcase/war_pick_icon.png"
+var pick_card: Button
+var _pick_art: Texture2D = null
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -57,6 +63,16 @@ func _ready() -> void:
 		card.pressed.connect(func() -> void: preview(id))
 		add_child(card)
 		cards.append(card)
+	pick_card = Button.new()
+	pick_card.name = "Pickaxe"
+	pick_card.flat = true
+	pick_card.focus_mode = Control.FOCUS_NONE
+	pick_card.mouse_filter = Control.MOUSE_FILTER_PASS
+	for style in ["normal", "hover", "pressed", "focus", "disabled"]:
+		pick_card.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	pick_card.mouse_entered.connect(func() -> void: preview(Ep2ArmoryState.PICK))
+	pick_card.pressed.connect(func() -> void: preview(Ep2ArmoryState.PICK))
+	add_child(pick_card)
 	bud_card = _supply_button("ChillBud", select_bud)
 	bud_card.icon = BUD_ICON
 	bud_card.expand_icon = true
@@ -111,6 +127,21 @@ func _sync_shipment_model() -> void:
 	_ship_source = src
 	_ship_turn.add_child(Ep2ShipmentCrate.model(1.3))
 
+## The pickaxe tile: the Shipment's place mirrored to the right edge, the top right corner (the close button is top left).
+func pick_rect() -> Rect2:
+	var compact: bool = size.x < 650.0
+	var w: float = 76.0 if compact else 150.0
+	var h: float = 44.0 if compact else 84.0
+	return Rect2(Vector2(size.x - w - 10.0, 8.0), Vector2(w, h))
+
+
+## The pickaxe's picture once the streamed pack has it (null before: the tile draws without one).
+func pick_icon() -> Texture2D:
+	if _pick_art == null and Ep2Extras.has(PICK_ICON):
+		_pick_art = load(PICK_ICON) as Texture2D
+	return _pick_art
+
+
 func shipment_rect() -> Rect2:
 	var side: float = 64.0 if size.x < 650.0 else 120.0
 	return Rect2(Vector2(10.0, 6.0), Vector2(side, side))
@@ -154,7 +185,7 @@ func supply_gui_point(point: Vector2) -> bool:
 
 ## Previewing never changes the ammunition/reload transaction; release commits once in the host.
 func preview(id: String) -> void:
-	if state != null and not state.is_held(id) and state.owns(id):
+	if state != null and state.can_select(id):
 		bud_selected = false
 		refresh_supplies()
 		highlighted = id
@@ -164,6 +195,8 @@ func point_at(point: Vector2) -> void:
 	for i in cards.size():
 		if cards[i].visible and cards[i].get_global_rect().has_point(point):
 			preview(Ep2ArmoryState.IDS[i])
+	if pick_card.visible and pick_card.get_global_rect().has_point(point):
+		preview(Ep2ArmoryState.PICK)
 
 
 ## THE MYSTERY RULE (founder 2026-11-07): the cards are the weapons he has in hand now, in slot order. A gun he never acquired, or one the
@@ -200,6 +233,9 @@ func _process(_delta: float) -> void:
 		if slot >= 0:
 			cards[i].position = card_rect(slot).position
 			cards[i].size = card_rect(slot).size
+	pick_card.visible = not bud_selected                # the selected bud's picture takes that corner
+	pick_card.position = pick_rect().position
+	pick_card.size = pick_rect().size
 	var band: Rect2 = _ledger_band()
 	var action_width: float = 112.0 if size.x < 650 else 150.0
 	var supply_scale: float = _supply_scale()
@@ -353,6 +389,18 @@ func _draw() -> void:
 		if keys:
 			_text("CHILL BUD", Vector2(br.get_center().x, br.end.y + (10 if compact else 14)), 9 if compact else 12, BRASS, true)
 	_draw_ledger(_ledger_band(), compact)
+	if not bud_selected:
+		var pr: Rect2 = pick_rect()
+		var pick_on: bool = highlighted == Ep2ArmoryState.PICK
+		_leather(pr, Color("38261b") if pick_on else Color("231b15"), pick_on)
+		var art: Texture2D = pick_icon()
+		if art != null:
+			var room := Rect2(pr.position + Vector2(6, 4), pr.size - Vector2(12, 8 if not keys else (16 if compact else 24)))
+			var k: float = minf(room.size.x / art.get_width(), room.size.y / art.get_height())
+			draw_texture_rect(art, Rect2(room.get_center() - art.get_size() * k * 0.5, art.get_size() * k), false)
+		if keys:
+			_text(Ep2ArmoryState.PICK_NAME.to_upper(), Vector2(pr.get_center().x, pr.end.y - (5 if compact else 8)), 9 if compact else 13, PAPER, true)
+			_text(Ep2ArmoryState.key_label(Ep2ArmoryState.PICK_ACTION), pr.position + Vector2(10, 18 if compact else 24), 11 if compact else 15, BRASS)
 	var shown: Array = shown_ids()
 	if shown.is_empty():
 		# the Sheriff holds every iron: say so in the first card's place, and name only what he does carry

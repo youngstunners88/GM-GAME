@@ -3137,7 +3137,7 @@ func select_weapon(id: String) -> bool:
 	var selected: bool = armory.select(id)
 	_armory_weapon_changed()
 	if selected:
-		_hud_ctl.toast(Ep2ArmoryState.NAMES[id], 1.0)
+		_hud_ctl.toast(Ep2ArmoryState.display_name(id), 1.0)
 	return selected
 
 

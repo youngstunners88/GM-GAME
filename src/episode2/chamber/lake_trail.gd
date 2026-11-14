@@ -1246,8 +1246,19 @@ func _on_player_shot() -> void:
 	var direction: Vector3 = -_camera.global_transform.basis.z
 	if _carrion != null:
 		_carrion.notify_shot(eye, direction)     # the near miss: they lift off whatever the round goes on to hit
+	_hit_along(eye, direction)
+
+
+## A landed pickaxe swing: the same line as a round, but only as far as the pick reaches, and no carrion scare from a shot that was never fired.
+func _on_pickaxe_hit() -> void:
+	if _camera != null:
+		_hit_along(_camera.global_position, -_camera.global_transform.basis.z)
+
+
+## Whatever stands first on the line within reach takes it (a round's 181 m, or the pick's length during a swing).
+func _hit_along(eye: Vector3, direction: Vector3) -> void:
 	var best: int = -1
-	var best_t: float = 181.0
+	var best_t: float = shot_reach(181.0)
 	for i in _bandits.size():
 		var b: Dictionary = _bandits[i]
 		if not (b["root"] as Node3D).visible:
@@ -1257,8 +1268,8 @@ func _on_player_shot() -> void:
 			best_t = t
 			best = i
 	# One round, one target: whatever stands first on the line takes it, man or animal.
-	var creature: Dictionary = _creature_on_ray(eye, direction, true)
-	if not creature.is_empty() and float(creature["t"]) < best_t:
+	var creature: Dictionary = _creature_on_ray(eye, direction, not _melee)      # a swing from the saddle never lands on his own horse
+	if not creature.is_empty() and float(creature["t"]) < best_t and float(creature["t"]) <= shot_reach(INF):
 		_hit_creature(creature, eye, direction)
 		return
 	if best >= 0:

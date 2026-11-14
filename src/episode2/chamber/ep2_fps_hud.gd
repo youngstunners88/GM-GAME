@@ -224,7 +224,7 @@ func _update_armory() -> void:
 		return
 	_hold_button.disabled = not armory_enabled
 	# the pickaxe (what he carries while the Sheriff holds the irons) has no card icon: indexing it aborted this update every frame in jail
-	_hold_button.icon = Ep2WeaponSelector.ICONS.get(armory.equipped, null)
+	_hold_button.icon = _panel.pick_icon() if armory.equipped == Ep2ArmoryState.PICK else Ep2WeaponSelector.ICONS.get(armory.equipped, null)
 	var keys: bool = TouchUi.keys_shown()
 	# the holster button is its weapon icon alone on a phone ("HOLD Tab" names a key); the touch hold works on the icon
 	_hold_button.text = "HOLD\n%s" % Ep2ArmoryState.key_label("ep2_armory") if keys else ""
@@ -280,7 +280,7 @@ func toggle_armory() -> void:
 func close_armory(commit: bool = true, restore_mouse: bool = true) -> void:
 	if not armory_open:
 		return
-	if commit and not _panel.bud_selected and armory.owns(_panel.highlighted):
+	if commit and not _panel.bud_selected and armory.can_select(_panel.highlighted):
 		weapon_selected.emit(_panel.highlighted)
 	armory_open = false
 	_panel.hide()
@@ -380,6 +380,8 @@ func _input(event: InputEvent) -> void:
 		_panel.preview(Ep2ArmoryState.WIN)
 	elif event.is_action_pressed("ep2_weapon_2") or event.is_action_pressed("ui_right"):
 		_panel.preview(Ep2ArmoryState.REM)
+	elif InputMap.has_action(Ep2ArmoryState.PICK_ACTION) and event.is_action_pressed(Ep2ArmoryState.PICK_ACTION):
+		_panel.preview(Ep2ArmoryState.PICK)
 	elif event.is_action_pressed("ep2_weapon_previous"):
 		_panel.preview(Ep2ArmoryState.REM if _panel.highlighted == Ep2ArmoryState.WIN else Ep2ArmoryState.WIN)
 	elif event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_X and absf(event.axis_value) > 0.45:

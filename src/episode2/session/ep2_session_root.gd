@@ -1000,6 +1000,9 @@ func _route_free_roam(event: InputEvent) -> bool:
 			if InputMap.has_action(Ep2ArmoryState.SLOT_ACTIONS[slot]) and event.is_action_pressed(Ep2ArmoryState.SLOT_ACTIONS[slot]):
 				_active.select_weapon(Ep2ArmoryState.IDS[slot])
 				return true
+		if InputMap.has_action(Ep2ArmoryState.PICK_ACTION) and event.is_action_pressed(Ep2ArmoryState.PICK_ACTION):
+			_active.select_weapon(Ep2ArmoryState.PICK)       # his own pick, any time (founder 2026-11-14)
+			return true
 		if event.is_action_pressed("ep2_weapon_previous"):
 			_active.select_previous_weapon()
 			return true

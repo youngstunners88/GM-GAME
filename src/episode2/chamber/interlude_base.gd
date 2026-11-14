@@ -416,6 +416,29 @@ func _on_player_shot() -> void:
 	pass
 
 
+## The pickaxe lands part-way through its swing (Ep2Viewmodel.pickaxe_landed). A room with something to hit answers `_on_pickaxe_hit()`;
+## `shot_reach()` is the pick's reach while that runs, so a room can put the swing through the same hit test as a round, limited to arm's length.
+var _melee: bool = false
+
+
+func _pickaxe_landed() -> void:
+	if not has_player_control():
+		return
+	_melee = true
+	_on_pickaxe_hit()
+	_melee = false
+
+
+## What a landed pickaxe swing does in this room (nothing by default).
+func _on_pickaxe_hit() -> void:
+	pass
+
+
+## How far the thing in his hands reaches: `gun_range` for a round, the pick's length for a swing.
+func shot_reach(gun_range: float) -> float:
+	return minf(gun_range, Ep2ArmoryState.PICK_REACH) if _melee else gun_range
+
+
 ## True while the rifle should be at low ready (the woods' spyglass is up).
 func _viewmodel_lowered() -> bool:
 	return false
@@ -862,6 +885,7 @@ func _build_first_person() -> void:
 	_vm.attach(_camera)
 	_vm.set_exposure(viewmodel_exposure)
 	_vm.fired.connect(_on_player_shot)
+	_vm.pickaxe_landed.connect(_pickaxe_landed)
 	_vm.dry_fired.connect(func() -> void:
 		if _hud != null:
 			_hud.toast("EMPTY  -  NO RESERVE" if _vm.gun.reserve == 0 else "OUT OF ROUNDS  -  PRESS R", 1.6))
@@ -1266,7 +1290,7 @@ func select_weapon(id: String) -> bool:
 	var selected: bool = armory.select(id)
 	_sync_held_weapon()
 	if selected and _hud != null:
-		_hud.toast(Ep2ArmoryState.NAMES[id], 1.0)
+		_hud.toast(Ep2ArmoryState.display_name(id), 1.0)
 	return selected
 
 

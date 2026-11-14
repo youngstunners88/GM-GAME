@@ -36,6 +36,8 @@ func _ready() -> void:
 	await _test_purchase_reveals()
 	await _test_confiscation_hides()
 	await _test_pickaxe_tab()
+	await _test_pickaxe_always()
+	await _test_pickaxe_melee()
 	_test_shop_order()
 	_test_lock_chain()
 	await _test_case_takeout()
@@ -215,6 +217,119 @@ func _test_pickaxe_tab() -> void:
 	await _frames()
 	check("the Sheriff never takes it: its tab stays through a confiscation", _tab_keys(shop).has(Ep2ArmoryState.PICK))
 	shop.queue_free()
+	await _frames(1)
+
+
+## Founder 2026-11-14: the native pickaxe is always usable in the shooter, not only while the Sheriff holds the irons.
+func _test_pickaxe_always() -> void:
+	print("-- THE PICKAXE IS ALWAYS IN REACH (never bought, never confiscated to get it, the guns stay his)")
+	var st := Ep2ArmoryState.post_hideout()
+	st.acquire(Ep2ArmoryState.REM)
+	var rifle_rounds: int = st.firearm(Ep2ArmoryState.WIN).rounds
+	check("a normal run, nothing confiscated: the pick can be taken up", not st.firearms_confiscated and st.can_select(Ep2ArmoryState.PICK) and st.select(Ep2ArmoryState.PICK)
+		and st.equipped == Ep2ArmoryState.PICK)
+	check("it is not a ninth gun: IDS is still the eight firearms and nothing was bought", not Ep2ArmoryState.IDS.has(Ep2ArmoryState.PICK) and not st.owns(Ep2ArmoryState.PICK))
+	check("the guns stay owned, loaded and un-held", st.owns(Ep2ArmoryState.WIN) and st.owns(Ep2ArmoryState.REM) and not st.is_held(Ep2ArmoryState.WIN)
+		and st.firearm(Ep2ArmoryState.WIN).rounds == rifle_rounds and not st.firearms_confiscated)
+	st.step(Ep2ArmoryState.SWITCH_TIME + 0.05)
+	check("the pick is ready to swing once the switch is done", st.ready())
+	check("Q (previous) takes the rifle back, and Q again the pick", st.select_previous() and st.equipped == Ep2ArmoryState.WIN and st.select_previous() and st.equipped == Ep2ArmoryState.PICK)
+	check("a gun key takes any owned gun back", st.select(Ep2ArmoryState.REM) and st.equipped == Ep2ArmoryState.REM)
+	st.select(Ep2ArmoryState.PICK)
+	var copy: Ep2ArmoryState = st.detached_copy()
+	check("the pick stays up through a room hand-over and a save, with the gun to return to remembered", copy.equipped == Ep2ArmoryState.PICK and copy.previous == Ep2ArmoryState.REM
+		and copy.owns(Ep2ArmoryState.WIN) and not copy.firearms_confiscated)
+	check("the pick has its own key (9) beside the eight gun keys", InputMap.has_action(Ep2ArmoryState.PICK_ACTION) or Ep2ArmoryState.ACTIONS.has(Ep2ArmoryState.PICK_ACTION))
+	# the first-person view: visible in his hands, a swing counts and lands once, and the rifle fires again afterwards
+	var cam := Camera3D.new()
+	add_child(cam)
+	var vm := Ep2Viewmodel.new()
+	add_child(vm)
+	var st2 := Ep2ArmoryState.post_hideout()
+	vm.bind_armory(st2)
+	vm.attach(cam)
+	st2.select(Ep2ArmoryState.PICK)
+	var landed := [0]
+	vm.pickaxe_landed.connect(func() -> void: landed[0] += 1)
+	for i in 20:
+		vm.step(1.0 / 60.0, false, false, 0.0)
+	var view: Node3D = vm.rifle
+	check("the pick view is in his hands and shown (not the rifle, not hidden)", view != null and view.name == "PickaxeViewmodel" and view.visible and view.get_parent() == cam)
+	check("it is the founder's War Pick in his glove with a sleeve running out of frame (streamed pack mounted)", view.has_meta("held")
+		and view.find_child("PickaxeHeld", true, false) != null and view.find_child("ArmSleeve", true, false) != null)
+	var s: Vector3 = view.global_transform.basis.get_scale()
+	check("sane size on screen (0.5 - 1.2 of the model)", s.x > 0.5 and s.x < 1.2 and absf(s.x - s.y) < 0.01, str(s))
+	var rounds_before: int = st2.firearm(Ep2ArmoryState.WIN).rounds
+	check("fire swings it: the swing counts and costs no round", vm.fire() and vm.pickaxe_swings == 1 and st2.firearm(Ep2ArmoryState.WIN).rounds == rounds_before)
+	check("a second press mid-swing does nothing", not vm.fire() and vm.pickaxe_swings == 1)
+	for i in 40:
+		vm.step(1.0 / 60.0, false, false, 0.0)
+	check("the swing lands exactly once", landed[0] == 1, str(landed[0]))
+	check("and it swings again when the first is done", vm.fire() and vm.pickaxe_swings == 2)
+	for i in 40:
+		vm.step(1.0 / 60.0, false, false, 0.0)
+	st2.select(Ep2ArmoryState.WIN)
+	for i in 30:
+		vm.step(1.0 / 60.0, false, false, 0.0)
+	check("back on the rifle it fires a round as before", vm.rifle.name == "Viewmodel" and vm.fire() and st2.firearm(Ep2ArmoryState.WIN).rounds == rounds_before - 1)
+	vm.queue_free()
+	cam.queue_free()
+	# Tabs: his own tile, never a gun card
+	var sel := _selector_for(st)
+	await _frames()
+	check("Tabs has a pickaxe tile of its own; the gun cards are still only his guns", sel.pick_card != null and sel.pick_card.visible
+		and sel.shown_ids() == [Ep2ArmoryState.WIN, Ep2ArmoryState.REM] and sel.cards.size() == Ep2ArmoryState.IDS.size(), str(sel.shown_ids()))
+	check("the tile is on screen and clear of every gun card", Rect2(Vector2.ZERO, sel.size).encloses(sel.pick_rect())
+		and not sel.pick_rect().intersects(sel.card_rect(0)) and not sel.pick_rect().intersects(sel.card_rect(3)), str(sel.pick_rect()))
+	st.select(Ep2ArmoryState.WIN)
+	sel.point_at(sel.pick_card.get_global_rect().get_center())
+	check("pointing at it previews the pick (release equips it)", sel.highlighted == Ep2ArmoryState.PICK and st.can_select(sel.highlighted))
+	await _frames()
+	check("it is named on the tile where keys are shown", " ".join(sel.drawn_text).contains("PICKAXE"))
+	sel.queue_free()
+	await _frames(1)
+
+
+## The swing is a real melee hit in the real woods: arm's length only, no round spent, and the rifle still his.
+func _test_pickaxe_melee() -> void:
+	print("-- A PICKAXE SWING HITS WHAT IS IN REACH (real woods room, a real bear)")
+	var w: WoodsQuadChamber = (load("res://src/episode2/chamber/woods_quad.tscn") as PackedScene).instantiate() as WoodsQuadChamber
+	add_child(w)
+	w.setup(0, [], 0)
+	await get_tree().process_frame
+	var br: Ep2BearBrain = w.get_bear("Twitch")
+	check("the woods has its scout bear", br != null)
+	if br == null:
+		w.queue_free()
+		return
+	br.actor.stop()
+	Ep2BearKit.pose(br.actor, "idle")
+	br.actor.visible = true
+	br.hp = 1
+	w._player_pos = Vector3.ZERO
+	check("in the woods the pick is taken up like any weapon (no jail needed)", w.select_weapon(Ep2ArmoryState.PICK) and w.armory.equipped == Ep2ArmoryState.PICK)
+	var rounds: int = w.armory.firearm(Ep2ArmoryState.WIN).rounds
+	var swing := func(distance: float) -> bool:
+		br.actor.position = Vector3(0.0, 0.0, distance)
+		var swung: bool = false
+		for i in 50:
+			var eye: Vector3 = w._player_pos + Vector3(0.0, w.eye_height, 0.0)
+			var t: Vector3 = br.actor.position + Vector3(0.0, br.actor.height_m * 0.55, 0.0) - eye
+			w._look_yaw = atan2(t.x, t.z)
+			w._look_pitch = atan2(t.y, Vector2(t.x, t.z).length())
+			if i == 12:
+				swung = w.shoot()
+			w.step(1.0 / 60.0)
+			br.actor.position = Vector3(0.0, 0.0, distance)      # hold him there: this is about reach, not his charge
+		return swung
+	var far: bool = swing.call(9.0)
+	check("a swing at a bear 9 m away swings and does not touch him", far and not br.is_dead() and br.hp == 1, "swung %s hp %d" % [far, br.hp])
+	var near: bool = swing.call(1.9)
+	check("a swing at a bear within reach lands: he is down, the kill is Lil Blunt's", near and br.is_dead() and str(br.get_meta("killed_by", "")) == "player",
+		"swung %s dead %s" % [near, br.is_dead()])
+	check("no round was spent and the rifle is still his", w.armory.firearm(Ep2ArmoryState.WIN).rounds == rounds and w.armory.owns(Ep2ArmoryState.WIN)
+		and w.select_weapon(Ep2ArmoryState.WIN))
+	w.queue_free()
 	await _frames(1)
 
 

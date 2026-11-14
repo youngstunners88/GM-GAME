@@ -56,8 +56,14 @@ const HELD := {
 		"hip_rotation": Vector3(0.03, PI + 0.28, -0.04), "hip_offset": Vector3(0.015, 0.055, -0.08), "arm_pivot": Vector3(-0.14, -0.23, -0.33)},
 	# trigger hand on the wrist with its finger at the set triggers, support hand under the fore-end. The eye is on the tube's axis, just behind the eyepiece (build_scoped_sharps.py
 	# prints it), and the bore is parallel, so the aimed view looks level down the tube; `scoped` takes the rifle away at full aim, when Ep2FpsHud draws the lens.
+	# 2026-11-14 (founder: "his left arm doesn't look like his original hand"): the support hand was the pistol fist mirrored and left as it lies on the
+	# Remington, so it floated under the barrel pointing forward with its forearm running back along the gun into the trigger hand, and both arms
+	# ended in a cut 0.25 m behind the wrist. It is now turned to HOLD the fore-end (`grip`: where the fist closes; `forearm`: the way the arm leaves,
+	# down and to his left like the Winchester's; `around`: the axis the fingers wrap), and both arms run out of the frame in a sleeve.
 	Ep2ArmoryState.BUFF: {"gun_scale": 1.0, "gun_at": Vector3.ZERO, "muzzle": Vector3(0, 0.0, 0.75), "eye": Vector3(0, 0.0915, -0.25), "scoped": true,
-		"hands": [{"at": Vector3(0.0, -0.277, -0.128), "size": 0.6, "mirror": false}, {"at": Vector3(0.0, -0.29, 0.229), "size": 0.6, "mirror": true}],
+		"hands": [{"at": Vector3(0.0, -0.277, -0.128), "size": 0.6, "mirror": false, "sleeve": true},
+			{"at": Vector3(0.0, -0.29, 0.229), "size": 0.6, "mirror": true, "sleeve": true,
+				"grip": Vector3(0.0, -0.068, 0.24), "forearm": Vector3(0.38, -0.55, -0.74), "around": Vector3(0.0, 0.0, 1.0)}],
 		"hip_rotation": Vector3(0.03, PI + 0.26, -0.04), "hip_offset": Vector3(0.02, -0.03, -0.02), "arm_pivot": Vector3(0.0, -0.075, -0.11)},
 }
 ## Measured in the model frame (the build script prints its Blender anchors; game = (x, z, -y)): muzzle, the eye when aimed (on the
@@ -182,6 +188,10 @@ static func _make_held(id: String) -> Node3D:
 		var size: float = float(spec["size"])
 		# turned a quarter, the model's z is the view's x: flipping it makes the left hand
 		hand.scale = Vector3(size, size, -size if spec["mirror"] else size)
+		if spec.has("grip"):
+			_regrip(hand, spec["grip"], spec["forearm"], spec["around"])
+		if spec.get("sleeve", false):
+			_add_sleeve(hand)
 		hands.add_child(hand, true)
 	root.set_meta("meshy", true)
 	root.set_meta("hip_offset", a["hip_offset"])
@@ -194,6 +204,41 @@ static func _make_held(id: String) -> Node3D:
 	if a.get("scoped", false):
 		root.set_meta("scoped", true)
 	return root
+
+
+## THE GUN HAND'S OWN SHAPE, in its model frame (measured from lil_blunt_gun_hand.glb, slices along its length): the fist closes around
+## HAND_FIST, the fingers wrap the pistol grip's axis HAND_AROUND, the forearm leaves along HAND_FOREARM and is cut at HAND_CUT (radius HAND_CUT_R).
+const HAND_FIST := Vector3(0.0, 0.255, 0.01)
+const HAND_AROUND := Vector3(0.0, 1.0, 0.0)
+const HAND_FOREARM := Vector3(0.988, -0.15, 0.03)
+const HAND_CUT := Vector3(0.40, 0.165, 0.03)
+const HAND_CUT_R := 0.112
+const HAND_SLEEVE_LEN := 1.5
+
+
+## Turn a placed gun hand about its fist so the fist closes at `grip`, the fingers wrap `around` and the forearm leaves along `forearm` (all in the
+## view's frame). The hand keeps its size and its mirror.
+static func _regrip(hand: Node3D, grip: Vector3, forearm: Vector3, around: Vector3) -> void:
+	var placed: Basis = hand.transform.basis
+	var f0: Vector3 = (placed * HAND_FOREARM).normalized()
+	var a0: Vector3 = placed * HAND_AROUND
+	a0 = (a0 - f0 * a0.dot(f0)).normalized()
+	var f1: Vector3 = forearm.normalized()
+	var a1: Vector3 = (around - f1 * around.dot(f1)).normalized()
+	var turn: Basis = Basis(f1, a1, f1.cross(a1)) * Basis(f0, a0, f0.cross(a0)).inverse()
+	hand.transform.basis = turn * placed
+	hand.position = grip - hand.transform.basis * HAND_FIST
+
+
+## The arm model ends in a cut a hand's length behind the bracer; a sleeve in his own leafy green (the bow arms' sleeve) carries it out of the frame.
+static func _add_sleeve(hand: Node3D) -> void:
+	var axis: Vector3 = HAND_FOREARM.normalized()
+	var hem: Array = [[0.0, 0.88, 0.0], [0.01, 1.0, 0.0], [0.04, 1.02, 0.0], [0.05, 0.98, 0.0]]
+	var cloth: Array = [[0.046, 0.97, 0.0], [0.14, 1.0, 0.06], [0.30, 1.0, 0.05], [0.60, 0.98, 0.04], [HAND_SLEEVE_LEN, 0.97, 0.03]]
+	var sleeve := MeshInstance3D.new()
+	sleeve.name = "ArmSleeve"
+	sleeve.mesh = Ep2BowView.sleeve_mesh(HAND_CUT - axis * 0.05, axis, HAND_CUT_R * 1.14, hem, cloth, Ep2BowView.FOREARM_CLOTH)
+	hand.add_child(sleeve)
 
 
 ## The founder's Meshy view: his gun with Lil Blunt's gloved hands already on it (no procedural arms), and the same metas.

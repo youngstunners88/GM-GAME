@@ -7,8 +7,14 @@ signal firearms_returned
 const WIN := "winchester_1886"
 const REM := "remington_1875_gold"
 const BOW := "bear_longbow"
-## An equipped mode while the Sheriff holds the irons, never a fourth slot.
+## Lil Blunt's own miner's pick: never bought, never held by the Sheriff, never one of the eight gun slots (IDS). It is in his hands
+## while the Sheriff holds the irons, and since 2026-11-14 (founder: the native melee is always usable) he can take it up at any time
+## with `select(PICK)` (key 9, Tabs, or Q back to it); the guns stay owned and loaded while it is up.
 const PICK := "pickaxe"
+const PICK_NAME := "Pickaxe"
+const PICK_ACTION := "ep2_weapon_pick"
+## How far a swing reaches from his eye, metres.
+const PICK_REACH := 2.8
 ## Rich & Utah's new stock (founder 2026-11-01: "more weapons like a shotgun ... a bergmann mp18 submachine gun and a golden thompson
 ## submachine gun"). Bought at the counter with Episode 1 crypto like the rest; once owned they join the quick-switch armory.
 const SHOT := "coach_shotgun"
@@ -41,7 +47,7 @@ const SWITCH_TIME := 0.18
 const VERSION := 1
 const CONTROL_FILE := "user://ep2_armory_controls.cfg"
 const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_previous", "ep2_armory",
-	"ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6", "ep2_weapon_7", "ep2_weapon_8"]
+	"ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6", "ep2_weapon_7", "ep2_weapon_8", PICK_ACTION]
 ## The quick-switch key for each slot in IDS order (1-8).
 const SLOT_ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_4", "ep2_weapon_5", "ep2_weapon_6",
 	"ep2_weapon_7", "ep2_weapon_8"]
@@ -405,8 +411,18 @@ func return_firearms() -> void:
 	firearms_returned.emit()
 
 
+## The name to show for anything that can be in his hands (the eight guns and the pickaxe).
+static func display_name(id: String) -> String:
+	return PICK_NAME if id == PICK else str(NAMES.get(id, id))
+
+
+## True when `id` can be taken up now: the pickaxe always, a gun while he owns it and the Sheriff is not holding it.
+func can_select(id: String) -> bool:
+	return id == PICK or (owns(id) and not is_held(id))
+
+
 func select(id: String) -> bool:
-	if is_held(id) or not owns(id) or id == equipped:
+	if id == equipped or not can_select(id):
 		return false
 	active_gun().cancel_reload()
 	active_gun().set_aim(false)
@@ -424,7 +440,7 @@ func select_previous() -> bool:
 
 func ready() -> bool:
 	if equipped == PICK:
-		return firearms_confiscated
+		return _switch_t <= 0.0
 	return owns(equipped) and not is_held(equipped) and _switch_t <= 0.0
 
 
@@ -575,12 +591,14 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 	var wanted: String = str(data.get("equipped", REM if owns(REM) else WIN))
 	if firearms_confiscated and (not IDS.has(wanted) or is_held(wanted) or not owns(wanted)):
 		equipped = PICK
+	elif valid and wanted == PICK:
+		equipped = PICK                # he chose the pick himself: it stays up through a room hand-over and a save
 	else:
 		equipped = wanted
 		if equipped == PICK or not owns(equipped):
 			equipped = WIN if owns(WIN) else REM if owns(REM) else WIN
 	previous = REM if equipped in [WIN, PICK] else WIN
-	if firearms_confiscated and IDS.has(str(data.get("previous", ""))):
+	if (firearms_confiscated or equipped == PICK) and IDS.has(str(data.get("previous", ""))):
 		previous = str(data["previous"])
 	sniper_owned = valid and bool(data.get("sniper", false))
 	sniper_rounds = clampi(SaveSafe.to_int(data.get("sniper_rounds", 0)), 0, RESERVE_CAP) if sniper_owned else 0
@@ -611,7 +629,8 @@ static func install_actions() -> void:
 	var bindings: Dictionary = {"ep2_weapon_1": [KEY_1, JOY_BUTTON_LEFT_SHOULDER], "ep2_weapon_2": [KEY_2, JOY_BUTTON_RIGHT_SHOULDER],
 		"ep2_weapon_3": [KEY_3, JOY_BUTTON_DPAD_UP], "ep2_weapon_previous": [KEY_Q, JOY_BUTTON_Y], "ep2_armory": [KEY_TAB, JOY_BUTTON_BACK],
 		"ep2_weapon_4": [KEY_4, JOY_BUTTON_DPAD_RIGHT], "ep2_weapon_5": [KEY_5, JOY_BUTTON_DPAD_DOWN], "ep2_weapon_6": [KEY_6, JOY_BUTTON_DPAD_LEFT],
-		"ep2_weapon_7": [KEY_7, JOY_BUTTON_LEFT_STICK], "ep2_weapon_8": [KEY_8, JOY_BUTTON_RIGHT_STICK]}
+		"ep2_weapon_7": [KEY_7, JOY_BUTTON_LEFT_STICK], "ep2_weapon_8": [KEY_8, JOY_BUTTON_RIGHT_STICK],
+		PICK_ACTION: [KEY_9, JOY_BUTTON_MISC1]}
 	for action in bindings:
 		if InputMap.has_action(action):
 			continue             # existing custom/rebound controls take precedence

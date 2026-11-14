@@ -514,6 +514,7 @@ func tick(delta: float, p: Vector3, fwd: Vector3) -> void:
 		if f != null:
 			(f as Ep2TownFolk).step(delta)
 	_tick_servers(delta)
+	_tick_reactions(delta)
 	if _arrival != null and not _arrival.is_walking() and not _arrival.dead:
 		_arrival.face_point(RENEGADE_MARK)
 	if not _door_said and _doorman != null and not _doorman.dead and p.distance_to(_doorman.position) < 4.0:
@@ -576,13 +577,55 @@ func tick(delta: float, p: Vector3, fwd: Vector3) -> void:
 				_set_phase("left")
 
 
-## The floor answers the block: paddles up, applause.
+## The floor answers the block: paddles up, applause. People, not a chorus line (founder 2026-11-14: "they cheer like robots"): each one
+## answers in his own time (REACT_SPREAD), with his own choice of cheer, clap or a nod (REACT_WEIGHTS), a few only look on, and the room's one
+## cheer recording is not struck again on top of itself (CHEER_COOLDOWN; between whoops the claps carry the reaction).
+const REACT_SPREAD := 0.55
+const REACT_WEIGHTS := [["Cheer", 0.34], ["Clap", 0.38], ["Agree", 0.18], ["", 0.10]]
+const CHEER_COOLDOWN := 7.0
+var _react_queue: Array = []                       # [folk, seconds until he moves, clip]
+var _cheer_at: float = -INF
+## How many times the cheer recording was started, and every [seconds after the call, clip] the floor was given (the gate reads these).
+var cheers_played: int = 0
+var react_log: Array = []
+
+
 func _react() -> void:
-	if _cheer.stream != null: _cheer.play()
-	for i in _crowd.size():
-		var f: Ep2TownFolk = _crowd[i]
-		if not f.dead:
-			f.play_clip("Cheer" if (i + _line) % 2 == 0 else "Clap")
+	if _cheer.stream != null and _t - _cheer_at >= CHEER_COOLDOWN:
+		_cheer_at = _t
+		cheers_played += 1
+		_cheer.pitch_scale = randf_range(0.94, 1.06)
+		_cheer.play()
+	_react_queue.clear()
+	react_log.clear()
+	for f in _crowd:
+		if (f as Ep2TownFolk).dead:
+			continue
+		var roll: float = randf()
+		var clip: String = ""
+		for w in REACT_WEIGHTS:
+			roll -= float(w[1])
+			if roll <= 0.0:
+				clip = str(w[0])
+				break
+		var wait: float = randf() * REACT_SPREAD
+		react_log.append([wait, clip])
+		if clip != "":
+			_react_queue.append([f, wait, clip])
+
+
+## Each person starts his own answer when his moment comes.
+func _tick_reactions(delta: float) -> void:
+	for i in range(_react_queue.size() - 1, -1, -1):
+		var r: Array = _react_queue[i]
+		r[1] = float(r[1]) - delta
+		if float(r[1]) > 0.0:
+			continue
+		var f: Ep2TownFolk = r[0]
+		_react_queue.remove_at(i)
+		if is_instance_valid(f) and not f.dead and phase in ["calls", "jack", "after"]:
+			if not f.play_clip(str(r[2]), randf_range(0.9, 1.12)):
+				f.play_clip("Clap")
 
 
 func _tick_servers(delta: float) -> void:

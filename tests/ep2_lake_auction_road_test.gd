@@ -135,7 +135,19 @@ func _ready() -> void:
 	road._player_pos = road.from_house(Vector3(0.0, 0, 8.0))
 	_advance(road, 0.2)
 	check("inside the hall Renegade starts calling (HALL)", road.get_beat_name() == "HALL" and house.phase == "calls", road.get_beat_name())
+	# the floor answers like people (founder 2026-11-14): no two on one frame as a chorus, a mix of answers, one cheer recording per cooldown
+	var waits: Dictionary = {}
+	var clips: Dictionary = {}
+	for r in house.react_log:
+		waits[snappedf(float(r[0]), 0.001)] = true
+		clips[str(r[1])] = true
+	check("the crowd's answers are spread in time, not frame-synced (%d people, %d different moments)" % [house.react_log.size(), waits.size()],
+		house.react_log.size() >= 6 and waits.size() >= house.react_log.size() - 1, str(house.react_log))
+	check("and mixed (cheer / clap / nod / look on), not strict alternating rows", clips.size() >= 2, str(clips.keys()))
+	var first_cheers: int = house.cheers_played
 	_advance(road, house.CALL_GAP * house.CALLS.size() + 2.0)
+	check("three calls inside the cooldown strike the cheer recording once, not three times on top of itself", first_cheers == 1 and house.cheers_played <= 2
+		and house.CALL_GAP < house.CHEER_COOLDOWN, "%d then %d" % [first_cheers, house.cheers_played])
 	check("Jack Hammer is recognised (JACK)", road.get_beat_name() == "JACK", road.get_beat_name())
 	_advance(road, 3.9 * house.JACK_LINES.size() + 0.3)
 	check("he flees (FLEE): running, the side door swings", road.get_beat_name() == "FLEE" and house.jack.is_walking(), road.get_beat_name())

@@ -19,6 +19,8 @@ extends Node
 ## A round left the barrel (the host decides what a shot means: noise in the woods, nothing in the shaft).
 signal fired
 signal pickaxe_swung
+## The swing's head arrives (PICK_LAND_AT of the way through): the moment a melee hit is tested.
+signal pickaxe_landed
 signal dry_fired
 signal blocked(reason: String)
 signal reload_finished
@@ -50,8 +52,30 @@ const SOUND_DIR := "res://src/assets/sounds/"
 const PICKAXE_MODEL := "res://src/episode2/assets/weapons/pickaxe_fp.glb"
 const PICKAXE_SWING := "res://src/assets/sounds/ep2_pickaxe_swing.mp3"
 const PICK_SWING_TIME := 0.46
+const PICK_LAND_AT := 0.42
 const PICK_HOME_POS := Vector3(0.24, -0.30, -0.62)
 const PICK_HOME_ROT := Vector3(-0.25, PI + 0.10, -0.45)
+## The founder's Verdant War Pick in Lil Blunt's glove (the same model Rich's counter turns in its case): streamed with the extras, so it is his
+## first-person pick wherever the pack has mounted. Until the pack mounts (and in a build without it) the bare stand-in below is used, and it is
+## swapped for this the first time the pick is taken up afterwards.
+const PICK_HELD_MODEL := "res://src/episode2/extras/armory/showcase/war_pick_held.glb"
+## The model's own shape (measured, slices up its height): the fist closes at PICK_FIST, the handle runs from there along PICK_HANDLE to the head
+## (which lies in the model's XY plane), and the forearm leaves along PICK_ARM to a cut at PICK_ARM_CUT (radius PICK_ARM_R).
+const PICK_FIST := Vector3(0.10, 0.28, 0.03)
+const PICK_HANDLE := Vector3(-0.93, 0.33, 0.02)
+const PICK_ARM := Vector3(0.76, -0.63, -0.17)
+const PICK_ARM_CUT := Vector3(0.445, 0.02, -0.047)
+const PICK_ARM_R := 0.07
+## Carry, camera space: the fist low right, the handle up and a little forward (PICK_HELD_UP), the head's points fore and aft, the arm running
+## back out of the bottom of the frame.
+const PICK_HELD_POS := Vector3(0.26, -0.24, -0.50)
+const PICK_HELD_UP := Vector3(-0.20, 0.74, -0.64)
+## The head's plane is turned this way round the handle, so its two points show as a pick and not edge-on as a spike.
+const PICK_HELD_SIDE := Vector3(0.72, 0.0, 0.69)
+const PICK_HELD_SCALE := 1.0
+## The swing turns about his elbow, this far from the fist (camera space, behind and below it), so the forearm always stays behind the hand.
+const PICK_ELBOW := Vector3(0.10, -0.26, 0.34)
+const PICK_CHOP := 0.6
 
 ## The rifle logic: ammo, tube magazine, lever cycle, ADS blend, spread. Starts loaded and unlocked (Lil Blunt was taught
 ## in the hideout; nobody locks his trigger in the story rooms).
@@ -72,6 +96,7 @@ var shots_played: int = 0
 var levers_played: int = 0
 var pickaxe_swings: int = 0
 var _pick_swing: float = 0.0
+var _pick_land_due: bool = false
 var _pick_audio: AudioStreamPlayer = null
 
 var _recoil: float = 0.0
@@ -323,6 +348,7 @@ func fire() -> bool:
 		if _pick_swing > 0.001:
 			return false
 		_pick_swing = PICK_SWING_TIME
+		_pick_land_due = true
 		pickaxe_swings += 1
 		if _pick_audio != null and _pick_audio.stream != null:
 			_pick_audio.play()
@@ -678,6 +704,8 @@ func _sync_weapon() -> void:
 		return
 	if armory.equipped == Ep2ArmoryState.BOW:
 		_ensure_founder_bow()
+	if armory.equipped == Ep2ArmoryState.PICK:
+		_ensure_held_pick()
 	_ensure_armory_gun(armory.equipped)
 	if _active_id != armory.equipped:
 		for view in _weapon_views.values():
@@ -729,7 +757,35 @@ func _sync_weapon() -> void:
 func _make_pickaxe_view() -> Node3D:
 	var root := Node3D.new()
 	root.name = "PickaxeViewmodel"
-	if ResourceLoader.exists(PICKAXE_MODEL):
+	var held: PackedScene = load(PICK_HELD_MODEL) as PackedScene if Ep2Extras.has(PICK_HELD_MODEL) else null
+	if held != null:
+		var hand: Node3D = held.instantiate() as Node3D
+		hand.name = "PickaxeHeld"
+		# turn the model about its fist: the handle along PICK_HELD_UP, the head's plane fore and aft, and of the two ways round the one that
+		# sends the forearm back toward the camera
+		var h0: Vector3 = PICK_HANDLE.normalized()
+		var n0: Vector3 = (Vector3.BACK - h0 * Vector3.BACK.dot(h0)).normalized()
+		var h1: Vector3 = PICK_HELD_UP.normalized()
+		var from_model: Basis = Basis(h0, n0, h0.cross(n0)).inverse()
+		var turn := Basis.IDENTITY
+		var best: float = -INF
+		for side in [PICK_HELD_SIDE, -PICK_HELD_SIDE]:
+			var n1: Vector3 = (side - h1 * (side as Vector3).dot(h1)).normalized()
+			var candidate: Basis = Basis(h1, n1, h1.cross(n1)) * from_model
+			var toward: float = (candidate * PICK_ARM.normalized()).z
+			if toward > best:
+				best = toward
+				turn = candidate
+		hand.transform = Transform3D(turn, -(turn * PICK_FIST))
+		root.add_child(hand)
+		var arm: Vector3 = PICK_ARM.normalized()
+		var sleeve := MeshInstance3D.new()
+		sleeve.name = "ArmSleeve"
+		sleeve.mesh = Ep2BowView.sleeve_mesh(PICK_ARM_CUT - arm * 0.10, arm, PICK_ARM_R * 1.25, [[0.0, 0.88, 0.0], [0.01, 1.0, 0.0], [0.04, 1.02, 0.0], [0.05, 0.98, 0.0]],
+			[[0.046, 0.97, 0.0], [0.14, 1.0, 0.06], [0.30, 1.0, 0.05], [0.60, 0.98, 0.04], [1.8, 0.97, 0.03]], Ep2BowView.FOREARM_CLOTH)
+		hand.add_child(sleeve)
+		root.set_meta("held", true)
+	elif ResourceLoader.exists(PICKAXE_MODEL):
 		var packed: PackedScene = load(PICKAXE_MODEL) as PackedScene
 		if packed != null:
 			var model: Node3D = packed.instantiate() as Node3D
@@ -754,14 +810,38 @@ func _make_pickaxe_view() -> Node3D:
 		head.mesh = _pick_head_mesh()
 		head.material_override = iron
 		root.add_child(head)
-	_pick_audio = AudioStreamPlayer.new()
-	_pick_audio.name = "PickaxeSwing"
-	_pick_audio.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
-	_pick_audio.volume_db = -3.0
-	if ResourceLoader.exists(PICKAXE_SWING):
-		_pick_audio.stream = load(PICKAXE_SWING) as AudioStream
-	add_child(_pick_audio)
+	if _pick_audio == null:
+		_pick_audio = AudioStreamPlayer.new()
+		_pick_audio.name = "PickaxeSwing"
+		_pick_audio.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+		_pick_audio.volume_db = -3.0
+		if ResourceLoader.exists(PICKAXE_SWING):
+			_pick_audio.stream = load(PICKAXE_SWING) as AudioStream
+		add_child(_pick_audio)
 	return root
+
+
+## The pick view is built when the viewmodel attaches; if the streamed war pick was not mounted yet then, swap it in the first time the pick is
+## taken up (the same late mount as the founder's bow).
+func _ensure_held_pick() -> void:
+	var view: Node3D = _weapon_views.get(Ep2ArmoryState.PICK)
+	if view == null or view.has_meta("held") or camera == null or not Ep2Extras.has(PICK_HELD_MODEL):
+		return
+	var fresh: Node3D = _make_pickaxe_view()
+	if not fresh.has_meta("held"):
+		fresh.free()
+		return
+	var was_active: bool = rifle == view
+	camera.remove_child(view)
+	view.queue_free()
+	camera.add_child(fresh)
+	fresh.scale = Vector3.ONE * VM_SCALE
+	fresh.visible = false
+	_weapon_views[Ep2ArmoryState.PICK] = fresh
+	if was_active:
+		rifle = fresh
+		rifle.visible = _shown
+	_apply_world_shadows_to(fresh)
 
 
 func _pick_cylinder(parent: Node3D, top: float, bottom: float, height: float, at: Vector3, mat: Material) -> void:
@@ -812,6 +892,9 @@ func _pick_triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void
 
 func _step_pickaxe(delta: float, moving: bool, walk_phase: float) -> void:
 	_pick_swing = maxf(0.0, _pick_swing - delta)
+	if _pick_land_due and _pick_swing <= PICK_SWING_TIME * (1.0 - PICK_LAND_AT):
+		_pick_land_due = false
+		pickaxe_landed.emit()
 	_recoil = 0.0
 	_flash_t = 0.0
 	cam_kick = lerpf(cam_kick, 0.0, 1.0 - exp(-delta / 0.14))
@@ -820,12 +903,21 @@ func _step_pickaxe(delta: float, moving: bool, walk_phase: float) -> void:
 	var swing: float = 0.0
 	if _pick_swing > 0.0:
 		swing = sin((1.0 - _pick_swing / PICK_SWING_TIME) * PI)
-	var pos: Vector3 = PICK_HOME_POS + Vector3(0.0, sin(_anim_t * 1.8) * 0.004, 0.0)
+	var held: bool = rifle.has_meta("held")
+	var pos: Vector3 = (PICK_HELD_POS if held else PICK_HOME_POS) + Vector3(0.0, sin(_anim_t * 1.8) * 0.004, 0.0)
 	if moving:
 		pos += Vector3(sin(walk_phase) * 0.009, -absf(sin(walk_phase)) * 0.011, 0.0)
-	var rot: Vector3 = PICK_HOME_ROT
-	pos += Vector3(-0.035, -0.025, -0.15) * swing
-	rot += Vector3(-0.95, 0.12, 0.32) * swing
+	var rot: Vector3 = Vector3.ZERO if held else PICK_HOME_ROT
+	if held:
+		# the forearm chops forward and down about the elbow (below the frame): the head comes over into the middle of the view and back
+		var chop := Basis(Vector3.RIGHT, -PICK_CHOP * swing) * Basis(Vector3.UP, 0.25 * swing)
+		var elbow: Vector3 = pos + PICK_ELBOW
+		pos = elbow + chop * (pos - elbow) + Vector3(-0.07, 0.16, -0.05) * swing
+		rot = chop.get_euler()
+		rifle.scale = Vector3.ONE * VM_SCALE * PICK_HELD_SCALE
+	else:
+		pos += Vector3(-0.035, -0.025, -0.15) * swing
+		rot += Vector3(-0.95, 0.12, 0.32) * swing
 	rifle.position = pos
 	rifle.rotation = rot
 
