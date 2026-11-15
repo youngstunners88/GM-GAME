@@ -26,8 +26,8 @@ const TOMMY := "thompson_gold"
 const BORCH := "borchardt_c93"
 const BUFF := "sharps_buffalo"
 const IDS := [WIN, REM, BOW, SHOT, MP18, TOMMY, BORCH, BUFF]
-const NAMES := {WIN: "GM Lever Rifle", REM: "Golden BTC Revolver", BOW: "GM Bow",
-	SHOT: "Lever Shotgun", MP18: "Drum SMG", TOMMY: "Golden Thompson", BORCH: "Borchardt Pistol", BUFF: "Buffalo Gun"}
+const NAMES := {WIN: "Winchester 1886", REM: "Golden Remington 1875", BOW: "Recovered Bear Bow",
+	SHOT: "Winchester 1887", MP18: "Bergmann MP18", TOMMY: "Golden Thompson", BORCH: "Borchardt C-93", BUFF: "Sharps 1874"}
 const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round", BOW: "bear_arrow", SHOT: "buckshot_shell", MP18: "nine_mm", TOMMY: "forty_five",
 	BORCH: "seven_six_five", BUFF: "sharps_round"}
 ## Rounds that come with a gun when it is acquired (loaded + reserve; never refilled for free afterwards).
@@ -67,19 +67,19 @@ const SHOP: Array = [
 	# so it sits right under the Shipment with its cartridges under it. Then each gun with its own ammunition under it, in the order the story
 	# puts them in his hands: the Winchester (the hideout), the Remington (the armed runner), the bow (an archer in the woods), the Borchardt
 	# (the stranger at the draw), then the counter-only Lever Shotgun, Drum SMG and Golden Thompson. Ids never change; only the rows moved.
-	{"id": "sniper", "name": "BUFFALO GUN", "note": "SHARPS 1874 - TELESCOPIC SIGHT", "price": 3, "rounds": 0},
+	{"id": "sniper", "name": "SHARPS 1874", "note": "SHARPS 1874 - TELESCOPIC SIGHT", "price": 3, "rounds": 0},
 	{"id": "sniper_ammo", "name": "SHARPS CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
-	{"id": WIN, "name": "GM LEVER RIFLE", "note": "WINCHESTER 1886 - GM RECEIVER", "price": 3, "rounds": 0},
+	{"id": WIN, "name": "WINCHESTER 1886", "note": "WINCHESTER 1886 - GM RECEIVER", "price": 3, "rounds": 0},
 	{"id": "rifle_ammo", "name": "REPEATER CARTRIDGES", "note": "A BOX OF TWENTY-FOUR", "price": 1, "rounds": 24},
-	{"id": REM, "name": "GOLDEN BTC REVOLVER", "note": "SINGLE ACTION - BITCOIN CYLINDER", "price": 4, "rounds": 0},
+	{"id": REM, "name": "GOLDEN REMINGTON 1875", "note": "SINGLE ACTION - BITCOIN CYLINDER", "price": 4, "rounds": 0},
 	{"id": "revolver_ammo", "name": "SIXGUN CARTRIDGES", "note": "A BOX OF EIGHTEEN", "price": 1, "rounds": 18},
-	{"id": BOW, "name": "GM BOW", "note": "RECURVE - GM MEDALLION", "price": 2, "rounds": 0},
+	{"id": BOW, "name": "RECOVERED BEAR BOW", "note": "RECURVE - GM MEDALLION", "price": 2, "rounds": 0},
 	{"id": "arrows", "name": "GM ARROWS", "note": "A QUIVER OF TWELVE", "price": 1, "rounds": 12},
-	{"id": BORCH, "name": "BORCHARDT PISTOL", "note": "C-93 TOGGLE LOCK - EIGHT ROUNDS", "price": 3, "rounds": 0},
+	{"id": BORCH, "name": "BORCHARDT C-93", "note": "C-93 TOGGLE LOCK - EIGHT ROUNDS", "price": 3, "rounds": 0},
 	{"id": "borchardt_ammo", "name": "7.65 BORCHARDT", "note": "TWO MAGAZINES - SIXTEEN", "price": 1, "rounds": 16},
-	{"id": SHOT, "name": "LEVER SHOTGUN", "note": "WINCHESTER 1887 - FIVE SHELLS", "price": 3, "rounds": 0},
+	{"id": SHOT, "name": "WINCHESTER 1887", "note": "WINCHESTER 1887 - FIVE SHELLS", "price": 3, "rounds": 0},
 	{"id": "shotgun_ammo", "name": "BUCKSHOT SHELLS", "note": "A BOX OF TEN", "price": 1, "rounds": 10},
-	{"id": MP18, "name": "DRUM SMG", "note": "BERGMANN MP18 - SNAIL DRUM", "price": 4, "rounds": 0},
+	{"id": MP18, "name": "BERGMANN MP18", "note": "BERGMANN MP18 - SNAIL DRUM", "price": 4, "rounds": 0},
 	{"id": "mp18_ammo", "name": "9MM SNAIL DRUMS", "note": "TWO DRUMS - SIXTY-FOUR", "price": 1, "rounds": 64},
 	{"id": TOMMY, "name": "GOLDEN THOMPSON", "note": "1928 - FIFTY-ROUND DRUM", "price": 6, "rounds": 0},
 	{"id": "tommy_ammo", "name": ".45 DRUMS", "note": "TWO DRUMS - ONE HUNDRED", "price": 2, "rounds": 100},

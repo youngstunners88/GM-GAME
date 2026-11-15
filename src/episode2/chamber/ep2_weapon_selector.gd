@@ -419,6 +419,7 @@ func _draw() -> void:
 		var image_size: Vector2 = icon.get_size() * ratio
 		draw_texture_rect(icon, Rect2(image_rect.get_center() - image_size * 0.5, image_size), false)
 		var fs: int = mini(16, int(rect.size.x / 22.0)) if compact else mini(20, int(rect.size.x / 15.0))
+		fs = _fit_font_size(Ep2ArmoryState.NAMES[id].to_upper(), rect.size.x - 20.0, fs)
 		_text(Ep2ArmoryState.NAMES[id].to_upper(),Vector2(rect.get_center().x,rect.position.y+rect.size.y*.75),fs,PAPER,true)
 		var count: String = card_status(id)
 		_text(count,Vector2(rect.get_center().x,rect.position.y+rect.size.y*.86),12 if compact else 14,BRASS,true)

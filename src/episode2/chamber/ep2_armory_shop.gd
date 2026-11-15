@@ -4,7 +4,7 @@ extends Control
 ## Leather-and-brass, the same cabinet as the personal armory selector (ep2_weapon_selector.gd) so the two
 ## read as one world. The panel never awards anything: it only raises `buy_requested`, and the host chamber
 ## debits the Episode 1 crypto purse and asks `Ep2ArmoryState`. The tender is Episode 1 crypto only
-## (BTC / ETH / SOL coin faces) - no soft currency, no protocol number, no address.
+## (BTC / ETH / WBTC / SOL / TITANX coin faces) - no soft currency, no protocol number, no address.
 ## Stock and prices live once, in `Ep2ArmoryState.SHOP`.
 
 signal buy_requested(item_id: String, price: int, tender: String)
@@ -63,8 +63,8 @@ const WEAPON_TABS: Array = [
 	{"key": Ep2ArmoryState.REM, "label": "REMINGTON", "row": Ep2ArmoryState.REM, "model": TAB_DIR + "gold_remington.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.BORCH, "label": "BORCHARDT", "row": Ep2ArmoryState.BORCH, "model": TAB_DIR + "borchardt.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.BORCH + "_held", "label": "HELD C93", "row": Ep2ArmoryState.BORCH, "model": TAB_DIR + "borchardt_held.glb", "yaw": PI * 0.5},
-	{"key": Ep2ArmoryState.SHOT, "label": "COACH GUN", "row": Ep2ArmoryState.SHOT, "model": TAB_DIR + "coach_shotgun.glb", "yaw": PI * 0.5},
-	{"key": Ep2ArmoryState.MP18, "label": "MACHINE GUN", "row": Ep2ArmoryState.MP18, "model": TAB_DIR + "machine_gun.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.SHOT, "label": "1887 SHOTGUN", "row": Ep2ArmoryState.SHOT, "model": TAB_DIR + "coach_shotgun.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.MP18, "label": "MP18", "row": Ep2ArmoryState.MP18, "model": TAB_DIR + "machine_gun.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.TOMMY, "label": "GOLD TOMMY", "row": Ep2ArmoryState.TOMMY, "model": TAB_DIR + "golden_tommy.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.TOMMY + "_held", "label": "HELD TOMMY", "row": Ep2ArmoryState.TOMMY, "model": TAB_DIR + "golden_tommy_held.glb", "yaw": PI * 0.5},
 	# His own miner's pick in his glove (founder's Verdant War Pick). Nobody sells it, so it has no row: the tab only fills the case.
@@ -473,6 +473,14 @@ func open_shop(armory_state: Ep2ArmoryState, coin_purse: int) -> void:
 	purse = coin_purse
 	if purse_of.is_valid():
 		purse = int(purse_of.call(tender))
+		# Open on a token he actually carries, including Episode 1 WBTC. Keep
+		# his selected tender whenever it still has a balance; never convert coins.
+		if purse == 0:
+			for token in TENDERS:
+				var balance: int = int(purse_of.call(token))
+				if balance > purse:
+					tender = token
+					purse = balance
 	index = 0
 	grace = 0.25
 	flash = ""
@@ -631,8 +639,8 @@ func _short() -> bool:
 ## The top of the tabs: the heading and the purse line end here.
 func _tabs_top() -> float:
 	if _short():
-		return size.y * 0.075 + 44.0 + 30.0          # the compact heading + the purse line, then the list
-	return size.y * 0.075 + (44.0 if size.x < 650.0 else 58.0) + 34.0
+		return size.y * 0.075 + 44.0 + 38.0          # the compact heading + the purse line, then the list
+	return size.y * 0.075 + (44.0 if size.x < 650.0 else 58.0) + 42.0
 
 
 ## Columns are sized for the whole set (one strip on a wide screen), so a tab keeps its width as purchases add tabs beside it.
@@ -746,6 +754,7 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([Vector2(mid, line_y - 5), Vector2(mid + 5, line_y), Vector2(mid, line_y + 5), Vector2(mid - 5, line_y)]), BRASS)
 	_text("PAY WITH  ◂ %s ▸  ·  YOU HOLD %d" % [TENDER_NAMES.get(tender, tender.to_upper()), purse],
 		Vector2(mid, line_y + (14 if compact else 20)), 11 if compact else 14, BRASS, true)
+	_text("BTC · ETH · WBTC · SOL · TITANX", Vector2(mid, line_y + (26 if compact else 32)), 9, PAPER, true)
 	var picked_tab: int = active_tab()
 	var tabs: Array = _tabs()
 	for t in tabs.size():
@@ -757,6 +766,8 @@ func _draw() -> void:
 		box.set_corner_radius_all(6)
 		draw_style_box(box, tab_r)
 		var tab_font: int = 9 if tab_r.size.x < 80.0 else (10 if compact else 12)
+		while tab_font > 8 and FONT.get_string_size(str(tabs[t]["label"]), HORIZONTAL_ALIGNMENT_LEFT, -1, tab_font).x > tab_r.size.x - 8.0:
+			tab_font -= 1
 		# every tab is a weapon he has (the mystery rule), so none is drawn as locked, whatever the counter's chain says about its row
 		_text(str(tabs[t]["label"]), Vector2(tab_r.get_center().x, tab_r.get_center().y + float(tab_font) * 0.36), tab_font, PAPER, true)
 	if showcase_key != "":
@@ -788,12 +799,15 @@ func _draw() -> void:
 		_leather(rect, LEATHER if picked else LEATHER_DIM, picked)
 		var left: float = rect.position.x + 16
 		var cy: float = rect.get_center().y
-		_text(str(item["name"]), Vector2(left, cy - (4.0 if tall else 1.0)), (15 if compact else 18) if tall else (13 if compact else 15), PAPER if can or owned else CLOSED)
 		_text(str(item["note"]), Vector2(left, cy + (16.0 if tall else 12.0)), (10 if compact else 12) if tall else 9, BRASS)
 		var right: float = rect.end.x - 16
 		var label: String = "OWNED" if owned else _lock_note(str(item["id"])) if _lock_note(str(item["id"])) != "" \
 			else "NOT ENOUGH CRYPTO" if purse < int(item["price"]) else "%d %s" % [int(item["price"]), TENDER_NAMES.get(tender, tender.to_upper())]
 		var ls: int = FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+		var name_fs: int = (15 if compact else 18) if tall else (13 if compact else 15)
+		while name_fs > 8 and FONT.get_string_size(str(item["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, name_fs).x > right - ls - left - 8.0:
+			name_fs -= 1
+		_text(str(item["name"]), Vector2(left, cy - (4.0 if tall else 1.0)), name_fs, PAPER if can or owned else CLOSED)
 		_text(label, Vector2(right - ls, cy + 6), 14, BRASS if can else CLOSED)
 	var footer: float = row_rect(mini(rows.size() - 1, _scroll + rows_fit() - 1)).end.y + (24.0 + ARROW_H if scrolling() else 24.0)
 	if _short():
