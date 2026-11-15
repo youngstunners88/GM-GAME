@@ -53,7 +53,7 @@ func _ready() -> void:
 
 	print("-- THE SHOP: the Sharps is sold, the Gatling never")
 	var sold: Dictionary = Ep2ArmoryState.shop_item("sniper")
-	check("the long rifle in the Armory's stock IS the Sharps 1874 Buffalo Gun", "SHARPS 1874" in str(sold.get("note", "")) and "BUFFALO" in str(sold.get("name", "")), str(sold))
+	check("the long rifle in the Armory's stock IS the Sharps 1874 Buffalo Gun", "SHARPS 1874" in str(sold.get("note", "")) and "SHARPS 1874" == str(sold.get("name", "")), str(sold))
 	var stock_text: String = ""
 	for it in Ep2ArmoryState.SHOP:
 		stock_text += (str(it["id"]) + " " + str(it["name"]) + " " + str(it["note"])).to_lower() + " "

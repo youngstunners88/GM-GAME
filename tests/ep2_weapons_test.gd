@@ -150,7 +150,7 @@ func _test_purchase_reveals() -> void:
 	st.purchase_sniper("btc")
 	await _frames()
 	check("the Sharps bought: its tab is on the strip", _tab_keys(shop).has(Ep2ArmoryState.BUFF) and _visible_tab_buttons(shop) == 3, str(_tab_keys(shop)))
-	check("...and its card is in Tabs, named", sel.card_slot(Ep2ArmoryState.BUFF) >= 0 and " ".join(sel.drawn_text).contains("BUFFALO GUN"))
+	check("...and its card is in Tabs, named", sel.card_slot(Ep2ArmoryState.BUFF) >= 0 and " ".join(sel.drawn_text).contains("SHARPS 1874"))
 	check("...and its quick-switch key works", st.select(Ep2ArmoryState.BUFF))
 	st.purchase_firearm(Ep2ArmoryState.TOMMY, "btc")
 	await _frames()
@@ -344,7 +344,7 @@ func _test_shop_order() -> void:
 	pinned.sort()
 	check("every row and save id is unchanged (only the order moved)", sorted_ids == pinned, str(ids))
 	check("first THE SHIPMENT", ids[0] == "river_gear" and str(Ep2ArmoryState.SHOP[0]["name"]) == "THE SHIPMENT")
-	check("second the BUFFALO GUN (the Sharps)", ids[1] == "sniper" and str(Ep2ArmoryState.SHOP[1]["name"]) == "BUFFALO GUN")
+	check("second the SHARPS 1874", ids[1] == "sniper" and str(Ep2ArmoryState.SHOP[1]["name"]) == "SHARPS 1874")
 	check("third its SHARPS CARTRIDGES", ids[2] == "sniper_ammo" and str(Ep2ArmoryState.SHOP[2]["name"]) == "SHARPS CARTRIDGES")
 	var gun_order: Array = []
 	var paired: bool = true
