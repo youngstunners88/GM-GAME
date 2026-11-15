@@ -579,7 +579,7 @@ jobs:
           # Lake -> road -> auction grounds -> hall as one room (founder 2026-11-08): no swap at the door, solid hall, Renegade, Jack Hammer's flee.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_auction_road_test.tscn > lake-auction-road-tests.log 2>&1
           if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-auction-road-tests.log; then exit 1; fi
-          grep -q 'EP2_LAKE_AUCTION_ROAD: 48 checks, 0 FAIL' lake-auction-road-tests.log
+          grep -q 'EP2_LAKE_AUCTION_ROAD: 51 checks, 0 FAIL' lake-auction-road-tests.log
           # Founder playtest preset "dude" (2026-11-09): Dude's stables, every gun, 2000 rounds, 64 BTC; Save/Continue; no change without it.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_playtest_dude_test.tscn > playtest-dude-tests.log 2>&1
           if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' playtest-dude-tests.log; then exit 1; fi
