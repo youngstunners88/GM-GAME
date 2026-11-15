@@ -170,7 +170,7 @@ func _test_scope_rule() -> void:
 func _test_shop() -> void:
 	print("-- RICH & UTAH")
 	var sold: Dictionary = Ep2ArmoryState.shop_item("sniper")
-	check("the row keeps its story id, name and price, and now says telescopic sight", str(sold.get("id", "")) == "sniper" and "BUFFALO" in str(sold.get("name", "")) and int(sold.get("price", 0)) == 3 and "TELESCOPIC" in str(sold.get("note", "")) and not "LADDER" in str(sold.get("note", "")), str(sold))
+	check("the row keeps its story id, name and price, and now says telescopic sight", str(sold.get("id", "")) == "sniper" and "SHARPS 1874" == str(sold.get("name", "")) and int(sold.get("price", 0)) == 3 and "TELESCOPIC" in str(sold.get("note", "")) and not "LADDER" in str(sold.get("note", "")), str(sold))
 	check("ten weapon tabs: the nine guns and his pickaxe", Ep2ArmoryShop.WEAPON_TABS.size() == 10)
 	var tab: Dictionary = Ep2ArmoryShop.WEAPON_TABS[0]
 	check("the Sharps tab shows the scoped model", str(tab["label"]) == "SHARPS" and Ep2Extras.has(str(tab["model"])))

@@ -114,7 +114,7 @@ func _test_guns_buff() -> void:
 	print("-- GUNS BUFF: eight guns, Meshy models, jail rebuy")
 	for id in [Ep2ArmoryState.REM, Ep2ArmoryState.BOW, Ep2ArmoryState.WIN, Ep2ArmoryState.BORCH, Ep2ArmoryState.SHOT, Ep2ArmoryState.MP18, Ep2ArmoryState.TOMMY]:
 		_check("%s is a row of Rich's stock" % id, not Ep2ArmoryState.shop_item(id).is_empty())
-	_check("the buffalo gun is a row of Rich's stock (story id 'sniper')", "BUFFALO" in str(Ep2ArmoryState.shop_item("sniper").get("name", "")))
+	_check("the buffalo gun is a row of Rich's stock (story id 'sniper')", "SHARPS 1874" == str(Ep2ArmoryState.shop_item("sniper").get("name", "")))
 	for ammo in ["revolver_ammo", "arrows", "rifle_ammo", "borchardt_ammo", "shotgun_ammo", "sniper_ammo", "mp18_ammo", "tommy_ammo"]:
 		_check("Rich sells %s" % ammo, int(Ep2ArmoryState.shop_item(ammo).get("rounds", 0)) > 0)
 	for id in Ep2ArmoryGunView.MESHY_MODELS:
