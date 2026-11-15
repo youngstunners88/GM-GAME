@@ -1,30 +1,37 @@
 {
-  "objective": "Completed existing dude forward-route repair and verified public release",
-  "branch": "codex/dude-forward-path",
-  "source_sha": "7567dce53bd59a3e29b73c4a9504969e5279af14",
-  "observed_master_sha": "94df01c7",
-  "build_id": "2026-11-11-7567dce",
-  "run_id": 42950916056,
-  "outcome": "success; actual butler upload, public BUILD/input and published-pack forward arc verified",
-  "touched": [
-    "src/episode2/session/ep2_session_root.gd",
-    "src/episode2/chamber/river_cover.gd",
-    "src/input/mobile/virtual_button.gd",
-    "tests/ep2_playtest_dude_test.gd",
-    "tests/ep2_river_cover_test.gd",
+  "objective": "Restore original Episode 2 weapon names and make Episode 1 WBTC usable/readable at Rich counter; finish verified deployment",
+  "branch": "codex/original-weapon-names-wbtc",
+  "source_sha": "bbeb3b5028d7e6f64db122cc012a3f36752f0b46",
+  "origin_master_observed": "07aafd0e47a87293bb80bacaaa4ac98eff23770a",
+  "owned_paths": [
+    "src/episode2/chamber/ep2_armory_state.gd",
+    "src/episode2/chamber/ep2_armory_shop.gd",
+    "src/episode2/chamber/ep2_weapon_selector.gd",
+    "tests/ep2_original_names_wbtc_test.*",
+    "tests/ep2_weapons_test.gd",
+    "tests/ep2_armory_guns_test.gd",
+    "tests/ep2_founder_residuals_1101_test.gd",
+    "tests/ep2_weapon_consistency_test.gd",
     ".github/workflows/export-game.yml"
   ],
   "verified": [
-    "13 selected local suites; founder gate 41/41",
-    "Actual ridge GUI touch, pause/resume, leave-cover and camera review",
-    "Full master CI and successful butler deploy",
-    "Public F3/F8, BUILD and keyboard movement; published packs forward arc 17/17"
+    "20 real Episode 1 WBTC pickup/save-load/purchase tests pass",
+    "Native gameplay-camera screenshots at 1280x720,390x844,844x390; final abbreviated W.1887 tab",
+    "Fresh Godot 4.3 web export: 199192576 bytes, gate 199229440",
+    "Front-page lock and security pass",
+    "Baseline PUBLIC pack tested: correctly fails restored names/funded WBTC default; confirms pack driver loads exported code"
   ],
-  "receipt": "docs/episode2-quality/playtest-dude-2026-11-09/release-receipt.json",
-  "limitations": [
-    "Automated touch simulation; no physical-phone test",
-    "Forward reachability gate accelerates travel and defeats threats through production damage methods; not a manual combat playthrough",
-    "Automated browser uses the existing device-unlock fixture; access code was not manually typed"
+  "pending": [
+    "Impacted test reruns queued/running; original full suite finished with obsolete name/layout expectations plus repository-known pause geometry exception",
+    "Run /workspace/work/weapon-wbtc/final-gates.py after reruns",
+    "Ship via scripts/ship-to-master.sh --gates \"bash /workspace/work/weapon-wbtc/release-gates.sh\"",
+    "Monitor actual master CI butler upload; public-browser.mjs and published-pack 20-check test; retain receipt"
   ],
-  "next": "Founder device playtest; no open release blockers"
+  "evidence_root": "/workspace/work/weapon-wbtc",
+  "report": "docs/episode2-quality/original-names-wbtc-20261115/REPORT.md",
+  "notes": [
+    "No physical phone test",
+    "Browser uses verified Node TLS and curl-backed local streaming for >100MiB packs; scoped relay permissions. Public URL and BUILD observed; known browser audio worklet network error retained.",
+    "Runtime code unchanged after 0c5729ec; later commits update test name expectations and evidence."
+  ]
 }
