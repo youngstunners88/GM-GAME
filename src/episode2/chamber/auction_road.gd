@@ -27,6 +27,13 @@ const CLAIM_S := 130.0                             # the claim wagon across the 
 const CLAIM_TALK_R := 9.0
 const SPOOK_S := 235.0                             # the carcass beside the road
 const SPOOK_R := 28.0
+## GM OG SMOKE rides with him on the road to the auction (founder 2026-11-15: "the song that should be playing on the way to the auction once Lil Blunt is
+## on the road ... should be GM OG Smoke"). Streamed (ep2_extras.pck): the founder's "GM OG Smoke (Remastered x3)", Ogg q1, ~104 s, looped by the manager.
+## It starts once, crossfades in over whatever the lake left playing, ducks under every spoken line, and fades out at the porch where the hall's own sound takes over.
+const ROAD_SONG := "res://src/episode2/extras/music/ep2_gm_og_smoke.ogg"
+const SONG_FADE_IN := 2.5
+const SONG_FADE_OUT := 2.4
+const SONG_END_S := 365.0                          # = PORCH_S - 30: the hall's lamps and voices begin to take over here
 const ARRIVE_S := 345.0                            # the auction grounds' gate
 const PORCH_S := 395.0                             # the auction house's porch edge (Ep2AuctionHouse's origin)
 const DISMOUNT_S := PORCH_S - 26.0                 # level with the hitching rail: he gets down and walks the last stretch
@@ -72,6 +79,8 @@ var _house: Ep2AuctionHouse
 var _foot_speed: float = 3.4
 var _hitched: bool = false
 var _dismount_t: float = -1.0
+var _song_on: bool = false                       # GM OG Smoke has been started (once per ride, never restarted)
+var _song_faded: bool = false
 var _env: Environment
 var _sky_mat: ProceduralSkyMaterial
 var _light_s: float = -999.0
@@ -100,7 +109,7 @@ func _build_house() -> void:
 		_house.position = at(PORCH_S)
 		_house.rotation.y = ROAD_YAW
 		_house.phase_changed.connect(_on_house_phase)
-		_house.say = func(text: String, secs: float) -> void: _hud.speech(text, secs, false)
+		_house.say = func(text: String, secs: float) -> void: _caption(text, secs)
 	_house.build_next()
 
 
@@ -430,7 +439,7 @@ func _next_claim_line() -> void:
 		_finish_claim()
 		return
 	var row: Array = CLAIM_LINES[_claim_line]
-	_hud.speech("%s: %s" % [row[0], row[1]], 4.2, false)
+	_caption("%s: %s" % [row[0], row[1]], 4.2)
 	_claim_t = 4.2
 	var speaker: Ep2TownFolk = _clerk if row[0] == "CLAIM CLERK" else (_claimant if row[0] == "CLAIMANT" else null)
 	if speaker != null and not _down.has(speaker.name):
@@ -449,6 +458,7 @@ func _finish_claim() -> void:
 func _tick(delta: float) -> void:
 	_build_people()
 	var s: float = road_s(_player_pos)
+	_tick_song(s)
 	if _vultures != null:
 		_vultures.listener = _player_pos
 	# CLAIM: the wagon holds the road until they have spoken (or nobody is left standing to speak)
@@ -494,7 +504,7 @@ func _tick(delta: float) -> void:
 		_hitched = true                               # he gets down by the rail; the horse walks over and stands with the others
 		_dismount_t = 0.0
 		walk_speed = _foot_speed
-		_hud.speech("LIL BLUNT: Easy now. Wait here with the others.", 2.6, false)
+		_caption("LIL BLUNT: Easy now. Wait here with the others.", 2.6)
 	if _dismount_t >= 0.0:
 		_dismount_t += delta
 		eye_height = lerpf(MOUNTED_EYE, FPS_EYE_HEIGHT, smoothstep(0.0, 0.9, _dismount_t))
@@ -524,7 +534,7 @@ func _spook() -> void:
 	_rise_t = 0.0
 	_dust.restart()
 	_dust.emitting = true
-	_hud.speech(SPOOK_LINE, 3.5, false)
+	_caption(SPOOK_LINE, 3.5)
 	if _mounted:
 		_bolt_t = 0.0
 		var path := "res://src/episode2/extras/audio/town/horse_whinny.ogg"
@@ -584,6 +594,23 @@ func _collide(p: Vector3) -> Vector3:
 		s = PORCH_S + l.z
 		d = l.x
 	return at(s, d) + Vector3(0, p.y, 0)
+
+
+## A caption on the road ducks the song for as long as it is up (recorded takes duck it themselves; unrecorded lines would not).
+func _caption(text: String, seconds: float) -> void:
+	_hud.speech(text, seconds, false)
+	if _song_on and not _song_faded:
+		AudioManager.duck_for_speech(seconds)
+
+
+## GM OG Smoke: on from the first frame on the road (the moment the extras have it), off at the porch, never twice.
+func _tick_song(s: float) -> void:
+	if not _song_on and not _song_faded and Ep2Extras.has(ROAD_SONG):
+		_song_on = true
+		AudioManager.crossfade_music(ROAD_SONG, SONG_FADE_IN)
+	elif _song_on and not _song_faded and s >= SONG_END_S:
+		_song_faded = true
+		AudioManager.fade_out_music(SONG_FADE_OUT)
 
 
 func _on_house_phase(phase: String) -> void:

@@ -131,6 +131,8 @@ func update(stage: int, t: float) -> void:
 	if rifle == null:
 		return
 	match stage:
+		Stage.SHARPS_SETDOWN:
+			_setdown(t)
 		Stage.SHARPS_REACH:
 			_out(t)
 		Stage.SHARPS_TALK:
@@ -143,6 +145,45 @@ func update(stage: int, t: float) -> void:
 			if rifle.visible and (lid_angle != 0.0 or not rifle.global_transform.is_equal_approx(_rest)):
 				settle()
 			_arms(0.0, Vector3.ZERO, 0.0, Vector3.ZERO)
+
+
+## HANDS FREE (founder 2026-11-15). Both hands go down to the counter in front of him; whatever he holds (the gold) is set on it at
+## SETDOWN_RELEASE_AT; the hands come away empty and the arms hand back to his clip before he turns to the case.
+func _setdown(t: float) -> void:
+	if _rich == null:
+		return
+	var fwd: Vector3 = Vector3(_rich.global_transform.basis.z.x, 0.0, _rich.global_transform.basis.z.z).normalized()
+	var side: Vector3 = Vector3(fwd.z, 0.0, -fwd.x)
+	var base: Vector3 = _rich.global_position + fwd * 0.42
+	var surface: float = (_xf * Vector3(0.0, FELT_Y, 0.0)).y + 0.05
+	var right_at: Vector3 = Vector3(base.x, surface, base.z) + side * 0.16
+	var left_at: Vector3 = Vector3(base.x, surface, base.z) - side * 0.16
+	var rel: float = Ep2ArmoryIntro.SETDOWN_RELEASE_AT
+	var w: float
+	if t < rel:
+		w = _ease(t / rel)
+	else:
+		w = 1.0 - _ease((t - rel) / maxf(Ep2ArmoryIntro.SETDOWN_TURN_AT - rel, 0.01))
+		_release_held(right_at)
+	_arms(w, right_at, w, left_at)
+
+
+## Set everything in his hands except the rifle on the counter (kept where it lands: it is the shop's stock, not a prop of this beat).
+func _release_held(at: Vector3) -> void:
+	if _rich == null or _rich.model == null:
+		return
+	for a in _rich.model.find_children("Hold_*", "BoneAttachment3D", true, false):
+		if str(a.name) == "Hold_Sharps" or a.get_child_count() == 0:
+			continue
+		var prop: Node3D = a.get_child(0) as Node3D
+		a.remove_child(prop)
+		a.get_parent().remove_child(a)
+		a.queue_free()
+		add_child(prop)
+		prop.scale = Vector3.ONE
+		prop.global_position = at
+		prop.global_rotation = Vector3.ZERO
+		prop.set_meta("set_down", true)
 
 
 func _out(t: float) -> void:

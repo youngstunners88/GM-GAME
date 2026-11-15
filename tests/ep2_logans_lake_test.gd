@@ -46,7 +46,8 @@ func _ready() -> void:
 	check("founder's supplied Logan has a real skin and clips", c._logan.has_clips() and c._logan.model.find_children("*", "Skeleton3D", true, false).size() == 1)
 	check("no remote interaction from the arrival trail", not c.start_rig())
 	check("walk to Logan through ordinary movement", walk(c, Vector3(-5.5, 0, 8)))
-	check("meeting starts investigation", c.start_rig() and c.get_beat() == LogansLakeChamber.Beat.INVESTIGATE)
+	advance(c, 0.1)                                # he sees Lil Blunt on the shore: the talk starts by itself (founder 2026-11-15, no [E])
+	check("meeting starts investigation", c.get_beat() == LogansLakeChamber.Beat.INVESTIGATE)
 	check("cannot skip dialogue by spamming interact", not c.start_rig())
 	# Exercise the live scene clock, not deterministic manual stepping, while paused.
 	c.set_physics_process(true)
@@ -75,8 +76,9 @@ func _ready() -> void:
 	check("the ridge is being built behind the lake since Logan's first line", session._pb_id == "river_cover")
 	check("the overlook line is still running when he may walk on", c._talk_t > 0.0)
 	session._drive_prebuild(1.0e9)                 # the test is the frame clock: the background build, done
-	c._hud.search_requested.emit()
-	c._hud.search_requested.emit()
+	c._player_pos = Vector3(-8.0, 6.0, LogansLakeChamber.WALK_ON_Z)   # walking on IS finishing (founder 2026-11-15: no [E] arrivals)
+	advance(c, 0.1)
+	advance(c, 0.1)
 	check("finish touch action resolves the lake exactly once (the session carries on to the ridge)", completions.is_empty() and results.size() == 1)
 	# founder lock 2026-11-04: the lake hands on to the day-88 ridge (never a vault, never the runner)
 	check("lake result hands on to the day-88 ridge, no vault", results.size() == 1 and not results[0].get("end_session", false) and results[0].get("lake_complete", false) and str(results[0].get("next_chamber", "")) == "river_cover")

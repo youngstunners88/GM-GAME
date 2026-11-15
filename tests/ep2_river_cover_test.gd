@@ -184,14 +184,16 @@ func _test_full_run() -> void:
 	_stand(c, RiverCoverChamber.OVERLOOKS[2])
 	_advance(c, 0.5)
 	check("on the dock ledge: GATE 3/3 DOCK APPROACH", c.get_gate() == 2 and "GATE 3/3" in str(c.get_hud().objective))
+	check("Rich has come down to the dock to watch the last gate (founder 2026-11-15)", c.get_rich() != null and c.get_rich().visible and c.rich_state() != "")
 	_wave_out(c, 22)
 	_kill_river_bears(c)
 	_advance(c, 60.0)
 	check("the dock approach clear, Utah walks out onto the lower dock", c.utah_visible() and c.get_beat_name() in ["DOCK", "DONE"])
-	_advance(c, 20.0)
+	_advance(c, 40.0)
 	check("the shipment reaches Utah under the crane: the run resolves, three gates, no loss", res.size() == 1
 		and bool(res[0].get("river_complete", false)) and int(res[0].get("gates", 0)) == 3 and int(res[0].get("losses", -1)) == 0, str(res))
-	check("Rich is never here, nor Logan (he stays at his lake)", c.find_child("Rich", true, false) == null and c.find_child("Logan", true, false) == null)
+	check("Rich collected the shipment: he lifted the crate and carried it off the dock (a visible beat, not a line)", c.crate_collected() and c.get_crate() != null and not c.get_crate().visible)
+	check("Logan stays at his lake", c.find_child("Logan", true, false) == null)
 	check("the Shipment is still his (logistics gear, never confiscated or spent)", st.river_gear)
 	c.free()
 
@@ -308,7 +310,7 @@ func _test_lake_is_logans_alone() -> void:
 	add_child(lake)
 	lake.set_physics_process(false)
 	lake.setup(0, [], 0)
-	check("Logan's Lake: never Rich, never Utah", lake.find_child("Rich", true, false) == null and lake.find_child("Utah", true, false) == null)
+	check("Logan's Lake: never Rich, never Utah (Rich is at the dock, not the lake)", lake.find_child("Rich", true, false) == null and lake.find_child("Utah", true, false) == null)
 	lake.free()
 
 

@@ -1130,22 +1130,6 @@ const LINES: Dictionary = {
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_cert1_0.ogg"
 	},
-	"town_cert1_1": {
-		"speaker": "minister",
-		"text": "We don't hand out paper for free. What you're looking at on the wall are the four licenses that actually sit on the wBTC vault.",
-		"seconds": 8.605042,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/town_cert1_1.ogg"
-	},
-	"town_cert1_2": {
-		"speaker": "minister",
-		"text": "Prospector's is the floor. Then Miner's, Foreman's, Mine Owner's. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight.",
-		"seconds": 12.705,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/town_cert1_2.ogg"
-	},
 	"town_cert1_3": {
 		"speaker": "minister",
 		"text": "You can start with a Prospector's when you're ready, or go the bond route if you want the discount and a real share of the gold. Flip bond gets you NOTE cheaper. Builder bond puts you in the longer pool.",

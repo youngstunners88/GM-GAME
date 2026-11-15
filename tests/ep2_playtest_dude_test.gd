@@ -142,7 +142,8 @@ func _test_auction_preset() -> void:
 	lake._player_pos = LogansLakeChamber.AUCTION_SIGN + Vector3(0.6, 0, 0.6)
 	s._drive_prebuild(1.0e9)
 	check("the road to the auction is built behind the lake", s.is_prebuilt("auction_road"))
-	check("at the signpost the lake lets him leave for the auction", lake._near_auction_sign() and lake._can_leave_for_auction() and lake.start_rig())
+	lake.step(1.0 / 30.0)                         # founder 2026-11-15: riding past the signpost IS leaving - no [E]
+	check("at the signpost the lake lets him leave for the auction, by riding, not by a key", lake._near_auction_sign() and lake._can_leave_for_auction() and s.get_active() is AuctionRoadChamber)
 	var road: AuctionRoadChamber = s.get_active() as AuctionRoadChamber
 	check("...and he is on the auction road, still in the saddle", road != null and road.is_mounted(), str(s.get_active()))
 	# a save at the warped lake is an ordinary after-day-88 lake checkpoint: Continue opens there again, signpost and all
@@ -259,7 +260,8 @@ func _forward(s: Ep2SessionRoot, town: GoldTownChamber) -> void:
 	lake.set_move_input(Vector2.ZERO)
 	lake.set_physics_process(false)
 	check("Logan is reachable from the trail arrival", _walk_to(lake, LogansLakeChamber.LOGAN_MARK + Vector3(-1.0, 0, 0), 20.0, 1.5))
-	check("Logan's investigation starts", lake.start_rig())
+	lake.step(0.1)                                # he sees Lil Blunt: the talk begins by itself (founder 2026-11-15)
+	check("Logan's investigation starts", lake.get_beat_name() == "INVESTIGATE")
 	_advance(lake, 60.0)
 	check("the staging marker is reachable", _walk_to(lake, LogansLakeChamber.STAGING_MARK, 20.0, 2.0))
 	check("cargo can be checked once", lake.start_rig() and lake._stage_calls == 1)
@@ -296,7 +298,8 @@ func _forward(s: Ep2SessionRoot, town: GoldTownChamber) -> void:
 	check("the returned horse can be mounted", lake.start_rig() and lake.is_riding_horse())
 	_advance(lake, 1.0)
 	lake._player_pos = LogansLakeChamber.AUCTION_SIGN
-	check("the auction sign opens the road", lake.start_rig())
+	lake.step(1.0 / 30.0)
+	check("the auction sign opens the road", s.get_active() is AuctionRoadChamber)
 	check("the real auction road and house are reachable", s.get_active() is AuctionRoadChamber and s._chain_id == "auction_road")
 
 

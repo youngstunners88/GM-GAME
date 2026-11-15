@@ -117,6 +117,11 @@
     "stranger": {
       "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
       "name": "Stranger"
+    },
+    "renegade": {
+      "voice_id": "X0KF3ROqwE8cLCsWuhs6",
+      "name": "Renegade, the Gold Rush auctioneer (founder-locked voice, 2026-11-15)",
+      "source": "Founder-specified ElevenLabs voice id for the auctioneer; Jack Hammer, the doorman and the crowd keep their own voices"
     }
   },
   "lines_pending_second_account": [
@@ -124,6 +129,11 @@
       "id": "dude_ranch_16",
       "speaker": "dude",
       "text": "It's a long road to Logan's Lake, partner. My patch is just outside the east fence. Buy Chill Buds there, and they'll heal you on the way."
+    },
+    {
+      "id": "dude_ranch_17",
+      "speaker": "dude",
+      "text": "Well, that's rude, partner, walking off mid-sentence. Goodbye, then."
     }
   ],
   "lines": [
@@ -900,16 +910,6 @@
       "text": "Bull sent you. Looking for a claim."
     },
     {
-      "id": "town_cert1_1",
-      "speaker": "minister",
-      "text": "We don't hand out paper for free. What you're looking at on the wall are the four licenses that actually sit on the wBTC vault."
-    },
-    {
-      "id": "town_cert1_2",
-      "speaker": "minister",
-      "text": "Prospector's is the floor. Then Miner's, Foreman's, Mine Owner's. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight."
-    },
-    {
       "id": "town_cert1_3",
       "speaker": "minister",
       "text": "You can start with a Prospector's when you're ready, or go the bond route if you want the discount and a real share of the gold. Flip bond gets you NOTE cheaper. Builder bond puts you in the longer pool."
@@ -1356,6 +1356,68 @@
       "seconds": 2.2,
       "loop": false,
       "prompt": "A man lifts a heavy glass of whiskey, takes one long satisfying swallow and sets the glass back down on a wooden bar with a soft knock and a relaxed breath. Close realistic foley, no words, no music."
+    }
+  ],
+  "lines_pending_rerecord": [
+    {
+      "id": "town_cert1_1",
+      "speaker": "minister",
+      "text": "We don't hand out paper for free. What you're looking at on the wall are the three licenses that actually sit on the wBTC vault."
+    },
+    {
+      "id": "town_cert1_2",
+      "speaker": "minister",
+      "text": "Prospector's is the floor. Then Miner's, then Foreman's at the top. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight."
+    },
+    {
+      "id": "logan_lp_1",
+      "speaker": "logan",
+      "text": "This lake is a liquidity pool: providers like me pour our coins in so everyone else can trade against them."
+    },
+    {
+      "id": "logan_lp_2",
+      "speaker": "logan",
+      "text": "Deep, still water means even a big trade barely ripples the price, so the deeper the lake, the safer it is to trade in."
+    },
+    {
+      "id": "logan_lp_3",
+      "speaker": "logan",
+      "text": "Providers earn a small fee on every trade, so keep the bank secure, check the cargo at that staging marker, and never empty the lake."
+    },
+    {
+      "id": "river_rich_dock",
+      "speaker": "rich",
+      "text": "I'll take it from here, Lil Blunt. Fine shooting up there."
+    },
+    {
+      "id": "auction_renegade_1",
+      "speaker": "renegade",
+      "text": "Welcome, claim holders, to the Gold Rush Auction! Seven days, one pool - every ounce of GOLD you forfeit buys your share of this week's XAUT. Pro-rata, no favourites!"
+    },
+    {
+      "id": "auction_renegade_2",
+      "speaker": "renegade",
+      "text": "Paper at the door, paddles on the floor! Your license gets you a number - your GOLD gets you the weight. The whole mine is bidding this week!"
+    },
+    {
+      "id": "auction_renegade_3",
+      "speaker": "renegade",
+      "text": "Do I hear forfeit? I hear forfeit! Paddle forty-one, paddle eighty-eight - real gold in a real box, settled when the week closes!"
+    },
+    {
+      "id": "auction_renegade_4",
+      "speaker": "renegade",
+      "text": "Well now - the man on my own claim board, standing right under it! Somebody fetch the Sheriff!"
+    },
+    {
+      "id": "auction_renegade_5",
+      "speaker": "renegade",
+      "text": "Lead in my hall?! There he goes - the one-eyed gent's running!"
+    },
+    {
+      "id": "auction_renegade_6",
+      "speaker": "renegade",
+      "text": "Ladies and gentlemen - THAT is the kind of excitement GOLD buys! Back to the week's lot!"
     }
   ]
 }

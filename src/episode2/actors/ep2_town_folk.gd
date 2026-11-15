@@ -8,6 +8,7 @@ signal arrived
 
 var height_m: float = 1.8
 var facing: float = 0.0
+var turn_rate: float = -1.0                  # > 0 overrides the standing turn rate (7/s) for a slow, readable turn (the armory hand-over)
 var model: Node3D = null
 var pose_name: String = "idle"
 var dead: bool = false
@@ -347,7 +348,7 @@ func step(delta: float) -> void:
 			_floor_y += stepv.y
 			_phase += delta * _speed * 4.6
 	# walking: a quick turn into the travel heading (time constant ~0.07 s, a pivot rather than a moonwalk); standing: the gentle settle
-	rotation.y = lerp_angle(rotation.y, facing, clampf((WALK_TURN_RATE if moving else 7.0) * delta, 0.0, 1.0))
+	rotation.y = lerp_angle(rotation.y, facing, clampf((WALK_TURN_RATE if moving else (turn_rate if turn_rate > 0.0 else 7.0)) * delta, 0.0, 1.0))
 	if ground_fn.is_valid() and not use_height:
 		_floor_y = move_toward(_floor_y, float(ground_fn.call(position)), GROUND_FOLLOW * delta)
 	if model == null:

@@ -8,6 +8,8 @@ signal conversation_line(who: String, text: String, line_id: String, voice_id: S
 ## The referral sale completed. `paid` is BTC-equivalent faces debited in one
 ## tender; `credit` is the BTC amount Dude carries until the auction.
 signal horse_bought(paid: int, credit: int)
+## Lil Blunt picked a horse (E beside it). `coat` is its colour name (Ep2HorseCoat.COATS); the ride to the lake carries it.
+signal horse_chosen(index: int, coat: String)
 
 const DUDE := "res://src/episode2/assets/town/dude_stable_owner.glb"
 const ASSISTANT := "res://src/episode2/assets/town/stable_assistant.glb"
@@ -22,6 +24,12 @@ const STABLE_POS := Vector3(-16.0, 0.0, 1222.0)
 const PADDOCK := Rect2(-24.0, 1204.0, 20.0, 36.0)
 const ACCESS_CLEAR := Rect2(-4.0, 1216.0, 16.0, 12.0)
 const TALK_RADIUS := 3.0
+## Dude starts talking when he SEES Lil Blunt (founder 2026-11-15: "don't make it optional... once he sees Lil Blunt the conversation should commence").
+const GREET_RADIUS := 6.5
+## Walk off mid-sentence beyond this and Dude calls it rude (and says goodbye). Not once the horse is paid for: then leaving is the point.
+const LEAVE_RADIUS := 8.5
+const REARM_RADIUS := 12.0
+const CHOOSE_RADIUS := 2.4
 const CLIPS := ["idle", "walk", "run", "turn", "jump"]
 const HORSES: Array = [
 	[Vector3(-13.0, 0, 1213.5), PI, "horse_stand"],
@@ -82,6 +90,7 @@ const CONV_LINES: Dictionary = {
 	"dude_ranch_14": ["DUDE", "Anything else, partner? Your horse is ready when you are. No hurry around here."],
 	"dude_ranch_15": ["DUDE", "Remember: Logan's Lake first. Let her drink and cool down. It's right there on the map."],
 	"dude_ranch_16": ["DUDE", "It's a long road to Logan's Lake, partner. My patch is just outside the east fence. Buy Chill Buds there, and they'll heal you on the way."],
+	"dude_ranch_17": ["DUDE", "Well, that's rude, partner, walking off mid-sentence. Goodbye, then."],
 }
 
 var actors: Array[Ep2TownFolk] = []
@@ -109,6 +118,8 @@ var _horse_deal_done: bool = false
 var _deal_paid: int = 0
 var _deal_credit: int = 0
 var _horse_followup_said: bool = false
+var _chosen_horse: int = 0                    # the horse Lil Blunt picked (E beside it); the ride to the lake takes this one's coat
+var _auto_armed: bool = true                  # Dude greets on sight once per approach; re-armed when Lil Blunt has gone well away
 var _bud_packs_sold: int = 0
 var _patch_root: Node3D = null
 var _patch_ready: bool = false
@@ -475,6 +486,7 @@ func _build_horses(props: Array) -> void:
 	for i in HORSES.size():
 		var horse: Node3D = scene.instantiate()
 		horse.name = WALKING_HORSE if i == 4 else "StableHorse%d" % i
+		Ep2HorseCoat.apply(horse, str(Ep2HorseCoat.YARD_ORDER[i % Ep2HorseCoat.YARD_ORDER.size()]))
 		horse.position = HORSES[i][0]
 		horse.rotation.y = float(HORSES[i][1])
 		add_child(horse)
@@ -541,27 +553,27 @@ func _dismount_dead_horse(horse: Node3D) -> void:
 
 
 ## True when Dude is at the yard, off his horse and able to have a conversation.
-func can_talk(player: Vector3) -> bool:
-	return not _quiet and not _conv_active and _ride_state == "" and actors.size() == 2 and player.distance_to(actors[0].position) <= TALK_RADIUS
+func can_talk(player: Vector3, radius: float = TALK_RADIUS) -> bool:
+	return not _quiet and not _conv_active and _ride_state == "" and actors.size() == 2 and player.distance_to(actors[0].position) <= radius
 
 
 ## Start or continue Dude's yard-owned conversation. Chambers only present the
 ## emitted lines; every purchase and story flag remains here across handoff.
-func try_talk(player: Vector3) -> bool:
-	if not can_talk(player) or _talk_cd > 0.0: return false
+func try_talk(player: Vector3, radius: float = TALK_RADIUS) -> bool:
+	if not can_talk(player, radius) or _talk_cd > 0.0: return false
 	_talk_cd = 0.35
+	_auto_armed = false
 	actors[0].stop()
 	actors[0].face_point(player)
 	var lines: Array = []
 	if _referred and not _horse_deal_done:
 		_greeted = true
+		# the short version (founder 2026-11-15: "don't make Dude linger his speech so much"): the haggle and the mount reminder are gone; the horse
+		# is Lil Blunt's the moment the deal line lands and he can ride whenever he likes - the lines after it play over the top of that
 		lines.append(_line("dude_ranch_07"))
 		lines.append(_line("dude_ranch_08"))
-		lines.append(_line("dude_ranch_09"))
-		lines.append(_line("dude_ranch_10"))
 		lines.append(_line("dude_ranch_11" if _tender_for(HORSE_PRICE) != "" else "dude_ranch_12", "horse_deal"))
 		lines.append(_line("dude_ranch_13"))
-		lines.append({"who":"DUDE", "text":"Mount your saddled horse here at the stables, partner. Follow the trail on your map to Logan’s Lake.", "id":"", "voice":""})
 		# fix pack 2026-10-27 step 11: in the same talk Dude offers his Chill Buds (the first one is his gift; more on the next talk)
 		if not GameManager.dude_free_bud_claimed:
 			lines.append(_line("dude_ranch_03", "free_bud"))
@@ -574,7 +586,6 @@ func try_talk(player: Vector3) -> bool:
 			lines.append(_line("dude_ranch_03", "free_bud"))
 	elif _horse_deal_done and not _horse_followup_said:
 		_horse_followup_said = true
-		lines.append(_line("dude_ranch_14"))
 		lines.append(_line("dude_ranch_15"))
 		if not _patch_told:
 			lines.append(_line("dude_ranch_16", "tell_patch"))
@@ -687,6 +698,66 @@ func _charge(amount: int) -> int:
 	return amount
 
 
+## Dude greets Lil Blunt as soon as he sees him (called by the chamber each tick while talking is allowed). Only the story talks start by
+## themselves - the greeting, the horse deal, the follow-up - never the Chill Bud menu, which stays an [E] choice.
+func try_auto_greet(player: Vector3) -> bool:
+	if not _auto_armed or _conv_active or actors.size() != 2:
+		return false
+	var story_talk: bool = (not _greeted) or (_referred and not _horse_deal_done) or (_horse_deal_done and not _horse_followup_said)
+	if not story_talk:
+		return false
+	return try_talk(player, GREET_RADIUS)
+
+
+## Lil Blunt walked off mid-sentence before the horse was paid for: Dude cuts the talk short with one rude-and-goodbye line.
+func _check_walked_off(player: Vector3) -> void:
+	var gap: float = player.distance_to(actors[0].position)
+	if gap > REARM_RADIUS:
+		_auto_armed = true
+	if not _conv_active or _horse_deal_done or _conv_queue.is_empty() or str(_conv_current.get("id", "")) == "dude_ranch_17":
+		return
+	if gap > LEAVE_RADIUS:
+		_conv_queue = [_line("dude_ranch_17")]
+		_emit_next_line()
+
+
+## The horse nearest to Lil Blunt (index) within CHOOSE_RADIUS, or -1. A downed horse is not for sale.
+func nearest_horse(player: Vector3) -> int:
+	var best: int = -1
+	var best_d: float = CHOOSE_RADIUS
+	for i in horses.size():
+		if not _horse_alive(i):
+			continue
+		var d: float = player.distance_to(horses[i].global_position)
+		if d < best_d:
+			best_d = d
+			best = i
+	return best
+
+
+func can_choose(player: Vector3) -> bool:
+	var i: int = nearest_horse(player)
+	return i >= 0 and i != _chosen_horse and not is_dude_riding()
+
+
+## [E] beside a horse: it is the one Lil Blunt will ride. True when the choice changed.
+func try_choose(player: Vector3) -> bool:
+	var i: int = nearest_horse(player)
+	if i < 0 or i == _chosen_horse or is_dude_riding():
+		return false
+	_chosen_horse = i
+	horse_chosen.emit(i, Ep2HorseCoat.coat_of(horses[i]))
+	return true
+
+
+func chosen_coat() -> String:
+	return Ep2HorseCoat.coat_of(horses[_chosen_horse]) if _chosen_horse >= 0 and _chosen_horse < horses.size() else "brown"
+
+
+func chosen_index() -> int:
+	return _chosen_horse
+
+
 func _tick_conversation(delta: float, quiet: bool) -> void:
 	if quiet or not _conv_active: return
 	_conv_wait = maxf(0.0, _conv_wait - delta)
@@ -705,6 +776,8 @@ func step(delta: float, player: Vector3, quiet: bool = false) -> void:
 	var dt: float = _distant_dt
 	_distant_dt = 0.0
 	if not quiet: _time += dt
+	if not quiet and not actors.is_empty():
+		_check_walked_off(player)
 	_tick_conversation(dt, quiet)
 	_tick_dude(dt, player, quiet)
 	_tick_assistant(dt, quiet)
@@ -1081,7 +1154,7 @@ func snapshot() -> Dictionary:
 		"horse_phases": _horse_anims.map(func(ap): return ap.current_animation_position), "horse_state": horse_state,
 		"patch_told": _patch_told, "greeted": _greeted, "referred": _referred, "horse_deal_done": _horse_deal_done,
 		"deal_paid": _deal_paid, "deal_credit": _deal_credit, "horse_followup": _horse_followup_said,
-		"bud_packs_sold": _bud_packs_sold,
+		"bud_packs_sold": _bud_packs_sold, "chosen_horse": _chosen_horse, "auto_armed": _auto_armed,
 		"conversation": {"active": _conv_active, "queue": _conv_queue.duplicate(true), "current": _conv_current.duplicate(true), "wait": _conv_wait},
 		"ride": {"state": _ride_state, "next": _ride_next, "path": _ride_path.duplicate(), "index": _ride_index,
 			"mount_t": _ride_mount_t, "from": _ride_from, "distance": _ride_distance},
@@ -1103,6 +1176,8 @@ func restore(data: Dictionary) -> void:
 	_deal_credit = int(data.get("deal_credit", 0))
 	_horse_followup_said = bool(data.get("horse_followup", false))
 	_bud_packs_sold = int(data.get("bud_packs_sold", 0))
+	_chosen_horse = int(data.get("chosen_horse", 0))
+	_auto_armed = bool(data.get("auto_armed", true))
 	_rng.state = int(data.get("rng_state", _rng.state))
 	var conversation: Dictionary = data.get("conversation", {})
 	_conv_active = bool(conversation.get("active", false))

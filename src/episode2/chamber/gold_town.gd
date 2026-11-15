@@ -7,8 +7,7 @@ extends Ep2Interlude
 ##
 ##   STREET    walk to the CERTIFICATES office
 ##   OFFICE    The Sheriff (the founder's own character: weathered, long duster, star, a wisp of smoke) and Minister Mike Dean behind the
-##             counter, facing the door. On his left wall hang the four Miner's License certificates (Prospector's, Miner's, Foreman's, Mine
-##             Owner's). First visit = a soft gate: the four licenses + Flip / Builder bonds explained, no free paper (Phase 2 reframe
+##             counter, facing the door. On his left wall hang the three Miner's License certificates (Prospector's, Miner's, Foreman's). First visit = a soft gate: the three licenses + Flip / Builder bonds explained, no free paper (Phase 2 reframe
 ##             2026-11-03, docs/founder-feedback/2026-11-03_phase2_license_reframe.md section 3.1)
 ##   TO_BAR    cross the street to the SALOON
 ##   BAR       a whiskey, a quarter of a Bitcoin on the bar, the bartender's jaw drops, a stranger at the end of the bar noticed -
@@ -33,7 +32,7 @@ extends Ep2Interlude
 ##   DRINKS    the bar: they really drink (Inferno lifts his glass, Lil Blunt's comes up to the camera); Inferno has to help his cousin
 ##             Flux with his new kettle; before he goes he points Lil Blunt back to Mike Dean for a real Miner's License or a bond
 ##             (Phase 2 reframe 2026-11-03: Inferno gifts NO paper - there is no Gold Panner and no stamp anywhere)
-##   MINISTER2 the second visit: Mike Dean's license / bond close (the four licenses on his left wall), then the referral to his
+##   MINISTER2 the second visit: Mike Dean's license / bond close (the three licenses on his left wall), then the referral to his
 ##             friend Dude at the horse stables
 ##   STABLES   Dude: the Minister sent him; they agree a price in BTC for the horse; Dude offers his Chill Buds (Tabs health); then
 ##             "Logan's Lake first" - the horse needs to drink in this heat (the lake is on the map)
@@ -101,12 +100,12 @@ const INFERNO_LICENSE_LINES: Array = [
 	["INFERNO", "You already got the map off that fool. That'll get you in the door at the auction."],
 	["INFERNO", "If you want real weight - lower fees, Builder share, something that actually sits on the vault - go back to Mike Dean. Get a proper Miner's License. Or bond if you've got the ETH. I ain't carrying paper for you."],
 ]
-## Section 3.1: the first visit (pre-draw, Bull sent him) - the four licenses on the left wall and the bonds; a soft gate, no free paper.
+## Section 3.1: the first visit (pre-draw, Bull sent him) - the three licenses on the left wall and the bonds; a soft gate, no free paper.
 ## Index 1 is the line where Mike Dean turns Lil Blunt's eye to the wall (`MINISTER_WALL_LINE`).
 const MINISTER1_LINES: Array = [
 	["MIKE DEAN", "Bull sent you. Looking for a claim."],
-	["MIKE DEAN", "We don't hand out paper for free. What you're looking at on the wall are the four licenses that actually sit on the wBTC vault."],
-	["MIKE DEAN", "Prospector's is the floor. Then Miner's, Foreman's, Mine Owner's. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight."],
+	["MIKE DEAN", "We don't hand out paper for free. What you're looking at on the wall are the three licenses that actually sit on the wBTC vault."],
+	["MIKE DEAN", "Prospector's is the floor. Then Miner's, then Foreman's at the top. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight."],
 	["MIKE DEAN", "You can start with a Prospector's when you're ready, or go the bond route if you want the discount and a real share of the gold. Flip bond gets you NOTE cheaper. Builder bond puts you in the longer pool."],
 	["MIKE DEAN", "Sheriff's the one who can walk you through the process once you've got skin in it. Right now you're just a man who walked in with Bull's name. That's not enough for a license."],
 ]
@@ -120,15 +119,14 @@ const MINISTER2_LINES: Array = [
 	["MIKE DEAN", "Decide what you actually want. Then we can talk numbers. In the meantime, if you need a horse that won't die in the heat, talk to my good friend Dude at the stables. Tell him I sent you."],
 	["LIL BLUNT", "Much obliged, Minister."],
 ]
-## The four Miner's License tiers on the office's left wall, low to high (the same ladder as the Auctions - Miner's License UI).
+## The three Miner's License tiers on the office's left wall, low to high (the same ladder as the Auctions - Miner's License UI).
 ## Each tier's printed certificate (GPT Image 2 via Muapi, 2026-11-03: engraved parchment, its title, "GOLDMINE TERRITORY", "BACKED BY
-## THE wBTC VAULT", a copper / silver / gold / platinum seal, "TIER n OF 4"). Streamed in the Episode 2 extras pack (the main pack has
-## no room for four textures); until it mounts each frame shows a plain placard with the tier name.
+## THE wBTC VAULT", a copper / silver / gold / platinum seal, "TIER n OF 3"). Streamed in the Episode 2 extras pack (the main pack has
+## no room for three textures); until it mounts each frame shows a plain placard with the tier name.
 const LICENSE_TIERS: Array = [
 	["PROSPECTOR'S LICENSE", Color(0.72, 0.45, 0.25), "res://src/episode2/extras/town/licenses/tex_license_prospector.jpg"],
 	["MINER'S LICENSE", Color(0.75, 0.76, 0.78), "res://src/episode2/extras/town/licenses/tex_license_miner.jpg"],
 	["FOREMAN'S LICENSE", Color(0.93, 0.74, 0.25), "res://src/episode2/extras/town/licenses/tex_license_foreman.jpg"],
-	["MINE OWNER'S LICENSE", Color(0.86, 0.90, 0.95), "res://src/episode2/extras/town/licenses/tex_license_mine-owner.jpg"],
 ]
 ## The drink itself: Inferno's Stand_and_Drink (the hideout's clip) and Lil Blunt's glass up to the camera, then down.
 const FP_DRINK_S := 2.4
@@ -178,7 +176,7 @@ const SHERIFF_MOUTH := Vector3(0.03, 0.855, 0.095)
 ## The license wall (office-local). Founder 2026-11-03 (follow-up): on the side OPPOSITE Minister Mike Dean's desk - the right wall's
 ## inner face (x +3.86; his desk and chair stand on the left, x -2.3), on the clear stretch between the side window (z ~ -5.3..-6.5,
 ## measured in tools/ep2_shots/license_wall_shot) and the back wall, above the safe. Seen from the counter it reads left to right
-## Prospector's -> Mine Owner's, rising slightly - the ladder.
+## Prospector's -> Foreman's, rising slightly - the ladder.
 const LICENSE_WALL_AT := Vector3(3.86, 1.55, -6.9)       # the FRONT-most frame (the top tier); lower tiers step towards the back
 const LICENSE_WALL_STEP := 0.58                           # along the wall
 const LICENSE_WALL_RISE := 0.08                           # the slight diagonal, rising to the top tier
@@ -921,6 +919,10 @@ func start_rig(_payment: String = "") -> bool:
 	if _can_mount():
 		_mount()
 		return true
+	if _stable_yard != null and _stable_interaction_allowed() and _stable_yard.try_choose(_player_pos):
+		if _hud != null:
+			_hud.toast("YOUR HORSE: %s" % _stable_yard.chosen_coat().to_upper(), 2.2)
+		return true
 	if _stable_yard != null and _stable_interaction_allowed() and _stable_yard.try_talk(_player_pos):
 		return true
 	if can_use_bud_patch():
@@ -961,7 +963,9 @@ func _open_shop() -> void:
 	set_aim(false)
 	_mouse_before = Input.mouse_mode
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	get_tree().paused = true
+	# Rich keeps talking while the trade panel is up (founder 2026-11-15: "the trade shouldn't prevent his speech"): pausing the tree stopped his
+	# speech clock and his animation mid-word. While the introduction runs the world carries on; control is already withheld by `_shop_open`.
+	get_tree().paused = not (_intro != null and _intro.is_busy())
 
 
 # --- Dude's Chill Bud patch (founder 2026-11-01) --------------------------------------------------------------------------------
@@ -1572,7 +1576,7 @@ func _on_beat_entered(b: int) -> void:
 				_hud.toast("TO LOGAN'S LAKE", 3.4)
 			# Wait here for the player to mount at the actual stables.
 		Beat.DONE:
-			_resolve({"next_chamber": "lake_trail", "horse": _horse_bought, "got_map": _got_map, "peacemaker": _got_peacemaker,
+			_resolve({"next_chamber": "lake_trail", "horse": _horse_bought, "horse_coat": (_stable_yard.chosen_coat() if _stable_yard != null else "brown"), "got_map": _got_map, "peacemaker": _got_peacemaker,
 				"license_talk": _license_talk, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
 				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear,
@@ -2366,7 +2370,7 @@ func _hear_license_talk() -> void:
 	_license_talk = true
 
 
-## Turn Lil Blunt's eye to the four licenses on the left wall for one line, then back to Mike Dean.
+## Turn Lil Blunt's eye to the three licenses on the left wall for one line, then back to Mike Dean.
 func _look_at_license_wall() -> void:
 	look_toward(Ep2GoldTown.local_to_world("Bldg_Certificates", LICENSE_WALL_AT + Vector3(0.0, 0.15, -LICENSE_WALL_STEP * 1.5)), 2.4)
 
@@ -2383,7 +2387,7 @@ func _minister_steps(lines: Array, wall_line: int) -> Array:
 		+ _caption_steps(lines.slice(wall_line + 1)))
 
 
-## The four Miner's License certificates on the certificate office's RIGHT wall, opposite Mike Dean's desk (founder 2026-11-03 follow-up):
+## The three Miner's License certificates on the certificate office's RIGHT wall, opposite Mike Dean's desk (founder 2026-11-03 follow-up):
 ## a slight rising diagonal of framed papers beside the counter, each with its tier name, so the ladder reads during the talk.
 ## Procedural (wood frame, paper, a tier-coloured seal, Label3D lettering) so it always shows - no asset, no pack weight.
 func _build_license_wall() -> void:
@@ -2406,7 +2410,7 @@ static func build_license_wall(parent: Node3D) -> void:
 	paper_mat.albedo_color = Color(0.93, 0.87, 0.72)
 	paper_mat.roughness = 0.95
 	for i in LICENSE_TIERS.size():
-		var rank: int = LICENSE_TIERS.size() - 1 - i                    # 0 = Mine Owner's (front, highest) ... 3 = Prospector's (back)
+		var rank: int = LICENSE_TIERS.size() - 1 - i                    # 0 = Foreman's (front, highest) ... 2 = Prospector's (back)
 		var local: Vector3 = LICENSE_WALL_AT + Vector3(0.0, -rank * LICENSE_WALL_RISE, -rank * LICENSE_WALL_STEP)
 		var cert := Node3D.new()
 		cert.name = "License%d" % (i + 1)
@@ -2442,7 +2446,7 @@ static func build_license_wall(parent: Node3D) -> void:
 		seal.position = Vector3(0.0, -0.17, 0.022)
 		seal.name = "Seal"
 		cert.add_child(seal)
-		for t in [[str(LICENSE_TIERS[i][0]), 0.15, 34], ["BACKED BY THE wBTC VAULT", 0.04, 18], ["TIER %d OF 4" % (i + 1), -0.03, 18]]:
+		for t in [[str(LICENSE_TIERS[i][0]), 0.15, 34], ["BACKED BY THE wBTC VAULT", 0.04, 18], ["TIER %d OF 3" % (i + 1), -0.03, 18]]:
 			var label := Label3D.new()
 			label.text = str(t[0])
 			label.font_size = int(t[2])
@@ -2547,6 +2551,8 @@ func _tick(delta: float) -> void:
 	var duel: bool = _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW]
 	if _stable_yard != null:
 		_stable_yard.step(delta, _player_pos, duel or _hold > 0.0 or _show_active or intro_busy or _shop_open)
+		if _stable_interaction_allowed():
+			_stable_yard.try_auto_greet(_player_pos)         # Dude speaks the moment he sees Lil Blunt
 		_dude_treats_horse()
 	if _town_audio != null:
 		_town_audio.step(delta, _people, _player_pos, _hold > 0.0 or _show_active or intro_busy or _shop_open, duel)
@@ -2709,7 +2715,8 @@ func _tick(delta: float) -> void:
 				_advance_to(Beat.STABLES)
 		Beat.STABLES:
 			# Dude's conversation runs in Ep2StableYard (talk [E]); the horse bought, his "Logan's Lake first" said -> the ride
-			if _horse_bought and not _show_active and (_stable_yard == null or not _stable_yard.conversation_active()):
+			# paid -> on to the ride at once: Lil Blunt never waits for Dude to finish talking (founder 2026-11-15); the rest of his lines play over it
+			if _horse_bought and not _show_active:
 				_after_story()
 		Beat.GEARED:
 			if _hud != null:
@@ -2724,7 +2731,12 @@ func _tick(delta: float) -> void:
 				if _end_t == 0.0 and _handoff_ok(): _advance_to(Beat.DONE)
 
 	if _stable_yard != null and _hud != null:
+		var choose_prompt: bool = _stable_interaction_allowed() and _stable_yard.can_choose(_player_pos) and not _stable_yard.conversation_active()
 		var show_prompt: bool = _stable_interaction_allowed() and _stable_yard.can_talk(_player_pos)
+		if choose_prompt and not show_prompt:
+			_hud.set_search_prompt(("Choose this horse [E]" if TouchUi.keys_shown() else "Choose this horse"))
+			_stable_prompt_shown = true
+			return
 		var patch_prompt: bool = not show_prompt and can_use_bud_patch()
 		if patch_prompt:
 			_hud.set_search_prompt("Buy Chill Buds [E]" if TouchUi.keys_shown() else "Buy Chill Buds")

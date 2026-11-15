@@ -10,11 +10,15 @@ const LOGAN_MARK := Vector3(-3.4, 0, 8)
 const ARRIVAL_SIGN := Vector3(-12, 0, -4) # opposite the water; leave the rider-to-Logan sightline open
 const STAGING_MARK := Vector3(-4.5, 0, 17)
 const OVERLOOK := Vector3(-8, 6, 61)
+## Logan's lesson, three plain sentences for someone who has never heard of liquidity (founder 2026-11-15: "more to say about Liquidity Providing to
+## help newbies understand in 3 sentences"): what a liquidity provider is, what still deep water buys you, and what the providers get and must not do.
 const LINES := [
-	"LOGAN: This depth stays deep. We stage what comes in before anything goes downstream.",
-	"LIL BLUNT: So the lake holds the depth, and the river carries what is ready?",
-	"LOGAN: Exactly. Check the cargo at that staging marker. Keep the bank secure; don't empty the lake.",
+	"LOGAN: This lake is a liquidity pool: providers like me pour our coins in so everyone else can trade against them.",
+	"LOGAN: Deep, still water means even a big trade barely ripples the price, so the deeper the lake, the safer it is to trade in.",
+	"LOGAN: Providers earn a small fee on every trade, so keep the bank secure, check the cargo at that staging marker, and never empty the lake.",
 ]
+## Logan starts talking when he sees Lil Blunt come down to the shore - [E] is no longer how you meet him (founder 2026-11-15).
+const GREET_R := 6.5
 var _logan: Ep2TownFolk
 var _marker: Node3D
 var _cargo: Node3D
@@ -406,13 +410,8 @@ func _on_beat_entered(b: int) -> void:
 
 func start_rig(_payment: String = "") -> bool:
 	if not has_player_control() or armory_open(): return false
-	if _beat == Beat.OVERLOOK and _staged and _player_pos.z > 59 and _handoff_ok():
-		# founder lock 2026-11-04: the lake hands on to the day-88 ridge (river_cover.gd); Logan stays here, Rich and Utah never come
-		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
-		return true
-	if _beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction() and _handoff_ok():
-		_leave_for_auction()
-		return true
+	# NO [E] ARRIVALS (founder 2026-11-15: "it mustn't be something someone presses E to activate ... one world"): the ridge path and the road to
+	# the auction both carry on by walking (the walk-on checks in _tick); [E] is only for doing things here.
 	if _can_offer_salve():
 		_buy_salve()
 		return true
@@ -464,6 +463,8 @@ func _tick(delta: float) -> void:
 	_logan.step(delta)
 	if _player_pos.distance_to(LOGAN_MARK) < 7:
 		_logan.face_point(_player_pos)
+	if _beat == Beat.ARRIVE and _player_pos.distance_to(LOGAN_MARK) < GREET_R and has_player_control():
+		_advance_to(Beat.INVESTIGATE)                    # he sees him: the talk begins by itself
 	if _gesture_t > 0:
 		_gesture_t -= delta
 		if _gesture_t <= 0: _logan.hold_clip("Idle")
@@ -480,16 +481,11 @@ func _tick(delta: float) -> void:
 			else: _dialogue_panel.hide()
 	var prompt := ""
 	if _beat == Beat.ARRIVE and _player_pos.distance_to(LOGAN_MARK) < 3.2:
-		prompt = "Meet Logan [E]"
+		prompt = ""
 	elif _beat == Beat.STAGE and _player_pos.distance_to(STAGING_MARK) < 2.8:
 		prompt = "Check staged cargo [E]"
-	elif _beat == Beat.OVERLOOK and _player_pos.z > 59:
-		prompt = "Finish lake visit [E]"
-	elif _beat == Beat.ROAD and _near_auction_sign():
-		if _can_leave_for_auction():
-			prompt = "Ride to the auction [E]" if _riding else "Walk to the auction [E]"
-		else:
-			prompt = "Patch the horse first: Logan's salve or Dude" if _horse_state == "hurt" else "Mount your horse first"
+	elif _beat == Beat.ROAD and _near_auction_sign() and not _can_leave_for_auction():
+		prompt = "Patch the horse first: Logan's salve or Dude" if _horse_state == "hurt" else "Mount your horse first"
 	elif _can_offer_salve():
 		prompt = ("Logan's salve · 0.5 BTC [E]" if armory.can_pay_half_btc() else "Logan's salve · 0.5 BTC (short) · or Dude, 1 BTC")
 	elif _riding:
@@ -513,6 +509,9 @@ func _tick(delta: float) -> void:
 	# 2026-11-07 "no pause climbing the hill from the cargo check"): the ridge carries the caption on (RiverCoverChamber.adopt_lake)
 	if _beat == Beat.OVERLOOK and _staged and _player_pos.z >= WALK_ON_Z and not _resolved and has_player_control() and _handoff_ok():
 		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
+	# the road to the auction is the same: riding (or walking, when the horse is gone) past the signpost IS leaving - no key
+	if _beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok():
+		_leave_for_auction()
 
 func _collide(p: Vector3) -> Vector3:
 	if Ep2LoganCabin.YARD.has_point(Vector2(p.x, p.z)) or (_player_pos.x < -11.5 and p.x < -11.5):

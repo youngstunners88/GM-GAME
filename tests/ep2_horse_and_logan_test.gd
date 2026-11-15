@@ -205,6 +205,8 @@ func _test_session_respawn() -> void:
 		lake._player_pos = Vector3(-8.0, 6.0, 60.0)
 		# the ridge asked for on his first visit builds behind the lake (ep2-no-blackouts: the exit holds for it, never a cut to an unbuilt room)
 		session._drive_prebuild(1e9)
-		check("...and his visit can finish: [E] goes on to the ridge", lake.start_rig() and session.get_active() is RiverCoverChamber, str(session.get_active()))
+		lake._player_pos = Vector3(-8.0, 6.0, LogansLakeChamber.WALK_ON_Z)
+		lake.step(1.0 / 30.0)
+		check("...and his visit can finish: walking on goes to the ridge, no [E]", session.get_active() is RiverCoverChamber, str(session.get_active()))
 	session.queue_free()
 	await get_tree().process_frame

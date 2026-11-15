@@ -6,7 +6,8 @@ extends Ep2Interlude
 ## downstream through exactly three gates: the LAUNCH POOL, the BEND / RAPIDS and the DOCK APPROACH. Bears come off the banks, swim at
 ## it and try to board and tip it; he covers it from the ridge with the Armory's Sharps (any gun he carries works, the Sharps drops a
 ## bear in one). Between gates the crate waits in an eddy while he drops to the next ledge (one bear on the path each time - the short
-## ground scrapes). Utah waits at the lower dock (never at the lake; Rich never comes) and takes it in under the crane.
+## ground scrapes). Rich and Utah meet it at the lower dock (never at the lake): Utah works the crane, Rich stands on the deck from the last gate, watches the
+## shoot end, then lifts the crate and carries it into the warehouse (founder 2026-11-15: "Rich is supposed to collect the shipment!!!").
 ## Prerequisites: the Sharps AND the Shipment from the Armory. Missing either, the run does not start and no crate is spawned.
 ## Failure (the crate tipped, or Lil Blunt downed): back to the CURRENT gate's overlook, the crate back at that gate, the gate's wave
 ## again and the guns' ammunition as it was when the gate began. Never a repurchase.
@@ -104,6 +105,17 @@ const LOOK_HOLD := 0.5
 const UTAH_HEIGHT := 1.85
 const DOCK_DECK := Vector3(-13, 1.2, 262)
 const UTAH_LINE := "river_utah_dock"
+## RICH COLLECTS THE SHIPMENT (founder 2026-11-15). Offsets from DOCK_DECK. He walks out of the warehouse doorway when gate 3 begins, stands where the
+## ridge is in view (he witnesses the end of the shoot), and once the crane has set the crate down he lifts it and carries it back through the doorway.
+const RICH_LINE := "I'll take it from here, Lil Blunt. Fine shooting up there."
+const RICH_START := Vector3(-9.0, 0.0, -0.6)
+const RICH_WATCH := Vector3(-2.2, 0.0, -2.3)
+const RICH_CRATE_SIDE := Vector3(-0.35, 0.0, 0.25)
+const RICH_DOOR := Vector3(-9.6, 0.0, 1.9)
+const RICH_SPEED := 1.25
+const RICH_LIFT_S := 0.9
+const RICH_CARRY_SCALE := 0.62               # the crate rides against his chest: scaled as he lifts it, while his body hides the change
+const RICH_COLLECT_MAX := 18.0               # the dock beat never waits longer than this for him
 
 var _river_pts := PackedVector3Array()
 var _river_arc := PackedFloat32Array()
@@ -133,6 +145,10 @@ var _gate_cleared: bool = false               # this gate's wave is down: the cr
 var _tip_warned: bool = false
 var _utah: Ep2TownFolk
 var _utah_t: float = -1.0
+var _rich: Ep2TownFolk
+var _rich_state: String = ""        # "" -> arrive -> watch -> to_crate -> lift -> carry -> gone
+var _rich_t: float = 0.0
+var _crate_carried: bool = false
 var _dock_t: float = -1.0
 var _blocked_reason: String = ""
 var _water_loop: AudioStreamPlayer
@@ -162,7 +178,7 @@ func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() 
 ## Each step stays short (ep2-no-blackouts: a step over ~100 ms is a visible hitch in the room he is walking through), so the ridge's
 ## overlooks and dressing are steps of their own.
 func _build_steps() -> Array: return [_light, _build_land, _build_river, _build_ridge, _build_overlooks, _dress_ridge, _build_marker, _build_dock,
-	_build_crate, _build_utah]
+	_build_crate, _build_utah, _build_rich]
 
 
 # --- the set ------------------------------------------------------------------------------------------------------------------
@@ -932,7 +948,7 @@ func _build_crate() -> void:
 	_place_crate(0.0)
 
 
-## Utah, at the lower dock only (never at Logan's Lake; Rich never comes). Hidden until the dock approach is clear.
+## Utah, at the lower dock only (never at Logan's Lake). Hidden until the dock approach is clear. Rich is built beside him (_build_rich).
 func _build_utah() -> void:
 	_utah = Ep2TownFolk.new()
 	_utah.name = "Utah"
@@ -942,6 +958,96 @@ func _build_utah() -> void:
 	_utah.setup(path, UTAH_HEIGHT, Color(0.28, 0.33, 0.34))
 	_utah.position = DOCK_DECK + Vector3(-9, 0, 3.2)
 	_utah.visible = false
+
+
+func _build_rich() -> void:
+	_rich = Ep2TownFolk.new()
+	_rich.name = "Rich"
+	_rich.looping_clips.assign(["Idle", "Walk", "Talk"])
+	_visuals.add_child(_rich)
+	var has_v2: bool = Ep2Extras.has(Ep2Extras.RICH)
+	_rich.setup(Ep2Extras.RICH if has_v2 else GoldTownChamber.RICH_MODEL, GoldTownChamber.RICH2_HEIGHT if has_v2 else GoldTownChamber.RICH_HEIGHT, Color(0.30, 0.20, 0.13))
+	_rich.position = DOCK_DECK + RICH_START
+	_rich.visible = false
+
+
+## Gate 3 begins: Rich comes out of the warehouse to watch the last stretch.
+func _rich_to_dock() -> void:
+	if _rich == null or _rich_state != "":
+		return
+	_rich.visible = true
+	_rich_state = "arrive"
+	_rich_t = 0.0
+	_rich.play_clip("Walk")
+
+
+func _rich_move(target: Vector3, delta: float) -> bool:
+	var flat: Vector3 = Vector3(target.x - _rich.position.x, 0.0, target.z - _rich.position.z)
+	if flat.length() < 0.08:
+		return true
+	_rich.face_point(target)
+	_rich.position += flat.normalized() * minf(RICH_SPEED * delta, flat.length())
+	_rich.play_clip("Walk")
+	return false
+
+
+func _tick_rich(delta: float) -> void:
+	if _rich == null or _rich_state == "" or _rich_state == "gone":
+		return
+	_rich_t += delta
+	var fwd: Vector3 = Vector3(sin(_rich.rotation.y), 0.0, cos(_rich.rotation.y))
+	match _rich_state:
+		"arrive":
+			if _rich_move(DOCK_DECK + RICH_WATCH, delta):
+				_rich_state = "watch"
+				_rich.play_clip("Idle")
+		"watch":
+			_rich.face_point(OVERLOOKS[2])                       # his eyes on the ridge: he sees the shoot out
+			# the crane has set the crate on the deck (the crate's own landing, _place_crate): now it is his
+			if _beat == Beat.DOCK and _dock_t >= 2.4:
+				_rich_state = "to_crate"
+		"to_crate":
+			if _rich_move(DOCK_DECK + RICH_CRATE_SIDE, delta):
+				_rich_state = "lift"
+				_rich_t = 0.0
+				_rich.face_point(_crate.position if _crate != null else DOCK_DECK)
+				_rich.play_clip("Talk")
+				_rich_says()
+		"lift":
+			var k: float = smoothstep(0.0, 1.0, clampf(_rich_t / RICH_LIFT_S, 0.0, 1.0))
+			if _crate != null:
+				_crate_carried = true
+				var carry_at: Vector3 = _rich.position + fwd * 0.5 + Vector3(0.0, 0.95, 0.0)
+				_crate.position = _crate.position.lerp(carry_at, k)
+				_crate.scale = Vector3.ONE.lerp(Vector3.ONE * RICH_CARRY_SCALE, k)
+			if _rich_t >= RICH_LIFT_S:
+				_rich_state = "carry"
+		"carry":
+			var arrived: bool = _rich_move(DOCK_DECK + RICH_DOOR, delta)
+			if _crate != null:
+				_crate.position = _rich.position + Vector3(sin(_rich.rotation.y), 0.0, cos(_rich.rotation.y)) * 0.5 + Vector3(0.0, 0.95, 0.0)
+				_crate.rotation = Vector3(0.0, _rich.rotation.y, 0.0)
+			if arrived:
+				_rich_state = "gone"
+				_rich.visible = false
+				if _crate != null:
+					_crate.visible = false                           # in through the warehouse door with him
+	_rich.step(delta)
+
+
+func _rich_says() -> void:
+	if _hud == null:
+		return
+	var id: String = Ep2TownVoiceBank.id_for("rich", RICH_LINE)
+	_hud.speech("RICH: " + RICH_LINE, 3.4, Ep2Speech.voiced(id))
+	if id != "":
+		_speak(id)
+
+
+func is_rich_collecting() -> bool: return _rich_state in ["to_crate", "lift", "carry"]
+func rich_state() -> String: return _rich_state
+func crate_collected() -> bool: return _rich_state == "gone"
+func get_rich() -> Ep2TownFolk: return _rich
 
 
 ## LOGAN'S LAKE STAYS BEHIND HIM. Called in the frame the session swaps the rooms: the lake's own terrain, water, trees, camp and Logan move
@@ -1187,6 +1293,7 @@ func _tick(delta: float) -> void:
 			_tick_run(delta)
 		Beat.DOCK:
 			_tick_dock(delta)
+	_tick_rich(delta)
 	if _crate != null:
 		_place_crate(delta)
 	_tick_cover(delta)
@@ -1230,6 +1337,8 @@ func _begin_gate(g: int) -> void:
 	_tip_warned = false
 	_gates_passed = maxi(_gates_passed, g + 1)
 	_wave_spawned = false
+	if g == 2:
+		_rich_to_dock()                                   # Rich comes down to the dock for the last gate
 	_wave_left = WAVES[g]
 	_spawn_queue.clear()
 	for i in WAVES[g]:
@@ -1461,6 +1570,8 @@ func _bears_aboard() -> int:
 
 ## The crate on the water: bobbing, turning with the current, heeling over as bears haul on it.
 func _place_crate(_delta: float) -> void:
+	if _crate_carried:
+		return                                           # Rich has it: _tick_rich places it
 	var p: Vector3 = river_point(_crate_s)
 	var d: Vector3 = river_dir(_crate_s)
 	_crate.position = p + Vector3(0, 0.18 + 0.06 * sin(_anim_t * 2.1), 0)
@@ -2191,7 +2302,8 @@ func _tick_dock(delta: float) -> void:
 	_dock_t += delta
 	if before < 2.4 and _dock_t >= 2.4:
 		_hand_off_line()
-	if _dock_t >= 2.4 + _line_len() + 0.6:
+	var rich_done: bool = _rich == null or _rich_state in ["", "gone"] or _dock_t > 2.4 + _line_len() + 0.6 + RICH_COLLECT_MAX
+	if _dock_t >= 2.4 + _line_len() + 0.6 and rich_done:
 		_set_tabs_live(false)
 		_advance_to(Beat.DONE)
 		# founder brief 2026-11-08: Utah has it - back to Logan's Lake, where his horse is already drinking, then the road to the auction

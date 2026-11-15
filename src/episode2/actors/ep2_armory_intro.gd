@@ -16,12 +16,20 @@ signal objective_changed(text: String)
 signal sharps_lifted(in_hand: bool)            # the chamber swaps the case rifle for the one in Rich's hand
 signal finished
 
-enum Stage { IDLE, RICH_WALK, SHARPS_REACH, SHARPS_TALK, SHARPS_BACK, GATLING_WALK, GATLING_WAIT, GATLING_DEMO, GATLING_OFFER, GATLING_FREE, DONE }
+enum Stage { IDLE, RICH_WALK, SHARPS_SETDOWN, SHARPS_REACH, SHARPS_TALK, SHARPS_BACK, GATLING_WALK, GATLING_WAIT, GATLING_DEMO, GATLING_OFFER, GATLING_FREE, DONE }
 
 const LINE_S := 4.2                              # a line stays up this long
 ## THE HAND-OVER AT THE CASE (founder 2026-11-07: "improve the way Rich takes it out the glass so that it's not tacky"). Stage seconds; Ep2SharpsCase
 ## animates the lid, the rifle and his arms from the same clock. Out: his hand lifts the lid, takes the grip, raises the rifle clear of the glass and
 ## brings it to his chest, where the support hand takes the fore-end. Back: the reverse, and he shuts the lid by hand.
+## HANDS FREE FIRST (founder 2026-11-15: "let him put down his gold that is in his hand so his hands are free and then let him turn around and reveal the weapon
+## as opposed to his body just inverting into position"). SHARPS_SETDOWN: both hands go down to the counter, whatever he holds is set on it (SETDOWN_RELEASE_AT),
+## the hands come away empty, and only then does he turn - slowly, about TURN_RATE rad/s - to face the case. The old step snapped his facing to the case on the
+## first frame of the reach, so the body whipped round while the arms were already reaching.
+const SETDOWN_S := 2.1                           # SHARPS_SETDOWN length
+const SETDOWN_RELEASE_AT := 0.75                 # the held thing leaves his hand here (hand on the counter)
+const SETDOWN_TURN_AT := 1.15                    # ...hands are free; from here he turns to the case
+const TURN_RATE := 2.8                           # the unhurried turn (the folk default of 7 is a spin)
 const REACH_S := 3.6                             # SHARPS_REACH length
 const IN_HAND_AT := 3.2                          # the rifle is his (on his hand bone) from here
 const FACE_CASE_OUT := 2.1                       # he looks at the case until the rifle is clear of it
@@ -262,6 +270,7 @@ func _close() -> void:
 
 func _finish_directing() -> void:
 	if rich != null:
+		rich.folk.turn_rate = -1.0
 		if rich.directed_arrived.is_connected(_on_arrived):
 			rich.directed_arrived.disconnect(_on_arrived)
 		rich.release()

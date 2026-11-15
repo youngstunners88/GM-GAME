@@ -479,9 +479,20 @@ func shot(eye: Vector3, dir: Vector3) -> bool:
 	return false
 
 
+## The auctioneer speaks in his locked ElevenLabs voice (founder 2026-11-15: voice id X0KF3ROqwE8cLCsWuhs6, assets/town-audio.json "renegade"). A line
+## whose take is in the town voice bank plays it, and the caption lasts as long as the take; a line with no take yet (generation needs the ElevenLabs key,
+## assets/town-audio.json lines_pending_rerecord) is shown as text on its usual timing - never silent in a way the player cannot read.
 func _say(text: String, seconds: float) -> void:
+	var shown_for: float = seconds
+	var parts: PackedStringArray = text.split(": ", true, 1)
+	if parts.size() == 2 and parts[0] == "RENEGADE":
+		var id: String = Ep2TownVoiceBank.id_for("renegade", parts[1])
+		var take: AudioStream = Ep2TownVoiceBank.stream(id) if id != "" else null
+		if take != null:
+			AudioManager.play_voice(id, take)
+			shown_for = take.get_length() + Ep2Speech.GAP
 	if say.is_valid():
-		say.call(text, seconds)
+		say.call(text, shown_for)
 
 
 func _set_phase(p: String) -> void:

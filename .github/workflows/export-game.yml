@@ -474,6 +474,9 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logans_lake_test.tscn > logans-lake-tests.log 2>&1
           grep -q 'LOGANS_LAKE: ALL PASS' logans-lake-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logans-lake-tests.log; then exit 1; fi
+          timeout 240 "$GODOT_BIN" --headless res://tests/ep2_fix_pack_1115_test.tscn > fix-pack-1115-tests.log 2>&1
+          grep -q 'EP2_FIX_PACK_1115: ALL PASS' fix-pack-1115-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-pack-1115-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_river_cover_test.tscn > river-cover-tests.log 2>&1
           grep -q 'RIVER_COVER: ALL PASS' river-cover-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' river-cover-tests.log; then exit 1; fi

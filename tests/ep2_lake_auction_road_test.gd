@@ -111,7 +111,7 @@ func _ready() -> void:
 	# 8. the auction house (brief PROMPT_AUCTION_HOUSE_RENEGADE_JACK_HAMMER_2026-11-08), in the same room
 	var house: Ep2AuctionHouse = road.house()
 	check("the auction house is built inside the road room (CAD kit streamed)", house != null and house.built)
-	check("the lake builds the road behind itself and holds the sign until it is ready", "prebuild_requested.emit(\"auction_road\")" in lake_src and "_can_leave_for_auction() and _handoff_ok()" in lake_src)
+	check("the lake builds the road behind itself and holds the sign until it is ready", "prebuild_requested.emit(\"auction_road\")" in lake_src and "_can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok()" in lake_src)
 	check("the hand-over keeps the lake's gaze (no camera reset)", "_apply_handoff_gaze(ROAD_YAW" in road_src and not "_look_yaw = ROAD_YAW" in road_src)
 	road._player_pos = road.at(road.DISMOUNT_S + 1.0)
 	_advance(road, 1.2)
