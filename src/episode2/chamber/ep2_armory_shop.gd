@@ -63,7 +63,7 @@ const WEAPON_TABS: Array = [
 	{"key": Ep2ArmoryState.REM, "label": "REMINGTON", "row": Ep2ArmoryState.REM, "model": TAB_DIR + "gold_remington.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.BORCH, "label": "BORCHARDT", "row": Ep2ArmoryState.BORCH, "model": TAB_DIR + "borchardt.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.BORCH + "_held", "label": "HELD C93", "row": Ep2ArmoryState.BORCH, "model": TAB_DIR + "borchardt_held.glb", "yaw": PI * 0.5},
-	{"key": Ep2ArmoryState.SHOT, "label": "1887 SHOTGUN", "row": Ep2ArmoryState.SHOT, "model": TAB_DIR + "coach_shotgun.glb", "yaw": PI * 0.5},
+	{"key": Ep2ArmoryState.SHOT, "label": "W. 1887", "row": Ep2ArmoryState.SHOT, "model": TAB_DIR + "coach_shotgun.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.MP18, "label": "MP18", "row": Ep2ArmoryState.MP18, "model": TAB_DIR + "machine_gun.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.TOMMY, "label": "GOLD TOMMY", "row": Ep2ArmoryState.TOMMY, "model": TAB_DIR + "golden_tommy.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.TOMMY + "_held", "label": "HELD TOMMY", "row": Ep2ArmoryState.TOMMY, "model": TAB_DIR + "golden_tommy_held.glb", "yaw": PI * 0.5},
