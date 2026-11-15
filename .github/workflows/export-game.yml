@@ -518,7 +518,7 @@ jobs:
           grep -q 'LAKE_ART: 27 checks, 0 failed' lake-art-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-art-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logan_cabin_test.tscn > logan-cabin-tests.log 2>&1
-          grep -q 'LOGAN_CABIN: 26 checks, 0 failed' logan-cabin-tests.log
+          grep -q 'LOGAN_CABIN: 34 checks, 0 failed' logan-cabin-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logan-cabin-tests.log; then exit 1; fi
           # Rich & Utah's two-storey Armory (founder 2026-10-19): building, windows, door, no horse inside, both men working both floors.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_two_story_test.tscn 2>&1 | tee armory2-tests.log
