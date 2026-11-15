@@ -1,0 +1,61 @@
+{
+  "source_sha": "901784b7e4d0c3769edb6e56197f533574f4f9cf",
+  "build_id": "2026-11-15-901784b",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "evidence": [
+    {
+      "kind": "native-gameplay-camera",
+      "path": "docs/episode2-quality/original-names-wbtc-20261115/held_remington_1875_gold.jpg"
+    },
+    {
+      "kind": "counter-portrait",
+      "path": "docs/episode2-quality/original-names-wbtc-20261115/counter_390x844.jpg"
+    },
+    {
+      "kind": "counter-landscape",
+      "path": "docs/episode2-quality/original-names-wbtc-20261115/counter_844x390.jpg"
+    },
+    {
+      "kind": "published-pack-gameplay",
+      "path": "docs/episode2-quality/original-names-wbtc-20261115/validation.txt"
+    },
+    {
+      "kind": "public-browser",
+      "path": "docs/episode2-quality/original-names-wbtc-20261115/public-browser.json"
+    },
+    {
+      "kind": "public-input",
+      "path": "docs/episode2-quality/original-names-wbtc-20261115/public-input.png"
+    },
+    {
+      "kind": "upload-log",
+      "path": "docs/episode2-quality/original-names-wbtc-20261115/upload-proof.txt"
+    }
+  ],
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/43715825769",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-11-15-901784b"
+  },
+  "published_pack_checks": {
+    "count": 20,
+    "result": "PASS",
+    "main_sha256": "6696228d974a4a3cc1a4c73bae7c0fcd48d21296174a26e6396f6bf57c64db40",
+    "extras_sha256": "947c5538d350225639f2db3a89f9f74723d4b65c266ff451eb310d8f994d0f9c"
+  },
+  "limits": [
+    "No physical phone test; portrait and landscape UI were inspected through native viewports.",
+    "Public browser smoke covers BUILD/assets/access-screen input. Weapon/currency transactions passed natively against the exact downloaded published base pack.",
+    "Cloud Chromium reports an audio worklet network/trust error; audio was not verified in that browser. No audio code changed."
+  ],
+  "open_blockers": []
+}

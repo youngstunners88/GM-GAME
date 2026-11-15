@@ -1,0 +1,29 @@
+SOURCE 901784b7e4d0c3769edb6e56197f533574f4f9cf
+Local full-suite aggregation: 116 retained logs; corrected armory suites rerun; repository-known pause geometry exception.
+Pinned Godot 4.3: compile, texture references, front-page lock, harness and security passed.
+Fresh nonthreaded web base pack: 199192576 bytes, limit 199229440 bytes.
+Complete CI gameplay/render/export/security/deployment: PASS, run 43715825769.
+Published base pack: 199192576 bytes.
+Published extras: 198457824 bytes.
+[BUILD] Lil Blunt Adventure — build 2026-11-15-901784b
+  [PASS] Episode 1 WBTC pickup credits the same purse Rich reads
+  [PASS] Episode 1 WBTC survives protocol save/load
+  [PASS] WBTC-only player opens directly on WBTC with the real balance
+  [PASS] locked stock cannot spend WBTC
+  [PASS] Rich sells the Shipment for Episode 1 WBTC
+  [PASS] Rich sells the Sharps for WBTC at the catalogue price
+  [PASS] duplicate gun refunds WBTC
+  [PASS] Rich sells Golden Remington 1875 for WBTC
+  [PASS] Rich sells Recovered Bear Bow for WBTC
+  [PASS] Rich sells Winchester 1886 for WBTC
+  [PASS] Rich sells Borchardt C-93 for WBTC
+  [PASS] Rich sells Winchester 1887 for WBTC
+  [PASS] Rich sells Bergmann MP18 for WBTC
+  [PASS] Rich sells Golden Thompson for WBTC
+  [PASS] WBTC also buys ammunition
+  [PASS] insufficient WBTC refuses without overdraft
+  [PASS] WBTC spending never debits BTC, ETH or SOL
+  [PASS] reopening preserves a funded WBTC choice
+  [PASS] other tenders remain selectable
+  [PASS] original handling names restored
+ORIGINAL_NAMES_WBTC: ALL PASS

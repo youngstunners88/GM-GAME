@@ -1,37 +1,23 @@
 {
-  "objective": "Restore original Episode 2 weapon names and make Episode 1 WBTC usable/readable at Rich counter; finish verified deployment",
+  "objective": "Completed original weapon names and Episode 1 WBTC at Rich counter; verified public release",
   "branch": "codex/original-weapon-names-wbtc",
-  "source_sha": "bbeb3b5028d7e6f64db122cc012a3f36752f0b46",
-  "origin_master_observed": "07aafd0e47a87293bb80bacaaa4ac98eff23770a",
-  "owned_paths": [
-    "src/episode2/chamber/ep2_armory_state.gd",
-    "src/episode2/chamber/ep2_armory_shop.gd",
-    "src/episode2/chamber/ep2_weapon_selector.gd",
-    "tests/ep2_original_names_wbtc_test.*",
-    "tests/ep2_weapons_test.gd",
-    "tests/ep2_armory_guns_test.gd",
-    "tests/ep2_founder_residuals_1101_test.gd",
-    "tests/ep2_weapon_consistency_test.gd",
-    ".github/workflows/export-game.yml"
-  ],
+  "source_sha": "901784b7e4d0c3769edb6e56197f533574f4f9cf",
+  "build_id": "2026-11-15-901784b",
+  "run_id": 43715825769,
+  "outcome": "success; actual itch upload confirmed; public BUILD matched",
   "verified": [
-    "20 real Episode 1 WBTC pickup/save-load/purchase tests pass",
-    "Native gameplay-camera screenshots at 1280x720,390x844,844x390; final abbreviated W.1887 tab",
-    "Fresh Godot 4.3 web export: 199192576 bytes, gate 199229440",
-    "Front-page lock and security pass",
-    "Baseline PUBLIC pack tested: correctly fails restored names/funded WBTC default; confirms pack driver loads exported code"
+    "Original model names in held HUD, Tabs, counter and pickup labels",
+    "20 real Episode 1 pickup/save-load/WBTC weapon-ammunition transactions on native source and exact published base pack",
+    "Native gameplay-camera UI at desktop, portrait and landscape sizes",
+    "Full CI gameplay/render/export/security success; nonthreaded base pack 199192576 bytes",
+    "Public BUILD, extras and access-screen keyboard input; access controls and stable save IDs preserved"
   ],
-  "pending": [
-    "Impacted test reruns queued/running; original full suite finished with obsolete name/layout expectations plus repository-known pause geometry exception",
-    "Run /workspace/work/weapon-wbtc/final-gates.py after reruns",
-    "Ship via scripts/ship-to-master.sh --gates \"bash /workspace/work/weapon-wbtc/release-gates.sh\"",
-    "Monitor actual master CI butler upload; public-browser.mjs and published-pack 20-check test; retain receipt"
-  ],
-  "evidence_root": "/workspace/work/weapon-wbtc",
   "report": "docs/episode2-quality/original-names-wbtc-20261115/REPORT.md",
-  "notes": [
-    "No physical phone test",
-    "Browser uses verified Node TLS and curl-backed local streaming for >100MiB packs; scoped relay permissions. Public URL and BUILD observed; known browser audio worklet network error retained.",
-    "Runtime code unchanged after 0c5729ec; later commits update test name expectations and evidence."
-  ]
+  "receipt": "docs/episode2-quality/original-names-wbtc-20261115/release-receipt.json",
+  "limitations": [
+    "No physical phone test; portrait and landscape UI were inspected through native viewports.",
+    "Public browser smoke covers BUILD/assets/access-screen input. Weapon/currency transactions passed natively against the exact downloaded published base pack.",
+    "Cloud Chromium reports an audio worklet network/trust error; audio was not verified in that browser. No audio code changed."
+  ],
+  "next": "No open blockers. Final response can point to verified live build 2026-11-15-901784b."
 }

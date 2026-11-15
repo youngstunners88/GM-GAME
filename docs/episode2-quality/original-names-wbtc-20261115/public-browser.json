@@ -1,0 +1,44 @@
+{
+  "gameUrl": "https://html-classic.itch.zone/html/18305533-2394518/index.html?v=1794749063&quot;&ep2=1",
+  "messages": [
+    "[BUILD] Lil Blunt Adventure \u2014 build 2026-11-15-901784b",
+    "[EP2] code prompt",
+    "[EP2] extras ready (ready)"
+  ],
+  "failures": [
+    "Failed to load worklet module script: https://html-classic.itch.zone/html/18305533-2394518/index.audio.worklet.js (Network error)"
+  ],
+  "responses": [
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2394518/index.pck",
+      "transport": "verified curl TLS -> local streaming relay (CDP has a 100MiB message limit)"
+    },
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2394518/index.wasm",
+      "status": 200
+    },
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2394518/ep2_extras.pck?v=2026-11-15-901784b",
+      "transport": "verified curl TLS -> local streaming relay (CDP has a 100MiB message limit)"
+    }
+  ],
+  "canvas": 1,
+  "tls": "Verified Node TLS via configured proxy and system CA; no certificate bypass",
+  "input": "clicked access screen and typed WBTC; no unlock attempted",
+  "packs": [
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2394518/index.pck",
+      "bytes": 199192576
+    },
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2394518/ep2_extras.pck?v=2026-11-15-901784b",
+      "bytes": 198457824
+    }
+  ],
+  "checks": {
+    "build": true,
+    "extras": true,
+    "scriptErrors": true,
+    "canvas": true
+  }
+}
