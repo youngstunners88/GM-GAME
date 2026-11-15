@@ -574,14 +574,15 @@ func _test_lake_horse() -> void:
 		c.set_move_input(Vector2(0, 1))
 		c.step(1.0 / 60.0)
 	c.set_move_input(Vector2.ZERO)
-	_check("meeting Logan starts the talk", c.start_rig() and c.get_beat() == LogansLakeChamber.Beat.INVESTIGATE)
+	_check("meeting Logan starts the talk (he sees Lil Blunt: no [E], founder 2026-11-15)", c.get_beat() == LogansLakeChamber.Beat.INVESTIGATE)
 	var drank_all_talk: bool = true
 	for i in 60 * 8:
 		c.step(1.0 / 60.0)
 		if c.get_beat() == LogansLakeChamber.Beat.INVESTIGATE:
 			drank_all_talk = drank_all_talk and c.get_horse_state() == "drink" and is_instance_valid(horse) and horse.visible
 	_check("the horse drinks the whole time Logan talks", drank_all_talk)
-	_check("...and the talk is not subtitled when it is voiced", not c._dialogue_panel.visible or Ep2TownVoiceBank.stream(Ep2TownVoiceBank.id_for("logan", "This depth stays deep. We stage what comes in before anything goes downstream.")) == null)
+	var logan_first: String = Ep2TownVoiceBank.id_for("logan", LogansLakeChamber.LINES[0].trim_prefix("LOGAN: "))
+	_check("...and the talk is subtitled exactly when it is not voiced", c._dialogue_panel.visible == (Ep2TownVoiceBank.stream(logan_first) == null))
 	for i in 60 * 20:
 		if c.get_beat() != LogansLakeChamber.Beat.INVESTIGATE: break
 		c.step(1.0 / 60.0)
