@@ -93,6 +93,7 @@ func _ready() -> void:
 	_test_lake_is_logans_alone()
 	_test_continues_the_walk()
 	_test_ranged_threat()
+	_test_hammer_crews()
 	print("RIVER_COVER: %s" % ("ALL PASS" if failures == 0 else "%d FAIL" % failures))
 	get_tree().quit(1 if failures else 0)
 
@@ -429,3 +430,43 @@ func _test_ranged_threat() -> void:
 func _retry_clears(c: RiverCoverChamber) -> bool:
 	c._package_lost()
 	return c.get_arrows().is_empty() and c.get_rafts().size() == 1 and c.get_raiders().size() == 2 and c.get_bears().size() == 1
+
+
+## Founder River Assets 2026-11-15: Hammer's men are not one clone; some carry rifles; some rafts carry one man.
+func _test_hammer_crews() -> void:
+	var c := _room(_armory(true, true))
+	for g in [1, 2]:
+		for i in (RiverCoverChamber.RAFT_CREWS[g] as Array).size():
+			c._spawn_raft(g, i, 120.0)
+	var solo: Array = []
+	var paired: int = 0
+	for r in c.get_rafts():
+		if (r["men"] as Array).size() == 1:
+			solo.append(r)
+		elif (r["men"] as Array).size() == 2:
+			paired += 1
+	check("solo and paired rafts are mixed down the river", solo.size() >= 2 and paired >= 2, "%d solo, %d paired" % [solo.size(), paired])
+	var rifles: int = 0
+	var pistols: int = 0
+	var looks: Dictionary = {}
+	var founder_body: bool = true
+	var muzzle_ok: bool = true
+	for m in c.get_raiders():
+		var folk: Ep2TownFolk = m["folk"]
+		looks["%s/%.2f/%.2f" % [str(m["gun"]), folk.height_m, folk.model.scale.x / folk.model.scale.y]] = true
+		if str(m["gun"]) == "rifle":
+			rifles += 1
+			founder_body = founder_body and folk.model.scene_file_path == RiverCoverChamber.RIFLEMAN_MODEL
+			muzzle_ok = muzzle_ok and absf((m["glint"] as Node3D).position.y - RiverCoverChamber.RIFLE_MUZZLE.y * folk.height_m) < 0.01
+		else:
+			pistols += 1
+	check("some men carry the founder's rifleman and his long gun, others keep sidearms", rifles >= 2 and pistols >= 2, "%d rifles, %d pistols" % [rifles, pistols])
+	check("...the riflemen are the River Assets body, their glint at the muzzle", founder_body and muzzle_ok)
+	check("no two men on the water share one look", looks.size() == c.get_raiders().size(), "%d looks / %d men" % [looks.size(), c.get_raiders().size()])
+	var lone: Dictionary = (solo[0]["men"] as Array)[0] if not solo.is_empty() else {}
+	check("a man alone on a raft is a rifleman", not lone.is_empty() and str(lone["gun"]) == "rifle")
+	if not lone.is_empty():
+		c.damage_raider(lone)
+		_advance(c, 2.0)
+		check("...shot, he still goes overboard into the river", c.raider_overboard(lone))
+	c.queue_free()

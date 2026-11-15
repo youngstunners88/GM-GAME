@@ -28,7 +28,8 @@ static func terrain_height(x: float, z: float) -> float:
 	var base: float = _natural_height(x, z)
 	if x >= -14.0: return base
 	var wx: float = 1.0 - smoothstep(6.0, 9.0, absf(x + 22.0))
-	var wz: float = 1.0 - smoothstep(6.0, 9.0, absf(z - 13.0))
+	# north of Logan's cabin the pad carries the neighbour wing (Ep2LoganCabin.NEIGHBOR_BODY, to z 22.2)
+	var wz: float = 1.0 - (smoothstep(9.6, 12.0, z - 13.0) if z > 13.0 else smoothstep(6.0, 9.0, 13.0 - z))
 	return lerpf(base, 1.0, wx * wz)
 
 static func drawn_height(x: float, z: float) -> float:

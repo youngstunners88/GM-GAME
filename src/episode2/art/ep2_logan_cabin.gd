@@ -9,6 +9,15 @@ const BTC := "res://src/episode2/assets/textures/tex_btc_coin.png"
 const RH := "res://src/episode2/extras/town/posters/poster_rh.png"
 const JACK := "res://src/episode2/extras/town/posters/poster_jack_hammer.jpg"
 const SENTENCE := "Be a liquidity provider."
+## Founder River Assets 2026-11-15: the neighbour building stands flush beside Logan's cabin (shared yard, same lakeshore),
+## carrying the mine4gold.app board, a Uniswap tin on a branded crate and the liquidity provider's rods. Baked from
+## "River Assets/wooden cabin.glb" by tools/ep2_river_assets/bake_river_assets.py.
+const NEIGHBOR := "res://src/episode2/extras/river_assets/neighbor_cabin.glb"
+const MINE4GOLD := DIR + "mine4gold_board.png"
+const UNISWAP := DIR + "uniswap_tin.png"
+const BRAND_TEXT := "mine4gold.app"
+const NEIGHBOR_POSITION := Vector3(-21.9, 1, 19.6)    # its front wall lines up with Logan's (world x -20.1), 0.5 m north of his gable
+const NEIGHBOR_BODY := Rect2(-24.6, 17.0, 5.1, 5.2)    # its walls, porch and steps (world x/z)
 const POSITION := Vector3(-23, 1, 13)
 const YARD := Rect2(-29, 6, 18, 14)
 const BODY := Rect2(-25.8, 9.5, 5.7, 7.0)
@@ -17,6 +26,7 @@ var kit: Node3D
 var ready_art: bool = false
 var pictures: Dictionary = {}
 var _dressed: bool = false
+var neighbor: Node3D
 
 func build(parent: Node3D) -> void:
 	if ready_art or not Ep2Extras.has(HOUSE) or not Ep2Extras.has(DETAILS): return
@@ -52,6 +62,7 @@ func build(parent: Node3D) -> void:
 	_picture("ReserveLedgerStamp", "LedgerFace", DIR + "btc_reserves.png", Vector2(.30, .15))
 	(pictures["ReserveLedgerStamp"] as MeshInstance3D).rotation.x = -PI / 2.0
 	_coin_faces()
+	_build_neighbor(parent)
 	var light := OmniLight3D.new()
 	light.name = "PorchOilLanternLight"
 	kit.find_child("LanternLight", true, false).add_child(light)
@@ -63,7 +74,9 @@ func build(parent: Node3D) -> void:
 	refresh_materials()
 
 func _picture(label: String, socket: String, path: String, size: Vector2, cutout: bool = false) -> void:
-	var anchor := kit.find_child(socket, true, false) as Node3D
+	_picture_on(kit.find_child(socket, true, false) as Node3D, label, path, size, cutout)
+
+func _picture_on(anchor: Node3D, label: String, path: String, size: Vector2, cutout: bool = false) -> void:
 	var image := MeshInstance3D.new()
 	image.name = label
 	var quad := QuadMesh.new()
@@ -82,6 +95,76 @@ func _picture(label: String, socket: String, path: String, size: Vector2, cutout
 	image.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	image.set_meta("source_texture", path)
 	pictures[label] = image
+
+## The neighbour wing: the founder's cabin, graded like Logan's, with the brand surfaces as physical boards and props.
+func _build_neighbor(parent: Node3D) -> void:
+	if not Ep2Extras.has(NEIGHBOR): return
+	neighbor = Node3D.new()
+	neighbor.name = "LogansNeighbor"
+	parent.add_child(neighbor)
+	neighbor.position = NEIGHBOR_POSITION
+	neighbor.rotation.y = PI / 2.0                        # front faces the lake trail, like Logan's
+	neighbor.set_meta("brand_text", BRAND_TEXT)
+	var shell := (load(NEIGHBOR) as PackedScene).instantiate() as Node3D
+	shell.name = "NeighborShell"
+	neighbor.add_child(shell)
+	for mesh in shell.find_children("*", "MeshInstance3D", true, false):
+		for i in mesh.mesh.get_surface_count():
+			var original := mesh.mesh.surface_get_material(i) as StandardMaterial3D
+			if original != null:
+				var m := original.duplicate() as StandardMaterial3D
+				m.roughness = .9
+				m.albedo_color = Color(.84, .87, .79)
+				mesh.set_surface_override_material(i, m)
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(.20, .12, .06)
+	wood.roughness = .95
+	# mine4gold.app: a painted board on the porch eave (eave front measured at 2.0-2.2 m, local z 2.05)
+	var board := _block(neighbor, "Mine4GoldBacking", Vector3(2.72, .66, .06), Vector3(0, 2.45, 2.10), wood)
+	_picture_on(board, "Mine4GoldBoard", MINE4GOLD, Vector2(2.6, .56875))
+	(pictures["Mine4GoldBoard"] as MeshInstance3D).position.z = .031
+	# Uniswap: a tin plate nailed to a branded supply crate at the porch corner, facing the trail
+	var crate := _block(neighbor, "UniswapCrate", Vector3(1.1, 1.0, .9), Vector3(-1.75, .5, 3.0), wood)
+	_picture_on(crate, "UniswapTin", UNISWAP, Vector2(.68, .85))
+	(pictures["UniswapTin"] as MeshInstance3D).position.z = .451
+	# The liquidity provider's rods lean on the porch post nearest Logan's door: still deep water is the read, not a fishing verb.
+	var cane := StandardMaterial3D.new()
+	cane.albedo_color = Color(.55, .43, .24)
+	cane.roughness = .8
+	for i in 2:
+		var rod := MeshInstance3D.new()
+		rod.name = "LPRod%d" % i
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = .007
+		cyl.bottom_radius = .017
+		cyl.height = 2.7
+		cyl.radial_segments = 6
+		rod.mesh = cyl
+		rod.material_override = cane
+		neighbor.add_child(rod)
+		rod.position = Vector3(1.95 + .22 * float(i), 1.32, 2.42 - .06 * float(i))
+		rod.rotation = Vector3(-.16 - .05 * float(i), 0, .05 * float(i))
+		var reel := MeshInstance3D.new()
+		var drum := CylinderMesh.new()
+		drum.top_radius = .035
+		drum.bottom_radius = .035
+		drum.height = .03
+		reel.mesh = drum
+		reel.material_override = wood
+		rod.add_child(reel)
+		reel.position = Vector3(0, -.95, .03)
+		reel.rotation.z = PI / 2.0
+
+func _block(parent: Node3D, label: String, size: Vector3, at: Vector3, m: Material) -> MeshInstance3D:
+	var b := MeshInstance3D.new()
+	b.name = label
+	var box := BoxMesh.new()
+	box.size = size
+	b.mesh = box
+	b.material_override = m
+	parent.add_child(b)
+	b.position = at
+	return b
 
 func _coin_faces() -> void:
 	var st := SurfaceTool.new()
@@ -139,6 +222,7 @@ static func collide(p: Vector3) -> Vector3:
 	q.x = clampf(q.x, YARD.position.x, YARD.end.x)
 	q.z = clampf(q.z, YARD.position.y, YARD.end.y)
 	q = _push_rect(q, BODY)
+	q = _push_rect(q, NEIGHBOR_BODY)
 	# Solid bench, reserves coffer and paper board. Main porch centre stays clear.
 	for r in [Rect2(-20.0, 10.0, 1.5, 2.1), Rect2(-20.5, 14.1, 1.85, 2.3), Rect2(-19.5, 16.0, .8, 2.9), Rect2(-19.75, 6.8, .70, 3.8)]:
 		q = _push_rect(q, r)

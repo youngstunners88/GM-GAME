@@ -7,7 +7,7 @@ extends Node
 const TRAIL := preload("res://src/episode2/chamber/lake_trail.tscn")
 const LAKE := preload("res://src/episode2/chamber/logans_lake.tscn")
 const TOWN := preload("res://src/episode2/chamber/gold_town.tscn")
-const CHECKS_PINNED := 114
+const CHECKS_PINNED := 118
 
 var _fail: int = 0
 var _count: int = 0
@@ -26,6 +26,7 @@ func _ready() -> void:
 	_flock_can_die()
 	_flock_audio()
 	_carrion_can_die()
+	_founder_vulture()
 	_audio_assets()
 	await get_tree().process_frame
 	await _stampede_gives_no_warning()
@@ -167,6 +168,33 @@ func _flock_audio() -> void:
 	flock._process(0.1)
 	_check("...and when he has ridden away", not flock._wings.playing)
 	flock.free()
+
+
+## Founder River Assets 2026-11-15: the improved vulture is the live model, circling and at the carcass, on the same wing hinges.
+func _founder_vulture() -> void:
+	print("-- THE FOUNDER'S VULTURE")
+	var flock := _flock()
+	var bird: Node3D = flock.birds[0]
+	_check("the circling birds wear the founder's vulture", Ep2VultureMesh.is_founder(bird) and bird.get_node_or_null("WingL/FounderWing") != null
+		and bird.get_node_or_null("WingR/FounderWing") != null and not (bird.get_node("WingL/Wing") as Node3D).visible)
+	var tip_before: Vector3 = (bird.get_node("WingL/FounderWing") as Node3D).global_transform * Vector3(-1.0, 0.0, 0.0)
+	Ep2VultureMesh.fold(bird)
+	var tip_after: Vector3 = (bird.get_node("WingL/FounderWing") as Node3D).global_transform * Vector3(-1.0, 0.0, 0.0)
+	_check("its own wings fold on the shoulder hinge (wound and fall poses drive the founder mesh)", tip_before.distance_to(tip_after) > 0.5,
+		"%.2f m" % tip_before.distance_to(tip_after))
+	Ep2VultureMesh.spread(bird)
+	flock.queue_free()
+	var birds := Ep2CarrionVultures.new()
+	add_child(birds)
+	birds.add_body(Vector3(0.0, 0.0, 0.0))
+	birds._send_bird(0)
+	var model: Node3D = (birds.birds[0]["node"] as Node3D).get_node("Model")
+	_check("the carcass birds are the same founder vulture", Ep2VultureMesh.is_founder(model))
+	var lowest: float = INF
+	var body := model.get_node("FounderBody") as MeshInstance3D
+	lowest = body.mesh.get_aabb().position.y + body.position.y
+	_check("its feet sit at the perch height the landing contract uses", absf(lowest + Ep2VultureMesh.PERCH_HEIGHT) < 0.03, "%.3f" % lowest)
+	birds.queue_free()
 
 
 func _carrion_can_die() -> void:

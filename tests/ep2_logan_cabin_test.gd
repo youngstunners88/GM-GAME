@@ -114,5 +114,20 @@ func _ready() -> void:
  check("water remains impassable after the optional cabin visit",c._collide(Vector3(25,0,20)).x<=-4)
  check("all ammunition, holdings and progression are unchanged",c.armory.snapshot()==inventory and c.get_beat()==c.Beat.ARRIVE and c.staging_count()==0)
  check("the original rigged Logan and working skiff remain present",c._logan.model.find_children("*","Skeleton3D",true,false)[0].get_bone_count()==65 and c._skiff.ready_art)
+ # Founder River Assets 2026-11-15: neighbour wing flush beside the cabin, mine4gold.app, Uniswap and LP imagery as physical objects
+ var nb:=b.neighbor
+ check("founder neighbour building stands beside Logan's cabin",nb!=null and nb.get_node_or_null("NeighborShell")!=null and nb.position.distance_to(b.root.position)<8.0)
+ var nb_rect:=Ep2LoganCabin.NEIGHBOR_BODY
+ check("...flush: a shared yard, not across the lake (gap to his gable under 1 m)",nb_rect.position.y-Ep2LoganCabin.BODY.end.y<1.0 and nb_rect.position.y>=Ep2LoganCabin.BODY.end.y)
+ var nb_ground=surface([ground],nb.position+Vector3(0,8,0),nb.position-Vector3(0,3,0))
+ check("...on the same flat pad as the cabin",nb_ground!=null and absf(nb_ground.y-nb.position.y)<.04)
+ check("mine4gold.app is a painted board with the exact text",nb.get_meta("brand_text")=="mine4gold.app" and b.pictures.Mine4GoldBoard.get_meta("source_texture")==Ep2LoganCabin.MINE4GOLD and b.pictures.Mine4GoldBoard.get_parent().name=="Mine4GoldBacking")
+ check("Uniswap logo is a tin plate on a physical crate",b.pictures.UniswapTin.get_parent().name=="UniswapCrate" and b.pictures.UniswapTin.get_meta("source_texture")==Ep2LoganCabin.UNISWAP)
+ check("both brand faces look toward the lake trail (+X)",(b.pictures.Mine4GoldBoard.global_transform.basis.z).dot(Vector3.RIGHT)>.95 and (b.pictures.UniswapTin.global_transform.basis.z).dot(Vector3.RIGHT)>.95)
+ check("liquidity provider rods lean at the neighbour porch",nb.get_node_or_null("LPRod0")!=null and nb.get_node_or_null("LPRod1")!=null)
+ old=c._player_pos;c._player_pos=Vector3(-22,1,16.8)
+ var nb_wall: Vector3=c._collide(Vector3(-22,1,17.4))
+ c._player_pos=old
+ check("the neighbour's walls block the player",nb_wall.z<=17.0)
  print("LOGAN_CABIN: ",checks," checks, ",failures," failed")
  c.queue_free();await get_tree().process_frame;get_tree().quit(0 if failures==0 else 1)

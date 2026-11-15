@@ -16,6 +16,13 @@ const PERCH_PITCH := 0.45                 # chest up, tail down: how a bird stan
 const PERCH_HEIGHT := 0.27                # root height (at scale 1) that puts the perched bird's feet on the ground
 const LYING_HEIGHT := 0.09                # root height (at scale 1) of a body flat on the ground
 
+## Founder River Assets 2026-11-15: the improved vulture ("River Assets/vulture.glb", baked by tools/ep2_river_assets/bake_river_assets.py)
+## is the live bird whenever the Episode 2 extras are mounted. The bake cuts it into "Body", "WingL" and "WingR" with the wings hinged
+## at the shoulders and the feet at -PERCH_HEIGHT, so every pose below drives it unchanged. The drawn parts stay as named, hidden
+## nodes (the flock, the carcass birds and their gates address them) and are the fallback before the pack mounts.
+const FOUNDER_GLB := "res://src/episode2/extras/river_assets/vulture.glb"
+static var _founder: Dictionary = {}                 # "Body"/"WingL"/"WingR" -> [Mesh, pivot Vector3]; {} = not loaded yet
+
 static var _feather: StandardMaterial3D = null
 static var _flight: StandardMaterial3D = null
 static var _skin: StandardMaterial3D = null
@@ -117,8 +124,60 @@ static func build(size: float = 1.0) -> Node3D:
 		var leg := _part(_leg_mesh, _skin, root)
 		leg.position = Vector3(side * 0.045, -0.12, 0.10)
 		leg.rotation.x = 0.5
+	_dress_founder(root)
 	flap(root, 0.0, 0.0)
 	return root
+
+
+## True when `node` (a `build()` bird) wears the founder's vulture.
+static func is_founder(node: Node3D) -> bool:
+	return node.get_node_or_null("FounderBody") != null
+
+
+static func _load_founder() -> bool:
+	if not _founder.is_empty():
+		return true
+	if not ResourceLoader.exists(FOUNDER_GLB):
+		return false
+	var scene := (load(FOUNDER_GLB) as PackedScene).instantiate() as Node3D
+	for mi in scene.find_children("*", "MeshInstance3D", true, false):
+		var key: String = str(mi.name)
+		if key in ["Body", "WingL", "WingR"]:
+			var mesh: Mesh = (mi as MeshInstance3D).mesh
+			for i in mesh.get_surface_count():
+				var m := mesh.surface_get_material(i) as StandardMaterial3D
+				if m != null:
+					m.cull_mode = BaseMaterial3D.CULL_DISABLED     # a wing seen from above or below is never hollow
+					m.roughness = 1.0
+					m.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+			_founder[key] = [mesh, (mi as Node3D).position]
+	scene.free()
+	if _founder.size() != 3:
+		_founder = {}
+		return false
+	return true
+
+
+static func _dress_founder(root: Node3D) -> void:
+	if not _load_founder():
+		return
+	for part in root.get_children():
+		if part is MeshInstance3D:
+			(part as MeshInstance3D).visible = false
+	for path in ["Neck/Head", "Neck/Beak", "WingL/Wing", "WingL/Primaries", "WingR/Wing", "WingR/Primaries"]:
+		(root.get_node(path) as Node3D).visible = false
+	var body := MeshInstance3D.new()
+	body.name = "FounderBody"
+	body.mesh = _founder["Body"][0]
+	root.add_child(body)
+	body.position = _founder["Body"][1]
+	for side in ["WingL", "WingR"]:
+		var pivot := root.get_node(side) as Node3D
+		pivot.position = _founder[side][1]
+		var wing := MeshInstance3D.new()
+		wing.name = "FounderWing"
+		wing.mesh = _founder[side][0]
+		pivot.add_child(wing)
 
 
 ## A slow soaring flap. `amount` 0 = wings locked in the glide's shallow V, 1 = a full downbeat.

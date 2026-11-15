@@ -52,8 +52,26 @@ const DRIFT := [[1.1, 2.4], [0.7, 1.8], [0.9, 2.0]]
 ## rafts to assist the bears. They are trying to drain the liquidity. Some of his men must even fire at Lil Blunt."
 const WAVES := [4, 7, 6]                     # swimmers per gate
 const ARCHERS := [1, 2, 2]                   # bow bears on the far bank per gate: they have the reach to hit the ridge
-const RAFTS := [1, 1, 2]                     # Hammer's rafts per gate
-const RAFT_MEN := 2
+## Founder River Assets 2026-11-15: "not one cloned face/body; some carry rifles; some travel alone on a raft". Men per raft, per gate:
+## solo and paired rafts are mixed so the river is not copy-pasted.
+const RAFT_CREWS := [[2], [1, 2], [2, 1]]
+const RAFT_MEN := 2                          # the most men one raft carries
+## The founder's Hammer rifleman ("River Assets/westerncowboy.glb", raft cut away, baked Idle = low ready / Draw = aimed by
+## tools/ep2_river_assets/bake_river_assets.py). His own red hatband is the Hammer mark; the pistol men keep the trail's band.
+const RIFLEMAN_MODEL := "res://src/episode2/extras/river_assets/hammer_rifleman.glb"
+const RIFLE_MUZZLE := Vector3(-0.194, 0.836, 0.422)   # muzzle in the aimed pose, as a fraction of his height (measured in the bake)
+## Each man down the river takes the next look: body ("rifle" = founder rifleman, "pistol" = the town cowboy), height, build (x/z
+## girth) and a cloth tint, so no two men on the water are the same. Solo rafts always carry a rifleman.
+const HAMMER_LOOKS: Array = [
+	{"body": "rifle", "height": 1.86, "build": 1.00, "tint": Color(1.0, 1.0, 1.0)},
+	{"body": "pistol", "height": 1.78, "build": 1.10, "tint": Color(0.80, 0.84, 0.92)},
+	{"body": "rifle", "height": 1.79, "build": 1.12, "tint": Color(0.86, 0.80, 0.70)},
+	{"body": "pistol", "height": 1.88, "build": 0.93, "tint": Color(1.0, 0.90, 0.78)},
+	{"body": "rifle", "height": 1.92, "build": 0.95, "tint": Color(0.74, 0.80, 0.76)},
+	{"body": "pistol", "height": 1.82, "build": 1.04, "tint": Color(0.92, 0.82, 0.86)},
+	{"body": "rifle", "height": 1.83, "build": 1.06, "tint": Color(0.95, 0.86, 0.80)},
+	{"body": "rifle", "height": 1.76, "build": 1.16, "tint": Color(0.80, 0.76, 0.72)},
+]
 const ARCHER_DRAW := 1.3                     # the visible draw is the warning: step aside and the arrow misses
 const ARCHER_RELOAD := 4.6
 const ARROW_HIT_CHANCE := 0.3                # even a man standing still is not hit by every arrow: he stands on an overlook to shoot, this has to be survivable
@@ -1292,7 +1310,7 @@ func _spawn_far_bank_and_rafts(g: int) -> void:
 		Ep2BearKit.add_bow(a)
 		Ep2BearKit.pose(a, "idle")
 		_bears.append({"actor": a, "state": "archer", "hp": 1, "side": -1.0, "s": s, "swipe_t": 1.0 + 1.5 * float(i), "ridge": false, "dead_t": 0.0, "draw": -1.0})
-	for i in int(RAFTS[g]):
+	for i in (RAFT_CREWS[g] as Array).size():
 		_spawn_raft(g, i, start)
 
 
@@ -1310,14 +1328,22 @@ func _spawn_raft(g: int, i: int, start: float) -> void:
 	var raft: Dictionary = {"node": root, "s": maxf(start - 34.0 - 16.0 * float(i), 0.0), "lateral": 2.8 if i % 2 == 0 else -2.8, "men": [], "hooked": false,
 		"health": Ep2CreatureHealth.attach(root, RAFT_HP), "logs": logs, "broken": false, "jolt": 0.0, "list": 0.0, "draft": 0.0, "hits": 0,
 		"break_t": 0.0}
-	for k in RAFT_MEN:
+	var crew: int = int(RAFT_CREWS[g][i])
+	raft["crew"] = crew
+	for k in crew:
+		var look: Dictionary = _next_hammer_look(crew == 1)
+		var rifle: bool = str(look["body"]) == "rifle"
+		var height: float = float(look["height"])
 		var folk := Ep2TownFolk.new()
 		root.add_child(folk)
-		folk.setup(GoldTownChamber.COWBOY_MODEL, 1.82, Color(0.22, 0.16, 0.11), false)
+		folk.setup(RIFLEMAN_MODEL if rifle else GoldTownChamber.COWBOY_MODEL, height, Color(0.22, 0.16, 0.11), false)
 		folk.set_pose("idle")
-		folk.position = Vector3(-0.55 + 1.1 * float(k), 0.18, -0.9 + 1.5 * float(k))
-		var band := _box(Vector3(0.38, 0.05, 0.36), Vector3(0.0, 1.71, 0.0), _mat(Color(0.24, 0.035, 0.025)), folk)   # Hammer's red hatband, as on the trail
-		band.name = "HammerBand"
+		folk.position = Vector3(0.0, 0.18, 0.0) if crew == 1 else Vector3(-0.55 + 1.1 * float(k), 0.18, -0.9 + 1.5 * float(k))
+		_dress_hammer_man(folk, look)
+		folk.set_meta("hammer_body", look["body"])
+		if not rifle:
+			var band := _box(Vector3(0.38, 0.05, 0.36), Vector3(0.0, 1.71, 0.0), _mat(Color(0.24, 0.035, 0.025)), folk)   # Hammer's red hatband, as on the trail
+			band.name = "HammerBand"
 		var glint := MeshInstance3D.new()
 		var ball := SphereMesh.new()
 		ball.radius = 0.06
@@ -1328,14 +1354,54 @@ func _spawn_raft(g: int, i: int, start: float) -> void:
 		glow.emission = Color(1.0, 0.91, 0.60)
 		glow.emission_energy_multiplier = 5.0
 		glint.material_override = glow
-		glint.position = GoldTownChamber.COWBOY_HAND_DRAW * 1.82 + Vector3(0, 0, 0.23)
+		glint.position = RIFLE_MUZZLE * height if rifle else GoldTownChamber.COWBOY_HAND_DRAW * height + Vector3(0, 0, 0.23)
 		glint.visible = false
 		glint.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		folk.add_child(glint)
-		var man: Dictionary = {"folk": folk, "raft": raft, "state": "ride", "tell": 0.0, "cool": 1.6 + 1.3 * float(k) + float(i), "aim": Vector3.ZERO, "hp": 1, "glint": glint}
+		var man: Dictionary = {"folk": folk, "raft": raft, "state": "ride", "tell": 0.0, "cool": 1.6 + 1.3 * float(k) + float(i), "aim": Vector3.ZERO, "hp": 1, "glint": glint, "gun": "rifle" if rifle else "pistol"}
 		(raft["men"] as Array).append(man)
 		_raiders.append(man)
 	_rafts.append(raft)
+
+
+func _crew_total(g: int) -> int:
+	var n: int = 0
+	for c in RAFT_CREWS[g]:
+		n += int(c)
+	return n
+
+
+var _hammer_used: Array = []
+## The next unused look from HAMMER_LOOKS (all used: start over); a man alone on a raft is always one of the founder's riflemen.
+func _next_hammer_look(solo: bool) -> Dictionary:
+	if _hammer_used.size() >= HAMMER_LOOKS.size():
+		_hammer_used.clear()
+	for i in HAMMER_LOOKS.size():
+		if i in _hammer_used or (solo and str(HAMMER_LOOKS[i]["body"]) != "rifle"):
+			continue
+		_hammer_used.append(i)
+		return HAMMER_LOOKS[i]
+	_hammer_used.clear()
+	return HAMMER_LOOKS[0]
+
+
+## Build and cloth tint on his own copies of the materials (the shared GLB is never recoloured for the town).
+func _dress_hammer_man(folk: Ep2TownFolk, look: Dictionary) -> void:
+	if folk.model == null:
+		return
+	var b: float = float(look["build"])
+	folk.model.scale = Vector3(folk.model.scale.x * b, folk.model.scale.y, folk.model.scale.z * b)
+	var tint: Color = look["tint"]
+	for mi in folk.model.find_children("*", "MeshInstance3D", true, false):
+		var mesh: Mesh = (mi as MeshInstance3D).mesh
+		if mesh == null:
+			continue
+		for i in mesh.get_surface_count():
+			var m := mesh.surface_get_material(i) as StandardMaterial3D
+			if m != null:
+				var own := m.duplicate() as StandardMaterial3D
+				own.albedo_color = own.albedo_color * tint
+				(mi as MeshInstance3D).set_surface_override_material(i, own)
 
 
 ## Every gate starts with what it takes to finish it: Utah left rounds at the overlook. The Armory's stock stays his; this only tops up what
@@ -1343,7 +1409,7 @@ func _spawn_raft(g: int, i: int, start: float) -> void:
 func _resupply(g: int) -> void:
 	if not armory.sniper_owned:
 		return
-	var need: int = int(WAVES[g]) + int(ARCHERS[g]) + int(RAFTS[g]) * RAFT_MEN + 4
+	var need: int = int(WAVES[g]) + int(ARCHERS[g]) + _crew_total(g) + 4
 	# what he can actually still fire: the Sharps' loaded round + its reserve. (`sniper_rounds` only counts boxes bought and never
 	# drops when he shoots, so testing it left the reserve at 0 mid-run and R did nothing - founder 2026-11-06.)
 	var sharps: Ep2Winchester = armory.firearm(Ep2ArmoryState.BUFF)
