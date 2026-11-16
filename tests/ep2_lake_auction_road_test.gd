@@ -148,6 +148,7 @@ func _ready() -> void:
 	# 8. the auction house (brief PROMPT_AUCTION_HOUSE_RENEGADE_JACK_HAMMER_2026-11-08), in the same room
 	var house: Ep2AuctionHouse = road.house()
 	check("the auction house is built inside the road room (CAD kit streamed)", house != null and house.built)
+	check("outside the hall the crowd bed is silent and the hall score is off", is_equal_approx(house.murmur_target(), house.MURMUR_OFF) and not road.hall_score_on())
 	check("the lake builds the road behind itself and holds the sign until it is ready", "prebuild_requested.emit(\"auction_road\")" in lake_src and "_can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok()" in lake_src)
 	check("the hand-over keeps the lake's gaze (no camera reset)", "_apply_handoff_gaze(ROAD_YAW" in road_src and not "_look_yaw = ROAD_YAW" in road_src)
 	road._player_pos = road.at(road.DISMOUNT_S + 1.0)
@@ -204,6 +205,10 @@ func _ready() -> void:
 	road._player_pos = road.from_house(Vector3(0.0, 0, 8.0))
 	_advance(road, 0.2)
 	check("inside the hall Renegade starts calling (HALL)", road.get_beat_name() == "HALL" and house.phase == "calls", road.get_beat_name())
+	check("in the hall the crowd murmurs under the auctioneer, swelling on arrival (never above bed + swell)",
+		house.murmur_target() > house.MURMUR_BED - 0.01 and house.murmur_target() <= house.MURMUR_BED + house.MURMUR_SWELL + 0.01, str(house.murmur_target()))
+	check("the hall score plays inside the hall when it is in the pack (night bed only until then)",
+		road.hall_score_on() == Ep2Extras.has(AuctionRoadChamber.HALL_SCORE), str(road.hall_score_on()))
 	# the floor answers like people (founder 2026-11-14): no two on one frame as a chorus, a mix of answers, one cheer recording per cooldown
 	var waits: Dictionary = {}
 	var clips: Dictionary = {}
@@ -220,12 +225,14 @@ func _ready() -> void:
 	check("Jack Hammer is recognised (JACK)", road.get_beat_name() == "JACK", road.get_beat_name())
 	_advance(road, 3.9 * house.JACK_LINES.size() + 0.3)
 	check("he flees (FLEE): running, the side door swings", road.get_beat_name() == "FLEE" and house.jack.is_walking(), road.get_beat_name())
+	check("the room hushes while Jack runs", is_equal_approx(house.murmur_target(), house.MURMUR_HUSH), str(house.murmur_target()))
 	_advance(road, 14.0)
 	check("he is gone and the auction carries on (AFTER), alive", road.get_beat_name() == "AFTER" and not house.jack.visible and not house.jack.dead, road.get_beat_name())
 	check("no teleport, no hand-off while he was in the hall", res.is_empty())
 	road._player_pos = road.from_house(Vector3(0.0, 0, -1.5))
 	_advance(road, 0.2)
 	check("out the front doors the slice ends cleanly", res.size() == 1 and bool(res[0].get("jack_fled", false)) and bool(res[0].get("end_session", false)), str(res))
+	check("the hall score fades out when he leaves by the porch", not road.hall_score_on())
 	# a shot inside is pressure: Jack runs at once and is never killed here
 	road.setup(0, [], 0)
 	check("a retry puts Jack back at the claim board", house.phase == "" and house.jack.visible and house.jack.position.distance_to(house.JACK_MARK) < 0.2)

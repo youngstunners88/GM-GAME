@@ -64,13 +64,14 @@ const SHERIFF_JAMES := "res://src/episode2/extras/folk/sheriff_james.glb"
 const RENEGADE := "res://src/episode2/extras/folk/renegade.glb"
 ## The auction's new cast (founder 2026-11-16, sheets in design/ep2/auction/cast-references-20261116): two license checkers and a
 ## five-piece band. Each is used only when its GLB is in the pack; until then the checkers keep their old models and the band stays off.
-const CHECKER_A := "res://src/episode2/extras/people/auction_checker_a.glb"      # the claim wagon's clerk ("Certificate man.jpg")
-const CHECKER_B := "res://src/episode2/extras/people/auction_checker_b.glb"      # the hall's doorman ("Certificate man2.jpg")
-const BAND_LEAD := "res://src/episode2/extras/people/auction_band_lead.glb"      # the woman who sings
-const BAND_FIDDLE := "res://src/episode2/extras/people/auction_band_fiddle.glb"
-const BAND_GUITAR := "res://src/episode2/extras/people/auction_band_guitar.glb"  # plays the banjo
-const BAND_BASS := "res://src/episode2/extras/people/auction_band_bass.glb"
-const BAND_HARMONICA := "res://src/episode2/extras/people/auction_band_harmonica.glb"
+## Built from PEOPLE_DIR on purpose: scripts/check-ep2-extras-pack.sh requires every literal extras path in this file to be packed.
+const CHECKER_A := PEOPLE_DIR + "auction_checker_a.glb"      # the claim wagon's clerk ("Certificate man.jpg")
+const CHECKER_B := PEOPLE_DIR + "auction_checker_b.glb"      # the hall's doorman ("Certificate man2.jpg")
+const BAND_LEAD := PEOPLE_DIR + "auction_band_lead.glb"      # the woman who sings
+const BAND_FIDDLE := PEOPLE_DIR + "auction_band_fiddle.glb"
+const BAND_GUITAR := PEOPLE_DIR + "auction_band_guitar.glb"  # plays the banjo
+const BAND_BASS := PEOPLE_DIR + "auction_band_bass.glb"
+const BAND_HARMONICA := PEOPLE_DIR + "auction_band_harmonica.glb"
 ## The walk-in shops' two keepers (founder fix pack 2026-10-27: "two more shopkeepers (women are fine) behind the counters"): Hunyuan3D-2.1
 ## scans of SDXL references with a second, sharper head scan (tools/ep2_runpod/hunyuan cast_*.py), rigged on the townfolk skeleton by
 ## tools/ep2_motion/rig_scan_character.py --skirt (Idle, Greet, Point, Carry, Walk). The General Store's (apron) and the Hotel desk's.

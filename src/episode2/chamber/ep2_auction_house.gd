@@ -34,6 +34,12 @@ const RADIUS := 0.35
 const JACK_MARK := Vector3(-8.4, 0, 21.4)
 const RENEGADE_MARK := Vector3(0.45, STAGE_H, 25.3)       # beside the rostrum, not behind it: the whole host reads from the floor
 const HITCH := Vector3(-6.5, 0, -15.0)              # the hitching rail, beside the road short of the porch
+const HALL_POOL := 2.6                              # chandelier pool energy; the stage keeps 2.4 over a 9 m pool plus the 6.0 key, so the block stays brightest
+const HALL_WARM := Color(1.0, 0.76, 0.5)            # lamplight, a little less orange than the porch so faces read
+const MURMUR_OFF := -40.0                           # before he is in the hall
+const MURMUR_BED := -13.0                           # settled: under the auctioneer and the night bed
+const MURMUR_SWELL := 6.0                           # dB added at the top of a swell
+const MURMUR_HUSH := -24.0                          # Jack runs: the room holds its breath
 const TIED_COATS := ["white", "black"]              # the two at the rail; the player's road horse keeps its stable coat
 const CALL_GAP := 5.8
 const CALLS := [
@@ -90,6 +96,8 @@ var _crowd: Array = []                              # bidders + watchers (react 
 var _servers: Array = []                            # [folk, route, index, wait, pause clip]
 var _doorman: Ep2TownFolk
 var _band: Array = []                               # the five players (empty until all five GLBs are in the pack)
+var _murmur: AudioStreamPlayer3D
+var _swell: float = 0.0                             # 1 just after a call or on arrival, decays to 0
 var _tied: Array = []                               # the horses at the hitching rail
 var _arrival: Ep2TownFolk
 var _t: float = 0.0
@@ -244,7 +252,8 @@ func _shell() -> void:
 	key.shadow_enabled = true
 	add_child(key)
 	key.look_at_from_position(key.position, RENEGADE_MARK + Vector3(0, 1.2, 0), Vector3.UP)
-	_light(Vector3(0, 6.0, 9.0), 1.3, 13.0)
+	# 2026-11-17 light pass: the two chandelier pools carry the room now (was 1.3 / 1.1: the floor read as silhouettes). Same places, no new lights.
+	_light(Vector3(0, 6.0, 9.0), HALL_POOL, 17.0, HALL_WARM)
 	_light(Vector3(0, 4.6, 25.0), 2.4, 9.0, Color(1.0, 0.74, 0.44))     # the stage's own pool: the block is the brightest place in the room
 	var foot := MeshInstance3D.new()                                    # footlights: a row of oil-lamp flames along the stage lip
 	var fm := BoxMesh.new()
@@ -258,7 +267,7 @@ func _shell() -> void:
 	foot.material_override = flame
 	foot.position = Vector3(0, STAGE_H + 0.05, STAGE_Z0 + 0.12)
 	add_child(foot)
-	_light(Vector3(0, 6.0, 18.5), 1.1, 12.0)
+	_light(Vector3(0, 6.0, 18.5), HALL_POOL * 0.9, 16.0, HALL_WARM)
 	for sx in [-1.0, 1.0]:
 		_light(Vector3(sx * 5.0, 3.6, 0.9), 1.2, 7.5)
 	# solids: front wall (door gap), side walls (Jack's door gap on the left), back wall, stage + steps, rail, bleachers, porch posts
@@ -278,6 +287,8 @@ func _shell() -> void:
 	_cheer = _sound("crowd_cheer.ogg", Vector3(0, 1.6, 17.0), false, 8.0, -4.0)
 	_bell = _sound("town_draw_bell.ogg", RENEGADE_MARK + Vector3(0, 1.0, 0), false, 6.0, -6.0)
 	_sound("town_saloon.ogg", Vector3(0, 2.0, 15.0), true, 7.0, -3.0)      # the night bed: heard faintly from the gate, full in the hall
+	# the room's own voice (2026-11-17): the town's crowd loop under the night bed, low; it swells on arrival and at each call, hushes when Jack runs
+	_murmur = _sound("town_people_loop.ogg", Vector3(0, 1.4, 16.0), true, 5.0, MURMUR_OFF)
 
 
 ## Block, strongbox, claim board and Jack's poster, the rail and side seating, the floor's benches, chandeliers, bunting, the grounds.
@@ -557,8 +568,25 @@ func _say(text: String, seconds: float) -> void:
 		say.call(text, shown_for)
 
 
+## The crowd bed's level: off outside the hall's story, a settled murmur inside, +MURMUR_SWELL on a swell, hushed while Jack flees.
+func murmur_target() -> float:
+	if phase == "":
+		return MURMUR_OFF
+	if phase == "flee":
+		return MURMUR_HUSH
+	return MURMUR_BED + MURMUR_SWELL * _swell
+
+
+func _tick_murmur(delta: float) -> void:
+	_swell = maxf(0.0, _swell - delta / 3.5)            # a swell takes about 3.5 s to settle
+	if _murmur != null:
+		_murmur.volume_db = move_toward(_murmur.volume_db, murmur_target(), delta * 14.0)
+
+
 func _set_phase(p: String) -> void:
 	phase = p
+	if p in ["calls", "after"]:
+		_swell = 1.0                                    # arrival, and the room letting go once Jack is out the door
 	_t = 0.0
 	_line = -1
 	phase_changed.emit(p)
@@ -588,6 +616,7 @@ func tick(delta: float, p: Vector3, fwd: Vector3) -> void:
 			(f as Ep2TownFolk).step(delta)
 	_tick_servers(delta)
 	_tick_reactions(delta)
+	_tick_murmur(delta)
 	if _arrival != null and not _arrival.is_walking() and not _arrival.dead:
 		_arrival.face_point(RENEGADE_MARK)
 	if not _door_said and _doorman != null and not _doorman.dead and p.distance_to(_doorman.position) < 4.0:
@@ -664,6 +693,7 @@ var react_log: Array = []
 
 
 func _react() -> void:
+	_swell = maxf(_swell, 0.7)
 	if _cheer.stream != null and _t - _cheer_at >= CHEER_COOLDOWN:
 		_cheer_at = _t
 		cheers_played += 1

@@ -31,6 +31,10 @@ const SPOOK_R := 28.0
 ## on the road ... should be GM OG Smoke"). Streamed (ep2_extras.pck): the founder's "GM OG Smoke (Remastered x3)", Ogg q1, ~104 s, looped by the manager.
 ## It starts once, crossfades in over whatever the lake left playing, ducks under every spoken line, and fades out at the porch where the hall's own sound takes over.
 const ROAD_SONG := "res://src/episode2/extras/music/ep2_gm_og_smoke.ogg"
+## The hall's own score (2026-11-17): an old-time instrumental, on while he is inside the hall, faded out when he leaves by the porch.
+const HALL_SCORE := "res://src/episode2/extras/music/ep2_auction_hall.ogg"
+const HALL_SCORE_IN := 3.0
+const HALL_SCORE_OUT := 2.5
 const SONG_FADE_IN := 2.5
 const SONG_FADE_OUT := 2.4
 const SONG_END_S := 365.0                          # = PORCH_S - 30: the hall's lamps and voices begin to take over here
@@ -81,6 +85,7 @@ var _hitched: bool = false
 var _dismount_t: float = -1.0
 var _song_on: bool = false                       # GM OG Smoke has been started (once per ride, never restarted)
 var _song_faded: bool = false
+var _hall_score_on: bool = false
 var _env: Environment
 var _sky_mat: ProceduralSkyMaterial
 var _light_s: float = -999.0
@@ -524,6 +529,7 @@ func _tick(delta: float) -> void:
 			_house.build_next()
 		var fwd: Vector3 = -_camera.global_transform.basis.z if _camera != null else _forward
 		_house.tick(delta, to_house(_player_pos), Vector3(fwd.dot(_right), fwd.y, fwd.dot(_forward)))
+		_tick_hall_score(_house.inside(to_house(_player_pos)))
 		if _house.phase == "left":
 			return
 	var prompt := ""
@@ -605,7 +611,7 @@ func _collide(p: Vector3) -> Vector3:
 ## A caption on the road ducks the song for as long as it is up (recorded takes duck it themselves; unrecorded lines would not).
 func _caption(text: String, seconds: float) -> void:
 	_hud.speech(text, seconds, false)
-	if _song_on and not _song_faded:
+	if (_song_on and not _song_faded) or _hall_score_on:
 		AudioManager.duck_for_speech(seconds)
 
 
@@ -617,6 +623,20 @@ func _tick_song(s: float) -> void:
 	elif _song_on and not _song_faded and s >= SONG_END_S:
 		_song_faded = true
 		AudioManager.fade_out_music(SONG_FADE_OUT)
+
+
+## The hall score follows him through the doors. Without the file in the pack the hall keeps its night bed and nothing else changes.
+func _tick_hall_score(in_hall: bool) -> void:
+	if in_hall and not _hall_score_on and Ep2Extras.has(HALL_SCORE):
+		_hall_score_on = true
+		AudioManager.crossfade_music(HALL_SCORE, HALL_SCORE_IN)
+	elif not in_hall and _hall_score_on:
+		_hall_score_on = false
+		AudioManager.fade_out_music(HALL_SCORE_OUT)
+
+
+func hall_score_on() -> bool:
+	return _hall_score_on
 
 
 func _on_house_phase(phase: String) -> void:

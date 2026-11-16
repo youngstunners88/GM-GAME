@@ -46,6 +46,11 @@ func _ready() -> void:
 			["17_renegade_arms", road.from_house(Vector3(0.45, 0, 22.9)), road.ROAD_YAW, 0.06, 0.4],
 			["18_wall_trim", road.from_house(Vector3(4.0, 0, 21.0)), road.ROAD_YAW + 1.2, 0.05, 0.4],
 			["19_stage_front", road.from_house(Vector3(-3.0, 0, 20.5)), road.ROAD_YAW + 0.5, -0.1, 0.4]]
+	if OS.get_cmdline_user_args().has("clerk"):     # the claim wagon's checker, face on from 2.4 m and from the saddle's approach
+		var cp: Vector3 = road.at(road.CLAIM_S - 2.6, -2.2)
+		var eye: Vector3 = road.at(road.CLAIM_S - 5.0, -2.2)
+		shots = [["20_claim_clerk", eye, atan2(cp.x - eye.x, cp.z - eye.z), -0.22, 0.4],
+			["21_claim_clerk_talk", road.at(road.CLAIM_S - 6.2, -1.6), atan2(cp.x - road.at(road.CLAIM_S - 6.2, -1.6).x, cp.z - road.at(road.CLAIM_S - 6.2, -1.6).z), -0.16, 0.4]]
 	for s in shots:
 		road._player_pos = s[1]
 		var t: float = s[4]

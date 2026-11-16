@@ -1,0 +1,54 @@
+{
+ "people": {
+  "checker_a": {
+   "mesh_task": "16c86ecd-3f26-443c-8384-4f1367efa42e",
+   "file": "auction_checker_a.glb",
+   "height": 1.82,
+   "presets": [
+    "preset:biped:idle",
+    "preset:biped:greet_01",
+    "preset:biped:complain_01"
+   ],
+   "clips": [
+    "Idle",
+    "Greet",
+    "Talk"
+   ],
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "d028c5da-ba4c-4786-9277-8984ef95a7e7",
+   "retarget_task": "aa664018-4d23-45b8-91a7-2614cd648d51",
+   "retarget_output_keys": [
+    "model_url"
+   ]
+  },
+  "checker_b": {
+   "file": "auction_checker_b.glb",
+   "height": 1.78,
+   "presets": [
+    "preset:biped:idle",
+    "preset:biped:greet_01",
+    "preset:biped:complain_01"
+   ],
+   "clips": [
+    "Idle",
+    "Greet",
+    "Talk"
+   ],
+   "mesh_task": "c01ebb1e-1d37-4c1b-9f6f-e57a5eda344d",
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "d8675c40-b592-4a78-9ac0-10f6c2c02eef",
+   "retarget_task": "2f7b20f3-f637-40ec-b2ad-8e752f13b566",
+   "retarget_output_keys": [
+    "model_url"
+   ]
+  }
+ },
+ "credits_spent_runs": [
+  {
+   "before": 475.0,
+   "after": 420.0
+  }
+ ]
+}
