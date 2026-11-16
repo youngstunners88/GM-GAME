@@ -114,7 +114,10 @@ const RICH_CRATE_SIDE := Vector3(-0.35, 0.0, 0.25)
 const RICH_DOOR := Vector3(-9.6, 0.0, 1.9)
 const RICH_SPEED := 1.25
 const RICH_LIFT_S := 0.9
-const RICH_CARRY_SCALE := 0.62               # the crate rides against his chest: scaled as he lifts it, while his body hides the change
+## The crate keeps the dock prop's size in his arms (founder touch-up 2026-11-16: it no longer shrinks on the lift). Its base rides at his forearms,
+## its near face a hand's width in front of his body (the offset is measured from the crate's own depth when he lifts it).
+const RICH_CARRY_UP := 0.55
+const RICH_CARRY_CLEAR := 0.12
 const RICH_COLLECT_MAX := 18.0               # the dock beat never waits longer than this for him
 
 var _river_pts := PackedVector3Array()
@@ -149,6 +152,8 @@ var _rich: Ep2TownFolk
 var _rich_state: String = ""        # "" -> arrive -> watch -> to_crate -> lift -> carry -> gone
 var _rich_t: float = 0.0
 var _crate_carried: bool = false
+var _carry_reach: float = 0.5               # metres from his centre to the crate's centre while he holds it
+var _carry_yaw: float = 0.0                  # the crate's turn against his facing: its narrow side against his chest
 var _dock_t: float = -1.0
 var _blocked_reason: String = ""
 var _water_loop: AudioStreamPlayer
@@ -967,7 +972,10 @@ func _build_rich() -> void:
 	_visuals.add_child(_rich)
 	var has_v2: bool = Ep2Extras.has(Ep2Extras.RICH)
 	_rich.setup(Ep2Extras.RICH if has_v2 else GoldTownChamber.RICH_MODEL, GoldTownChamber.RICH2_HEIGHT if has_v2 else GoldTownChamber.RICH_HEIGHT, Color(0.30, 0.20, 0.13))
-	_rich.position = DOCK_DECK + RICH_START
+	# he walks on the dock's deck (DOCK_DECK.y), not on the ground under it: a plain `position` let his step() settle him to y 0, 1.2 m into the
+	# boards with the crate he carried (touch-ups 2026-11-16)
+	_rich.use_height = true
+	_rich.place(DOCK_DECK + RICH_START)
 	_rich.visible = false
 
 
@@ -1010,6 +1018,7 @@ func _tick_rich(delta: float) -> void:
 			if _rich_move(DOCK_DECK + RICH_CRATE_SIDE, delta):
 				_rich_state = "lift"
 				_rich_t = 0.0
+				_carry_reach = _crate_carry_reach()
 				_rich.face_point(_crate.position if _crate != null else DOCK_DECK)
 				_rich.play_clip("Talk")
 				_rich_says()
@@ -1017,22 +1026,37 @@ func _tick_rich(delta: float) -> void:
 			var k: float = smoothstep(0.0, 1.0, clampf(_rich_t / RICH_LIFT_S, 0.0, 1.0))
 			if _crate != null:
 				_crate_carried = true
-				var carry_at: Vector3 = _rich.position + fwd * 0.5 + Vector3(0.0, 0.95, 0.0)
+				var carry_at: Vector3 = _rich.position + fwd * _carry_reach + Vector3(0.0, RICH_CARRY_UP, 0.0)
 				_crate.position = _crate.position.lerp(carry_at, k)
-				_crate.scale = Vector3.ONE.lerp(Vector3.ONE * RICH_CARRY_SCALE, k)
+				_crate.rotation.y = lerp_angle(_crate.rotation.y, _rich.rotation.y + _carry_yaw, k)
 			if _rich_t >= RICH_LIFT_S:
 				_rich_state = "carry"
 		"carry":
 			var arrived: bool = _rich_move(DOCK_DECK + RICH_DOOR, delta)
 			if _crate != null:
-				_crate.position = _rich.position + Vector3(sin(_rich.rotation.y), 0.0, cos(_rich.rotation.y)) * 0.5 + Vector3(0.0, 0.95, 0.0)
-				_crate.rotation = Vector3(0.0, _rich.rotation.y, 0.0)
+				_crate.position = _rich.position + Vector3(sin(_rich.rotation.y), 0.0, cos(_rich.rotation.y)) * _carry_reach + Vector3(0.0, RICH_CARRY_UP, 0.0)
+				_crate.rotation = Vector3(0.0, _rich.rotation.y + _carry_yaw, 0.0)
 			if arrived:
 				_rich_state = "gone"
 				_rich.visible = false
 				if _crate != null:
 					_crate.visible = false                           # in through the warehouse door with him
 	_rich.step(delta)
+
+
+## The crate is turned so its narrow side is against his chest (`_carry_yaw`); the reach is half that depth plus a hand's width, so the carry never
+## puts it inside him.
+func _crate_carry_reach() -> float:
+	_carry_yaw = 0.0
+	if _crate == null or _crate.get_child_count() == 0 or not (_crate.get_child(0) is Node3D):
+		return 0.5
+	var piece := _crate.get_child(0) as Node3D
+	var box: AABB = Ep2ArmoryShop._bounds(piece)
+	var along_x: float = box.size.x * absf(piece.scale.x) * _crate.scale.x
+	var along_z: float = box.size.z * absf(piece.scale.z) * _crate.scale.z
+	if along_x < along_z:
+		_carry_yaw = PI * 0.5
+	return RICH_CARRY_CLEAR + minf(along_x, along_z) * 0.5
 
 
 func _rich_says() -> void:

@@ -168,7 +168,7 @@ func _ready() -> void:
 	# Phase 2 reframe (founder 2026-11-03, section 3.1): the first visit is a soft gate - three licenses + bonds, no free paper
 	var first: String = " ".join(GoldTownChamber.MINISTER1_LINES.map(func(l: Array) -> String: return str(l[1]))).to_lower()
 	_check("first visit: Mike Dean names all three licenses (and not a fourth), the wBTC vault and both bonds, and refuses free paper - no invented numbers",
-		"prospector's" in first and "miner's" in first and "foreman's" in first and not "mine owner" in first and not "four" in first and "three licenses" in first and "wbtc vault" in first
+		"prospector's" in first and "miner's" in first and "goldsmith's" in first and not "foreman" in first and not "mine owner" in first and not "four" in first and "three licenses" in first and "wbtc vault" in first
 			and "flip bond" in first and "builder bond" in first and "not enough for a license" in first and not first.contains("%"), first)
 	# two lines were reworded for three licenses (founder 2026-11-15); their takes are re-recorded when the ElevenLabs key is on the machine (assets/town-audio.json lines_pending_rerecord) - until then they are seen, never silent
 	_check("every first-visit Mike Dean line is voiced in his ElevenLabs voice, bar the two awaiting re-record", GoldTownChamber.MINISTER1_LINES.filter(func(l: Array) -> bool:
@@ -184,8 +184,8 @@ func _ready() -> void:
 			# founder 2026-11-03 follow-up: on the side OPPOSITE Mike Dean's desk (his desk and chair stand at x -2.3)
 			on_left = on_left and cert_lp.x > 3.5 and cert_lp.z < GoldTownChamber.OFFICE_SPOT.z and cert_lp.y > 1.2
 			tiers.append(str(cert.get_meta("tier", "")))
-	_check("the three certificates hang on the wall opposite Mike Dean's desk, beyond the counter (Prospector's, Miner's, Foreman's)",
-		on_left and tiers == ["PROSPECTOR'S LICENSE", "MINER'S LICENSE", "FOREMAN'S LICENSE"], str(tiers))
+	_check("the three certificates hang on the wall opposite Mike Dean's desk, beyond the counter (Prospector's, Miner's, Goldsmith's)",
+		on_left and tiers == ["PROSPECTOR'S LICENSE", "MINER'S LICENSE", "GOLDSMITH'S LICENSE"], str(tiers))
 	var printed: bool = lic_wall != null and bool(lic_wall.get_meta("printed", false))
 	if printed:
 		for i in 3:

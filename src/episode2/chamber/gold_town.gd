@@ -7,7 +7,7 @@ extends Ep2Interlude
 ##
 ##   STREET    walk to the CERTIFICATES office
 ##   OFFICE    The Sheriff (the founder's own character: weathered, long duster, star, a wisp of smoke) and Minister Mike Dean behind the
-##             counter, facing the door. On his left wall hang the three Miner's License certificates (Prospector's, Miner's, Foreman's). First visit = a soft gate: the three licenses + Flip / Builder bonds explained, no free paper (Phase 2 reframe
+##             counter, facing the door. On his left wall hang the three Miner's License certificates (Prospector's, Miner's, Goldsmith's). First visit = a soft gate: the three licenses + Flip / Builder bonds explained, no free paper (Phase 2 reframe
 ##             2026-11-03, docs/founder-feedback/2026-11-03_phase2_license_reframe.md section 3.1)
 ##   TO_BAR    cross the street to the SALOON
 ##   BAR       a whiskey, a quarter of a Bitcoin on the bar, the bartender's jaw drops, a stranger at the end of the bar noticed -
@@ -105,7 +105,7 @@ const INFERNO_LICENSE_LINES: Array = [
 const MINISTER1_LINES: Array = [
 	["MIKE DEAN", "Bull sent you. Looking for a claim."],
 	["MIKE DEAN", "We don't hand out paper for free. What you're looking at on the wall are the three licenses that actually sit on the wBTC vault."],
-	["MIKE DEAN", "Prospector's is the floor. Then Miner's, then Foreman's at the top. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight."],
+	["MIKE DEAN", "Prospector's is the floor. Then Miner's, then Goldsmith's at the top. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight."],
 	["MIKE DEAN", "You can start with a Prospector's when you're ready, or go the bond route if you want the discount and a real share of the gold. Flip bond gets you NOTE cheaper. Builder bond puts you in the longer pool."],
 	["MIKE DEAN", "Sheriff's the one who can walk you through the process once you've got skin in it. Right now you're just a man who walked in with Bull's name. That's not enough for a license."],
 ]
@@ -126,7 +126,7 @@ const MINISTER2_LINES: Array = [
 const LICENSE_TIERS: Array = [
 	["PROSPECTOR'S LICENSE", Color(0.72, 0.45, 0.25), "res://src/episode2/extras/town/licenses/tex_license_prospector.jpg"],
 	["MINER'S LICENSE", Color(0.75, 0.76, 0.78), "res://src/episode2/extras/town/licenses/tex_license_miner.jpg"],
-	["FOREMAN'S LICENSE", Color(0.93, 0.74, 0.25), "res://src/episode2/extras/town/licenses/tex_license_foreman.jpg"],
+	["GOLDSMITH'S LICENSE", Color(0.93, 0.74, 0.25), "res://src/episode2/extras/town/licenses/tex_license_goldsmith.jpg"],
 ]
 ## The drink itself: Inferno's Stand_and_Drink (the hideout's clip) and Lil Blunt's glass up to the camera, then down.
 const FP_DRINK_S := 2.4
@@ -176,7 +176,7 @@ const SHERIFF_MOUTH := Vector3(0.03, 0.855, 0.095)
 ## The license wall (office-local). Founder 2026-11-03 (follow-up): on the side OPPOSITE Minister Mike Dean's desk - the right wall's
 ## inner face (x +3.86; his desk and chair stand on the left, x -2.3), on the clear stretch between the side window (z ~ -5.3..-6.5,
 ## measured in tools/ep2_shots/license_wall_shot) and the back wall, above the safe. Seen from the counter it reads left to right
-## Prospector's -> Foreman's, rising slightly - the ladder.
+## Prospector's -> Goldsmith's, rising slightly - the ladder.
 const LICENSE_WALL_AT := Vector3(3.86, 1.55, -6.9)       # the FRONT-most frame (the top tier); lower tiers step towards the back
 const LICENSE_WALL_STEP := 0.58                           # along the wall
 const LICENSE_WALL_RISE := 0.08                           # the slight diagonal, rising to the top tier
@@ -2410,7 +2410,7 @@ static func build_license_wall(parent: Node3D) -> void:
 	paper_mat.albedo_color = Color(0.93, 0.87, 0.72)
 	paper_mat.roughness = 0.95
 	for i in LICENSE_TIERS.size():
-		var rank: int = LICENSE_TIERS.size() - 1 - i                    # 0 = Foreman's (front, highest) ... 2 = Prospector's (back)
+		var rank: int = LICENSE_TIERS.size() - 1 - i                    # 0 = Goldsmith's (front, highest) ... 2 = Prospector's (back)
 		var local: Vector3 = LICENSE_WALL_AT + Vector3(0.0, -rank * LICENSE_WALL_RISE, -rank * LICENSE_WALL_STEP)
 		var cert := Node3D.new()
 		cert.name = "License%d" % (i + 1)

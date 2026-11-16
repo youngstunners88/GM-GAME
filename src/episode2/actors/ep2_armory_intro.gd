@@ -152,9 +152,19 @@ func step(delta: float, player_world: Vector3) -> void:
 	match stage:
 		Stage.RICH_WALK:
 			if _rich_arrived:
-				stage = Stage.SHARPS_REACH
+				stage = Stage.SHARPS_SETDOWN                      # hands free first (founder 2026-11-15); the reach follows
 				_t = 0.0
 				rich.direct_here("Counter", player_world, true)    # he stands at the case; Ep2SharpsCase solves his arms (the Reach clip bent him double over it)
+		Stage.SHARPS_SETDOWN:
+			# his hands go to the counter facing Lil Blunt; only once they are empty does he turn, slowly, to the case
+			if _t >= SETDOWN_TURN_AT:
+				rich.folk.turn_rate = TURN_RATE
+				rich.folk.face_point(case_point if case_point.is_finite() else player_world)
+			else:
+				rich.folk.face_point(player_world)
+			if _t >= SETDOWN_S:
+				stage = Stage.SHARPS_REACH
+				_t = 0.0
 		Stage.SHARPS_REACH:
 			rich.folk.face_point(case_point if case_point.is_finite() and _t < FACE_CASE_OUT else player_world)
 			if not _lifted and _t >= IN_HAND_AT:

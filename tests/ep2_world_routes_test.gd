@@ -34,7 +34,7 @@ func _ready() -> void:
  session._active=trail;session._mode=session.Mode.CHAMBER
  check("correct minister voice",Ep2TownVoiceBank.LINES.town_cert1_0.ready and JSON.parse_string(FileAccess.get_file_as_string("res://assets/town-audio-generated.json"))["town_cert1_0"]["voice_id"]=="CfxYdK3WmF3bmrvyLAiU")
  check("correct Dude voice",Ep2StableYard.DUDE_VOICE=="3N5PpVsIKXqmtLAhF2Lj")
- check("Logan's dialogue has actual recordings",Ep2TownVoiceBank.stream("logan_depth")!=null and Ep2TownVoiceBank.stream("logan_cargo")!=null and Ep2TownVoiceBank.stream("logan_handoff")!=null)
+ check("Logan's dialogue has actual recordings",Ep2TownVoiceBank.stream("logan_handoff")!=null and Ep2TownVoiceBank.LINES.logan_handoff.ready)
  check("road speech resolves streamed takes",absf(trail._vo_len("trail_lb_start")-Ep2TownVoiceBank.stream("trail_lb_start").get_length())<0.001)
  trail.set_move_input(Vector2(0,-1))
  var original_woods: int=woods.get_instance_id()

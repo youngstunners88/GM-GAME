@@ -1090,30 +1090,6 @@ const LINES: Dictionary = {
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_opp_2.ogg"
 	},
-	"logan_depth": {
-		"speaker": "logan",
-		"text": "This depth stays deep. We stage what comes in before anything goes downstream.",
-		"seconds": 5.805042,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/logan_depth.ogg"
-	},
-	"logan_lb_depth": {
-		"speaker": "lil_blunt",
-		"text": "So the lake holds the depth, and the river carries what is ready?",
-		"seconds": 4.505,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/logan_lb_depth.ogg"
-	},
-	"logan_cargo": {
-		"speaker": "logan",
-		"text": "Exactly. Check the cargo at that staging marker. Keep the bank secure; don't empty the lake.",
-		"seconds": 6.405,
-		"start_seconds": 0,
-		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/logan_cargo.ogg"
-	},
 	"logan_handoff": {
 		"speaker": "logan",
 		"text": "Cargo checked. The depth holds. Follow the outflow to the high ground—the day-88 shipment leaves from here.",
@@ -1276,16 +1252,16 @@ const LINES: Dictionary = {
 	},
 	"miners_certs_1": {
 		"speaker": "youth",
-		"text": "Went to the Certificates office. Mike Dean wants four licenses before I can work a real claim.",
-		"seconds": 5.805,
+		"text": "Went to the Certificates office. Mike Dean wants three licenses before I can work a real claim.",
+		"seconds": 5.805042,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/miners_certs_1.ogg"
 	},
 	"miners_certs_2": {
 		"speaker": "rancher",
-		"text": "Four papers and a bond. That's how you know a claim is honest.",
-		"seconds": 4.205,
+		"text": "Three papers and a bond. That's how you know a claim is honest.",
+		"seconds": 4.205042,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/miners_certs_2.ogg"
@@ -1377,6 +1353,62 @@ const LINES: Dictionary = {
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/miners_hammer_5.ogg"
+	},
+	"river_rich_dock": {
+		"speaker": "rich",
+		"text": "I'll take it from here, Lil Blunt. Fine shooting up there.",
+		"seconds": 3.474833,
+		"start_seconds": 0.030167,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/river_rich_dock.ogg"
+	},
+	"auction_renegade_1": {
+		"speaker": "renegade",
+		"text": "Welcome, claim holders, to the Gold Rush Auction! Seven days, one pool - every ounce of GOLD you forfeit buys your share of this week's XAUT. Pro-rata, no favourites!",
+		"seconds": 13.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/auction_renegade_1.ogg"
+	},
+	"auction_renegade_2": {
+		"speaker": "renegade",
+		"text": "Paper at the door, paddles on the floor! Your license gets you a number - your GOLD gets you the weight. The whole mine is bidding this week!",
+		"seconds": 10.005,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/auction_renegade_2.ogg"
+	},
+	"auction_renegade_3": {
+		"speaker": "renegade",
+		"text": "Do I hear forfeit? I hear forfeit! Paddle forty-one, paddle eighty-eight - real gold in a real box, settled when the week closes!",
+		"seconds": 10.605042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/auction_renegade_3.ogg"
+	},
+	"auction_renegade_4": {
+		"speaker": "renegade",
+		"text": "Well now - the man on my own claim board, standing right under it! Somebody fetch the Sheriff!",
+		"seconds": 6.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/auction_renegade_4.ogg"
+	},
+	"auction_renegade_5": {
+		"speaker": "renegade",
+		"text": "Lead in my hall?! There he goes - the one-eyed gent's running!",
+		"seconds": 4.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/auction_renegade_5.ogg"
+	},
+	"auction_renegade_6": {
+		"speaker": "renegade",
+		"text": "Ladies and gentlemen - THAT is the kind of excitement GOLD buys! Back to the week's lot!",
+		"seconds": 6.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/auction_renegade_6.ogg"
 	}
 }
 const GREETINGS: Dictionary = {
@@ -1445,15 +1477,8 @@ static func seconds(id: String, fallback: float = 4.2) -> float:
 	var recording: AudioStream = stream(id)
 	return recording.get_length() + 0.25 if recording != null else fallback
 
-## Decoded once and kept: a line used to go back through the resource loader every time it was spoken, so a repeated shout could
-## hitch on the frame the character opened their mouth. Held streams are small next to the pack they come from.
-static var _streams: Dictionary = {}
 static func stream(id: String) -> AudioStream:
 	if not LINES.has(id) or not LINES[id]["ready"]:
 		return null
-	if _streams.has(id):
-		return _streams[id] as AudioStream
 	var path: String = LINES[id]["path"]
-	var s: AudioStream = load(path) as AudioStream if ResourceLoader.exists(path) else null
-	_streams[id] = s
-	return s
+	return load(path) as AudioStream if ResourceLoader.exists(path) else null

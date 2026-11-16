@@ -1,5 +1,13 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-16 — Fix-pack 1115 touch-ups: Goldsmith's ladder, voices, Rich's beats (pushed; see the ship line below for live state).**
+- **Licenses:** the wall is Prospector's -> Miner's -> **Goldsmith's** (Foreman's print re-titled GOLDSMITH'S LICENSE; Prospector's "TIER 1 OF 3" plate re-lettered clean, no smudge round the 3). Mike Dean's text says Goldsmith's. No Foreman's or Mine Owner's anywhere.
+- **Voices recorded (ElevenLabs):** the auctioneer's six calls (voice X0KF3ROqwE8cLCsWuhs6), Rich's dock line, and the two miners now say "three licenses" / "Three papers". **Still text only:** Mike Dean x2, Logan x3, Dude x2 - their voices are on an ElevenLabs account whose key is not on this machine (checked `~/.config/gm-game/elevenlabs.key` and `~/Documents/GitHub/GM-GAME/.env`: both accounts answer "voice not found").
+- **Rich at the armory:** the "set down what's in his hands, hands free, slow turn to the case" beat now actually plays (it was written but never entered).
+- **Rich at the dock:** he stood 1.2 m under the deck; now he walks on it, and the crate stays its dock size when he lifts and carries it (no 62% shrink).
+- **Horses:** captured in the real yard - brown, white, black and palomino read differently.
+- Pack: Logan's three old lake-lesson takes (replaced by the LP lesson, never played) removed to make room; extras pack ~199.10 MB vs 199.23 MB gate. NOT founder-verified.
+
 **2026-11-15 — Original weapon names and Episode 1 WBTC — VERIFIED LIVE, BUILD `2026-11-15-901784b`.**
 - Held-weapon HUD, Tabs and Rich's catalogue use the original weapon/model names. Rich visibly lists WBTC, reads the existing Episode 1 WBTC balance and opens on a funded token when the selected token is empty. Prices and save IDs are unchanged.
 - New 20-check transaction gate covers actual Episode 1 pickup/save-load through WBTC purchases of every weapon and ammunition, refund/refusal and separate balances. Full CI/render/security/export and actual itch upload passed (run `43715825769`); public BUILD/assets/access-screen input verified, and 20/20 transactions passed against the downloaded published base pack. Native camera UI reviewed at desktop/portrait/landscape sizes; no physical phone test. Evidence and limits: `docs/episode2-quality/original-names-wbtc-20261115/REPORT.md`.

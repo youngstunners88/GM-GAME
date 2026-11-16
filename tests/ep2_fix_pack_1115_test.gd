@@ -13,12 +13,25 @@ func _src(path: String) -> String:
 func _ready() -> void:
 	await get_tree().process_frame
 	# 1. three licenses
-	check("the license wall has three tiers: Prospector's, Miner's, Foreman's", GoldTownChamber.LICENSE_TIERS.size() == 3
-		and str(GoldTownChamber.LICENSE_TIERS[2][0]) == "FOREMAN'S LICENSE")
+	# Captain lock (touch-ups 2026-11-16): Prospector's -> Miner's -> Goldsmith's. Never Foreman's, never Mine Owner's.
+	check("the license wall has three tiers: Prospector's, Miner's, Goldsmith's", GoldTownChamber.LICENSE_TIERS.size() == 3
+		and GoldTownChamber.LICENSE_TIERS.map(func(t: Array) -> String: return str(t[0])) == ["PROSPECTOR'S LICENSE", "MINER'S LICENSE", "GOLDSMITH'S LICENSE"])
+	check("each tier's print is its own texture (the Goldsmith print exists, the Foreman and Mine Owner prints are gone)",
+		str(GoldTownChamber.LICENSE_TIERS[2][2]).ends_with("tex_license_goldsmith.jpg") and FileAccess.file_exists("res://src/episode2/extras/town/licenses/tex_license_goldsmith.jpg")
+		and not FileAccess.file_exists("res://src/episode2/extras/town/licenses/tex_license_foreman.jpg") and not FileAccess.file_exists("res://src/episode2/extras/town/licenses/tex_license_mine-owner.jpg"))
+	var all_copy: String = (_src("res://src/episode2/chamber/gold_town.gd") + _src("res://assets/town-audio.json") + _src("res://src/episode2/audio/town_voice_bank.gd")).to_lower()
+	check("no Foreman's or Mine Owner's anywhere in the town's code, dialogue or voice lines", not "foreman" in all_copy and not "mine owner" in all_copy)
+	check("no line says four licenses or four papers", not "four licenses" in all_copy and not "four papers" in all_copy)
+	check("the miners' certificate talk is recorded with three licenses (no 'four' left in the takes)", Ep2TownVoiceBank.LINES["miners_certs_1"]["ready"]
+		and "three licenses" in str(Ep2TownVoiceBank.LINES["miners_certs_1"]["text"]) and Ep2TownVoiceBank.LINES["miners_certs_2"]["ready"]
+		and str(Ep2TownVoiceBank.LINES["miners_certs_2"]["text"]).begins_with("Three papers"))
 	var first: String = " ".join(GoldTownChamber.MINISTER1_LINES.map(func(l: Array) -> String: return str(l[1]))).to_lower()
 	check("Mike Dean says three licenses, never four, and never names a fourth", "three licenses" in first and not "four" in first and not "mine owner" in first)
 	# 2. Rich's hands-free reveal
 	check("the hand-over has a SETDOWN stage before the reach", Ep2ArmoryIntro.Stage.has("SHARPS_SETDOWN") and Ep2ArmoryIntro.Stage.SHARPS_SETDOWN < Ep2ArmoryIntro.Stage.SHARPS_REACH)
+	var intro_src: String = _src("res://src/episode2/actors/ep2_armory_intro.gd")
+	check("...and the beat really plays it: his walk ends in SETDOWN (not straight into the reach) and the slow turn rate is applied",
+		intro_src.contains("stage = Stage.SHARPS_SETDOWN") and intro_src.contains("rich.folk.turn_rate = TURN_RATE"))
 	check("gold is set down, then the hands are free, then he turns - in that order, slowly", Ep2ArmoryIntro.SETDOWN_RELEASE_AT < Ep2ArmoryIntro.SETDOWN_TURN_AT
 		and Ep2ArmoryIntro.SETDOWN_TURN_AT < Ep2ArmoryIntro.SETDOWN_S and Ep2ArmoryIntro.TURN_RATE < 4.0)
 	var folk := Ep2TownFolk.new()
@@ -62,11 +75,17 @@ func _ready() -> void:
 	check("Rich is built at the dock, comes for gate 3, lifts the crate and carries it off", river_src.contains("func _build_rich") and river_src.contains("_rich_to_dock()")
 		and river_src.contains("\"lift\"") and river_src.contains("\"carry\"") and not river_src.contains("Rich never comes"))
 	check("the beat waits for him to finish collecting before it hands on", river_src.contains("rich_done"))
+	check("the crate keeps the dock prop's size in his arms (no shrink on the lift)", not river_src.contains("RICH_CARRY_SCALE") and not river_src.contains("_crate.scale =")
+		and river_src.contains("_carry_reach = _crate_carry_reach()"))
+	check("Rich walks on the dock's deck, not 1.2 m under it (the crate he carries is above the boards)", river_src.contains("_rich.use_height = true")
+		and river_src.contains("_rich.place(DOCK_DECK + RICH_START)"))
+	check("Rich's dock line is recorded", Ep2TownVoiceBank.LINES.has("river_rich_dock") and Ep2TownVoiceBank.LINES["river_rich_dock"]["ready"])
 	# 7. the auctioneer's voice id
 	var cfg: Dictionary = JSON.parse_string(_src("res://assets/town-audio.json"))
 	check("the auctioneer's voice is X0KF3ROqwE8cLCsWuhs6 in the town voice config", str(cfg["voices"]["renegade"]["voice_id"]) == "X0KF3ROqwE8cLCsWuhs6")
-	var pending: Array = (cfg["lines_pending_rerecord"] as Array).filter(func(r: Dictionary) -> bool: return r["speaker"] == "renegade").map(func(r: Dictionary) -> String: return str(r["text"]))
-	check("every CALL of the auctioneer has a row for his voice", Ep2AuctionHouse.CALLS.all(func(l: String) -> bool: return pending.has(l.trim_prefix("RENEGADE: "))))
+	check("every CALL of the auctioneer is recorded in his voice (touch-ups 2026-11-16)", Ep2AuctionHouse.CALLS.all(func(l: String) -> bool:
+		var id: String = Ep2TownVoiceBank.id_for("renegade", l.trim_prefix("RENEGADE: "))
+		return id != "" and bool(Ep2TownVoiceBank.LINES[id]["ready"]) and ResourceLoader.exists(str(Ep2TownVoiceBank.LINES[id]["path"]))))
 	check("the auction house plays recorded takes for RENEGADE lines", _src("res://src/episode2/chamber/ep2_auction_house.gd").contains("Ep2TownVoiceBank.id_for(\"renegade\""))
 	# 8. GM OG Smoke
 	check("GM OG Smoke is packaged for the road and the road starts, ducks and fades it", ResourceLoader.exists(AuctionRoadChamber.ROAD_SONG)
