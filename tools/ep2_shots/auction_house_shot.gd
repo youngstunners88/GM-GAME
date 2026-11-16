@@ -39,6 +39,13 @@ func _ready() -> void:
 			["08_jack", road.from_house(Vector3(-5.6, 0, 17.6)), road.ROAD_YAW - 0.68, 0.0, 0.4],
 			["09_floor", road.from_house(Vector3(1.0, 0, 13.4)), road.ROAD_YAW + 0.55, -0.05, 3.0],
 			["10_side_windows", road.from_house(Vector3(0.0, 0, 6.0)), road.ROAD_YAW + 1.3, 0.1, 0.3]]
+	if OS.get_cmdline_user_args().has("cast"):      # 2026-11-16 cast brief: the band pocket, the porch checker + desk, the tied horses, Renegade's arms
+		shots = [["14_band_left", road.from_house(Vector3(-2.2, 0, 17.6)), road.ROAD_YAW - 0.95, 0.0, 0.4],
+			["15_porch_checker", road.from_house(Vector3(3.4, 0, -2.6)), road.ROAD_YAW + 0.1, 0.02, 0.4],
+			["16_horses_outside", road.from_house(Vector3(1.5, 0, -15.0)), road.ROAD_YAW - PI * 0.5, 0.0, 0.4],
+			["17_renegade_arms", road.from_house(Vector3(0.45, 0, 22.9)), road.ROAD_YAW, 0.06, 0.4],
+			["18_wall_trim", road.from_house(Vector3(4.0, 0, 21.0)), road.ROAD_YAW + 1.2, 0.05, 0.4],
+			["19_stage_front", road.from_house(Vector3(-3.0, 0, 20.5)), road.ROAD_YAW + 0.5, -0.1, 0.4]]
 	for s in shots:
 		road._player_pos = s[1]
 		var t: float = s[4]

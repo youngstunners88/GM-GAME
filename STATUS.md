@@ -1,5 +1,15 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-16 — Auction: Renegade's arms, horse coats, interior pass — PUSHED, deploying (see ship line). New cast NOT made yet.**
+- **Renegade:** his arms were pinned into his coat; they now hang clear of his sides. Same per-instance arm override that fixed Utah (`gold_town.gd`), installed on the auction's copy only; shared model untouched. Before/after: `docs/episode2-quality/auction-cast-20261116/renegade_arms_before_after.jpg`.
+- **Horses:** the two tied at the auction rail are now white and black. The player's road horse is not touched. Capture in `hall_after.jpg`.
+- **Interior (CAD pass, no layout or collision change inside the hall):** dark dado panelling with cap rail and skirting on both side walls, inside window sills and jambs, floor-board seams, iron knee brackets on the roof trusses, a brass bead + skirting + pilasters on the stage front, seven wall lanterns, and a license-check desk on the porch (the one new solid, off every walk path). The lift is modest: the hall is still dim. Matched captures: `interior_matched_before_after.jpg`.
+- **Checkers and band: NOT in the game yet.** The Meshy key on the build machine is a placeholder (API answers 401), so no character could be generated; 0 credits spent. The claim clerk and doorman keep their current models. The band does not appear at all (no stand-in faces). Everything else is ready: sheets filed in `design/ep2/auction/cast-references-20261116/`, band marks/light/instrument hand-offs coded, fiddle + bow, banjo, upright bass and harmonica built in the kit, and `tools/meshy/auction_cast_batch.py` runs the seven people in one command (~308 credits).
+- **Needed from the founder:** a working Meshy key (`meshy auth login`). Also about 3.5 MB of pack room for seven people: the pack has 67 KB free, so something must be named for removal first.
+- **Pack:** ep2_extras.pck 199,161,984 / 199,229,440 B (67 KB free); main pack unchanged.
+- **Tests:** auction 61 checks (was 51; CI pin updated), fix-pack 1115, horse/Logan, armory, character-motion all PASS.
+- **Not done / known:** the road horse does not yet wear the coat chosen at Dude's (it never did; separate item). NOT founder-verified.
+
 **2026-11-16 — Fix-pack 1115 touch-ups: Goldsmith's ladder, voices, Rich's beats (pushed; see the ship line below for live state).**
 - **Licenses:** the wall is Prospector's -> Miner's -> **Goldsmith's** (Foreman's print re-titled GOLDSMITH'S LICENSE; Prospector's "TIER 1 OF 3" plate re-lettered clean, no smudge round the 3). Mike Dean's text says Goldsmith's. No Foreman's or Mine Owner's anywhere.
 - **Voices recorded (ElevenLabs):** the auctioneer's six calls (voice X0KF3ROqwE8cLCsWuhs6), Rich's dock line, and the two miners now say "three licenses" / "Three papers". **Still text only:** Mike Dean x2, Logan x3, Dude x2 - their voices are on an ElevenLabs account whose key is not on this machine (checked `~/.config/gm-game/elevenlabs.key` and `~/Documents/GitHub/GM-GAME/.env`: both accounts answer "voice not found").

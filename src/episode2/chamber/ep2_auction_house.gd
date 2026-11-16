@@ -34,6 +34,7 @@ const RADIUS := 0.35
 const JACK_MARK := Vector3(-8.4, 0, 21.4)
 const RENEGADE_MARK := Vector3(0.45, STAGE_H, 25.3)       # beside the rostrum, not behind it: the whole host reads from the floor
 const HITCH := Vector3(-6.5, 0, -15.0)              # the hitching rail, beside the road short of the porch
+const TIED_COATS := ["white", "black"]              # the two at the rail; the player's road horse keeps its stable coat
 const CALL_GAP := 5.8
 const CALLS := [
 	"RENEGADE: Welcome, claim holders, to the Gold Rush Auction! Seven days, one pool - every ounce of GOLD you forfeit buys your share of this week's XAUT. Pro-rata, no favourites!",
@@ -63,6 +64,19 @@ const SERVERS := [
 	["townswoman_dressmaker", [Vector3(-4.2, 0.12, 0.9), Vector3(4.2, 0.12, 0.9)], "Greet"],
 ]
 
+## The band (founder 2026-11-16): five, stage-left on the open floor in front of the stage, the woman who sings a step forward.
+## [model, x, z, instrument piece ("" = none), hand bone, prop offset, prop rotation]. Off the centre aisle and clear of the bidders.
+const BAND := [
+	[Ep2Extras.BAND_LEAD, -7.4, 21.4, "", "", Vector3.ZERO, Vector3.ZERO],
+	[Ep2Extras.BAND_FIDDLE, -9.0, 20.8, "Auc_Fiddle", "LeftHand", Vector3(0, 0.04, 0.02), Vector3(-70, 0, 20)],
+	[Ep2Extras.BAND_GUITAR, -8.8, 22.3, "Auc_Banjo", "LeftHand", Vector3(0, 0.04, 0.03), Vector3(0, 0, 110)],
+	[Ep2Extras.BAND_BASS, -6.1, 22.5, "Auc_Bass", "LeftHand", Vector3(0, 0.0, 0.08), Vector3(0, 0, 180)],
+	[Ep2Extras.BAND_HARMONICA, -5.5, 21.0, "Auc_Harmonica", "RightHand", Vector3(0, 0.05, 0.03), Vector3(0, 90, 0)],
+]
+const BAND_FACE := Vector3(2.0, 0, 12.0)            # they play to the room, not to the block
+const SCONCES := [[-1, 4.0], [-1, 12.0], [1, 4.0], [1, 12.0], [1, 20.0], [1, 28.0], [-1, 28.6]]      # [wall side, z]
+const DESK := Vector3(5.4, 0.12, 1.3)               # the license-check desk on the porch, past the hostess's walk
+
 var built: bool = false
 var phase: String = ""
 var renegade: Ep2TownFolk
@@ -75,6 +89,8 @@ var _folk: Array = []                               # every shootable person but
 var _crowd: Array = []                              # bidders + watchers (react to the calls)
 var _servers: Array = []                            # [folk, route, index, wait, pause clip]
 var _doorman: Ep2TownFolk
+var _band: Array = []                               # the five players (empty until all five GLBs are in the pack)
+var _tied: Array = []                               # the horses at the hitching rail
 var _arrival: Ep2TownFolk
 var _t: float = 0.0
 var _line: int = -1
@@ -299,6 +315,11 @@ func _furnish() -> void:
 			add_child(ch)
 	for x in [-7.0, -3.0, 1.0, 5.0]:
 		_kit_piece("Auc_Bunting", Vector3(x + 1.0, 4.05, -0.05))
+	# 2026-11-16 interior pass: wall lanterns between the windows (their own flame, no new lights) and the check desk on the porch
+	for row in SCONCES:
+		_kit_piece("Auc_Sconce", Vector3(float(row[0]) * (W * 0.5 - 0.22), 3.3, float(row[1])), 0.0 if int(row[0]) < 0 else PI)
+	if _kit_piece("Auc_CheckDesk", DESK) != null:
+		_solid(DESK.x, DESK.z, 0.5, 0.33)
 	# the grounds: lamp posts pooling warm light up the last stretch of road, the hitching rail with two horses already tied
 	for i in 6:
 		var side: float = -1.0 if i % 2 == 0 else 1.0
@@ -309,6 +330,7 @@ func _furnish() -> void:
 	_kit_piece("Auc_HitchRail", HITCH, PI * 0.5)
 	_solid(HITCH.x, HITCH.z, 0.12, 2.3)
 	var horse_scene: PackedScene = load(LogansLakeChamber.HORSE_MODEL) if ResourceLoader.exists(LogansLakeChamber.HORSE_MODEL) else null
+	var coat_i: int = 0
 	for dz in [-3.0, 3.0]:
 		if horse_scene == null:
 			break
@@ -319,6 +341,10 @@ func _furnish() -> void:
 		h.position = HITCH + Vector3(1.3, 0, dz)
 		h.rotation.y = -PI * 0.5                    # nose to the rail
 		add_child(h)
+		h.name = "TiedHorse%d" % coat_i
+		Ep2HorseCoat.apply(h, str(TIED_COATS[coat_i % TIED_COATS.size()]))      # founder 2026-11-16: not every horse brown
+		coat_i += 1
+		_tied.append(h)
 		for ap in m.find_children("*", "AnimationPlayer", true, false):
 			if (ap as AnimationPlayer).has_animation("horse_stand"):
 				(ap as AnimationPlayer).play("horse_stand")
@@ -378,6 +404,8 @@ func _people() -> void:
 	renegade = _person(RENEGADE, RENEGADE_MARK, 1.82)
 	renegade.name = "Renegade"
 	lend(renegade, JACK, {"Cheer": "cheer", "Clap": "clap", "Agree": "agree"})   # his own Idle/Talk/Greet/Point; the floor-work gestures lent
+	# Founder 2026-11-16: his arms folded into the torso. The same per-instance arm override that fixed Utah (gold_town.gd): this copy only.
+	preload("res://src/episode2/actors/ep2_armory_pose.gd").install(renegade)
 	jack = _person(JACK, JACK_MARK, 1.84)
 	jack.name = "JackHammer"
 	lend(jack, DUDE, {"Run": "run_001"})
@@ -396,13 +424,15 @@ func _people() -> void:
 		if row[2] == "Talk":
 			_attach(f, "Auc_Tray", Vector3(0.0, 0.08, 0.06), Vector3(0, 0, 90))
 		_servers.append([f, route, 0, randf() * 2.0, row[2]])
-	_doorman = _person("townsman_rancher", Vector3(2.6, 0.12, 1.3))
+	_doorman = _person(doorman_model(), Vector3(2.6, 0.12, 1.3), 1.84)
 	_doorman.face_point(Vector3(0, 0, -20))
 	_arrival = _person("townsman_youth", Vector3(-7.0, 0, -36.0))
 	_arrival.walk_path([Vector3(-1.4, 0, -6.0), Vector3(-0.8, 0.12, 1.0), Vector3(-2.6, 0.12, 10.6)], 1.3)
 	_folk = _crowd + [renegade, _doorman, _arrival]
 	for s in _servers:
 		_folk.append(s[0])
+	_build_band()
+	_folk.append_array(_band)                           # stepped and shootable like everyone else, but not part of the answering crowd
 	_side_door = Node3D.new()
 	_side_door.position = Vector3(-W * 0.5 + 0.1, 0.12, SIDE_DOOR_Z - SIDE_DOOR_W * 0.5)
 	add_child(_side_door)
@@ -418,14 +448,46 @@ func _people() -> void:
 	_gallop = _sound("horse_whinny.ogg", Vector3(-W * 0.5 - 12.0, 1.0, SIDE_DOOR_Z + 6.0), false, 10.0)
 
 
-func _attach(f: Ep2TownFolk, piece: String, pos: Vector3, rot: Vector3) -> void:
+## The hall's doorman: the founder's second checker once his GLB is in the pack, the rancher until then.
+static func doorman_model() -> String:
+	return Ep2Extras.CHECKER_B if ResourceLoader.exists(Ep2Extras.CHECKER_B) else "townsman_rancher"
+
+
+## True when all five players' models are in the pack. A part-band (or stand-in faces) is never shown.
+static func band_ready() -> bool:
+	for row in BAND:
+		if not ResourceLoader.exists(str(row[0])):
+			return false
+	return true
+
+
+func _build_band() -> void:
+	if not band_ready():
+		return
+	for row in BAND:
+		var lead: bool = _band.is_empty()
+		var f: Ep2TownFolk = _person(str(row[0]), Vector3(row[1], 0.12, row[2]), 1.66 if lead else 1.78)
+		f.name = "Band%d" % _band.size()
+		f.looping_clips.assign(["Idle", "Play", "Talk"])
+		f.face_point(BAND_FACE)
+		if str(row[3]) != "":
+			_attach(f, str(row[3]), row[5], row[6], str(row[4]))
+			if str(row[3]) == "Auc_Fiddle":
+				_attach(f, "Auc_FiddleBow", Vector3(0, 0.04, 0.02), Vector3(0, 0, 70))
+		f.hold_clip("Play" if f.anim_player() != null and f.anim_player().has_animation("Play") else "Idle")
+		_band.append(f)
+	# one soft warm pool on them; the block stays the brightest place in the room (stage pool 2.4, key 6.0)
+	_light(Vector3(-7.5, 2.2, 21.0), 0.8, 5.0, Color(1.0, 0.76, 0.5))
+
+
+func _attach(f: Ep2TownFolk, piece: String, pos: Vector3, rot: Vector3, bone: String = "RightHand") -> void:
 	var src: Node3D = _kit.find_child(piece, true, false) as Node3D
 	if src == null:
 		return
 	var p: Node3D = src.duplicate() as Node3D
 	p.name = piece
 	Ep2Pbr.dress(p)
-	f.attach_prop(p, "RightHand", pos, rot)
+	f.attach_prop(p, bone, pos, rot)
 
 
 ## True while the player is inside the hall's walls.

@@ -4,6 +4,7 @@ extends Node
 ## diagonal road to the auction (one claim beat, one vulture/dust spook, zero Hammersmen) that ends at the auction gate.
 const LAKE := preload("res://src/episode2/chamber/logans_lake.tscn")
 const ROAD := preload("res://src/episode2/chamber/auction_road.tscn")
+const ARM_CLEAR := 1.2        # hand clearance / shoulder width: 1.27-1.31 with the arm override, 1.01-1.14 pinned to his sides without it
 var failures: int = 0
 var checks: int = 0
 
@@ -32,6 +33,42 @@ func _lake(st: Ep2ArmoryState, after: bool) -> LogansLakeChamber:
 func _advance(c: Node, seconds: float) -> void:
 	for i in int(seconds * 30.0):
 		c.step(1.0 / 30.0)
+
+
+## Renegade's Idle at 3 frames: [hand clearance / shoulder width, shoulder->hand span / rest arm length] per frame (worse side).
+func _arm_report(folk: Ep2TownFolk) -> Array:
+	var out: Array = []
+	var ap: AnimationPlayer = folk.anim_player() if folk != null else null
+	var rigs: Array = folk.model.find_children("*", "Skeleton3D", true, false) if folk != null and folk.model != null else []
+	if ap == null or rigs.is_empty() or not ap.has_animation("Idle"):
+		return out
+	var sk: Skeleton3D = rigs[0]
+	var pose := preload("res://src/episode2/actors/ep2_ranch_pose.gd")
+	var hips: int = pose._find(sk, "Hips")
+	var length: float = ap.get_animation("Idle").length
+	ap.play("Idle")
+	for frac in [0.1, 0.45, 0.8]:
+		ap.seek(length * frac, true)
+		sk.force_update_all_bone_transforms()
+		var centre: Vector3 = sk.get_bone_global_pose(hips).origin
+		var clear: float = 9.0
+		var span: float = 9.0
+		for side in ["Left", "Right"]:
+			var a: int = pose._find(sk, side + "Arm")
+			var f: int = pose._find(sk, side + "ForeArm")
+			var h: int = pose._find(sk, side + "Hand")
+			var shoulder: Vector3 = sk.get_bone_global_pose(a).origin
+			var hand: Vector3 = sk.get_bone_global_pose(h).origin
+			var arm_len: float = sk.get_bone_rest(f).origin.length() + sk.get_bone_rest(h).origin.length()
+			span = minf(span, shoulder.distance_to(hand) / maxf(arm_len, 0.0001))
+			# how far the hand is from the body's vertical axis, as a fraction of the shoulder's own distance (measured flat)
+			var up: Vector3 = (sk.global_basis.inverse() * Vector3.UP).normalized()
+			var hs: Vector3 = hand - centre
+			var ss: Vector3 = shoulder - centre
+			clear = minf(clear, (hs - up * hs.dot(up)).length() / maxf((ss - up * ss.dot(up)).length(), 0.0001))
+		out.append([snappedf(clear, 0.01), snappedf(span, 0.01)])
+	folk.hold_clip("Idle")
+	return out
 
 
 func _ready() -> void:
@@ -132,6 +169,38 @@ func _ready() -> void:
 	check("Renegade (the Drive GLB) is the host on the block, with lent clips", house.renegade != null and house.renegade.has_clips()
 		and house.renegade.position.y > 1.0 and absf(house.renegade.position.x) < 0.5)
 	check("Jack Hammer can run (Dude's run lent to his rig)", house.jack.anim_player() != null and house.jack.anim_player().has_animation("lent/Run"))
+	# 8b. the auction cast brief (PROMPT_EPISODE2_AUCTION_CAST_TPOSE_CAD_ARMS_2026-11-16)
+	var arms: Array = _arm_report(house.renegade)
+	check("Renegade's Idle: both hands outside the torso at 3 sampled frames", arms.size() == 3 and arms.all(func(r): return r[0] >= ARM_CLEAR), str(arms))
+	check("Renegade's Idle: shoulder-to-hand span not collapsed (>= 55% of the arm) at 3 frames", arms.size() == 3 and arms.all(func(r): return r[1] >= 0.55), str(arms))
+	var coats: Dictionary = {}
+	for h in house._tied:
+		coats[Ep2HorseCoat.coat_of(h)] = true
+	check("the horses tied at the rail wear at least two different coats", house._tied.size() >= 2 and coats.size() >= 2, str(coats.keys()))
+	var house_src: String = _text("res://src/episode2/chamber/ep2_auction_house.gd")
+	check("the auction never recolours the player's road horse", not house._tied.has(road._horse) and house_src.count("Ep2HorseCoat.apply(") == 1
+		and not "Ep2HorseCoat.apply(" in road_src)
+	var clerk: Ep2TownFolk = road.find_child("ClaimClerk", true, false) as Ep2TownFolk
+	check("checker A is the claim clerk when his model is in the pack (the old clerk until then)", clerk != null
+		and ResourceLoader.exists(AuctionRoadChamber.clerk_model_path())
+		and (AuctionRoadChamber.clerk_model_path() == Ep2Extras.CHECKER_A) == ResourceLoader.exists(Ep2Extras.CHECKER_A), AuctionRoadChamber.clerk_model_path())
+	check("checker B is the hall doorman when his model is in the pack (the rancher until then)", house._doorman != null and house._doorman.has_clips()
+		and (Ep2AuctionHouse.doorman_model() == Ep2Extras.CHECKER_B) == ResourceLoader.exists(Ep2Extras.CHECKER_B), Ep2AuctionHouse.doorman_model())
+	check("the band is five, or not there at all (never a part-band or stand-in faces)",
+		house._band.size() == (5 if Ep2AuctionHouse.band_ready() else 0), "%d players, ready=%s" % [house._band.size(), Ep2AuctionHouse.band_ready()])
+	var band_ok: bool = str(Ep2AuctionHouse.BAND[0][0]) == Ep2Extras.BAND_LEAD and Ep2AuctionHouse.BAND.size() == 5
+	for row in Ep2AuctionHouse.BAND:
+		band_ok = band_ok and float(row[1]) < -3.0 and float(row[2]) < house.STAGE_Z0 and float(row[2]) > house.RAIL_Z
+	check("the band's marks: the woman who sings leads, all five stage-left of the aisle, on the floor in front of the stage", band_ok)
+	var aisle_ok: bool = true
+	for zi in range(2, 24):
+		var a: Vector3 = house.collide(Vector3(0, 0, float(zi)))
+		aisle_ok = aisle_ok and absf(a.x) < 0.001 and absf(a.z - float(zi)) < 0.001
+	check("the centre aisle is clear from the doors to the stage (z 2..23)", aisle_ok)
+	var kit_ok: bool = true
+	for piece in ["Auc_Sconce", "Auc_CheckDesk", "Auc_Fiddle", "Auc_FiddleBow", "Auc_Banjo", "Auc_Bass", "Auc_Harmonica"]:
+		kit_ok = kit_ok and house._kit.find_child(piece, true, false) != null
+	check("the CAD kit carries the interior pass and the band's period instruments", kit_ok)
 	road._player_pos = road.from_house(Vector3(0.0, 0, 8.0))
 	_advance(road, 0.2)
 	check("inside the hall Renegade starts calling (HALL)", road.get_beat_name() == "HALL" and house.phase == "calls", road.get_beat_name())

@@ -252,17 +252,23 @@ func _build_wagon() -> void:
 
 
 func _build_people() -> void:
-	if _clerk == null and Ep2Extras.has(CLERK_MODEL):
-		_clerk = _person("ClaimClerk", CLERK_MODEL, at(CLAIM_S - 2.6, -2.2))
+	var clerk_model: String = clerk_model_path()
+	if _clerk == null and Ep2Extras.has(clerk_model):
+		_clerk = _person("ClaimClerk", clerk_model, at(CLAIM_S - 2.6, -2.2))
 	if _claimant == null and Ep2Extras.has(CLAIMANT_MODEL):
 		_claimant = _person("Claimant", CLAIMANT_MODEL, at(CLAIM_S + 0.5, 3.4))
 		_claimant.hold_clip("Rest")
 
 
+## The claim clerk: the founder's new checker (2026-11-16) once his GLB is in the pack, the old clerk until then.
+static func clerk_model_path() -> String:
+	return Ep2Extras.CHECKER_A if ResourceLoader.exists(Ep2Extras.CHECKER_A) else CLERK_MODEL
+
+
 func _person(label: String, path: String, p: Vector3) -> Ep2TownFolk:
 	var folk := Ep2TownFolk.new()
 	folk.name = label
-	folk.looping_clips.assign(["Idle", "Talk", "Rest", "Alert"])
+	folk.looping_clips.assign(["Idle", "Talk", "Greet", "Rest", "Alert"])
 	_visuals.add_child(folk)
 	folk.setup(path, PERSON_HEIGHT, Color(0.35, 0.3, 0.25))
 	folk.position = p

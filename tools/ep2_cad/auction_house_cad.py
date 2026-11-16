@@ -158,6 +158,32 @@ def building():
             add("building", "Glow", box((0.04, 1.8, 1.4), (sx * (hw - 0.05), 3.6, z0 + 6.0 + 8.0 * k)), 2)
             add("building", "Trim", box((0.3, 0.14, 1.7), (sx * hw, 4.57, z0 + 6.0 + 8.0 * k)), 2)
         add("building", "Trim", box((0.3, 0.3, D + 0.2), (sx * hw, WALL_H, (z0 + z1) / 2)))
+        # 2026-11-16 interior pass (no layout change: everything sits inside the wall line, under 6 cm proud).
+        # Dado: dark panelling to 1.1 m with a cap rail and a skirting, broken for Jack's side door on the left.
+        xi = sx * (hw - T - 0.02)
+        runs = [(z0 + 0.1, z1 - T - 0.1)]
+        if sx < 0:
+            runs = [(z0 + 0.1, SIDE_DOOR_Z - SIDE_DOOR_W / 2 - 0.2), (SIDE_DOOR_Z + SIDE_DOOR_W / 2 + 0.2, z1 - T - 0.1)]
+        for za, zb in runs:
+            add("building", "DarkWood", box((0.04, 1.0, zb - za), (xi, 0.12 + 0.5, (za + zb) / 2)), 2)
+            add("building", "Trim", box((0.09, 0.07, zb - za), (sx * (hw - T - 0.045), 1.155, (za + zb) / 2)), 2)
+            add("building", "Trim", box((0.07, 0.14, zb - za), (sx * (hw - T - 0.035), 0.19, (za + zb) / 2)), 2)
+            n = int((zb - za) / 1.2)
+            for i in range(1, n):
+                add("building", "Trim", box((0.055, 0.82, 0.07), (sx * (hw - T - 0.0275), 0.68, za + (zb - za) * i / n)), 2)
+        # Window casings on the inside: a deep sill and two jambs under the existing head.
+        for k in range(3):
+            zc = z0 + 6.0 + 8.0 * k
+            add("building", "Trim", box((0.16, 0.08, 1.8), (sx * (hw - T - 0.06), 2.66, zc)), 2)
+            for dz in (-0.76, 0.76):
+                add("building", "Trim", box((0.06, 1.9, 0.12), (sx * (hw - T - 0.03), 3.6, zc + dz)), 2)
+    # Floor-board seams: shallow dark joints across the hall every 1.1 m (4 mm proud of the slab, well under a footstep).
+    for i in range(1, int(D / 1.1)):
+        add("building", "DarkWood", box((W - 2 * T - 0.2, 0.004, 0.018), (0, 0.122, z0 + i * 1.1)), 2)
+    # Iron knee brackets where each tie beam meets the wall plate.
+    for z in [z0 + 3.0 + 6.0 * k for k in range(5)]:
+        for sx in (-1, 1):
+            add("building", "Iron", prism_xy([(sx * (hw - T), WALL_H - 0.36), (sx * (hw - T), WALL_H - 1.1), (sx * (hw - T - 0.74), WALL_H - 0.36)], 0.03, z - 0.015), 2)
     add("building", "DarkWood", box((0.3, SIDE_DOOR_H + 0.25, 0.2), (-hw, (SIDE_DOOR_H + 0.25) / 2, SIDE_DOOR_Z - SIDE_DOOR_W / 2 - 0.1)))
     add("building", "DarkWood", box((0.3, SIDE_DOOR_H + 0.25, 0.2), (-hw, (SIDE_DOOR_H + 0.25) / 2, SIDE_DOOR_Z + SIDE_DOOR_W / 2 + 0.1)))
     add("building", "DarkWood", box((0.3, 0.25, SIDE_DOOR_W + 0.4), (-hw, SIDE_DOOR_H + 0.25, SIDE_DOOR_Z)))
@@ -210,6 +236,71 @@ def stage():
     add("stage", "DarkWood", box((STAGE_X * 2 + 1.2, 0.9, 0.3), (0, 6.5, STAGE_Z0 - 0.2)))
     add("stage", "Brass", box((STAGE_X * 2 + 1.3, 0.06, 0.34), (0, 6.03, STAGE_Z0 - 0.2)), 2)
     add("stage", "Brass", box((STAGE_X * 2 + 1.3, 0.06, 0.34), (0, 6.97, STAGE_Z0 - 0.2)), 2)
+
+
+def stage_trim():
+    """2026-11-16: the stage front was a bare dark slab. A brass bead under the lip nose, a skirting, and pilasters framing panels."""
+    zf = STAGE_Z0 + 0.05                                                # the stage body's front face
+    add("stage", "Brass", cyl(0.018, STAGE_X * 2 + 0.1, (0, STAGE_H - 0.145, STAGE_Z0 - 0.13), Vector(1, 0, 0)), 2)
+    add("stage", "Trim", box((STAGE_X * 2 - 0.1, 0.14, 0.05), (0, 0.19, zf - 0.025)), 2)
+    for i in range(11):
+        x = -STAGE_X + 0.15 + i * (STAGE_X * 2 - 0.3) / 10.0
+        add("stage", "Trim", box((0.12, STAGE_H - 0.38, 0.045), (x, 0.26 + (STAGE_H - 0.38) / 2, zf - 0.0225)), 2)
+
+
+def sconce():
+    """A wall lantern: iron back plate and arm, brass font, glass chimney, flame. Origin on the wall, facing +x."""
+    add("sconce", "Iron", box((0.02, 0.34, 0.12), (0.01, 0.0, 0)), 2)
+    add("sconce", "Iron", box((0.2, 0.025, 0.025), (0.11, -0.1, 0)), 2)
+    add("sconce", "Brass", turned([(0.0, 0.03), (0.02, 0.07), (0.07, 0.075), (0.1, 0.035), (0.12, 0.04)], v(0.2, -0.1, 0)), 2)
+    add("sconce", "Flame", turned([(0.0, 0.0), (0.03, 0.02), (0.07, 0.014), (0.11, 0.0)], v(0.2, 0.03, 0)), 2)
+    add("sconce", "LampGlass", cyl(0.04, 0.2, (0.2, 0.12, 0)), 2)
+    add("sconce", "Brass", Part.makeCylinder(0.085, 0.01, v(0.03, 0.02, 0), v(1, 0, 0)), 2)      # the reflector dish behind the flame
+
+
+def check_desk():
+    """The license-check desk on the porch: a standing clerk's desk with a sloped top, a brass foot rail, a ledger and a stamp."""
+    for x in (-0.4, 0.4):
+        for z in (-0.22, 0.22):
+            add("check_desk", "DarkWood", turned([(0.0, 0.035), (0.1, 0.03), (0.5, 0.022), (0.9, 0.03), (1.0, 0.035)], v(x, 0, z)), 2)
+    add("check_desk", "DarkWood", box((0.95, 0.16, 0.58), (0, 1.02, 0)))
+    add("check_desk", "Trim", rot(box((1.0, 0.03, 0.66), (0, 1.14, 0)), -9.0, Vector(1, 0, 0), (0, 1.12, 0)))
+    add("check_desk", "Brass", cyl(0.014, 0.86, (0, 0.14, -0.22), Vector(1, 0, 0)), 2)
+    add("check_desk", "Brass", Part.makeCylinder(0.012, 0.012, v(0, 1.02, -0.3), v(0, 0, -1)), 2)                    # drawer pull
+    add("check_desk", "Paper", rot(box((0.34, 0.025, 0.26), (-0.15, 1.165, 0.0)), -9.0, Vector(1, 0, 0), (0, 1.12, 0)), 2)
+    add("check_desk", "DarkWood", cyl(0.02, 0.07, (0.3, 1.19, 0.12)), 2)                                               # the seal stamp
+    add("check_desk", "Iron", cyl(0.035, 0.03, (0.3, 1.155, 0.12)), 2)
+
+
+def instruments():
+    """The band's period instruments (founder 2026-11-16: fiddle, banjo, upright bass, harmonica; nothing modern). Each is authored
+    neck along +y with the grip at the origin, so a hand attach needs only a rotation."""
+    def body(piece, r_low, r_up, depth, y_low, y_up):
+        b = Part.makeCylinder(r_low, depth, v(0, y_low, -depth / 2), v(0, 0, 1)).fuse(Part.makeCylinder(r_up, depth, v(0, y_up, -depth / 2), v(0, 0, 1)))
+        add(piece, "Trim", b)
+    # fiddle: grip at the neck
+    body("fiddle", 0.1, 0.085, 0.045, -0.28, -0.14)
+    add("fiddle", "DarkWood", box((0.03, 0.3, 0.02), (0, 0.05, 0.02)), 2)
+    add("fiddle", "DarkWood", cyl(0.018, 0.05, (0, 0.2, 0.01), Vector(1, 0, 0)), 2)
+    add("fiddle", "DarkWood", box((0.035, 0.012, 0.04), (0, -0.2, 0.035)), 2)                    # bridge
+    # the bow: its own piece for the other hand
+    add("fiddle_bow", "DarkWood", cyl(0.006, 0.62, (0, 0.25, 0)), 2)
+    add("fiddle_bow", "Paper", box((0.008, 0.56, 0.003), (0, 0.25, 0.018)), 2)
+    add("fiddle_bow", "DarkWood", box((0.012, 0.04, 0.03), (0, -0.03, 0.01)), 2)
+    # banjo: skin head in a brass hoop
+    add("banjo", "Brass", Part.makeCylinder(0.14, 0.06, v(0, -0.3, -0.03), v(0, 0, 1)))
+    add("banjo", "Paper", Part.makeCylinder(0.128, 0.004, v(0, -0.3, 0.03), v(0, 0, 1)), 2)
+    add("banjo", "DarkWood", box((0.04, 0.52, 0.022), (0, 0.1, 0.02)), 2)
+    add("banjo", "DarkWood", box((0.06, 0.09, 0.02), (0, 0.4, 0.015)), 2)
+    # upright bass: stands on its endpin, origin at the neck heel (hand height)
+    body("bass", 0.3, 0.24, 0.2, -0.85, -0.45)
+    add("bass", "DarkWood", box((0.05, 0.75, 0.035), (0, 0.15, 0.09)), 2)
+    add("bass", "DarkWood", turned([(0.0, 0.03), (0.06, 0.045), (0.1, 0.02)], v(0, 0.52, 0.07)), 2)      # scroll
+    add("bass", "Iron", cyl(0.008, 0.2, (0, -1.25, 0)), 2)
+    add("bass", "DarkWood", box((0.09, 0.02, 0.07), (0, -0.7, 0.13)), 2)
+    # harmonica: tin covers on a brass comb
+    add("harmonica", "Tin", fillet(box((0.11, 0.028, 0.03), (0, 0, 0)), 0.004), 2)
+    add("harmonica", "Brass", box((0.1, 0.012, 0.034), (0, 0, 0)), 2)
 
 
 def lectern():
@@ -304,7 +395,8 @@ def bunting():
         add("bunting", ["RedCloth", "Cloth", "GoldCloth"][i % 3], prism_xy([(x - 0.18, 0), (x + 0.18, 0), (x, -0.42)], 0.01, -0.005), 2)
 
 
-BUILDERS = [("building", building), ("stage", stage), ("lectern", lectern), ("rail", rail), ("bleacher", bleacher), ("claim_board", claim_board),
+BUILDERS = [("building", building), ("stage", stage), ("stage_trim", stage_trim), ("sconce", sconce), ("check_desk", check_desk),
+            ("instruments", instruments), ("lectern", lectern), ("rail", rail), ("bleacher", bleacher), ("claim_board", claim_board),
             ("strongbox", strongbox), ("lamp_post", lamp_post), ("hitch_rail", hitch_rail), ("paddle", paddle), ("tray", tray), ("bunting", bunting)]
 failed = {}
 for name, fn in BUILDERS:
