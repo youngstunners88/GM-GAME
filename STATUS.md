@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-16 — Fix-pack 1115 touch-ups: Goldsmith's ladder, voices, Rich's beats (pushed; see the ship line below for live state).**
+**2026-11-16 — Fix-pack 1115 touch-ups: Goldsmith's ladder, voices, Rich's beats — LIVE via master 71f10a87 (CI run 43824639798, butler pushed, BUILD `2026-11-16-71f10a8`). NOT founder-verified.**
 - **Licenses:** the wall is Prospector's -> Miner's -> **Goldsmith's** (Foreman's print re-titled GOLDSMITH'S LICENSE; Prospector's "TIER 1 OF 3" plate re-lettered clean, no smudge round the 3). Mike Dean's text says Goldsmith's. No Foreman's or Mine Owner's anywhere.
 - **Voices recorded (ElevenLabs):** the auctioneer's six calls (voice X0KF3ROqwE8cLCsWuhs6), Rich's dock line, and the two miners now say "three licenses" / "Three papers". **Still text only:** Mike Dean x2, Logan x3, Dude x2 - their voices are on an ElevenLabs account whose key is not on this machine (checked `~/.config/gm-game/elevenlabs.key` and `~/Documents/GitHub/GM-GAME/.env`: both accounts answer "voice not found").
 - **Rich at the armory:** the "set down what's in his hands, hands free, slow turn to the case" beat now actually plays (it was written but never entered).
