@@ -217,6 +217,9 @@ func _ready() -> void:
 		str(house.grand.jets_fired) if house.grand != null else "no grand layer")
 	# the instrumentalists really play (founder 2026-11-17): both hands reach the instrument the body holds, every frame
 	# the solved pose is only there right after the skeleton's modifiers ran: measure on its skeleton_updated signal
+	# (the test fast-forwards the room between frames; give the players a few real frames to settle into the beat first)
+	for i in 3:
+		await get_tree().process_frame
 	var probe: Dictionary = {"worst": 0.0, "seen": 0}
 	var players: int = 0
 	var hooks: Array = []
