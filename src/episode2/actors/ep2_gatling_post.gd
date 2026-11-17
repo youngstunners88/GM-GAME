@@ -18,6 +18,7 @@ signal burst_started
 signal round_fired
 ## Every round's trace (origin, direction, what it met) - the town's law reads the rounds that leave the yard.
 signal round_traced(origin: Vector3, direction: Vector3, hit: Dictionary)
+signal billboard_hit(index: int)
 signal plate_rang(index: int)
 signal emptied
 
@@ -60,6 +61,7 @@ var aim_pitch: float = 0.0
 var shots_fired: int = 0
 var plates_rung: int = 0
 var bale_hits: int = 0
+var billboard_hits: int = 0
 var spin: float = 0.0                     # rad/s of the barrel cluster
 var model: Node3D = null
 var targets: Array = []                   # [{kind, node, swing, ang, vel, hits}] in the order they were added
@@ -183,6 +185,17 @@ func add_bale(world_pos: Vector3, face_toward: Vector3) -> int:
 	n.position = world_pos - position
 	_face_z(n, face_toward)
 	targets.append({"kind": "bale", "node": n, "swing": null, "ang": 0.0, "vel": 0.0, "hits": 0})
+	return targets.size() - 1
+
+
+## The official bill, on a timber frame beyond the plates. Its art builder streams with the texture.
+func add_billboard(world_pos: Vector3, face_toward: Vector3, size: Vector2, tex: Texture2D) -> int:
+	var path: String = Ep2TownPosters.DIR + "wanted_billboard.gd"
+	if tex == null or not Ep2Extras.has(path):
+		return -1
+	var builder: RefCounted = load(path).new()
+	var target: Dictionary = builder.build(self, world_pos, face_toward, size, tex)
+	targets.append(target)
 	return targets.size() - 1
 
 
@@ -385,7 +398,9 @@ func _trace(o: Vector3, d: Vector3) -> Dictionary:
 		var t: Dictionary = targets[i]
 		var n: Node3D = t["node"]
 		var centre: Vector3
-		if str(t["kind"]) == "plate":
+		if str(t["kind"]) == "billboard":
+			centre = n.global_position
+		elif str(t["kind"]) == "plate":
 			var sw: Node3D = t["swing"]
 			centre = sw.global_transform * PLATE_CENTRE if sw != null else n.global_position + Vector3(0, 1.2, 0)
 		else:
@@ -398,7 +413,12 @@ func _trace(o: Vector3, d: Vector3) -> Dictionary:
 		if tt <= 0.0 or tt >= best:
 			continue
 		var p: Vector3 = o + d * tt
-		if p.distance_to(centre) <= PLATE_RADIUS:
+		var accepts: bool = p.distance_to(centre) <= PLATE_RADIUS
+		if str(t["kind"]) == "billboard":
+			var local: Vector3 = n.to_local(p)
+			var size: Vector2 = t["size"]
+			accepts = absf(local.x) <= size.x * 0.5 and absf(local.y) <= size.y * 0.5
+		if accepts:
 			best = tt
 			out = {"point": p, "index": i}
 	if d.y < -1e-4:
@@ -416,6 +436,18 @@ func _hit_target(i: int, point: Vector3) -> void:
 		if int(t["hits"]) == 1:
 			plates_rung += 1
 		plate_rang.emit(i)
+	elif str(t["kind"]) == "billboard":
+		billboard_hits += 1
+		var holes: Array = t["holes"]
+		var hole: MeshInstance3D = holes[(int(t["hits"]) - 1) % holes.size()]
+		var n: Node3D = t["node"]
+		hole.position = n.to_local(point) + Vector3(0, 0, 0.006)
+		hole.rotation.z = _rng.randf_range(-PI, PI)
+		hole.visible = true
+		t["damage_state"] = "shredded" if int(t["hits"]) >= 90 else ("holed" if int(t["hits"]) >= 25 else "clean")
+		(t["material"] as ShaderMaterial).set_shader_parameter("damage", clampf((float(t["hits"]) - 89.0) / 180.0, 0.0, 0.45))
+		_puff(point)
+		billboard_hit.emit(i)
 	else:
 		bale_hits += 1
 		_puff(point)

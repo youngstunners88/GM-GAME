@@ -954,16 +954,18 @@ func _lean_tool_old(base: Vector3, length: float, parent: Node3D, shovel: bool) 
 
 func _wanted_poster(pos: Vector3, sx: float, parent: Node3D) -> void:
 	_box(Vector3(0.06, 1.15, 0.9), pos, _dark_wood, Vector3.ZERO, parent)
-	# The real hand-bills (founder 2026-10-24: the posters looked like blank boards): the same engraved posters the town hangs
+	# The real hand-bills (founder 2026-10-24: the posters looked like blank boards): the same canonical posters the town hangs
 	# (Ep2TownPosters, streamed). Jack Hammer on the left wall, the masked stage robbers on the right. Bars below are the fallback.
-	var bill: String = Ep2TownPosters.DIR + ("poster_jack_hammer.jpg" if sx < 0.0 else "poster_masked_riders.jpg")
+	var bill: String = Ep2TownPosters.DIR + ("poster_jack_hammer.png" if sx < 0.0 else "poster_masked_riders.jpg")
 	if Ep2Extras.has(bill):
 		var m := StandardMaterial3D.new()
 		m.albedo_texture = load(bill)
+		if sx < 0.0:
+			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 		m.roughness = 0.95
 		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 		var q := QuadMesh.new()
-		q.size = Vector2(0.74, 0.74 * Ep2TownPosters.ASPECT_PAINTED)
+		q.size = Vector2(0.74, 0.74 * float(m.albedo_texture.get_height()) / float(m.albedo_texture.get_width()))
 		_add(q, m, pos + Vector3(-0.04 * sx, 0.0, 0.0), Vector3(0.0, -sx * 90.0, sx * 1.5), parent)
 		return
 	var paper := _plain(Color(0.82, 0.73, 0.55), 0.95, 0.0)

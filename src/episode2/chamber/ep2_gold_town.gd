@@ -300,6 +300,8 @@ static func ground_y(world: Vector3) -> float:
 ## into the yard). The Armory faces -z (yaw PI), so local +x is world -x: at rest the bore points west over open ground, away from the street. The gun
 ## is NOT FOR SALE; the plates and bales are the firing yard it is demonstrated on.
 const GATLING_POST := Vector3(9.6, 0.0, 1.6)         # beyond the porch's right end and clear of the grazing horse (-27, 1462.5): founder, "dont replace the horses"
+const GATLING_BILLBOARD := Vector3(42.0, 3.5, 1.6)  # 4 m square; bottom 1.5 m, behind all existing targets
+const GATLING_BILLBOARD_SIZE := Vector2(4.0, 4.0)
 const GATLING_STAND_BACK := 1.0
 const GATLING_PLATES: Array = [Vector3(17.0, 0.0, 0.4), Vector3(20.5, 0.0, 3.6), Vector3(24.0, 0.0, -0.9), Vector3(27.5, 0.0, 2.4), Vector3(31.0, 0.0, 0.2)]
 const GATLING_BALES: Array = [Vector3(36.0, 0.0, 1.6), Vector3(19.0, 0.0, 5.6)]
