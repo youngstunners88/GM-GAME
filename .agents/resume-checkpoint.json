@@ -1,23 +1,20 @@
 {
-  "objective": "Completed original weapon names and Episode 1 WBTC at Rich counter; verified public release",
-  "branch": "codex/original-weapon-names-wbtc",
-  "source_sha": "901784b7e4d0c3769edb6e56197f533574f4f9cf",
-  "build_id": "2026-11-15-901784b",
-  "run_id": 43715825769,
-  "outcome": "success; actual itch upload confirmed; public BUILD matched",
+  "objective": "Official Jackhammer Wanted + RH rebalance + Gatling billboard shipped; founder acceptance pending",
+  "branch": "codex/official-jackhammer-1117",
+  "source_sha": "b1d62a9a291c2001809dac87c182b6b378c640b1",
+  "build_id": "2026-11-17-b1d62a9",
+  "run_id": 44020326089,
+  "outcome": "CI/upload/public BUILD verified; exact public packs replayed and rendered",
   "verified": [
-    "Original model names in held HUD, Tabs, counter and pickup labels",
-    "20 real Episode 1 pickup/save-load/WBTC weapon-ammunition transactions on native source and exact published base pack",
-    "Native gameplay-camera UI at desktop, portrait and landscape sizes",
-    "Full CI gameplay/render/export/security success; nonthreaded base pack 199192576 bytes",
-    "Public BUILD, extras and access-screen keyboard input; access controls and stable save IDs preserved"
+    "official source hash prefix 2f8056dc2537b898; public texture byte-identical to verified import",
+    "13 Jack Hammer bills vs 3 RH, 3.78x area excluding billboard",
+    "40 poster checks including actual baked Paper-corner coverage",
+    "player Gatling hits, holes, shred and all five original plates",
+    "hideout warm 8/8; full CI passes",
+    "public reload, both packs HTTP200, extras ready, no browser script errors"
   ],
-  "report": "docs/episode2-quality/original-names-wbtc-20261115/REPORT.md",
-  "receipt": "docs/episode2-quality/original-names-wbtc-20261115/release-receipt.json",
-  "limitations": [
-    "No physical phone test; portrait and landscape UI were inspected through native viewports.",
-    "Public browser smoke covers BUILD/assets/access-screen input. Weapon/currency transactions passed natively against the exact downloaded published base pack.",
-    "Cloud Chromium reports an audio worklet network/trust error; audio was not verified in that browser. No audio code changed."
-  ],
-  "next": "No open blockers. Final response can point to verified live build 2026-11-15-901784b."
+  "report": "docs/episode2-quality/jackhammer-20261117/REPORT.md",
+  "receipt": "docs/episode2-quality/jackhammer-20261117/release-receipt.json",
+  "next": "Founder hard-refresh walk of town and Armory Gatling only; do not label FIXED before it.",
+  "observed_remote_sha": "07fd9d45cf2e0df9102794565b039b575f4c77a8"
 }

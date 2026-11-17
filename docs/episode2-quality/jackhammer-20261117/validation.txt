@@ -15,4 +15,11 @@ Security Sentinel: no high/critical blockers.
 Native 1280x720 Compatibility captures reviewed: board, saloon, Armory front, mounted range clean/burst/shredded.
 Fresh-import release core pack: 199224848 bytes; extras pack: 198936608 bytes (each below 199229440).
 Replayed census against the exact exported core + extras, with only test fixtures overlaid: 40 checks, 0 failed; runtime/art came from the exported packs.
-Deployment verification pending; no founder acceptance claimed.
+CI run 44020326089: complete gameplay/render/export/security PASS; actual butler upload confirmed.
+Public browser loaded and reloaded BUILD 2026-11-17-b1d62a9; both packs HTTP 200, extras ready, no browser script errors.
+Published core: 199224768 bytes; published extras: 198940512 bytes (both under the existing 199229440-byte limit).
+Published-pack replay: poster 40/40, Gatling player-path ALL PASS, hideout warm 8/8.
+Canonical poster texture extracted from the public extras is byte-identical to the verified official import.
+All ten captures in this directory now come from the exact downloaded public packs, rendered natively in Compatibility and reviewed.
+Full local headless gate runner PASS; its three documented pause tap-target machine differences were tolerated by the existing runner. CI passes all checks without that local exception.
+Founder hard-refresh walk remains pending. FIXED is not claimed.

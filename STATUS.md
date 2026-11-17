@@ -1,11 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 
-**2026-11-17 — Official Jackhammer Wanted + environment-wide RH rebalance + shootable Gatling billboard — implemented; release verification pending; NOT founder-accepted.**
-- Verified founder Drive JPEG SHA-256 `2f8056dc2537b898 (full checksum in release-receipt.json)`; keyed torn white margins to alpha, canonical 1024 PNG with mipmaps. Removed the old JPEG/import; every town, cabin, hideout and auction bill uses the official face. No new likeness or wording.
+**2026-11-17 — Official Jackhammer Wanted + environment-wide RH rebalance + shootable Gatling billboard — SHIPPED to itch, public BUILD `2026-11-17-b1d62a9` verified; awaiting founder hard-refresh walk.**
+- Verified founder Drive JPEG SHA-256 prefix `2f8056dc2537b898` (full checksum in the release receipt); keyed torn white margins to alpha, canonical 1024 PNG with mipmaps. Removed the old JPEG/import; every town, cabin, hideout and auction bill uses the official face. No new likeness or wording.
 - Jack Hammer owns the saloon's 0.62 m bill, board's 0.56 m slot and all three Armory front papers. RH remains on Bldg_A, the smaller board slot and Logan's cabin. Count/area gate excludes the range billboard so it cannot conceal a street imbalance.
 - Beyond the Gatling plates: a 4 m official billboard with rectangular hits, pooled bullet holes, dust and progressive shred. Existing plates, bales, gun and finite ammunition preserved; supports are behind the firing lane.
-- Proof and captures: `docs/episode2-quality/jackhammer-20261117/REPORT.md`. The supplied poster has no eye patch and states a BTC reward; model and narrative were left untouched. **FIXED only after the founder hard-refresh walk of town + Armory Gatling.**
+- CI gameplay/render/export/security and actual butler upload passed (run 44020326089). Public BUILD/reload/extras verified; downloaded-pack replay: poster 40/40, mounted Gatling hits/holes/shred + old plates PASS, hideout warm 8/8. Thirteen Jack Hammer bills vs three RH, 3.78× paper area excluding the range billboard.
+- Proof and public-pack captures: `docs/episode2-quality/jackhammer-20261117/REPORT.md`. The supplied poster has no eye patch and states a BTC reward; model and narrative were left untouched. **FIXED only after the founder hard-refresh walk of town + Armory Gatling.**
 
 **2026-11-16 — Fix-pack 1115 touch-ups: Goldsmith's ladder, voices, Rich's beats (pushed; see the ship line below for live state).**
 - **Licenses:** the wall is Prospector's -> Miner's -> **Goldsmith's** (Foreman's print re-titled GOLDSMITH'S LICENSE; Prospector's "TIER 1 OF 3" plate re-lettered clean, no smudge round the 3). Mike Dean's text says Goldsmith's. No Foreman's or Mine Owner's anywhere.
