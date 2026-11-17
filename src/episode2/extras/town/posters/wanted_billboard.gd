@@ -7,11 +7,12 @@ func build(parent: Node3D, world_pos: Vector3, face_toward: Vector3, size: Vecto
 	n.position = world_pos - parent.position
 	var toward: Vector3 = face_toward - world_pos
 	n.rotation.y = atan2(toward.x, toward.z)
+	var carpentry: RefCounted = load(Ep2TownPosters.DIR + "town_posters_builder.gd").new()
 	var wood := Ep2GoldTown._tex_mat("", Color(0.46, 0.31, 0.17), 0.95, Ep2GoldTown.TIMBER_TEX)
 	for x in [-size.x * 0.5, size.x * 0.5]:
-		Ep2TownPosters._box(n, Vector3(0.16, world_pos.y + size.y * 0.5 + 0.16, 0.18), Vector3(x, -(world_pos.y - size.y * 0.5) * 0.5, -0.08), wood)
+		carpentry._box(n, Vector3(0.16, world_pos.y + size.y * 0.5 + 0.16, 0.18), Vector3(x, -(world_pos.y - size.y * 0.5) * 0.5, -0.08), wood)
 	for y in [-size.y * 0.5, 0.0, size.y * 0.5]:
-		Ep2TownPosters._box(n, Vector3(size.x + 0.24, 0.14, 0.10), Vector3(0, y, -0.06), wood)
+		carpentry._box(n, Vector3(size.x + 0.24, 0.14, 0.10), Vector3(0, y, -0.06), wood)
 	var canvas := MeshInstance3D.new()
 	canvas.name = "OfficialWantedCanvas"
 	var q := QuadMesh.new()

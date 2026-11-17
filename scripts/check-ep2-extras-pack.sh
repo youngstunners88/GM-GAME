@@ -49,6 +49,8 @@ printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/rich_armory2.glb' || { echo 
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/utah_armory2.glb' || { echo "✗ Utah v2 (extras/folk/utah_armory2.glb) is not in the repo's extras"; fail=1; }
 
 # Official Jack Hammer must ship; a stale JPEG remap would win the old loader's extension search.
+rel="src/episode2/extras/town/posters/town_posters_builder.gd"
+grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
 rel="src/episode2/extras/town/posters/wanted_billboard.gd"
 grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
 rel="src/episode2/extras/town/posters/poster_jack_hammer.png.import"

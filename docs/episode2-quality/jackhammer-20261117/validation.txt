@@ -11,4 +11,6 @@ Local release web export: 0 SCRIPT ERROR/Parse Error.
 Extras-pack presence gate: PASS; canonical PNG present, old JPEG absent.
 Security Sentinel: no high/critical blockers.
 Native 1280x720 Compatibility captures reviewed: board, saloon, Armory front, mounted range clean/burst/shredded.
-Fresh pack-size and deployment verification pending; no founder acceptance claimed.
+Fresh-import release core pack: 199224864 bytes; extras pack: 198936608 bytes (each below 199229440).
+Replayed census against the exact exported core + extras, with only test fixtures overlaid: 39 checks, 0 failed; runtime/art came from the exported packs.
+Deployment verification pending; no founder acceptance claimed.
