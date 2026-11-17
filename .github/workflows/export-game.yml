@@ -243,6 +243,10 @@ jobs:
           #   exclude_filter docs/,tests/,prompts/,scripts/,portals/ -> dev-only dirs that
           #        all_resources would otherwise sweep into the .pck (docs/
           #        captures alone was ~15MB of dead weight).
+          #   2026-11-17: vercel.json, skills-lock.json, marketing/, web/manifest.json (not game files) and six scripts that
+          #   nothing in src/ or project.godot references by file or class (src/space asteroid_field + space_ship, protocol_portals
+          #   SmokePlate / WhitepaperJump / VideoShrine, boss/shard_projectile): ~32 KB, the main pack was 13 KB over. Wire one
+          #   of those scripts into the game again -> remove it from this list in the same commit.
           #   design/,work-notes/,tools/,assets/keyart/,web_verify/,web/game/ -> reference
           #        images, notes, capture rigs and local export output nothing loads at runtime
           #        (2026-10-01: ~14 MB; the Episode 2 hideout's Meshy models pushed the pck over 190 MB).
@@ -271,7 +275,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json,src/episode2/config/grounded_walk.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,assets/*.json,package.json,package-lock.json,lil-blunt-icp/*,assets/pixellab/*,game-verify*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_fud_reject.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
+          exclude_filter="*.yml,*.yaml,*.md,vercel.json,skills-lock.json,marketing/*,web/manifest.json,src/space/asteroid_field.gd,src/space/space_ship.gd,src/protocol_portals/SmokePlate.gd,src/protocol_portals/WhitepaperJump.gd,src/protocol_portals/VideoShrine.gd,src/boss/shard_projectile.gd,docs/*,tests/*,prompts/*,scripts/*,assets/*.json,package.json,package-lock.json,lil-blunt-icp/*,assets/pixellab/*,game-verify*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_fud_reject.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""

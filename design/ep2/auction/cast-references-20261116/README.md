@@ -12,11 +12,9 @@ Copied from `~/Documents/SmokeRealm-stable-characters-20261024/auction folk/`. E
 | Upright bass | `auction_band_bass.glb` | `band_bass.jpg` | `Man_in_Western_attire_T-pose_15d81a44_2K.jpg` |
 | Harmonica | `auction_band_harmonica.glb` | `band_harmonica.jpg` | `Man_in_period_western_attire_8efe7a73_2K.jpg` |
 
-**Status 2026-11-16: no model generated yet, 0 credits spent.** Both credentials are valid. Meshy has 86 credits; the Meshy 401 was
-a placeholder in `~/.bashrc` shadowing the real key, now fixed. **Tripo is the primary path: 505 API credits**, and the founder's
-Tripo web app is open in Brave with a separate balance. Use the sheets below directly; do not invent or restyle faces.
-
-Tripo API: `python3 tools/ep2_forge/tripo_gen.py balance` then generate, rig (`/animations/rig`), and retarget
-(`/animations/retarget`). Meshy remains the fallback for its Talk/Greet clip library. Pack room must be measured before the full
-batch: the streamed extras pack has only 67 KB free. The game already looks for the seven files above; checkers swap in on their
-own, and the band appears only when all five are present.
+**Status 2026-11-17: all seven built with the Tripo API (505 -> 40 credits).** The game-ready files are in `built/` (a `.gdignore`
+keeps Godot out of it). They are not in the game: the streamed pack has no room (see STATUS). To install one, copy `<name>.glb` to
+`src/episode2/extras/people/`, import, then copy the settings from `<name>.glb.import.txt` (no LODs / shadow meshes, animation
+compression) and `texture.import.txt` (lossy 0.72) over the generated `.import` files, re-import and `git add -f` the `.import` files.
+Task ids: `manifest.json`. Rebuild steps: `tools/tripo/auction_cast_batch.py`, then prep_folk / export_folk / gltfpack_safe /
+shrink_glb (`--max 1024`), then `tools/tripo/install_person.py`.
