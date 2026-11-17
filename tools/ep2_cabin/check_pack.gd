@@ -37,7 +37,7 @@ func _initialize() -> void:
     check(name+" material resolves",mat!=null)
     if mat!=null and mat.albedo_texture!=null:check(name+" texture resolves at1K",mat.albedo_texture.get_width()>0 and mat.albedo_texture.get_width()<=1024)
   model.free()
- for path in [DIR+"liquidity_sign.png",DIR+"goldmine_wordmark.png",DIR+"btc_reserves.png","res://src/episode2/assets/textures/logos/logo_gold_mine.png","res://src/episode2/assets/textures/tex_btc_coin.png","res://src/episode2/extras/town/posters/poster_rh.png","res://src/episode2/extras/town/posters/poster_jack_hammer.jpg"]:
+ for path in [DIR+"liquidity_sign.png",DIR+"goldmine_wordmark.png",DIR+"btc_reserves.png","res://src/episode2/assets/textures/logos/logo_gold_mine.png","res://src/episode2/assets/textures/tex_btc_coin.png","res://src/episode2/extras/town/posters/poster_rh.png","res://src/episode2/extras/town/posters/poster_jack_hammer.png"]:
   var tex:=load(path)as Texture2D
   check("canonical signage texture ships "+path.get_file(),tex!=null and tex.get_width()>0)
  print("CABIN_PACK: ALL PASS (",checks," checks)"if failures==0 else "CABIN_PACK: FAILED "+str(failures));quit(0 if failures==0 else 1)

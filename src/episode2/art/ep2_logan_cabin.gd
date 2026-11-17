@@ -7,7 +7,7 @@ const DETAILS := DIR + "details.glb"
 const GM := "res://src/episode2/assets/textures/logos/logo_gold_mine.png"
 const BTC := "res://src/episode2/assets/textures/tex_btc_coin.png"
 const RH := "res://src/episode2/extras/town/posters/poster_rh.png"
-const JACK := "res://src/episode2/extras/town/posters/poster_jack_hammer.jpg"
+const JACK := "res://src/episode2/extras/town/posters/poster_jack_hammer.png"
 const SENTENCE := "Be a liquidity provider."
 ## Founder River Assets 2026-11-15: the neighbour building stands flush beside Logan's cabin (shared yard, same lakeshore),
 ## carrying the mine4gold.app board, a Uniswap tin on a branded crate and the liquidity provider's rods. Baked from
@@ -57,7 +57,7 @@ func build(parent: Node3D) -> void:
 	_picture("GoldmineWordmark", "GMWordmark", DIR + "goldmine_wordmark.png", Vector2(1.0, .25))
 	_picture("BTCEmblem", "BTCFace", BTC, Vector2(.88, .88), true)
 	_picture("WantedRH", "PosterRH", RH, Vector2(.72, .72), true)
-	_picture("WantedJackHammer", "PosterJack", JACK, Vector2(.65, .894))
+	_picture("WantedJackHammer", "PosterJack", JACK, Vector2(.72, .72), true)
 	_picture("BTCReserves", "ReserveLabel", DIR + "btc_reserves.png", Vector2(.88, .44))
 	_picture("ReserveLedgerStamp", "LedgerFace", DIR + "btc_reserves.png", Vector2(.30, .15))
 	(pictures["ReserveLedgerStamp"] as MeshInstance3D).rotation.x = -PI / 2.0

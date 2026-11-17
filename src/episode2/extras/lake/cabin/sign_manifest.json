@@ -19,6 +19,6 @@
   "BTC": "res://src/episode2/assets/textures/tex_btc_coin.png",
   "posters": [
     "res://src/episode2/extras/town/posters/poster_rh.png",
-    "res://src/episode2/extras/town/posters/poster_jack_hammer.jpg"
+    "res://src/episode2/extras/town/posters/poster_jack_hammer.png"
   ]
 }

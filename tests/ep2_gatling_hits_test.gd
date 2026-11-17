@@ -51,6 +51,15 @@ func _mouse_centre(c: GoldTownChamber, centre: Vector3) -> void:
 		c.step(1.0 / 60.0)
 
 
+func _capture(c: GoldTownChamber, label: String) -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("capture="):
+			var out: String = arg.trim_prefix("capture=")
+			DirAccess.make_dir_recursive_absolute(out)
+			for frame in 3: await RenderingServer.frame_post_draw
+			c.get_camera().get_viewport().get_texture().get_image().save_png(out.path_join(label + ".png"))
+
+
 func _finish() -> void:
 	if failures == 0:
 		print("EP2_GATLING_HITS: ALL PASS")
@@ -82,6 +91,60 @@ func _ready() -> void:
 		await get_tree().process_frame
 		_finish()
 		return
+	# The large official billboard is tested first; reset ammunition only in this test so every old plate is proved afterwards.
+	var board_index: int = -1
+	for i in g.targets.size():
+		if str(g.targets[i]["kind"]) == "billboard": board_index = i
+	check("official billboard exists in the real yard", board_index >= 0)
+	if board_index >= 0:
+		var target: Dictionary = g.targets[board_index]
+		var board: Node3D = target["node"]
+		var size: Vector2 = target["size"]
+		var texture: Texture2D = target["material"].get_shader_parameter("poster")
+		check("billboard reuses the one official texture", texture.resource_path.ends_with("poster_jack_hammer.png"))
+		var aim_points: Array[Vector3] = [board.global_position]
+		for x in [-size.x * 0.5, size.x * 0.5]:
+			for y in [-size.y * 0.5, size.y * 0.5]: aim_points.append(board.to_global(Vector3(x, y, 0)))
+		for point in aim_points:
+			var d: Vector3 = point - g.eye_position()
+			var pitch: float = atan2(d.y, Vector2(d.x, d.z).length())
+			check("billboard centre/corner is inside yaw and pitch arc " + str(point), _inside_arc(g, point) and pitch >= g.PITCH_MIN and pitch <= g.PITCH_MAX)
+		_mouse_centre(c, board.global_position)
+		var camera: Camera3D = c.get_camera()
+		var trace: Dictionary = g._trace(camera.global_position, -camera.global_transform.basis.z)
+		check("billboard centre clears the plates and bore-axis bale", int(trace.get("index", -1)) == board_index)
+		var edge: Vector3 = board.to_global(Vector3(1.8, 1.8, 0))
+		check("rectangle accepts hits far outside the old plate disc", int(g._trace(camera.global_position, (edge - camera.global_position).normalized()).get("index", -1)) == board_index)
+		var miss: Vector3 = board.to_global(Vector3(2.2, 0, 0))
+		check("rectangle rejects rounds beyond its edge", int(g._trace(camera.global_position, (miss - camera.global_position).normalized()).get("index", -1)) != board_index)
+		var axf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Armory"))
+		check("billboard is behind every plate and bale, with bottom above lane", Ep2GoldTown.GATLING_BILLBOARD.x > 36.0 and board.global_position.y - size.y * 0.5 >= 1.4)
+		var posts_clear: bool = true
+		for x in [-2.0, 2.0]:
+			var foot: Vector3 = board.to_global(Vector3(x, -board.global_position.y, -0.08))
+			if (axf.affine_inverse() * foot).x < 36.0: posts_clear = false
+		check("new support collision stays beyond stand-to-plates corridor", posts_clear)
+		var nodes_before: int = board.get_child_count()
+		await _capture(c, "gatling_clean")
+		var signalled: Array[int] = [0]
+		g.billboard_hit.connect(func(_index: int) -> void: signalled[0] += 1)
+		g.rounds = g.DRUM
+		for frame in 1200:
+			if frame % 18 == 0 and g.rounds > 0:
+				_mouse_centre(c, board.global_position)
+				c.shoot()
+			c.step(1.0 / 60.0)
+			if frame == 300: await _capture(c, "gatling_burst")
+		_run(c, 1.5)
+		check("mounted player empties a finite drum into the official billboard", g.rounds == 0 and g.billboard_hits >= 90)
+		var holes: int = 0
+		for hole in target["holes"]:
+			if hole.visible: holes += 1
+		check("hits leave pooled visible holes and emit feedback", holes > 0 and signalled[0] == g.billboard_hits)
+		check("canvas advances to shredded after enough actual rounds", target["damage_state"] == "shredded" and float(target["material"].get_shader_parameter("damage")) > 0.0)
+		check("full drum allocates no new billboard nodes", board.get_child_count() == nodes_before and target["holes"].size() == 200)
+		await _capture(c, "gatling_shredded")
+		g.rounds = g.DRUM  # fixture reset, never a gameplay refill
 	var in_arc: int = 0
 	var rung: int = 0
 	for i in g.targets.size():

@@ -2,9 +2,8 @@ class_name Ep2TownPosters
 extends RefCounted
 ## THE WANTED POSTERS (founder 2026-10-24: "the posters of the wanted bandits are not visible anywhere"; skill ep2-wanted-posters).
 ##
-## Until now the jail's wanted board and its front wall carried blank paper boxes, and the street carried nothing. Four painted hand-bills
-## (tools/ep2_forge/paint_wanted_posters.py, portraits engraved from the REAL game models via tools/ep2_forge/render_poster_bust.py) are
-## The founder's own two (Drive 2026-10-24, "Crypto Queen Wanted.jpg" and "RH Wanted.jpg") hang in the most-seen places: the top row
+## Jack Hammer uses only the official founder image (2026-11-05); the old engraving is retired. The supporting painted bills
+## remain alongside the founder's own (Drive 2026-10-24, "Crypto Queen Wanted.jpg" and "RH Wanted.jpg") hang in the most-seen places: the top row
 ## of the drop-off notice board, the saloon, the certificate office and the general store. Torn edges keyed to alpha, kept square.
 ## Nailed up where a man would look for them: the notice board at the drop-off, beside the shop doors under the porches, over the jail's
 ## blank papers outside and on its wanted board inside.
@@ -26,7 +25,7 @@ const BOARD_YAW := PI * 0.5             # its face looks across the street (+x)
 const WALL: Array = [
 	["Bldg_Certificates", Vector3(1.48, 1.90, 0.03), 0.56, "crypto_queen", -0.03],
 	["Bldg_Certificates", Vector3(-1.48, 1.92, 0.03), 0.46, "masked_riders", 0.04],
-	["Bldg_Saloon", Vector3(2.35, 1.95, 0.03), 0.62, "rh", 0.02],
+	["Bldg_Saloon", Vector3(2.35, 1.95, 0.03), 0.62, "jack_hammer", 0.02],
 	["Bldg_Saloon", Vector3(-1.65, 1.95, 0.03), 0.56, "crypto_queen", -0.02],
 	["Bldg_Saloon", Vector3(3.05, 1.80, 0.03), 0.40, "horse_thieves", -0.06],
 	["Bldg_Saloon", Vector3(-2.75, 2.0, 0.03), 0.44, "jack_hammer", -0.03],
@@ -38,6 +37,10 @@ const WALL: Array = [
 	["Bldg_D", Vector3(1.70, 1.92, 0.03), 0.54, "crypto_queen", -0.03],
 	["Bldg_E", Vector3(-1.25, 1.92, 0.03), 0.44, "horse_thieves", 0.04],
 	["Bldg_F", Vector3(1.48, 1.94, 0.03), 0.44, "masked_riders", 0.02],
+	# Square official bills on timber backing over the three baked rectangular placeholders.
+	["Bldg_Armory", Vector3(-1.75, 1.60, 0.04), 0.42, "jack_hammer", -0.07],
+	["Bldg_Armory", Vector3(1.80, 1.45, 0.04), 0.42, "jack_hammer", 0.072],
+	["Bldg_Armory", Vector3(-4.60, 1.50, 0.04), 0.42, "jack_hammer", -0.184],
 	# the jailhouse front: exactly over the three blank papers build_jailhouse.py nails up (0.40 x 0.55 at z = 0.006)
 	["Bldg_Jail", Vector3(-1.45, 1.55, 0.02), 0.40, "jack_hammer", 0.05],
 	["Bldg_Jail", Vector3(1.55, 1.45, 0.02), 0.40, "accomplice", -0.04],
@@ -50,8 +53,8 @@ const JAIL_BOARD: Array = [
 ]
 ## The street notice board's four bills (board-local: x across its face, y up, +z out of the face).
 const BOARD_BILLS: Array = [
-	[Vector3(-0.56, 1.95, 0.07), 0.56, "crypto_queen", -0.02], [Vector3(0.02, 1.86, 0.075), 0.40, "jack_hammer", 0.03],
-	[Vector3(0.58, 1.95, 0.07), 0.56, "rh", -0.03],
+	[Vector3(-0.56, 1.95, 0.07), 0.56, "crypto_queen", -0.02], [Vector3(0.02, 1.86, 0.075), 0.40, "rh", 0.03],
+	[Vector3(0.58, 1.95, 0.07), 0.56, "jack_hammer", -0.03],
 	[Vector3(-0.30, 1.38, 0.08), 0.26, "masked_riders", 0.06], [Vector3(0.32, 1.37, 0.08), 0.26, "horse_thieves", -0.05],
 ]
 
@@ -60,7 +63,7 @@ const BOARD_BILLS: Array = [
 static func build(root: Node3D, props: Array) -> int:
 	var mats: Dictionary = {}
 	for id in IDS:
-		for ext in ["jpg", "png"]:
+		for ext in (["png"] if id == "jack_hammer" else ["jpg", "png"]):
 			var p: String = DIR + "poster_%s.%s" % [id, ext]
 			if Ep2Extras.has(p):
 				mats[id] = _mat(load(p) as Texture2D, ext == "png")
@@ -75,9 +78,14 @@ static func build(root: Node3D, props: Array) -> int:
 		var piece: String = str(w[0])
 		if Ep2GoldTown.entry(piece).is_empty() or not mats.has(str(w[3])):
 			continue
+		if piece == "Bldg_Armory" and not Ep2GoldTown.armory_v2:
+			continue
 		if piece == "Bldg_Jail" and not Ep2GoldTown.jail_v1:
 			continue
 		var xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry(piece))
+		if piece == "Bldg_Armory":
+			var backing := _box(node, Vector3(0.46, 0.62, 0.014), Vector3.ZERO, Ep2GoldTown._tex_mat("", Color(0.40, 0.26, 0.13), 0.95, Ep2GoldTown.TIMBER_TEX))
+			backing.transform = xf * Transform3D(Basis(Vector3.FORWARD, float(w[4])), Vector3(w[1].x, w[1].y, 0.023))
 		node.add_child(_bill(mats[str(w[3])], xf * Transform3D(Basis(Vector3.FORWARD, float(w[4])), w[1]), float(w[2])))
 		hung += 1
 	if Ep2GoldTown.jail_v1:

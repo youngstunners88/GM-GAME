@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+
+**2026-11-17 — Official Jackhammer Wanted + environment-wide RH rebalance + shootable Gatling billboard — implemented; release verification pending; NOT founder-accepted.**
+- Verified founder Drive JPEG SHA-256 `2f8056dc2537b8986cbe67121379264a5fc65d23a4ba551a14096b3a53aea252`; keyed torn white margins to alpha, canonical 1024 PNG with mipmaps. Removed the old JPEG/import; every town, cabin, hideout and auction bill uses the official face. No new likeness or wording.
+- Jack Hammer owns the saloon's 0.62 m bill, board's 0.56 m slot and all three Armory front papers. RH remains on Bldg_A, the smaller board slot and Logan's cabin. Count/area gate excludes the range billboard so it cannot conceal a street imbalance.
+- Beyond the Gatling plates: a 4 m official billboard with rectangular hits, pooled bullet holes, dust and progressive shred. Existing plates, bales, gun and finite ammunition preserved; supports are behind the firing lane.
+- Proof and captures: `docs/episode2-quality/jackhammer-20261117/REPORT.md`. The supplied poster has no eye patch and states a BTC reward; model and narrative were left untouched. **FIXED only after the founder hard-refresh walk of town + Armory Gatling.**
+
 **2026-11-16 — Fix-pack 1115 touch-ups: Goldsmith's ladder, voices, Rich's beats (pushed; see the ship line below for live state).**
 - **Licenses:** the wall is Prospector's -> Miner's -> **Goldsmith's** (Foreman's print re-titled GOLDSMITH'S LICENSE; Prospector's "TIER 1 OF 3" plate re-lettered clean, no smudge round the 3). Mike Dean's text says Goldsmith's. No Foreman's or Mine Owner's anywhere.
 - **Voices recorded (ElevenLabs):** the auctioneer's six calls (voice X0KF3ROqwE8cLCsWuhs6), Rich's dock line, and the two miners now say "three licenses" / "Three papers". **Still text only:** Mike Dean x2, Logan x3, Dude x2 - their voices are on an ElevenLabs account whose key is not on this machine (checked `~/.config/gm-game/elevenlabs.key` and `~/Documents/GitHub/GM-GAME/.env`: both accounts answer "voice not found").

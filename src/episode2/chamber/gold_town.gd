@@ -689,6 +689,15 @@ func _build_guns() -> void:
 				_gatling.add_plate(xf * (pl as Vector3), face)
 			for bl in Ep2GoldTown.GATLING_BALES:
 				_gatling.add_bale(xf * (bl as Vector3), face)
+			var bill_path: String = Ep2TownPosters.DIR + "poster_jack_hammer.png"
+			if Ep2Extras.has(bill_path):
+				var at: Vector3 = xf * Ep2GoldTown.GATLING_BILLBOARD
+				var bi: int = _gatling.add_billboard(at, post_w, Ep2GoldTown.GATLING_BILLBOARD_SIZE, load(bill_path) as Texture2D)
+				if bi >= 0 and _town_col.has("props"):
+					var board: Node3D = _gatling.targets[bi]["node"]
+					for x in [-2.0, 2.0]:
+						var foot: Vector3 = board.to_global(Vector3(x, -at.y, -0.08))
+						(_town_col["props"] as Array).append([Vector2(foot.x, foot.z), 0.22])
 			if _town_col.has("props"):
 				(_town_col["props"] as Array).append([Vector2(post_w.x, post_w.z), 0.85])
 		else:

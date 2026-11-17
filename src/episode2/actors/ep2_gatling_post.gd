@@ -18,6 +18,7 @@ signal burst_started
 signal round_fired
 ## Every round's trace (origin, direction, what it met) - the town's law reads the rounds that leave the yard.
 signal round_traced(origin: Vector3, direction: Vector3, hit: Dictionary)
+signal billboard_hit(index: int)
 signal plate_rang(index: int)
 signal emptied
 
@@ -60,6 +61,7 @@ var aim_pitch: float = 0.0
 var shots_fired: int = 0
 var plates_rung: int = 0
 var bale_hits: int = 0
+var billboard_hits: int = 0
 var spin: float = 0.0                     # rad/s of the barrel cluster
 var model: Node3D = null
 var targets: Array = []                   # [{kind, node, swing, ang, vel, hits}] in the order they were added
@@ -183,6 +185,50 @@ func add_bale(world_pos: Vector3, face_toward: Vector3) -> int:
 	n.position = world_pos - position
 	_face_z(n, face_toward)
 	targets.append({"kind": "bale", "node": n, "swing": null, "ang": 0.0, "vel": 0.0, "hits": 0})
+	return targets.size() - 1
+
+
+## The official bill, on a timber frame beyond the plates. Holes are allocated once, then reused.
+func add_billboard(world_pos: Vector3, face_toward: Vector3, size: Vector2, tex: Texture2D) -> int:
+	if tex == null:
+		return -1
+	var n := Node3D.new()
+	n.name = "JackHammerBillboard"
+	add_child(n)
+	n.position = world_pos - position
+	_face_z(n, face_toward)
+	var wood := Ep2GoldTown._tex_mat("", Color(0.46, 0.31, 0.17), 0.95, Ep2GoldTown.TIMBER_TEX)
+	for x in [-size.x * 0.5, size.x * 0.5]:
+		Ep2TownPosters._box(n, Vector3(0.16, world_pos.y + size.y * 0.5 + 0.16, 0.18), Vector3(x, -(world_pos.y - size.y * 0.5) * 0.5, -0.08), wood)
+	for y in [-size.y * 0.5, 0.0, size.y * 0.5]:
+		Ep2TownPosters._box(n, Vector3(size.x + 0.24, 0.14, 0.10), Vector3(0, y, -0.06), wood)
+	var canvas := MeshInstance3D.new()
+	canvas.name = "OfficialWantedCanvas"
+	var q := QuadMesh.new()
+	q.size = size
+	canvas.mesh = q
+	var mat := ShaderMaterial.new()
+	mat.shader = preload("res://src/episode2/art/ep2_wanted_canvas.gdshader")
+	mat.set_shader_parameter("poster", tex)
+	mat.set_shader_parameter("damage", 0.0)
+	canvas.material_override = mat
+	canvas.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	n.add_child(canvas)
+	var holes: Array[MeshInstance3D] = []
+	var hole_mat := ShaderMaterial.new()
+	hole_mat.shader = preload("res://src/episode2/art/ep2_wanted_hole.gdshader")
+	var hole_mesh := QuadMesh.new()
+	hole_mesh.size = Vector2(0.085, 0.085)
+	for i in 200:
+		var hole := MeshInstance3D.new()
+		hole.mesh = hole_mesh
+		hole.material_override = hole_mat
+		hole.visible = false
+		hole.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		n.add_child(hole)
+		holes.append(hole)
+	targets.append({"kind": "billboard", "node": n, "swing": null, "hits": 0,
+		"size": size, "material": mat, "holes": holes, "damage_state": "clean"})
 	return targets.size() - 1
 
 
@@ -385,7 +431,9 @@ func _trace(o: Vector3, d: Vector3) -> Dictionary:
 		var t: Dictionary = targets[i]
 		var n: Node3D = t["node"]
 		var centre: Vector3
-		if str(t["kind"]) == "plate":
+		if str(t["kind"]) == "billboard":
+			centre = n.global_position
+		elif str(t["kind"]) == "plate":
 			var sw: Node3D = t["swing"]
 			centre = sw.global_transform * PLATE_CENTRE if sw != null else n.global_position + Vector3(0, 1.2, 0)
 		else:
@@ -398,7 +446,12 @@ func _trace(o: Vector3, d: Vector3) -> Dictionary:
 		if tt <= 0.0 or tt >= best:
 			continue
 		var p: Vector3 = o + d * tt
-		if p.distance_to(centre) <= PLATE_RADIUS:
+		var accepts: bool = p.distance_to(centre) <= PLATE_RADIUS
+		if str(t["kind"]) == "billboard":
+			var local: Vector3 = n.to_local(p)
+			var size: Vector2 = t["size"]
+			accepts = absf(local.x) <= size.x * 0.5 and absf(local.y) <= size.y * 0.5
+		if accepts:
 			best = tt
 			out = {"point": p, "index": i}
 	if d.y < -1e-4:
@@ -416,6 +469,18 @@ func _hit_target(i: int, point: Vector3) -> void:
 		if int(t["hits"]) == 1:
 			plates_rung += 1
 		plate_rang.emit(i)
+	elif str(t["kind"]) == "billboard":
+		billboard_hits += 1
+		var holes: Array = t["holes"]
+		var hole: MeshInstance3D = holes[(int(t["hits"]) - 1) % holes.size()]
+		var n: Node3D = t["node"]
+		hole.position = n.to_local(point) + Vector3(0, 0, 0.006)
+		hole.rotation.z = _rng.randf_range(-PI, PI)
+		hole.visible = true
+		t["damage_state"] = "shredded" if int(t["hits"]) >= 90 else ("holed" if int(t["hits"]) >= 25 else "clean")
+		(t["material"] as ShaderMaterial).set_shader_parameter("damage", clampf((float(t["hits"]) - 89.0) / 180.0, 0.0, 0.45))
+		_puff(point)
+		billboard_hit.emit(i)
 	else:
 		bale_hits += 1
 		_puff(point)

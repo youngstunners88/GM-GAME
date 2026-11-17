@@ -608,6 +608,9 @@ jobs:
           grep -q 'EP2_ARMORY_GUNS: ALL PASS' armory-guns-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-guns-tests.log; then exit 1; fi
           # The player's Gatling hits what the crosshair is on (founder 2026-10-27: "it doesnt hit any of the targets"): real mouse path, real camera ray.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_wanted_rebalance_test.tscn 2>&1 | tee wanted-rebalance-tests.log
+          grep -q "EP2_WANTED_REBALANCE: 39 checks, 0 failed" wanted-rebalance-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' wanted-rebalance-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gatling_hits_test.tscn 2>&1 | tee gatling-hits-tests.log
           grep -q 'EP2_GATLING_HITS: ALL PASS' gatling-hits-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gatling-hits-tests.log; then exit 1; fi
