@@ -6,6 +6,8 @@ EP2_GATLING_HITS: ALL PASS (150-round billboard, holes, shred; five old plates r
 EP2_ARMORY_GUNS: ALL PASS
 LOGAN_CABIN: 34 checks, 0 failed
 EP2_GOLD_TOWN: ALL PASS
+EP2_HIDEOUT_WARM: ALL PASS (8 pass, 0 fail), including replay against exported packs.
+Tabs ledger, Logan lake and fix-pack 1115 checks also pass.
 Three mutations correctly rejected: RH in largest saloon slot; zero billboard hit rectangle; incorrect baked-paper roll.
 Local release web export: 0 SCRIPT ERROR/Parse Error.
 Extras-pack presence gate: PASS; canonical PNG present, old JPEG absent.
