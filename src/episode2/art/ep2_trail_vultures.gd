@@ -133,18 +133,19 @@ func _fly(st: Dictionary, delta: float) -> void:
 	_place(st)
 	var node: Node3D = st["node"]
 	var seed_v: float = float(st["seed"])
-	var flap_amount: float
-	if wounded:
-		# It fights the air: the wounded wing catches the downbeat every time.
-		flap_amount = 0.62 + 0.22 * sin(t * 5.7)
-	else:
-		# Founder 2026-11-17: "we don't see their wings flapping". Bursts of full wingbeats most of the time, a working
-		# beat between them - never a frozen cut-out gliding round the thermal.
-		flap_amount = clampf(sin(t * 0.55 + seed_v) * 1.6 + 0.35, 0.3, 1.0)
+	var flap_amount: float = _flap_amount(st)
 	st["flap_t"] = float(st["flap_t"]) + delta * (11.0 if wounded else 8.2)
 	node.rotation.z = -0.24 + (0.16 * sin(t * 3.1) if wounded else 0.03 * sin(t * 0.7 + seed_v))   # the inside wing dropped into the turn
 	Ep2VultureMesh.flap(node, float(st["flap_t"]), flap_amount)
-	node.position.y -= sin(float(st["flap_t"])) * 0.22 * flap_amount     # each downbeat lifts the body: the flap carries weight
+
+
+## How hard it is beating now. Founder 2026-11-17: "we don't see their wings flapping" - bursts of full wingbeats most of
+## the time and a working beat between them, never a frozen cut-out gliding round the thermal. Wounded, it fights the air.
+func _flap_amount(st: Dictionary) -> float:
+	var t: float = float(st["t"])
+	if bool(st["wounded"]):
+		return 0.62 + 0.22 * sin(t * 5.7)
+	return clampf(sin(t * 0.55 + float(st["seed"])) * 1.6 + 0.35, 0.3, 1.0)
 
 
 ## Its place in the shared thermal, facing along the turn.
@@ -154,6 +155,7 @@ func _place(st: Dictionary) -> void:
 	var radius: float = float(st["radius"]) + sag * WOUND_WIDEN
 	var column := Vector3(cos(phase * 0.17) * 7.0, 0.0, sin(phase * 0.13) * 7.0)     # the thermal itself drifts over the desert
 	var y: float = float(st["height"]) + sin(float(st["t"]) * 0.4 + float(st["seed"])) * 0.9 - sag * WOUND_SAG
+	y -= sin(float(st["flap_t"])) * 0.1 * _flap_amount(st)        # each downbeat lifts the body: the flap carries weight
 	var node: Node3D = st["node"]
 	node.position = column + Vector3(cos(angle) * radius, y, sin(angle) * radius)
 	var tangent := Vector3(-sin(angle), 0.0, cos(angle))
