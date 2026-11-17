@@ -1,0 +1,14 @@
+Pinned Godot 4.3 stable, Compatibility renderer.
+Official source JPEG hash prefix: 2f8056dc2537b898 (full public hash in release-receipt.json).
+EP2_WANTED_REBALANCE: 39 checks, 0 failed
+CENSUS Jack Hammer=13 / 3.5916 m2; RH=3 / 0.9494 m2 (range billboard excluded)
+EP2_GATLING_HITS: ALL PASS (150-round billboard, holes, shred; five old plates remain hittable)
+EP2_ARMORY_GUNS: ALL PASS
+LOGAN_CABIN: 34 checks, 0 failed
+EP2_GOLD_TOWN: ALL PASS
+Two mutations correctly rejected: RH in largest saloon slot; zero billboard hit rectangle.
+Local release web export: 0 SCRIPT ERROR/Parse Error.
+Extras-pack presence gate: PASS; canonical PNG present, old JPEG absent.
+Security Sentinel: no high/critical blockers.
+Native 1280x720 Compatibility captures reviewed: board, saloon, Armory front, mounted range clean/burst/shredded.
+Fresh pack-size and deployment verification pending; no founder acceptance claimed.

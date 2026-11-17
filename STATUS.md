@@ -2,7 +2,7 @@
 
 
 **2026-11-17 — Official Jackhammer Wanted + environment-wide RH rebalance + shootable Gatling billboard — implemented; release verification pending; NOT founder-accepted.**
-- Verified founder Drive JPEG SHA-256 `2f8056dc2537b8986cbe67121379264a5fc65d23a4ba551a14096b3a53aea252`; keyed torn white margins to alpha, canonical 1024 PNG with mipmaps. Removed the old JPEG/import; every town, cabin, hideout and auction bill uses the official face. No new likeness or wording.
+- Verified founder Drive JPEG SHA-256 `2f8056dc2537b898 (full checksum in release-receipt.json)`; keyed torn white margins to alpha, canonical 1024 PNG with mipmaps. Removed the old JPEG/import; every town, cabin, hideout and auction bill uses the official face. No new likeness or wording.
 - Jack Hammer owns the saloon's 0.62 m bill, board's 0.56 m slot and all three Armory front papers. RH remains on Bldg_A, the smaller board slot and Logan's cabin. Count/area gate excludes the range billboard so it cannot conceal a street imbalance.
 - Beyond the Gatling plates: a 4 m official billboard with rectangular hits, pooled bullet holes, dust and progressive shred. Existing plates, bales, gun and finite ammunition preserved; supports are behind the firing lane.
 - Proof and captures: `docs/episode2-quality/jackhammer-20261117/REPORT.md`. The supplied poster has no eye patch and states a BTC reward; model and narrative were left untouched. **FIXED only after the founder hard-refresh walk of town + Armory Gatling.**
