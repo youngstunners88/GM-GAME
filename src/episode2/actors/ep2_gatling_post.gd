@@ -188,47 +188,14 @@ func add_bale(world_pos: Vector3, face_toward: Vector3) -> int:
 	return targets.size() - 1
 
 
-## The official bill, on a timber frame beyond the plates. Holes are allocated once, then reused.
+## The official bill, on a timber frame beyond the plates. Its art builder streams with the texture.
 func add_billboard(world_pos: Vector3, face_toward: Vector3, size: Vector2, tex: Texture2D) -> int:
-	if tex == null:
+	var path: String = Ep2TownPosters.DIR + "wanted_billboard.gd"
+	if tex == null or not Ep2Extras.has(path):
 		return -1
-	var n := Node3D.new()
-	n.name = "JackHammerBillboard"
-	add_child(n)
-	n.position = world_pos - position
-	_face_z(n, face_toward)
-	var wood := Ep2GoldTown._tex_mat("", Color(0.46, 0.31, 0.17), 0.95, Ep2GoldTown.TIMBER_TEX)
-	for x in [-size.x * 0.5, size.x * 0.5]:
-		Ep2TownPosters._box(n, Vector3(0.16, world_pos.y + size.y * 0.5 + 0.16, 0.18), Vector3(x, -(world_pos.y - size.y * 0.5) * 0.5, -0.08), wood)
-	for y in [-size.y * 0.5, 0.0, size.y * 0.5]:
-		Ep2TownPosters._box(n, Vector3(size.x + 0.24, 0.14, 0.10), Vector3(0, y, -0.06), wood)
-	var canvas := MeshInstance3D.new()
-	canvas.name = "OfficialWantedCanvas"
-	var q := QuadMesh.new()
-	q.size = size
-	canvas.mesh = q
-	var mat := ShaderMaterial.new()
-	mat.shader = preload("res://src/episode2/art/ep2_wanted_canvas.gdshader")
-	mat.set_shader_parameter("poster", tex)
-	mat.set_shader_parameter("damage", 0.0)
-	canvas.material_override = mat
-	canvas.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	n.add_child(canvas)
-	var holes: Array[MeshInstance3D] = []
-	var hole_mat := ShaderMaterial.new()
-	hole_mat.shader = preload("res://src/episode2/art/ep2_wanted_hole.gdshader")
-	var hole_mesh := QuadMesh.new()
-	hole_mesh.size = Vector2(0.085, 0.085)
-	for i in 200:
-		var hole := MeshInstance3D.new()
-		hole.mesh = hole_mesh
-		hole.material_override = hole_mat
-		hole.visible = false
-		hole.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		n.add_child(hole)
-		holes.append(hole)
-	targets.append({"kind": "billboard", "node": n, "swing": null, "hits": 0,
-		"size": size, "material": mat, "holes": holes, "damage_state": "clean"})
+	var builder: RefCounted = load(path).new()
+	var target: Dictionary = builder.build(self, world_pos, face_toward, size, tex)
+	targets.append(target)
 	return targets.size() - 1
 
 
