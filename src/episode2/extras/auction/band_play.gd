@@ -12,6 +12,8 @@ extends Node
 const BPM := 112.0
 ## Wrist sits this far back from the point the fingers close on.
 const WRIST_BACK := 0.075
+## Closest a wrist target sits to its shoulder (metres per unit of body scale): the elbow can fold this far and no farther.
+const MIN_REACH := 0.16
 
 var kind: String = "lead"
 var folk: Node3D
@@ -26,6 +28,37 @@ var _bones: Dictionary = {}
 var _t: float = 0.0
 var _seed: float = 0.0
 var _base_rot: Vector3
+var _aim: HandAim
+
+
+## Turns each hand on the instrument after the arm IK: these Tripo rigs have no finger bones, so a flat hand left at the clip's angle
+## read as a wave (palm to the room). Fingers run along the hand bone's +Y; the palm faces its -X (left) / +X (right): the rest pose
+## holds the palms forward (seen in renders, 2026-11-17).
+class HandAim extends SkeletonModifier3D:
+	var bones: Dictionary = {}       # side -> hand bone index
+	var fingers: Dictionary = {}     # side -> world direction the fingers point
+	var palm: Dictionary = {}        # side -> world direction the palm faces
+
+	func _process_modification() -> void:
+		var sk: Skeleton3D = get_skeleton()
+		if sk == null or influence <= 0.001:
+			return
+		var inv: Basis = sk.global_transform.basis.orthonormalized().inverse()
+		for side in bones:
+			if not fingers.has(side) or not palm.has(side):
+				continue
+			var b: int = int(bones[side])
+			var y: Vector3 = (inv * (fingers[side] as Vector3)).normalized()
+			var p: Vector3 = inv * (palm[side] as Vector3)
+			p = p - y * p.dot(y)
+			if p.length_squared() < 1e-6 or not y.is_normalized():
+				continue
+			var x: Vector3 = p.normalized() * (-1.0 if side == "Left" else 1.0)     # the palm is the hand's -X (left) / +X (right)
+			var want: Basis = Basis(x, y, x.cross(y))
+			var parent: int = sk.get_bone_parent(b)
+			var pb: Basis = sk.get_bone_global_pose(parent).basis.orthonormalized() if parent >= 0 else Basis.IDENTITY
+			var cur: Quaternion = sk.get_bone_pose_rotation(b)
+			sk.set_bone_pose_rotation(b, cur.slerp((pb.inverse() * want).get_rotation_quaternion(), influence))
 
 
 ## Wire a musician. Returns false when the rig lacks a usable arm chain (it then keeps its clip and its hand-held prop).
@@ -61,6 +94,11 @@ func setup(p_folk: Node3D, p_kind: String, p_instrument: Node3D = null, p_bow: N
 			ik.influence = 1.0
 			_sk.add_child(ik)
 			_ik[side] = ik
+		_aim = HandAim.new()
+		_aim.name = "PlayHandAim"
+		for side in ["Left", "Right"]:
+			_aim.bones[side] = _bones[side + "Hand"]
+		_sk.add_child(_aim)                # after both arms: the hand turns on the solved forearm
 	for piece in [instrument, bow]:
 		if piece != null and piece.get_parent() != folk:
 			if piece.get_parent() != null:
@@ -88,7 +126,11 @@ func _bone(n: String) -> Vector3:
 ## Hand target in world space for a point the fingers close on, pulled back toward the shoulder by the wrist offset.
 func _wrist(side: String, at: Vector3) -> Vector3:
 	var sh: Vector3 = _bone(side + "Arm")
-	return at - (at - sh).normalized() * WRIST_BACK * _unit()
+	var away: Vector3 = at - sh
+	# Pull back by the wrist, but never past the forearm's fold: a grip close to the shoulder (a cupped harmonica) would otherwise put
+	# the target ON the shoulder, where no two-bone arm can bend (it was 8 cm off).
+	var back: float = minf(WRIST_BACK * _unit(), maxf(away.length() - MIN_REACH * _unit(), 0.0))
+	return at - away.normalized() * back
 
 
 func _unit() -> float:
@@ -117,6 +159,10 @@ func _process(delta: float) -> void:
 	var head: Vector3 = _bone("Head")
 	var lw: Vector3
 	var rw: Vector3
+	var fl := Vector3.ZERO           # finger and palm directions per hand; a zero palm faces the grip point
+	var fr := Vector3.ZERO
+	var pl := Vector3.ZERO
+	var pr := Vector3.ZERO
 	match kind:
 		"fiddle":
 			# Body under the chin on his left collarbone, neck out to the left and forward, strings up.
@@ -136,6 +182,9 @@ func _process(delta: float) -> void:
 			if bow != null:
 				_place(bow, Y.cross(-B).normalized(), -B, Y, frog, u)
 			rw = frog
+			fl = U - Y * U.dot(Y)                    # fingers over the fingerboard from beneath
+			fr = -B                                   # the bow hand: fingers along the stick, palm down on it
+			pr = -U
 		"banjo":
 			var Y: Vector3 = (L * 0.78 + U * 0.55 + F * 0.12).normalized()
 			var Z: Vector3 = (F - Y * F.dot(Y)).normalized()
@@ -147,6 +196,8 @@ func _process(delta: float) -> void:
 			lw = origin + Y * (0.2 + slide) * u - Z * 0.03 * u
 			var strum: float = sin(beat * 2.0)              # eighth notes
 			rw = head_c + Z * 0.06 * u + Y * (0.06 + strum * 0.035) * u + R * 0.02 * u
+			fl = U - Y * U.dot(Y)
+			fr = -Y.cross(Z) if (-Y.cross(Z)).dot(U) < 0.0 else Y.cross(Z)       # across the strings, brushing down
 		"bass":
 			# Upright on its endpin, leaning back into him; the scroll above his head.
 			# A bassist stands behind and to the right of it: the body sits off his left hip, turned out toward his right,
@@ -161,7 +212,9 @@ func _process(delta: float) -> void:
 			var walk: float = [0.0, -0.06, -0.12, -0.06][int(floor(beat / TAU)) % 4]       # a walking bass line down the neck
 			lw = origin + Y * (0.22 + walk) * u - X * 0.04 * u + Z * 0.02 * u
 			var pluck: float = maxf(0.0, sin(beat)) * 0.05
-			rw = origin + Y * (-0.42) * u + Z * 0.13 * u + X * (0.02 - pluck) * u
+			rw = origin + Y * (-0.2) * u + Z * 0.12 * u + X * (0.02 - pluck) * u     # where the fingerboard ends: plucked within his reach
+			fl = R - Y * R.dot(Y)                    # wrapped across the front of the neck
+			fr = -Y
 		"harmonica":
 			var mouth: Vector3 = head + F * 0.11 * u - U * 0.07 * u
 			var slide: float = sin(beat * 0.5) * 0.025
@@ -169,13 +222,25 @@ func _process(delta: float) -> void:
 			_place(instrument, R, U, F, hc, u)
 			var wah: float = (0.5 + 0.5 * sin(beat)) * 0.04          # the cupped hand opening and closing
 			lw = hc + L * 0.05 * u + F * 0.015 * u
-			rw = hc + R * 0.06 * u + F * (0.05 + wah) * u - U * 0.02 * u
+			rw = hc + R * 0.035 * u + F * (0.07 + wah) * u - U * 0.02 * u      # cupped over the comb, in front of it
+			fl = U
+			fr = U
+			pl = R
+			pr = -F
 		_:
 			return
-	(_ik["Left"] as Ep2ArmIK).target_world = _wrist("Left", lw)
-	(_ik["Right"] as Ep2ArmIK).target_world = _wrist("Right", rw)
+	var wl: Vector3 = _wrist("Left", lw)
+	var wr: Vector3 = _wrist("Right", rw)
+	(_ik["Left"] as Ep2ArmIK).target_world = wl
+	(_ik["Right"] as Ep2ArmIK).target_world = wr
 	for side in _ik:
 		(_ik[side] as Ep2ArmIK).influence = grip
+	if _aim != null:
+		_aim.fingers["Left"] = fl
+		_aim.fingers["Right"] = fr
+		_aim.palm["Left"] = pl if pl != Vector3.ZERO else lw - wl + (lw - _bone("LeftArm")) * 0.15
+		_aim.palm["Right"] = pr if pr != Vector3.ZERO else rw - wr + (rw - _bone("RightArm")) * 0.15
+		_aim.influence = grip * 0.85
 
 
 func _place(piece: Node3D, X: Vector3, Y: Vector3, Z: Vector3, origin: Vector3, u: float) -> void:

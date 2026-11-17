@@ -243,8 +243,27 @@ func _ready() -> void:
 	for h in hooks:
 		(h[0] as Skeleton3D).skeleton_updated.disconnect(h[1])
 	if Ep2AuctionHouse.band_ready():
-		check("four instrumentalists play with both hands on the instrument (every wrist within 9 cm of its grip)",
-			players == 4 and int(probe["seen"]) >= 8 and float(probe["worst"]) < 0.09, "%d players, %d poses, worst %.3f m" % [players, int(probe["seen"]), float(probe["worst"])])
+		check("four instrumentalists play with both hands on the instrument (every wrist within 6 cm of its grip; 4.5 measured in the hall)",
+			players == 4 and int(probe["seen"]) >= 8 and float(probe["worst"]) < 0.06, "%d players, %d poses, worst %.3f m" % [players, int(probe["seen"]), float(probe["worst"])])
+	# 2026-11-17: the seven Tripo auction people were exported facing +X, so the band played side-on to the room. Measured from the shoulders.
+	var worst_turn: float = 0.0
+	for f in house._band + ([house._doorman] if house._doorman != null else []):
+		var sks: Array = (f as Ep2TownFolk).model.find_children("*", "Skeleton3D", true, false)
+		if sks.is_empty():
+			continue
+		var sk: Skeleton3D = sks[0]
+		var la: int = -1
+		var ra: int = -1
+		for b in sk.get_bone_count():
+			if sk.get_bone_name(b).ends_with("LeftArm"): la = b
+			if sk.get_bone_name(b).ends_with("RightArm"): ra = b
+		if la < 0 or ra < 0:
+			continue
+		var across: Vector3 = sk.global_transform * sk.get_bone_global_pose(ra).origin - sk.global_transform * sk.get_bone_global_pose(la).origin
+		across.y = 0.0
+		var body_fwd: Vector3 = Vector3.UP.cross(across.normalized())
+		worst_turn = maxf(worst_turn, rad_to_deg(body_fwd.angle_to((f as Node3D).global_basis.z.normalized())))
+	check("every auction player and the doorman face the way they are turned (chest within 25 degrees)", worst_turn < 25.0, "%.0f deg" % worst_turn)
 	check("the hall score plays inside the hall when it is in the pack (night bed only until then)",
 		road.hall_score_on() == Ep2Extras.has(AuctionRoadChamber.HALL_SCORE), str(road.hall_score_on()))
 	# the floor answers like people (founder 2026-11-14): no two on one frame as a chorus, a mix of answers, one cheer recording per cooldown

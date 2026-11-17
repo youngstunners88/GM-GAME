@@ -45,6 +45,9 @@ const GROUND_FOLLOW := 3.0                           # m/s: boards and steps are
 const WALK_TURN_RATE := 14.0
 
 
+## GLBs exported facing +X (a person faces +Z): the seven 2026-11-16 auction Tripo people, measured 89-99 degrees off on 2026-11-17.
+const SIDEWAYS_EXPORTS := ["auction_band_lead.glb", "auction_band_fiddle.glb", "auction_band_guitar.glb", "auction_band_bass.glb",
+	"auction_band_harmonica.glb", "auction_checker_a.glb", "auction_checker_b.glb"]
 ## Load `path` (a GLB), scale it to `height`, put its feet on the origin. Falls back to a plain figure so a build without the art still plays.
 func setup(path: String, height: float, fallback_tint: Color = Color(0.4, 0.3, 0.2), center_xz: bool = true) -> bool:
 	height_m = height
@@ -55,6 +58,9 @@ func setup(path: String, height: float, fallback_tint: Color = Color(0.4, 0.3, 0
 		add_child(model)
 		return false
 	add_child(model)
+	if path.get_file() in SIDEWAYS_EXPORTS:
+		for c in model.get_children():     # turned under the model, so clips, facing and centring all agree
+			if c is Node3D: (c as Node3D).transform = Transform3D(Basis(Vector3.UP, -PI * 0.5), Vector3.ZERO) * (c as Node3D).transform
 	var bb: AABB = _aabb(model)
 	var s: float = height / maxf(bb.size.y, 0.01)
 	model.scale = Vector3.ONE * s
