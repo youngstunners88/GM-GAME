@@ -289,6 +289,19 @@ func _forward(s: Ep2SessionRoot, town: GoldTownChamber) -> void:
 			for man in ridge.get_raiders(): ridge.damage_raider(man)
 			ridge.step(1.0 / 30.0)
 			if ridge.get_gate() == gate and ridge._gate_cleared and gate < 2 and ridge.crate_s() >= ridge.river_s_of(RiverCoverChamber.EDDY_1 if gate == 0 else RiverCoverChamber.EDDY_2) - 0.2: break
+	# one world (2026-11-17): Utah has it; he walks home up the same ridge and the lake takes over on Logan's path
+	var pts: Array = RiverCoverChamber.RIDGE_POINTS
+	for i in range(pts.size() - 1, -1, -1):
+		if s.get_active() != ridge: break
+		var from: Vector3 = ridge._player_pos
+		for k in 8:
+			if s.get_active() != ridge: break
+			ridge._player_pos = ridge._collide(from.lerp(pts[i], float(k + 1) / 8.0))
+			ridge._ground_y = ridge._player_pos.y
+			for f in 3: if s.get_active() == ridge: s.step(1.0 / 30.0)
+	for f in 30:
+		if s.get_active() != ridge: break
+		s.step(1.0 / 30.0)
 	lake = s.get_active() as LogansLakeChamber
 	check("only day-88 success returns to the lake with the auction sign", lake != null and lake.after_day88 and lake.get_beat_name() == "ROAD" and lake._auction_sign.visible)
 	if lake == null: return
