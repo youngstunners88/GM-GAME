@@ -202,6 +202,7 @@ func _test_session_respawn() -> void:
 		lake._beat = LogansLakeChamber.Beat.OVERLOOK
 		lake._staged = true
 		lake._talk_t = 0.0
+		lake.armory.sniper_owned = true                  # the ridge is only climbed with the Sharps (audit 2026-11-17)
 		lake._player_pos = Vector3(-8.0, 6.0, 60.0)
 		# the ridge asked for on his first visit builds behind the lake (ep2-no-blackouts: the exit holds for it, never a cut to an unbuilt room)
 		session._drive_prebuild(1e9)

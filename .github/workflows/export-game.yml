@@ -593,6 +593,9 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
           grep -q 'EP2_WORLD_ROUTES: 29 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_audit_1117_test.tscn > audit-revisit-tests.log 2>&1
+          grep -q 'EP2_AUDIT_1117: ALL PASS' audit-revisit-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' audit-revisit-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-trail-tests.log; then exit 1; fi
           # Founder hard-refresh residuals 2026-11-01: no-subtitle pacing, armory showcase + new guns, Chill Bud patch, bandit roles,
           # the seated rider, the lake approach, the horse at the lake, the crowd-graph stall fix.

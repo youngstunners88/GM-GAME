@@ -122,6 +122,34 @@ Music is the usual pressure: the project standard is **128 kbps** for MP3
 (`tools/reencode_media.sh`). A client-supplied track at 200+ kbps is roughly
 double-size for no audible gain in a browser game — re-encode before committing.
 
+## 5. URL flags on the LIVE build (added 2026-11-17, after one was found open)
+
+The founder's Episode 2 access code is the only lock he asked for ("access it simply but restrict others"). `?ep2gate=skip` was
+compiled out of the shipped build in October - and for a month `?ep2unlock=1` sat three lines away in `ep2_entry.gd`, read straight
+from the page URL with no build tag, writing the same device record a correct code writes. Anyone with the public repo could skip the
+code on itch. `scripts/check-harness-hooks.py` did not catch it because its parameter list only named the two flags it was written for.
+
+Rule: **a URL flag that unlocks, grants, skips or kills is a harness hook.** It lives in `src/debug/harness_hooks.gd`, goes through
+`allowed(web, gm_harness, ...)`, and is named in `PARAMS` in `scripts/check-harness-hooks.py`. Nothing else may read it.
+
+Every audit, list what the shipped build reads from the URL and classify each one:
+
+```bash
+grep -rn "URLSearchParams" src --include=*.gd | grep -o "get('[a-z0-9_]*')" | sort | uniq -c
+python3 scripts/check-harness-hooks.py            # CHECK_HARNESS_HOOKS: ALL PASS
+```
+
+| Flag (2026-11-17) | Before or after the access code | What it does | Verdict |
+|---|---|---|---|
+| `ep2gate`, `bosskill`, `ep2unlock` | before | skips the code / kills the boss / remembers the unlock | harness tag only (inert live) |
+| `ep2`, `stage`, `boss`, `blaze`, `vault`, `lounge`, `spawn_x`, `debug` | Episode 1 warps and the overlay | documented founder warps | accepted |
+| `playtest` | after the code | founder presets: every gun, a BTC floor | accepted (founder brief 2026-11-09), still behind the code |
+| `ep2leg`, `ep2chamber`, `ep2bot`, `ep2off`, `ep2probe`, `ep2lakeprobe` | after the code | skip legs, shorten the run, autopilot, probes | accepted while the economy is a simulation; **re-audit the day GOLD is real** (`ep2bot` + `ep2leg` is a farm) |
+
+A new flag is a finding until it has a row here. Definition of Done for a flag change: the checker passes, `tests/harness_hooks_inert_test.tscn`
+passes, and the flag is tried on the LIVE build after a hard refresh (the access prompt must still appear) - never claim it closed from
+a headless run.
+
 ## Relationship to the other gates
 
 | Concern | Owner |

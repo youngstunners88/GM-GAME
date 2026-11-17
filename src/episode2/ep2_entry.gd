@@ -87,9 +87,9 @@ func _ready() -> void:
 		_probe_lake_assets()
 	Ep2Extras.mount_gate = _extras_mount_ok
 	Ep2Extras.start(self)          # web: fetch ep2_extras.pck (two-storey Armory, Tripo Rich & Utah) long before the town
-	# TEST-ONLY (?ep2unlock=1 on web): remember the unlock on this device exactly as a correct code
-	# does, so a phone can enter without a keyboard. The prompt and the code path are untouched.
-	if _debug_unlock_requested():
+	# HARNESS BUILDS ONLY (HarnessHooks, compiled out of the shipped build): remember the unlock on this device exactly as a
+	# correct code does. The prompt and the code path are untouched; on the live site the code is the only way in.
+	if HarnessHooks.ep2_remembered_unlock_requested():
 		_write_unlock()
 	if _is_unlocked():
 		_begin()
@@ -112,12 +112,6 @@ func _write_unlock() -> void:
 	var cf := ConfigFile.new()
 	cf.set_value("ep2", "key", ACCESS_SHA256)
 	cf.save(UNLOCK_FILE)
-
-## TEST-ONLY. ?ep2unlock=1 on web skips the prompt by writing the unlock file above. Off
-## everywhere else (no query string, no web, any other value); the shipped gate is unchanged.
-func _debug_unlock_requested() -> bool:
-	return OS.has_feature("web") and bool(JavaScriptBridge.eval(
-		"new URLSearchParams(window.location.search).get('ep2unlock') === '1'", true))
 
 ## Founder 2026-11-08: the code could not be entered on a phone (no keyboard came up - the field was focused
 ## without a tap, and the 440 px box ran off a narrow screen). On any touch device the gate now brings its OWN
@@ -362,6 +356,8 @@ func _begin() -> void:
 		if Ep2Extras.state() == "loading": print("[PLAYTEST] waiting for the streamed extras (Dude, Logan, the auction hall)")
 		while Ep2Extras.state() == "loading":
 			await get_tree().create_timer(0.5).timeout
+			if not is_inside_tree():
+				return                          # he left for the menu while the pack was still streaming
 		Ep2HideoutWarm.release()            # no hideout on this path
 		_root.start_playtest(playtest)      # founder preset: Dude's stables / the lake after day-88 / the ridge, every gun (no pending Continue overrides it)
 	elif not record.is_empty():

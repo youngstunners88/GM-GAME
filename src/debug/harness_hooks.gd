@@ -10,9 +10,10 @@ extends RefCounted
 ##     except through `allowed()`, if `allowed()` stops requiring both `web` and the tag, or if either preset writer
 ##     ever contains gm_harness. tests/harness_hooks_inert_test.tscn proves the decision logic and the call sites.
 ##
-## Two hooks, both unlocked-file so main_menu.gd (founder-locked) is untouched:
+## Three hooks, all unlocked-file so main_menu.gd (founder-locked) is untouched:
 ##   ?ep2gate=skip  - Ep2Entry._is_unlocked() treats the access-code gate as passed (GameManager.ep2_story_unlocked),
 ##                    exactly what beating boss 3 does in memory. Lets a script reach the runner from ?ep2=1.
+##   ?ep2unlock=1   - Ep2Entry remembers the unlock on the device as a correct code would (same gate, same tag).
 ##   ?bosskill=N    - with ?boss=3, the Claim Jumper is killed N seconds (1..120) after the arena opens, through his REAL die()
 ##                    (so TransitionDirector.prewarm -> film -> TransitionDirector.go all run unchanged), with ONE
 ##                    difference: GameManager.mark_boss_defeated("claim_jumper") is skipped, so no progression write
@@ -54,6 +55,13 @@ static func param(search: String, key: String) -> String:
 static func _search() -> String:
 	var v: Variant = JavaScriptBridge.eval("window.location.search", true)
 	return str(v) if v != null else ""
+
+# --- hook (a2): the remembered unlock ------------------------------------------------------------------------------
+## ?ep2unlock=1 - Ep2Entry writes the same device-local record a correct access code writes. Until 2026-11-17 this was read
+## straight from the page URL in ep2_entry.gd with no tag, so the LIVE site accepted it and anyone could skip the founder's
+## access code. It is a harness parameter like the others now: inert unless the build carries gm_harness.
+static func ep2_remembered_unlock_requested() -> bool:
+	return allowed(OS.has_feature("web"), OS.has_feature("gm_harness"), "ep2unlock", "1")
 
 # --- hook (a): access-code gate ---------------------------------------------------------------------------------
 

@@ -76,6 +76,14 @@ guard — Godot refuses a duplicate connection outright ("Signal is already
 connected to given callable"). Don't write a test that claims to prove the guard
 that way; it passes for the wrong reason. Drive the handler directly instead.
 
+### What this skill does NOT cover: the way back (added 2026-11-17)
+
+The five guards are about the FORWARD chain. Rooms he has finished are retained and can be walked back into (`Ep2WorldRoutes`), and that
+is a second state machine with its own failures: a revisited room whose `chamber_cleared` is disconnected can still reach `_resolve()`
+and freeze; a boundary can exist in one direction only; a required item can sit behind a one-way hand-over. Both of the 2026-11-17
+soft-locks were there, with every guard above green. Any change to a hand-over, a `_resolve`, or a room boundary also runs
+`.claude/skills/ep2-revisit-route-integrity/SKILL.md` and its gate `tests/ep2_audit_1117_test.tscn`.
+
 ## Required assertions
 
 **Commit-exactly-once**

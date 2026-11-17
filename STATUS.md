@@ -1,5 +1,16 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-17 — Episode 2 full audit: two soft-locks, a dead end and an access-code bypass closed (pushed; see the ship line below for live state). NOT founder-verified, not yet seen in a browser.**
+- **How it was audited:** all 107 Episode 2 test scenes run on master with a clean save each (104 passed; the 3 that fail are stale checks, not in CI), the session, world-route, shared first-person room, boot/pause/exit and save code read in full, and pattern scans over the rest. No browser or phone playthrough, no look at the art, no listen to the mix: those layers are covered only by their existing tests. Full report: `docs/episode2-quality/full-audit-2026-11-17/AUDIT.md`.
+- **Frozen at Dude's (P0):** after riding out, coming back into town and pressing E on "Mount horse" at the rail froze the game for good. That prompt is closed on a return visit.
+- **No way back to the lake (P0):** once you rode north into town there was no route back to the lake trail, on foot or on the horse. Riding back down the street now puts you on the trail again where you stand, every time.
+- **The ridge ended the run (P1):** with the Shipment but no Sharps, the day-88 ridge could only end the session. The lake's overlook now turns you round ("needs the Sharps ... ride back to town for it") while the road to Rich & Utah's is still open.
+- **Horse and height (P1):** a horse left drinking at the lake no longer "carries" you through town (saddle height, riding speed, no horse); the town no longer keeps saddle eye height after the first ride out; the horse you rode into town is under you again on the trail.
+- **Lost purchases (P1):** being shot down on the trail restored what you carried when the ride first began, wiping anything bought since (the BTC stayed spent). It now restores what you carry on this leg.
+- **Access code (P1, security):** `?ep2unlock=1` on the live address skipped the Episode 2 code. It is now a test-build-only flag like the others, and the CI checker knows it.
+- **Still open (P2, listed in the report):** Esc during a film leaves for the menu with no confirmation; the horse can be ridden indoors in town; three stale tests; Save stores the section-start checkpoint.
+- New gate in CI: `tests/ep2_audit_1117_test` (22 checks; 13 fail with the fixes reverted). New skill: `ep2-revisit-route-integrity`.
+
 **2026-11-16 — Fix-pack 1115 touch-ups: Goldsmith's ladder, voices, Rich's beats (pushed; see the ship line below for live state).**
 - **Licenses:** the wall is Prospector's -> Miner's -> **Goldsmith's** (Foreman's print re-titled GOLDSMITH'S LICENSE; Prospector's "TIER 1 OF 3" plate re-lettered clean, no smudge round the 3). Mike Dean's text says Goldsmith's. No Foreman's or Mine Owner's anywhere.
 - **Voices recorded (ElevenLabs):** the auctioneer's six calls (voice X0KF3ROqwE8cLCsWuhs6), Rich's dock line, and the two miners now say "three licenses" / "Three papers". **Still text only:** Mike Dean x2, Logan x3, Dude x2 - their voices are on an ElevenLabs account whose key is not on this machine (checked `~/.config/gm-game/elevenlabs.key` and `~/Documents/GitHub/GM-GAME/.env`: both accounts answer "voice not found").

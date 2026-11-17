@@ -26,6 +26,7 @@ var _line: int = 0
 var _talk_t: float = 0.0
 var _gesture_t: float = 0.0
 var _staged: bool = false
+var _sharps_told: bool = false                     # the overlook has told him the ridge needs the Sharps (once per climb)
 var _dialogue: Label
 var _dialogue_panel: PanelContainer
 var _marker_label: Label3D
@@ -508,7 +509,16 @@ func _tick(delta: float) -> void:
 	# walking on up the path is enough: the ridge continues from here, [E] only says so sooner. Never waits on a line (founder
 	# 2026-11-07 "no pause climbing the hill from the cargo check"): the ridge carries the caption on (RiverCoverChamber.adopt_lake)
 	if _beat == Beat.OVERLOOK and _staged and _player_pos.z >= WALK_ON_Z and not _resolved and has_player_control() and _handoff_ok():
-		_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
+		if armory.sniper_owned:
+			_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
+		elif not _sharps_told:
+			# The ridge cannot be covered without the long rifle, and there is no way back down from it: he is turned round HERE, where the
+			# trail to Rich & Utah's counter is still open (audit 2026-11-17: the ridge's only answer was to end the run).
+			_sharps_told = true
+			_hud.objective = "The day-88 run needs the Sharps buffalo gun from Rich & Utah's counter. Ride back to town for it."
+			_hud.toast("NO SHARPS  -  BACK TO RICH & UTAH'S", 3.4)
+	elif _sharps_told and _player_pos.z < WALK_ON_Z - 4.0:
+		_sharps_told = false                           # said again each time he climbs back up without it
 	# the road to the auction is the same: riding (or walking, when the horse is gone) past the signpost IS leaving - no key
 	if _beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok():
 		_leave_for_auction()
@@ -638,7 +648,7 @@ func get_handoff() -> Dictionary:
 	return result
 
 ## At the top of the shore path with the ridge not yet built: the root spends more of each frame on it (never seen when built early).
-func _wants_handoff() -> bool: return (_beat == Beat.OVERLOOK and _staged and _player_pos.z > 59) or (_beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction())
+func _wants_handoff() -> bool: return (_beat == Beat.OVERLOOK and _staged and _player_pos.z > 59 and armory.sniper_owned) or (_beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction())
 
 func staging_complete() -> bool: return _staged
 func staging_count() -> int: return _stage_calls

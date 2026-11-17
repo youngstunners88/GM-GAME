@@ -76,6 +76,11 @@ func _ready() -> void:
 	check("the ridge is being built behind the lake since Logan's first line", session._pb_id == "river_cover")
 	check("the overlook line is still running when he may walk on", c._talk_t > 0.0)
 	session._drive_prebuild(1.0e9)                 # the test is the frame clock: the background build, done
+	# audit 2026-11-17: the ridge needs the Sharps and has no way back, so the lake holds him here until he owns it
+	c._player_pos = Vector3(-8.0, 6.0, LogansLakeChamber.WALK_ON_Z)
+	advance(c, 0.1)
+	check("without the Sharps the overlook turns him round instead of ending the run on the ridge", results.is_empty() and c.has_player_control() and "sharps" in c._hud.objective.to_lower())
+	c.armory.sniper_owned = true
 	c._player_pos = Vector3(-8.0, 6.0, LogansLakeChamber.WALK_ON_Z)   # walking on IS finishing (founder 2026-11-15: no [E] arrivals)
 	advance(c, 0.1)
 	advance(c, 0.1)

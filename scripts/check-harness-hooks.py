@@ -6,7 +6,7 @@ The hooks (src/debug/harness_hooks.gd) unlock Episode 2 from a URL and kill the 
 that would remove the founder's access code and skip progression, so they exist only when the build carries the custom
 feature tag `gm_harness`, which only `GM_HARNESS=1 scripts/ep2-local-export.sh` ever writes. This script fails if:
 
-  H1  a harness query parameter (ep2gate, bosskill) is mentioned in any src/ .gd file except harness_hooks.gd
+  H1  a harness query parameter (ep2gate, bosskill, ep2unlock) is mentioned in any src/ .gd file except harness_hooks.gd
   H2  a function in harness_hooks.gd that reads one is missing OS.has_feature("web") or OS.has_feature("gm_harness")
   H3  gated_value() stops requiring BOTH web and tag before it reads the page URL, or JavaScriptBridge.eval appears
       anywhere in the file except the single literal (no interpolation) eval inside _search(), which only gated_value() may call
@@ -31,9 +31,10 @@ if '--root' in sys.argv:
     ROOT = os.path.abspath(sys.argv[sys.argv.index('--root') + 1])
 
 HOOKS = 'src/debug/harness_hooks.gd'
-PARAMS = ('ep2gate', 'bosskill')
+PARAMS = ('ep2gate', 'bosskill', 'ep2unlock')
 SANCTIONED_CALLS = {                       # api name -> the only src file (besides harness_hooks.gd) that may call it
     'apply_ep2_gate_skip': 'src/episode2/ep2_entry.gd',
+    'ep2_remembered_unlock_requested': 'src/episode2/ep2_entry.gd',
     'kill_boss_after': 'src/level/level_base.gd',
     'skip_boss_credit': 'src/boss/claim_jumper.gd',
 }

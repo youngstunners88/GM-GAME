@@ -2777,8 +2777,10 @@ func _on_stable_horse_bought(_paid: int, _credit: int) -> void:
 		_hud.objective = "Take your horse to Logan's Lake first so she can drink and cool down. It's on the map."
 
 
+## The FIRST ride out only. On a later visit the trail owns Dude's ranch and the horse (Ep2WorldRoutes hands him to it on the lake road);
+## mounting here again resolved a room nobody was listening to and froze him at the rail (audit 2026-11-17).
 func can_mount_departure() -> bool:
-	return _beat == Beat.GEARED and _horse_bought and not _mounted_transport and not _depart_mounted and not _show_active and _player_pos.distance_to(DEPART_HORSE) < 3.0
+	return _beat == Beat.GEARED and _horse_bought and not _world_revisit and not _mounted_transport and not _depart_mounted and not _show_active and _player_pos.distance_to(DEPART_HORSE) < 3.0
 
 func _wants_handoff() -> bool:
 	return _beat == Beat.GEARED and _depart_mounted and not _show_active

@@ -5,6 +5,12 @@ var rooms: Dictionary = {}
 var cooldown: float = 0.0
 var horse: Node3D
 var mounted: bool = false
+## The trail's adopted streets end here (trail z; the town room owns everything north of it). Trail -> town above it, town -> trail
+## 2 m below it, so a rider standing on the line never flips rooms; `cooldown` covers the rest.
+const TOWN_LINE_Z := 118.0
+const TOWN_LINE_BACK := 2.0
+## The walking pace a woods or town room had before the ridden horse raised it: put back when he next arrives there on foot.
+var _foot_pace: Dictionary = {}
 func id_of(room: Node) -> String:
  return room.get_script().resource_path.get_file().get_basename()
 func park(session: Node, room: Node) -> void:
@@ -18,8 +24,9 @@ func park(session: Node, room: Node) -> void:
  # A retained room must not call an obsolete forward chain on a later visit.
  if room.chamber_cleared.is_connected(session._on_chamber_cleared): room.chamber_cleared.disconnect(session._on_chamber_cleared)
  if room.chamber_failed.is_connected(session._on_chamber_failed): room.chamber_failed.disconnect(session._on_chamber_failed)
- if room is LakeTrailChamber and room.is_mounted():
-  horse=room._horse;mounted=true
+ # The saddle is known only from the trail he is leaving: a horse left drinking at the lake (or shot) never follows him into town.
+ if room is LakeTrailChamber:
+  mounted=room.is_mounted();horse=room._horse if mounted else null
  if id in ["smelting_facility","mine_lift","woods_quad"] and room._bull != null:
   room._bull.hide()
  var vp := SubViewport.new()
@@ -43,8 +50,6 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  if previous.has_method("portal_detach"): previous.portal_detach()
  session._portal_on=false
  var pitch: float = previous._look_pitch
- if previous is LakeTrailChamber and previous.is_mounted():
-  horse=previous._horse;mounted=true
  var entry: Dictionary = rooms[id]
  rooms.erase(id)
  park(session,previous)
@@ -78,6 +83,14 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
   room._set_mouth_open(true)
   room._gate_open=1.0;room._gate_in_goal=1.0
  elif room is LakeTrailChamber:
+  # The one horse goes back under the trail's own roof: it was carried into the woods / the town's streets while he rode there.
+  if is_instance_valid(room._horse) and room._horse.get_parent()!=room._visuals:
+   room._horse.reparent(room._visuals,false)
+   room._horse.position.y=0.0
+  mounted=false;horse=null
+  # A new leg of the ride: a retry restores what he carries NOW. The snapshot from the trail's first minute used to come back on a
+  # later retry and wipe whatever he had bought at Rich's or Logan's since, with the BTC already spent.
+  room._armory_snapshot=room.armory.snapshot()
   room._ending=false;room._end_t=0.0;room._beat=room.Beat.RIDE
   if previous is LogansLakeChamber:
    # One horse: ridden away from the lake it carries him up the trail; left drinking, the trail is walked.
@@ -88,7 +101,14 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
    room._player_pos=position
    room._in_departure_area=true
   room._speed=0.0
-  room._look_yaw=wrapf(yaw+room.lake_transform().basis.get_euler().y,-PI,PI)
+  # the lake room is turned against the trail; the town and the woods share the trail's own axes (a translation only)
+  room._look_yaw=wrapf(yaw+room.lake_transform().basis.get_euler().y,-PI,PI) if previous is LogansLakeChamber else yaw
+ # On foot in the woods or the town: his own eye height and pace, whatever a ride through here (or the mount at Dude's) left behind.
+ if id in ["woods_quad","gold_town"] and not mounted:
+  room.eye_height=Ep2Interlude.FPS_EYE_HEIGHT
+  if _foot_pace.has(id):
+   room.walk_speed=_foot_pace[id]
+   _foot_pace.erase(id)
  if room.has_method("set_move_input"): room.set_move_input(previous._move_input,previous._run_input)
  room._camera.current=true
  if room is LakeTrailChamber and rooms.has("gold_town"):
@@ -125,6 +145,7 @@ func tick(session: Node, delta: float) -> void:
  var p: Vector3=c.get_player_position()
  if mounted and is_instance_valid(horse) and id in ["woods_quad","gold_town"]:
   if horse.get_parent()!=c._visuals: horse.reparent(c._visuals)
+  if not _foot_pace.has(id): _foot_pace[id]=c.walk_speed
   horse.position=p
   if c._move_input.length()>0.05: horse.rotation.y=c._look_yaw
   c.eye_height=move_toward(c.eye_height,2.18,delta*1.5);c.walk_speed=7.0
@@ -137,19 +158,24 @@ func tick(session: Node, delta: float) -> void:
  if id=="logans_lake" and p.z<LogansLakeChamber.SPAWN.z-0.7:
   travel(session,"lake_trail",Vector3.ZERO)
   return
- if id=="lake_trail" and c._in_departure_area and p.z>118.0 and rooms.has("gold_town"):
+ if id=="lake_trail" and c._in_departure_area and p.z>TOWN_LINE_Z and rooms.has("gold_town"):
   travel(session,"gold_town",p+GoldTownChamber.DEPART_HORSE)
  elif id=="lake_trail" and c._in_departure_area and p.z < -78.5:
   travel(session,"woods_quad",p+GoldTownChamber.DEPART_HORSE)
  # The town owns Dude's ranch at z=1230. The old 1345 boundary sent the
  # referred player to the woods' independent, unreferred scenery yard.
+ # Once he has ridden out, Dude's ranch and the lake road belong to the trail (it carries the town's own streets). Coming back down the
+ # street hands him to it again - without this the revisited town had no way back to the lake at all (audit 2026-11-17).
+ elif id=="gold_town" and c._world_revisit and rooms.has("lake_trail") and p.z<GoldTownChamber.DEPART_HORSE.z+TOWN_LINE_Z-TOWN_LINE_BACK:
+  travel(session,"lake_trail",p-GoldTownChamber.DEPART_HORSE)
  elif id=="gold_town" and p.z<1150.0:
   travel(session,"woods_quad",p)
  elif id=="woods_quad" and c._world_revisit:
-  if p.z>1152.0:travel(session,"gold_town",p)
+  if p.z>1152.0:
+   # the same ground from the south: the trail's when it exists, else the town that has not been left yet
+   if rooms.has("lake_trail"):travel(session,"lake_trail",p-GoldTownChamber.DEPART_HORSE)
+   else:travel(session,"gold_town",p)
   elif p.z<6.2:travel(session,"mine_lift",p+MineLiftChamber.SURFACE_OFFSET)
-  elif p.x>8.0 and p.z>1200.0 and p.z<1240.0:
-   travel(session,"lake_trail",p-GoldTownChamber.DEPART_HORSE)
  elif id=="mine_lift" and c._world_revisit:
   if c._cage_y<0.1 and p.z<MineLiftChamber.PORTAL_Z:
    travel(session,"smelting_facility",p+Vector3(0,0,30))
@@ -162,4 +188,5 @@ func clear() -> void:
  for entry in rooms.values():
   if is_instance_valid(entry.viewport): entry.viewport.queue_free()
  rooms.clear()
+ _foot_pace.clear()
  mounted=false;horse=null

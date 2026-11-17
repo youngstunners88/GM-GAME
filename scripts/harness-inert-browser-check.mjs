@@ -6,6 +6,7 @@
 // The shipped build (the CI artifact in web/game, and the itch page) must ignore both. This script loads a build with both
 // parameters and FAILS if either one did anything:
 //   1  ?ep2=1&ep2gate=skip  -> the access-code prompt still appears, and no runner leg ever starts
+//   1b ?ep2=1&ep2unlock=1   -> the same (it was live until 2026-11-17)
 //   2  ?boss=3&bosskill=2   -> no "[HARNESS]" console line, the stage never leaves PLAYING for LEVEL_COMPLETE
 //   3  window.__gm.harness  -> false (the overlay reports OS.has_feature("gm_harness"))
 // Run it on the CI artifact before deploy (advisory step) or on any local export:
@@ -57,6 +58,17 @@ if (expectLive) {
 }
 check('no [HARNESS] line printed' + (expectLive ? ' (live: expected at least one)' : ''), expectLive ? a.logs.some((l) => /^\[HARNESS\]/.test(l)) : !a.logs.some((l) => /^\[HARNESS\]/.test(l)));
 check(`beacon.harness is ${expectLive}`, !!a.gm && a.gm.harness === expectLive, `beacon=${JSON.stringify(a.gm && a.gm.harness)}`);
+
+// 1b. the remembered unlock (audit 2026-11-17: until then ?ep2unlock=1 was read WITHOUT the tag and opened Episode 2 on the live site)
+const u = await load('?ep2=1&ep2unlock=1&ep2probe=1&debug=beacon', { waitFor: /^\[EP2\] (code prompt|leg start)/, waitMs: 240000, settleMs: 12000 });
+const uPrompt = u.logs.some((l) => /^\[EP2\] code prompt/.test(l));
+const uLeg = u.logs.some((l) => /^\[EP2\] leg start/.test(l));
+if (expectLive) {
+  check('ep2unlock=1 remembered the unlock (a runner leg started, no code prompt)', uLeg && !uPrompt, `prompt=${uPrompt} leg=${uLeg}`);
+} else {
+  check('ep2unlock=1 is IGNORED: the access-code prompt appears', uPrompt, 'no "[EP2] code prompt" line: the gate did not show');
+  check('ep2unlock=1 is IGNORED: no runner leg starts', !uLeg, 'a runner leg started without the code');
+}
 
 // 2. the boss kill
 const b = await load('?boss=3&bosskill=2&debug=beacon', { waitFor: /^\[HARNESS\] bosskill: stage-3/, waitMs: 90000, settleMs: expectLive ? 4000 : 14000 });
