@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-17 — Auction: the new cast is IN (two checkers + five-piece band), hall score, light pass, crowd sound — PUSHED, deploying (see ship line).**
+**2026-11-17 — Auction: the new cast is IN (two checkers + five-piece band), hall score, light pass, crowd sound — LIVE on itch, BUILD `2026-11-17-fc858f3` (master CI 44039098729, butler pushed).**
 - **Cast (founder sheets, Tripo):** Checker A is the claim clerk at the wagon, Checker B the doorman at the porch (both Idle / Greet / Talk). The band stands stage-left: the singer (Idle + singing clip), fiddle, banjo, upright bass, harmonica. Capture `docs/episode2-quality/auction-cast-20261116/cast_in_game.jpg`. The four players share one borrowed idle (no playing animation yet) and the instruments read only loosely: next pass.
 - **Hall score:** an 1880s old-time instrumental loop (Muapi/Suno, 49 s) plays inside the hall, ducks under every line, fades out at the porch. Chosen by measurement, not by ear: listen and say if it should go.
 - **Pack room (founder approved 2026-11-17: "do whatever you need"):** the four largest streamed tracks re-encoded from ~180 to 128 kbps, same length, about 0.4 LU quieter: `gm_laker2.mp3` 4,346,348 -> 3,002,540 B, `ep2_theme_town.mp3` 3,566,036 -> 2,452,268, `gm_town.mp3` 3,307,580 -> 2,388,524, `06_28_remastered.mp3` 2,509,436 -> 1,814,060 (-4.07 MB). Nothing deleted. Streamed pack 197,843,328 / 199,229,440 B (1.39 MB free).
