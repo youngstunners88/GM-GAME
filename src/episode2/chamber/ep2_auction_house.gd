@@ -79,6 +79,9 @@ const BAND := [
 	[Ep2Extras.BAND_BASS, -6.1, 22.5, "Auc_Bass", "LeftHand", Vector3(0, 0.0, 0.08), Vector3(0, 0, 180)],
 	[Ep2Extras.BAND_HARMONICA, -5.5, 21.0, "Auc_Harmonica", "RightHand", Vector3(0, 0.05, 0.03), Vector3(0, 90, 0)],
 ]
+const BAND_PLAY := "res://src/episode2/extras/auction/band_play.gd"
+const SPECTACLE := "res://src/episode2/extras/auction/spectacle.gd"
+const BAND_KIND := {"Auc_Fiddle": "fiddle", "Auc_Banjo": "banjo", "Auc_Bass": "bass", "Auc_Harmonica": "harmonica"}
 const BAND_FACE := Vector3(2.0, 0, 12.0)            # they play to the room, not to the block
 const SCONCES := [[-1, 4.0], [-1, 12.0], [1, 4.0], [1, 12.0], [1, 20.0], [1, 28.0], [-1, 28.6]]      # [wall side, z]
 const DESK := Vector3(5.4, 0.12, 1.3)               # the license-check desk on the porch, past the hostess's walk
@@ -97,6 +100,8 @@ var _servers: Array = []                            # [folk, route, index, wait,
 var _doorman: Ep2TownFolk
 var _band: Array = []                               # the five players (empty until all five GLBs are in the pack)
 var _murmur: AudioStreamPlayer3D
+## The grand-event layer (GM logos, braziers, flame jets, gold): null until the streamed script is in.
+var grand: Node3D
 var _swell: float = 0.0                             # 1 just after a call or on arrival, decays to 0
 var _tied: Array = []                               # the horses at the hitching rail
 var _arrival: Ep2TownFolk
@@ -329,6 +334,11 @@ func _furnish() -> void:
 	# 2026-11-16 interior pass: wall lanterns between the windows (their own flame, no new lights) and the check desk on the porch
 	for row in SCONCES:
 		_kit_piece("Auc_Sconce", Vector3(float(row[0]) * (W * 0.5 - 0.22), 3.3, float(row[1])), 0.0 if int(row[0]) < 0 else PI)
+	# Founder 2026-11-17: a grand event - the GM logo over the block and on both walls, fire, gold (streamed script).
+	if ResourceLoader.exists(SPECTACLE):
+		grand = load(SPECTACLE).new()
+		add_child(grand)
+		grand.build(SCONCES, W * 0.5)
 	if _kit_piece("Auc_CheckDesk", DESK) != null:
 		_solid(DESK.x, DESK.z, 0.5, 0.33)
 	# the grounds: lamp posts pooling warm light up the last stretch of road, the hitching rail with two horses already tied
@@ -481,14 +491,35 @@ func _build_band() -> void:
 		f.name = "Band%d" % _band.size()
 		f.looping_clips.assign(["Idle", "Play", "Talk"])
 		f.face_point(BAND_FACE)
-		if str(row[3]) != "":
-			_attach(f, str(row[3]), row[5], row[6], str(row[4]))
-			if str(row[3]) == "Auc_Fiddle":
-				_attach(f, "Auc_FiddleBow", Vector3(0, 0.04, 0.02), Vector3(0, 0, 70))
-		f.hold_clip("Play" if f.anim_player() != null and f.anim_player().has_animation("Play") else "Idle")
+		var lead_sings: bool = _band.is_empty() and f.anim_player() != null and f.anim_player().has_animation("Talk")
+		f.hold_clip("Talk" if lead_sings else ("Play" if f.anim_player() != null and f.anim_player().has_animation("Play") else "Idle"))
+		# Founder 2026-11-17: the instrumentalists really play - the body holds the instrument, both hands are on it.
+		var kind: String = str(BAND_KIND.get(str(row[3]), "lead"))
+		var piece: Node3D = _kit_copy(str(row[3])) if str(row[3]) != "" else null
+		var bow_piece: Node3D = _kit_copy("Auc_FiddleBow") if kind == "fiddle" else null
+		var play: Node = load(BAND_PLAY).new()
+		play.name = "Plays"
+		f.add_child(play)
+		if not play.setup(f, kind, piece, bow_piece):
+			play.queue_free()
+			for extra in [piece, bow_piece]:
+				if extra != null: extra.queue_free()
+			if str(row[3]) != "":
+				_attach(f, str(row[3]), row[5], row[6], str(row[4]))
 		_band.append(f)
 	# one soft warm pool on them; the block stays the brightest place in the room (stage pool 2.4, key 6.0)
 	_light(Vector3(-7.5, 2.2, 21.0), 0.8, 5.0, Color(1.0, 0.76, 0.5))
+
+
+## A dressed copy of a kit piece, not yet parented (null when the kit lacks it).
+func _kit_copy(piece: String) -> Node3D:
+	var src: Node3D = _kit.find_child(piece, true, false) as Node3D
+	if src == null:
+		return null
+	var p: Node3D = src.duplicate() as Node3D
+	p.name = piece
+	Ep2Pbr.dress(p)
+	return p
 
 
 func _attach(f: Ep2TownFolk, piece: String, pos: Vector3, rot: Vector3, bone: String = "RightHand") -> void:
@@ -586,7 +617,8 @@ func _tick_murmur(delta: float) -> void:
 func _set_phase(p: String) -> void:
 	phase = p
 	if p in ["calls", "after"]:
-		_swell = 1.0                                    # arrival, and the room letting go once Jack is out the door
+		_swell = 1.0
+		if grand != null: grand.burst()                                    # arrival, and the room letting go once Jack is out the door
 	_t = 0.0
 	_line = -1
 	phase_changed.emit(p)
@@ -675,6 +707,7 @@ func tick(delta: float, p: Vector3, fwd: Vector3) -> void:
 						renegade.face_point(Vector3(0, 0, 10))
 						renegade.play_clip("Cheer")
 						_react()
+						if grand != null: grand.shower()
 			if p.z < Z0 - 0.6 and _t > 1.0:
 				_set_phase("left")
 
@@ -694,6 +727,7 @@ var react_log: Array = []
 
 func _react() -> void:
 	_swell = maxf(_swell, 0.7)
+	if grand != null: grand.burst()
 	if _cheer.stream != null and _t - _cheer_at >= CHEER_COOLDOWN:
 		_cheer_at = _t
 		cheers_played += 1

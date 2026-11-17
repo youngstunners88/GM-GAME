@@ -52,7 +52,37 @@ func _ready() -> void:
 		var eye: Vector3 = road.at(road.CLAIM_S - 5.0, -2.2)
 		shots = [["20_claim_clerk", eye, atan2(cp.x - eye.x, cp.z - eye.z), -0.22, 0.4],
 			["21_claim_clerk_talk", road.at(road.CLAIM_S - 6.2, -1.6), atan2(cp.x - road.at(road.CLAIM_S - 6.2, -1.6).x, cp.z - road.at(road.CLAIM_S - 6.2, -1.6).z), -0.16, 0.4]]
+	if OS.get_cmdline_user_args().has("grand"):     # 2026-11-17 grand event: GM logos, braziers, flame jets, gold, the band really playing
+		var band_eye: Vector3 = road.from_house(Vector3(-4.6, 0, 17.4))
+		var band_at: Vector3 = road.from_house(Vector3(-7.6, 0, 21.6))
+		var band_yaw: float = atan2(band_at.x - band_eye.x, band_at.z - band_eye.z)
+		shots = [["22_stage_wide", road.from_house(Vector3(0.0, 0, 8.0)), road.ROAD_YAW, 0.08, 0.4],
+			["23_flame_jets", road.from_house(Vector3(0.0, 0, 13.0)), road.ROAD_YAW, 0.12, 0.2, "burst"],
+			["24_band_playing", band_eye, band_yaw, -0.08, 0.4],
+			["24b_band_playing_later", band_eye, band_yaw, -0.08, 0.4, "wait"],
+			["25_left_wall_logo", road.from_house(Vector3(-3.0, 0, 15.5)), road.ROAD_YAW - PI * 0.5, 0.12, 0.4],
+			["26_gold_shower", road.from_house(Vector3(0.0, 0, 15.0)), road.ROAD_YAW, 0.15, 0.2, "shower"],
+			["27_bass_harmonica", road.from_house(Vector3(-4.0, 0, 20.4)), road.ROAD_YAW - 1.25, -0.12, 0.4],
+			["28_fiddle_banjo", road.from_house(Vector3(-7.0, 0, 18.4)), road.ROAD_YAW - 0.35, -0.1, 0.4]]
+	if OS.get_cmdline_user_args().has("band"):      # each player face on from 2.3 m: are both hands on the instrument?
+		shots = []
+		for row in Ep2AuctionHouse.BAND:
+			var at := Vector3(float(row[1]), 0, float(row[2]))
+			var eye_l: Vector3 = at + (Ep2AuctionHouse.BAND_FACE - at).normalized() * 2.3
+			var eye: Vector3 = road.from_house(eye_l)
+			var tgt: Vector3 = road.from_house(at)
+			shots.append(["29_%s" % str(row[3]).to_lower(), eye, atan2(tgt.x - eye.x, tgt.z - eye.z), -0.12, 0.4])
 	for s in shots:
+		if s.size() > 5 and road.house() != null and road.house().grand != null:
+			var g: Node = road.house().grand
+			if s[5] == "burst":
+				g._jet_t = 0.0
+				g.burst()
+			elif s[5] == "shower":
+				g._jet_t = 0.0
+				g.shower()
+			for i in (40 if s[5] != "wait" else 25):
+				await get_tree().process_frame
 		road._player_pos = s[1]
 		var t: float = s[4]
 		while t > 0.0:

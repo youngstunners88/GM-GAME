@@ -372,14 +372,10 @@ func _route_sample(distance: float) -> Array:
 func _step_horse() -> void:
 	_horse = _horse_instance(_visuals)
 	_horse.name = "DudesHorse"
-	Ep2HorseCoat.apply(_horse, str(handoff.get("horse_coat", "brown")))     # the horse Lil Blunt picked at Dude's yard
+	Ep2HorseCoat.ridden = str(handoff.get("horse_coat", Ep2HorseCoat.ridden))     # the horse Lil Blunt picked at Dude's yard
+	Ep2HorseCoat.apply(_horse, Ep2HorseCoat.ridden)
 	_horse_anim = _find_horse_anim(_horse)
-	var leather: StandardMaterial3D = _plain(Color(0.16, 0.075, 0.035), 0.82)
-	_box(Vector3(0.72, 0.13, 0.76), Vector3(0.0, SADDLE_HEIGHT, -0.15), leather, _horse)
-	_box(Vector3(0.82, 0.07, 0.12), Vector3(0.0, SADDLE_HEIGHT + 0.11, -0.47), leather, _horse)
-	for side in [-1.0, 1.0]:
-		_box(Vector3(0.035, 0.52, 0.055), Vector3(side * 0.43, SADDLE_HEIGHT - 0.27, -0.12), leather, _horse)
-		_box(Vector3(0.13, 0.035, 0.22), Vector3(side * 0.43, SADDLE_HEIGHT - 0.52, -0.12), leather, _horse)
+	# Founder 2026-11-17: no saddle. Ridden bareback, the horse reads the same on the trail, at the water and on the road.
 	_set_horse_clip("horse_stand", 1.0)
 
 

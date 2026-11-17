@@ -372,6 +372,7 @@ func _build_horse() -> void:
 				_horse_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
 	else:
 		_box(Vector3(0.76, 0.82, 1.75), Vector3(0.0, 1.02, 0.0), _plain(Color(0.33, 0.2, 0.11)), _horse)
+	Ep2HorseCoat.apply(_horse, Ep2HorseCoat.ridden)          # the stable's pick carries to the road
 
 
 func _on_setup() -> void:

@@ -693,13 +693,7 @@ func _build_horse() -> void:
 		var coat: StandardMaterial3D = _plain(Color(0.30, 0.16, 0.075), 0.92)
 		_box(Vector3(0.76, 0.82, 1.75), Vector3(0.0, 1.02, 0.0), coat, _horse)
 		_box(Vector3(0.40, 0.42, 0.70), Vector3(0.0, 1.62, 1.0), coat, _horse)
-	# Dude's saddle and stirrups, the same leather as on the trail: it is the same horse.
-	var leather: StandardMaterial3D = _plain(Color(0.16, 0.075, 0.035), 0.82)
-	_box(Vector3(0.72, 0.13, 0.76), Vector3(0.0, SADDLE_HEIGHT, -0.15), leather, _horse)
-	_box(Vector3(0.82, 0.07, 0.12), Vector3(0.0, SADDLE_HEIGHT + 0.11, -0.47), leather, _horse)
-	for side in [-1.0, 1.0]:
-		_box(Vector3(0.035, 0.52, 0.055), Vector3(side * 0.43, SADDLE_HEIGHT - 0.27, -0.12), leather, _horse)
-		_box(Vector3(0.13, 0.035, 0.22), Vector3(side * 0.43, SADDLE_HEIGHT - 0.52, -0.12), leather, _horse)
+	Ep2HorseCoat.apply(_horse, Ep2HorseCoat.ridden)     # founder 2026-11-17: the same horse he rode in on - same coat, no saddle appearing at the water
 	_place_horse(HORSE_DRINK, HORSE_DRINK_YAW)
 	_set_horse_clip("horse_graze", 0.55)
 
@@ -949,6 +943,8 @@ func _near_auction_sign() -> bool:
 
 ## Mounted by default. On foot only when there is no horse left to ride (shot dead at the water); a shot horse is patched first.
 func _can_leave_for_auction() -> bool:
+	if has_meta("road_parked"):
+		return false                  # the road he already rode is kept: the world routes carry him onto it (one world)
 	return _riding or _horse_state == "dead"
 
 

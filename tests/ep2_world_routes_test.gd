@@ -86,6 +86,25 @@ func _ready() -> void:
  check("route has gradual grass transition",trail._visuals.find_child("GradualGrassApproach",true,false)!=null)
  check("lake route uses the supplied draw song",AudioManager.current_music_player.stream.resource_path==Ep2DrawMusic.TRACK)
  check("entering the lake replaces ride music with supplied GM Laker2",routes.travel(session,"logans_lake",LogansLakeChamber.SPAWN) and AudioManager.current_music_player.stream.resource_path==Ep2DrawMusic.LAKE_TRACK and Ep2DrawMusic.token<0)
+ # One world (founder 2026-11-17): the auction road is walked back to the lake and ridden out onto the SAME road again
+ var road: AuctionRoadChamber=preload("res://src/episode2/chamber/auction_road.tscn").instantiate()
+ road.handoff={"road_mounted":false}
+ session.add_child(road);road.setup(0,[],0);road.set_physics_process(false)
+ routes.park(session,road)
+ var road_id: int=road.get_instance_id()
+ check("the lake can ride out onto the visited road",routes.travel(session,"auction_road",road.at(AuctionRoadChamber.START_S)) and session._active==road)
+ road._player_pos=road.at(AuctionRoadChamber.START_S-1.6)
+ road.set_move_input(Vector2(0,1))
+ routes.cooldown=0
+ routes.tick(session,.1)
+ check("walking back down the road arrives at Logan's Lake by the auction sign (no dead end)",session._active==lake and lake._player_pos.distance_to(Ep2WorldRoutes.lake_from_road())<0.01)
+ check("the lake never rebuilds the road it already has",not lake._can_leave_for_auction())
+ lake._player_pos=LogansLakeChamber.AUCTION_SIGN
+ lake._show_blocks_control=false
+ lake.set_move_input(Vector2(0,1))
+ routes.cooldown=0
+ routes.tick(session,.1)
+ check("back at the sign he walks onto the same road instance",session._active!=null and session._active.get_instance_id()==road_id)
  session.queue_free()
  await get_tree().process_frame
  print("EP2_WORLD_ROUTES: ",checks," checks, ",failed," failed")

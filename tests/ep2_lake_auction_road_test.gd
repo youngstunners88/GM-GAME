@@ -179,8 +179,10 @@ func _ready() -> void:
 		coats[Ep2HorseCoat.coat_of(h)] = true
 	check("the horses tied at the rail wear at least two different coats", house._tied.size() >= 2 and coats.size() >= 2, str(coats.keys()))
 	var house_src: String = _text("res://src/episode2/chamber/ep2_auction_house.gd")
-	check("the auction never recolours the player's road horse", not house._tied.has(road._horse) and house_src.count("Ep2HorseCoat.apply(") == 1
-		and not "Ep2HorseCoat.apply(" in road_src)
+	# founder 2026-11-17: one horse - the road horse wears the coat Lil Blunt picked at Dude's, and the hall never touches it
+	check("the road horse wears the stable's coat; the auction never recolours it", not house._tied.has(road._horse) and house_src.count("Ep2HorseCoat.apply(") == 1
+		and (road._horse.find_children("*", "MeshInstance3D", true, false).is_empty() or Ep2HorseCoat.coat_of(road._horse) == Ep2HorseCoat.ridden),
+		Ep2HorseCoat.coat_of(road._horse))
 	var clerk: Ep2TownFolk = road.find_child("ClaimClerk", true, false) as Ep2TownFolk
 	check("checker A is the claim clerk when his model is in the pack (the old clerk until then)", clerk != null
 		and ResourceLoader.exists(AuctionRoadChamber.clerk_model_path())
@@ -207,6 +209,39 @@ func _ready() -> void:
 	check("inside the hall Renegade starts calling (HALL)", road.get_beat_name() == "HALL" and house.phase == "calls", road.get_beat_name())
 	check("in the hall the crowd murmurs under the auctioneer, swelling on arrival (never above bed + swell)",
 		house.murmur_target() > house.MURMUR_BED - 0.01 and house.murmur_target() <= house.MURMUR_BED + house.MURMUR_SWELL + 0.01, str(house.murmur_target()))
+	# 2026-11-17 grand event: the GM logo over the block and on both walls, fire, and the flame jets erupt on the calls
+	var grand_ok: bool = not ResourceLoader.exists(Ep2AuctionHouse.SPECTACLE) or (house.grand != null
+		and house.grand.find_children("GMLogo*", "MeshInstance3D", true, false).size() == 3 and house.grand.jets_fired >= 1
+		and house.grand.find_children("*", "CPUParticles3D", true, false).size() >= 2 + 4 + Ep2AuctionHouse.SCONCES.size())
+	check("a grand event: three GM logo discs, two braziers, four flame jets that fired on the first call, a flame in every lantern", grand_ok,
+		str(house.grand.jets_fired) if house.grand != null else "no grand layer")
+	# the instrumentalists really play (founder 2026-11-17): both hands reach the instrument the body holds, every frame
+	# the solved pose is only there right after the skeleton's modifiers ran: measure on its skeleton_updated signal
+	var probe: Dictionary = {"worst": 0.0, "seen": 0}
+	var players: int = 0
+	var hooks: Array = []
+	for f in house._band:
+		var play: Node = (f as Node).get_node_or_null("Plays")
+		if play == null or str(play.kind) == "lead":
+			continue
+		players += 1
+		var sk: Skeleton3D = play._sk
+		var hook := func() -> void:
+			probe["seen"] = int(probe["seen"]) + 1
+			for arm in ["Left", "Right"]:
+				var hand: Vector3 = sk.global_transform * sk.get_bone_global_pose(int(play._bones[arm + "Hand"])).origin
+				probe["worst"] = maxf(float(probe["worst"]), hand.distance_to((play._ik[arm] as Ep2ArmIK).target_world))
+		sk.skeleton_updated.connect(hook)
+		hooks.append([sk, hook])
+		check("...the %s's instrument is held by the body, not glued to a hand bone" % str(play.kind),
+			play.instrument != null and play.instrument.get_parent() == f)
+	for i in 6:
+		await get_tree().process_frame
+	for h in hooks:
+		(h[0] as Skeleton3D).skeleton_updated.disconnect(h[1])
+	if Ep2AuctionHouse.band_ready():
+		check("four instrumentalists play with both hands on the instrument (every wrist within 9 cm of its grip)",
+			players == 4 and int(probe["seen"]) >= 8 and float(probe["worst"]) < 0.09, "%d players, %d poses, worst %.3f m" % [players, int(probe["seen"]), float(probe["worst"])])
 	check("the hall score plays inside the hall when it is in the pack (night bed only until then)",
 		road.hall_score_on() == Ep2Extras.has(AuctionRoadChamber.HALL_SCORE), str(road.hall_score_on()))
 	# the floor answers like people (founder 2026-11-14): no two on one frame as a chorus, a mix of answers, one cheer recording per cooldown

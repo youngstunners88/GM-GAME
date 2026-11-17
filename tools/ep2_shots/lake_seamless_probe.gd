@@ -12,6 +12,8 @@ var session: Node
 var start_back: float = 260.0
 var render: bool = false
 var out_dir: String = ""
+var sweep: bool = false            # sweep=1: a 360 degree look round just before the hand-over and just after (sand that vanishes on arrival)
+var _swept: Dictionary = {}
 
 
 func _ready() -> void:
@@ -22,6 +24,7 @@ func _ready() -> void:
 			"start": start_back = float(kv[1])
 			"render": render = kv[1] == "1"
 			"out": out_dir = kv[1]
+			"sweep": sweep = kv[1] == "1"
 	if out_dir != "": DirAccess.make_dir_recursive_absolute(out_dir)
 	get_viewport().size = Vector2i(640, 360) if render else get_viewport().size
 	session = load("res://src/episode2/session/ep2_session_root.tscn").instantiate()
@@ -108,6 +111,22 @@ func _ready() -> void:
 			mean = _mean(small)
 		else:
 			await get_tree().process_frame
+		if render and sweep and out_dir != "":
+			var a: Node = session._active
+			var tag: String = ""
+			if a is LakeTrailChamber and Vector2(to_logan.x, to_logan.z).length() < 26.0: tag = "trail"
+			elif swapped_at >= 0 and frames == swapped_at + 8: tag = "lake"
+			if tag != "" and not _swept.has(tag):
+				_swept[tag] = true
+				var keep_yaw: float = a._look_yaw
+				for k in 8:
+					a._look_yaw = keep_yaw + float(k) * TAU / 8.0
+					a._look_pitch = -0.08
+					if a.has_method("_update_camera"): a._update_camera(0.0)
+					await RenderingServer.frame_post_draw
+					await RenderingServer.frame_post_draw
+					get_viewport().get_texture().get_image().save_png("%s/sweep_%s_%d.png" % [out_dir, tag, k])
+				a._look_yaw = keep_yaw
 		var now: Vector3 = _world_pos(session._active, lake_xf)
 		var moved: float = 0.0 if prev_world == Vector3.INF else Vector2(now.x - prev_world.x, now.z - prev_world.z).length()
 		var d_logan: float = Vector2(logan_world.x - now.x, logan_world.z - now.z).length()
