@@ -38,9 +38,9 @@ const WALL: Array = [
 	["Bldg_E", Vector3(-1.25, 1.92, 0.03), 0.44, "horse_thieves", 0.04],
 	["Bldg_F", Vector3(1.48, 1.94, 0.03), 0.44, "masked_riders", 0.02],
 	# Square official bills on timber backing over the three baked rectangular placeholders.
-	["Bldg_Armory", Vector3(-1.75, 1.60, 0.04), 0.42, "jack_hammer", -0.07],
-	["Bldg_Armory", Vector3(1.80, 1.45, 0.04), 0.42, "jack_hammer", 0.072],
-	["Bldg_Armory", Vector3(-4.60, 1.50, 0.04), 0.42, "jack_hammer", -0.184],
+	["Bldg_Armory", Vector3(-1.75, 1.60, 0.04), 0.42, "jack_hammer", 0.07],
+	["Bldg_Armory", Vector3(1.80, 1.45, 0.04), 0.42, "jack_hammer", -0.072],
+	["Bldg_Armory", Vector3(-4.60, 1.50, 0.04), 0.42, "jack_hammer", 0.184],
 	# the jailhouse front: exactly over the three blank papers build_jailhouse.py nails up (0.40 x 0.55 at z = 0.006)
 	["Bldg_Jail", Vector3(-1.45, 1.55, 0.02), 0.40, "jack_hammer", 0.05],
 	["Bldg_Jail", Vector3(1.55, 1.45, 0.02), 0.40, "accomplice", -0.04],

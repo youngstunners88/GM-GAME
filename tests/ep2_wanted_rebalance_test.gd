@@ -5,6 +5,7 @@ var checks: int = 0
 var counts := {"jack_hammer": 0, "rh": 0}
 var areas := {"jack_hammer": 0.0, "rh": 0.0}
 var armory_bills: Array[MeshInstance3D] = []
+var armory_backings: Array[MeshInstance3D] = []
 
 func check(label: String, ok: bool) -> void:
 	checks += 1
@@ -12,6 +13,10 @@ func check(label: String, ok: bool) -> void:
 	print("[PASS] " if ok else "[FAIL] ", label)
 
 func census(node: Node) -> void:
+	if node is MeshInstance3D and node.mesh is BoxMesh and node.get_parent().name == "WantedPosters":
+		var arm_xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Armory"))
+		var at: Vector3 = arm_xf.affine_inverse() * node.global_position
+		if absf(at.z - 0.023) < 0.001 and absf(at.x) < 5.0: armory_backings.append(node)
 	if node is Sprite3D and node.texture != null and "poster_jack_hammer." in node.texture.resource_path:
 		check("auction bill uses the official PNG", node.texture.resource_path.ends_with("poster_jack_hammer.png"))
 		counts.jack_hammer += 1
@@ -68,6 +73,28 @@ func _ready() -> void:
 		for bill in armory_bills:
 			if (xf.affine_inverse() * bill.global_position).distance_to(centre) < 0.001 and absf(bill.mesh.size.x - 0.42) < 0.001: covered = true
 		check("Armory bill covers baked paper centre " + str(centre), covered)
+	# Read the actual Paper surface in the founder Armory GLB: its roll is mirrored by Blender->Godot conversion.
+	# Centre-only tests missed exposed corners; every baked vertex must project behind a real opaque backing.
+	var baked: Node3D = load(Ep2Extras.ARMORY).instantiate()
+	world.add_child(baked)
+	var paper_vertices: int = 0
+	var paper_covered: bool = armory_backings.size() == 3
+	for mesh in baked.find_children("*", "MeshInstance3D", true, false):
+		for surface in mesh.mesh.get_surface_count():
+			var mat: Material = mesh.mesh.surface_get_material(surface)
+			if mat == null or not "Paper" in mat.resource_name: continue
+			var vertices: PackedVector3Array = mesh.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+			for vertex in vertices:
+				var point: Vector3 = baked.to_local(mesh.to_global(vertex))
+				if absf(point.z - 0.005) >= 0.006: continue
+				paper_vertices += 1
+				var covered: bool = false
+				for backing in armory_backings:
+					var local: Vector3 = backing.to_local(xf * point)
+					var half: Vector3 = backing.mesh.size * 0.5
+					if absf(local.x) <= half.x and absf(local.y) <= half.y and local.z < half.z: covered = true
+				paper_covered = paper_covered and covered
+	check("opaque backings hide every actual baked Paper corner", paper_vertices >= 72 and paper_covered)
 	var clear: bool = true
 	var walls: Dictionary = {}
 	for row in Ep2TownPosters.WALL:
