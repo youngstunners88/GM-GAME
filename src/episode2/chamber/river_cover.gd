@@ -168,6 +168,9 @@ var _ray_t: float = INF                      # distance along the last _raider_o
 var _arrows: Array = []                      # node, from, to, t, flight
 var _valley: MeshInstance3D
 var _lake_root: Node3D
+var _lake_visuals: Node3D                       # the lake standing behind the ridge (adopted on the first climb, lent on a revisit)
+var _lent_from: Node3D
+var _lent_horse: Node3D
 var _ridge_sections: Array = []              # [centre, mitred offset toward the river, arc] along the ridge skin
 var _rock_mesh: Mesh                         # the Tripo sandstone (Ep2Extras.RIVER_ROCK), loaded once
 var _rock_mat: StandardMaterial3D
@@ -1078,6 +1081,37 @@ func get_rich() -> Ep2TownFolk: return _rich
 
 ## LOGAN'S LAKE STAYS BEHIND HIM. Called in the frame the session swaps the rooms: the lake's own terrain, water, trees, camp and Logan move
 ## here at LAKE_OFFSET, with its light, so the frame after [E] is the frame before it and the lake is really at his back on the climb.
+## Walked back up from the lake after day-88 (one world): the LIVE lake stands behind the ridge - its horse, its Logan - not the
+## copy kept from the first climb. Handed back by `return_lake` when he walks down again.
+func lend_lake(lake: Node3D) -> void:
+	var visuals: Node3D = lake.get("_visuals")
+	if visuals == null or _lake_root == null:
+		return
+	if is_instance_valid(_lake_visuals) and _lake_visuals != visuals:
+		_lake_visuals.queue_free()                          # the first climb's copy (and its horse) is stale now
+	visuals.reparent(_lake_root, false)
+	visuals.position = Vector3.ZERO
+	_lake_visuals = visuals
+	_lent_from = lake
+	var horse: Node3D = lake.get("_horse")
+	if horse != null and horse.get_parent() == lake:
+		horse.reparent(visuals, false)
+		_lent_horse = horse
+
+
+func return_lake() -> void:
+	if not is_instance_valid(_lent_from):
+		return
+	if is_instance_valid(_lent_horse):
+		_lent_horse.reparent(_lent_from, false)
+	if is_instance_valid(_lake_visuals):
+		_lake_visuals.reparent(_lent_from, false)
+		_lake_visuals.position = Vector3.ZERO
+	_lake_visuals = null
+	_lent_from = null
+	_lent_horse = null
+
+
 func adopt_lake(lake: Node3D) -> void:
 	var visuals: Node3D = lake.get("_visuals")
 	if visuals == null or _lake_root != null:
@@ -1088,6 +1122,7 @@ func adopt_lake(lake: Node3D) -> void:
 	_visuals.add_child(_lake_root)
 	visuals.reparent(_lake_root, false)
 	visuals.position = Vector3.ZERO
+	_lake_visuals = visuals
 	var horse: Node3D = lake.get("_horse")
 	if horse != null:
 		horse.reparent(visuals, false)                      # the horse he left at the water stays at the water
@@ -1320,7 +1355,7 @@ func _tick(delta: float) -> void:
 		Beat.DOCK:
 			_tick_dock(delta)
 		Beat.DONE:
-			if ridge_s(_player_pos) <= HOME_S and not _resolved and has_player_control() and _handoff_ok():
+			if not _world_revisit and ridge_s(_player_pos) <= HOME_S and not _resolved and has_player_control() and _handoff_ok():
 				_resolve({"next_chamber": "logans_lake", "after_day88": true, "river_complete": true, "gates": _gates_passed, "losses": _losses,
 					"downs": _downs, "companion": ""})
 	_tick_rich(delta)

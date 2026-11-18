@@ -105,6 +105,41 @@ func _ready() -> void:
  routes.cooldown=0
  routes.tick(session,.1)
  check("back at the sign he walks onto the same road instance",session._active!=null and session._active.get_instance_id()==road_id)
+ # One world after day-88 (founder 2026-11-17): the overlook path still climbs onto the river ridge, and the ridge walks back to the lake
+ var river: RiverCoverChamber=preload("res://src/episode2/chamber/river_cover.tscn").instantiate()
+ session.add_child(river);river.setup(0,[],0);river.set_physics_process(false)
+ river.adopt_lake(lake)
+ river._beat=river.Beat.DONE
+ routes.park(session,river)
+ var river_id: int=river.get_instance_id()
+ routes.travel(session,"logans_lake",LogansLakeChamber.SPAWN)
+ lake._beat=lake.Beat.ROAD
+ lake._show_blocks_control=false
+ lake.set_move_input(Vector2(0,1))
+ lake._player_pos=Vector3(-8.0,0,LogansLakeChamber.WALK_ON_Z+0.2)
+ routes.cooldown=0;routes.tick(session,.1)
+ check("arriving on the seam does not throw him onto the ridge (armed only after stepping clear)",session._active==lake)
+ lake._player_pos=Vector3(-8.0,0,LogansLakeChamber.WALK_ON_Z-3.0)
+ routes.cooldown=0;routes.tick(session,.1)
+ var top := Vector3(-8.0,0,LogansLakeChamber.WALK_ON_Z+0.2)
+ lake._player_pos=top
+ routes.cooldown=0;routes.tick(session,.1)
+ check("after day-88 the overlook path walks onto the SAME river ridge, where he stands",session._active!=null and session._active.get_instance_id()==river_id and river._player_pos.distance_to(top+RiverCoverChamber.LAKE_OFFSET)<0.01)
+ check("the live lake stands behind the ridge while he is up there",lake._visuals.get_parent()==river._lake_root)
+ check("the ridge revisit never re-resolves the river (no chained jump)",not river._resolved and river._world_revisit)
+ river._show_blocks_control=false
+ river.set_move_input(Vector2(0,1))
+ var up: Vector3=RiverCoverChamber.RIDGE_POINTS[2]
+ river._player_pos=up
+ routes.cooldown=0;routes.tick(session,.1)
+ check("up the ridge he stays on the ridge",session._active==river and river.ridge_s(up)>RiverCoverChamber.HOME_S+2.0)
+ var home: Vector3=river._player_pos
+ for k in 400:
+  if river.ridge_s(home)<=RiverCoverChamber.HOME_S: break
+  home=home.move_toward(RiverCoverChamber.RIDGE_POINTS[0],0.25)
+ river._player_pos=home
+ routes.cooldown=0;routes.tick(session,.1)
+ check("walking back down the ridge returns to the same lake, the lake handed back",session._active==lake and lake._visuals.get_parent()==lake and lake._player_pos.distance_to(home-RiverCoverChamber.LAKE_OFFSET)<0.01)
  session.queue_free()
  await get_tree().process_frame
  print("EP2_WORLD_ROUTES: ",checks," checks, ",failed," failed")

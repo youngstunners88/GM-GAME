@@ -37,6 +37,7 @@ func park(session: Node, room: Node) -> void:
 func travel(session: Node, id: String, position: Vector3) -> bool:
  if not rooms.has(id): return false
  var previous: Node = session._active
+ if previous is RiverCoverChamber: previous.return_lake()
  if previous is LogansLakeChamber: Ep2DrawMusic.finish_lake(previous)
  if previous is LakeTrailChamber: previous.restore_departure()
  var yaw: float = previous._look_yaw
@@ -106,6 +107,11 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  for sound in entry.sounds:
   if is_instance_valid(sound[0]): sound[0].play(sound[1])
  if room is GoldTownChamber: Ep2DrawMusic.begin_town(room)
+ if room is RiverCoverChamber and previous is LogansLakeChamber:
+  room.lend_lake(previous)
+  room.set_meta("left_home",false)
+ if room is LogansLakeChamber and previous is RiverCoverChamber:
+  room.set_meta("ridge_armed",false)
  if room is LogansLakeChamber:
   room._look_yaw=wrapf(yaw-(previous.lake_transform().basis.get_euler().y if previous is LakeTrailChamber else 0.0),-PI,PI)
   room.arrive_from_trail((previous is LakeTrailChamber or previous is AuctionRoadChamber) and previous.is_mounted())
@@ -143,6 +149,19 @@ func tick(session: Node, delta: float) -> void:
   travel(session,"logans_lake",c.lake_transform().affine_inverse()*c.get_player_position())
   return
  if not c.has_player_control() or c._move_input.length()<0.05:return
+ # One world: after day-88 the overlook path still climbs onto the river ridge, and the ridge walks back down to the lake.
+ # Each side arms only once he has stepped clear of the seam, so standing on it never bounces him between the two.
+ if id=="logans_lake" and rooms.has("river_cover") and c._beat==c.Beat.ROAD and not c.is_riding_horse():
+  if p.z<LogansLakeChamber.WALK_ON_Z-2.0: c.set_meta("ridge_armed",true)
+  elif p.z>=LogansLakeChamber.WALK_ON_Z and c.get_meta("ridge_armed",false):
+   travel(session,"river_cover",p+RiverCoverChamber.LAKE_OFFSET)
+   return
+ if id=="river_cover" and c._world_revisit:
+  var s: float=c.ridge_s(p)
+  if s>RiverCoverChamber.HOME_S+2.0: c.set_meta("left_home",true)
+  elif s<=RiverCoverChamber.HOME_S and c.get_meta("left_home",false) and rooms.has("logans_lake"):
+   travel(session,"logans_lake",p-RiverCoverChamber.LAKE_OFFSET)
+   return
  if id=="logans_lake" and p.z<LogansLakeChamber.SPAWN.z-0.7:
   travel(session,"lake_trail",Vector3.ZERO)
   return
