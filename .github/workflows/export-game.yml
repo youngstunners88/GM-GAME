@@ -1036,7 +1036,10 @@ jobs:
               # -X theirs: while rebasing, "theirs" is OUR export commit, so a conflict in the generated
               # web/game/index.html (another session's export landed first) resolves to the fresh export
               # instead of failing 5 times and silently skipping the itch deploy (cost the founder 3 deploys).
-              if git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push -u origin HEAD; then
+              # --autostash: the export leaves unstaged files behind (the un-added .pck files and other build
+              # output), and a plain rebase refuses ("You have unstaged changes"), so a master push that landed
+              # mid-run skipped the itch deploy (run 44215031614, 2026-11-18).
+              if git pull --rebase --autostash -X theirs origin "${GITHUB_REF_NAME}" && git push -u origin HEAD; then
                 pushed="yes"
                 echo "Export pushed (attempt ${attempt})"
                 break
