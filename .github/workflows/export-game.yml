@@ -527,6 +527,82 @@ jobs:
           timeout 400 "$GODOT_BIN" --headless res://tests/ep2_hideout_corrections_test.tscn > hideout-corrections-tests.log 2>&1
           grep -q 'EP2_HIDEOUT_CORRECTIONS: ALL PASS' hideout-corrections-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' hideout-corrections-tests.log; then exit 1; fi
+          # 2026-11-19 audit: Episode 2 gates that existed but never ran in CI (two had already rotted unseen)
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_art_direction_test.tscn > ep2-art-direction-tests.log 2>&1
+          grep -qF 'EP2_ART_DIRECTION: ALL PASS' ep2-art-direction-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-art-direction-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_audio_buses_test.tscn > ep2-audio-buses-tests.log 2>&1
+          grep -qF 'EP2_AUDIO_BUSES: ALL PASS' ep2-audio-buses-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-audio-buses-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_audio_mix_test.tscn > ep2-audio-mix-tests.log 2>&1
+          grep -qF 'EP2_AUDIO_MIX: ALL PASS' ep2-audio-mix-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-audio-mix-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_camera_framing_test.tscn > ep2-camera-framing-tests.log 2>&1
+          grep -qF 'CAMERA FRAMING: PASS' ep2-camera-framing-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-camera-framing-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_cinematic_test.tscn > ep2-cinematic-tests.log 2>&1
+          grep -qF 'EP2_CINEMATIC: ALL PASS' ep2-cinematic-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-cinematic-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_fort_knox_arc_test.tscn > ep2-fort-knox-arc-tests.log 2>&1
+          grep -qF 'EP2_FORT_KNOX_ARC: ALL PASS' ep2-fort-knox-arc-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-fort-knox-arc-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_glb_pipeline_test.tscn > ep2-glb-pipeline-tests.log 2>&1
+          grep -qF 'EP2_GLB_PIPELINE: ALL PASS' ep2-glb-pipeline-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-glb-pipeline-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_miner_shaft_test.tscn > ep2-miner-shaft-tests.log 2>&1
+          grep -qF 'EP2_MINER_SHAFT: ALL PASS' ep2-miner-shaft-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-miner-shaft-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_narrative_canon_test.tscn > ep2-narrative-canon-tests.log 2>&1
+          grep -qF 'EP2_NARRATIVE_CANON: ALL PASS' ep2-narrative-canon-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-narrative-canon-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_range_lesson_test.tscn > ep2-range-lesson-tests.log 2>&1
+          grep -qF 'EP2_RANGE_LESSON: ALL PASS' ep2-range-lesson-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-range-lesson-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_range_v3_test.tscn > ep2-range-v3-tests.log 2>&1
+          grep -qF 'EP2_RANGE_V3: ALL PASS' ep2-range-v3-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-range-v3-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_reachability_test.tscn > ep2-reachability-tests.log 2>&1
+          grep -qF 'EP2_REACHABILITY: ALL PASS' ep2-reachability-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-reachability-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_residuals_1028_test.tscn > ep2-residuals-1028-tests.log 2>&1
+          grep -qF 'EP2_RESIDUALS_1028: 192 checks, 0 failed' ep2-residuals-1028-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-residuals-1028-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_audio_test.tscn > ep2-runner-audio-tests.log 2>&1
+          grep -qF 'ALL PASS' ep2-runner-audio-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-audio-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_carts_test.tscn > ep2-runner-carts-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_CARTS: ALL PASS' ep2-runner-carts-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-carts-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_graybox_test.tscn > ep2-runner-graybox-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_GRAYBOX: ALL PASS' ep2-runner-graybox-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-graybox-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_motion_test.tscn > ep2-runner-motion-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_MOTION: ALL PASS' ep2-runner-motion-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-motion-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_music_test.tscn > ep2-runner-music-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_MUSIC: ALL PASS' ep2-runner-music-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-music-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_revolver_test.tscn > ep2-runner-revolver-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_REVOLVER: ALL PASS' ep2-runner-revolver-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-revolver-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_voice_test.tscn > ep2-runner-voice-tests.log 2>&1
+          grep -qF 'VOICE TEST: PASS' ep2-runner-voice-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-voice-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_transition_prebuild_test.tscn > ep2-transition-prebuild-tests.log 2>&1
+          grep -qF 'EP2_TRANSITION_PREBUILD: ALL PASS' ep2-transition-prebuild-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-transition-prebuild-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_voice_duck_test.tscn > ep2-voice-duck-tests.log 2>&1
+          grep -qF 'EP2_VOICE_DUCK: ALL PASS' ep2-voice-duck-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-voice-duck-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_weapon_consistency_test.tscn > ep2-weapon-consistency-tests.log 2>&1
+          grep -qF 'EP2_WEAPON_CONSISTENCY: ALL PASS' ep2-weapon-consistency-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-weapon-consistency-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_winchester_logo_test.tscn > ep2-winchester-logo-tests.log 2>&1
+          grep -qF 'EP2_WINCHESTER_LOGO: ALL PASS' ep2-winchester-logo-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-winchester-logo-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_smelting_facility_test.tscn > ep2-smelting-facility-tests.log 2>&1
+          grep -qF 'EP2_SMELTING_FACILITY: ALL PASS' ep2-smelting-facility-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-smelting-facility-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_lake_life_test.tscn > lake-life-tests.log 2>&1
           grep -q 'LAKE_LIFE: 0 failed' lake-life-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-life-tests.log; then exit 1; fi
