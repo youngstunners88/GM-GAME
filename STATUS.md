@@ -4,7 +4,7 @@
 - **Horses:** the chasing bandit's horse can be shot down (two rounds, it throws its rider). A town or stable horse you kill is still lying there after a reload.
 - **Songbirds:** a shot bird falls and lies on the forest floor; gunshots scatter the rest.
 - **The farmer's donkey:** rounds land in it on the desert road and in town. It throws its head up, shies and cries out, and the farmer turns on you. It is not killed, because it carries his trip into town. The cry is a lowered horse whinny until a real bray is recorded.
-- **Claim wagon (pushed, deploying):** on the auction road it was a 1 m toy cart under a floating sign. It is full size now.
+- **Claim wagon (live in build `2026-11-19-2a9b7e5`):** on the auction road it was a 1 m toy cart under a floating sign. It is full size now.
 - **Behind the scenes:** the web pack had crossed its 190 MB limit and was blocking every deploy. Two unused old runner tracks were left out of the build (files kept), so it is now 186 MB. Twenty-five Episode 2 checks that never ran in the build now do.
 - **Still open:** a first visit to an area follows the story order. Tell me if you want areas reachable before their story beat.
 
