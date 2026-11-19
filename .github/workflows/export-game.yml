@@ -179,6 +179,9 @@ jobs:
           echo "$BUN_DIR/package/bin" >> "$GITHUB_PATH"
 
       - name: Download Godot editor + export templates
+        env:
+          # Authenticated API calls: anonymous ones share a 60/hour per-IP limit and came back 403 (master run 44446006161).
+          GH_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p godot
@@ -194,20 +197,29 @@ jobs:
           TEMPLATES_URL="https://api.github.com/repos/godotengine/godot-builds/releases/assets/186099742"
           EDITOR_SHA512="fd52bb4ba8acc30ca5accd1c566d470ad7282f891ccc0995dfafabcf92bcf76280ce182bf9d80ebd885f3ed2165d01e1fc3f2928436b15498dfbd98656c2a45a"
           TEMPLATES_SHA512="476366caf0fd45a8f24136cf9cf1dc0bc2b96f7c82d53e5f82200b55aefd07b286d283fd6f1ce29e0de70648c5a51d3b12f96c6d4fafd4e8c4878ecda6406d6a"
+          EDITOR_FALLBACK="https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip"
+          TEMPLATES_FALLBACK="https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz"
           download_checked() {
-            local url="$1" file="$2" expected="$3"
-            curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
+            local url="$1" file="$2" expected="$3" fallback="$4"
+            local auth=()
+            if [ -n "${GH_API_TOKEN:-}" ]; then auth=(-H "Authorization: Bearer ${GH_API_TOKEN}"); fi
+            # curl sends the Authorization header to api.github.com only, not to the storage host it redirects to
+            if ! curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
               --connect-timeout 30 --max-time 300 --retry-max-time 180 \
-              -H "Accept: application/octet-stream" -o "$file" "$url"
+              "${auth[@]}" -H "Accept: application/octet-stream" -o "$file" "$url"; then
+              echo "::warning::release-asset API download failed; trying the public release URL (same SHA-512 check)"
+              curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
+                --connect-timeout 30 --max-time 300 --retry-max-time 180 -o "$file" "$fallback"
+            fi
             echo "$expected  $file" | sha512sum -c -
           }
-          download_checked "$EDITOR_URL" godot-editor.zip "$EDITOR_SHA512"
+          download_checked "$EDITOR_URL" godot-editor.zip "$EDITOR_SHA512" "$EDITOR_FALLBACK"
           unzip -q godot-editor.zip
           EDITOR_BIN=$(find . -maxdepth 1 -name "Godot_v*_linux.x86_64" -type f | head -1)
           chmod +x "$EDITOR_BIN"
           echo "GODOT_BIN=$(pwd)/$EDITOR_BIN" >> "$GITHUB_ENV"
 
-          download_checked "$TEMPLATES_URL" templates.tpz "$TEMPLATES_SHA512"
+          download_checked "$TEMPLATES_URL" templates.tpz "$TEMPLATES_SHA512" "$TEMPLATES_FALLBACK"
 
           # Templates must live at ~/.local/share/godot/export_templates/<version>/
           # NOTE: Godot names the dir "4.3.stable" (dot), not the release tag "4.3-stable".
