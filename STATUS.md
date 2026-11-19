@@ -1,5 +1,13 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-19 — Episode 2 audit and fixes — LIVE on itch, BUILD `2026-11-19-1d3269a` (master CI 44465144747, butler pushed); NOT founder-verified.**
+- **Horses:** the chasing bandit's horse can be shot down (two rounds, it throws its rider). A town or stable horse you kill is still lying there after a reload.
+- **Songbirds:** a shot bird falls and lies on the forest floor; gunshots scatter the rest.
+- **The farmer's donkey:** rounds land in it on the desert road and in town. It throws its head up, shies and cries out, and the farmer turns on you. It is not killed, because it carries his trip into town. The cry is a lowered horse whinny until a real bray is recorded.
+- **Claim wagon (pushed, deploying):** on the auction road it was a 1 m toy cart under a floating sign. It is full size now.
+- **Behind the scenes:** the web pack had crossed its 190 MB limit and was blocking every deploy. Two unused old runner tracks were left out of the build (files kept), so it is now 186 MB. Twenty-five Episode 2 checks that never ran in the build now do.
+- **Still open:** a first visit to an area follows the story order. Tell me if you want areas reachable before their story beat.
+
 **2026-11-17 (later) — Grand auction, the band really plays, bareback horse, vultures, lake check, road <-> lake one world — branch `claude/ep2-grand-auction-1117` (status line updated when live).**
 - **Grand event (founder: "dazzling ... GM logo ... a grand marvel event ... show flames"):** the GM logo (your gold-chain disc) 3.2 m over the block on the back wall in its own light, and a 2.2 m disc on each side wall; two iron braziers burning on the stage's front corners (flickering light, crackle); four flame jets on the stage lip that erupt with a roar on every call and cheer; a flame in every wall lantern; gold dust drifting through the stage light, and a shower of gold leaf when Renegade sends the room back to the lot. Proof: `docs/episode2-quality/grand-auction-20261117/`.
 - **Instrumentalists fixed:** the instrument is held by the body (fiddle under the chin, banjo across the chest, upright bass on its endpin off the left hip, harmonica at the mouth) and both hands are put on it every frame by two-bone arm IK: bow strokes, strumming, a walking bass line, cupped-hand harmonica; the whole band sways on the beat and the singer sings (Talk clip) instead of standing idle. Gate: every wrist within 6 cm of its grip.
