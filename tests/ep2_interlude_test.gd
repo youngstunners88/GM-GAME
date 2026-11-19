@@ -553,7 +553,14 @@ func _ready() -> void:
 	hf.step(0.016)
 	_check("at the exit door the hideout WAITS for the lift to be built (a pause at worst, never a blackout)", hf_resolved.is_empty() and hf.is_waiting_for_handoff())
 	hf._look_yaw = 0.3
-	root2.step(0.016)      # (the root is idle in this test: it finishes the background build, the hideout steps itself)
+	# (the root is idle in this test: it finishes the background build, the hideout steps itself). The build is spread over frames
+	# (ep2-prebuild-frame-budget), so step the root until the lift is ready - bounded, never an endless wait.
+	var build_steps: int = 0
+	while not hf._handoff_ok() and build_steps < 1200:
+		root2.step(0.016)
+		build_steps += 1
+	# since the open-door portal (founder 2026-10-24) he leaves by walking THROUGH the doorway, not by standing at it
+	hf._player_pos.z = SmeltingFacilityChamber.PORTAL_Z + 0.05
 	hf.step(0.016)
 	_check("...the moment it is built the door opens: the hideout resolves toward the lift", hf_resolved.size() == 1 and str(hf_resolved[0].get("next_chamber", "")) == "mine_lift")
 	root2.queue_free()

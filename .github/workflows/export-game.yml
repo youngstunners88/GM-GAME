@@ -521,6 +521,12 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_wildlife_combat_test.tscn > wildlife-combat-tests.log 2>&1
           grep -q 'EP2_WILDLIFE_COMBAT: ALL PASS' wildlife-combat-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' wildlife-combat-tests.log; then exit 1; fi
+          timeout 400 "$GODOT_BIN" --headless res://tests/ep2_interlude_test.tscn > interlude-tests.log 2>&1
+          grep -q 'EP2_INTERLUDE: ALL PASS' interlude-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' interlude-tests.log; then exit 1; fi
+          timeout 400 "$GODOT_BIN" --headless res://tests/ep2_hideout_corrections_test.tscn > hideout-corrections-tests.log 2>&1
+          grep -q 'EP2_HIDEOUT_CORRECTIONS: ALL PASS' hideout-corrections-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' hideout-corrections-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_lake_life_test.tscn > lake-life-tests.log 2>&1
           grep -q 'LAKE_LIFE: 0 failed' lake-life-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-life-tests.log; then exit 1; fi
