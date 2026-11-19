@@ -99,6 +99,31 @@ func greet() -> void:
 	greeting_time = 0.0
 
 
+## A round at the donkey (common sense: a shot animal reacts). It is a working animal on a
+## story trip, so it is not killed: it throws its head up and shies sideways, and the farmer
+## turns on the shooter (his greet clip doubles as the protest). Advanced by advance_motion.
+const STARTLE_SECONDS := 1.1
+var startle_time: float = -1.0
+var startles: int = 0
+
+func startle() -> void:
+	startle_time = 0.0
+	greeting_time = 0.0
+	startles += 1
+
+
+## Distance along the ray to the donkey's body or head, or -1. Cart space: the donkey walks
+## at z 1.6 facing +z (body sphere, then the head ahead of it).
+func ray_distance(eye: Vector3, dir: Vector3) -> float:
+	var best: float = -1.0
+	for s in [[Vector3(0.0, 0.95, 1.55), 0.55], [Vector3(0.0, 1.30, 2.30), 0.32]]:
+		var c: Vector3 = global_transform * (s[0] as Vector3)
+		var t: float = Ep2Wildlife._ray_sphere(eye, dir, c, float(s[1]))
+		if t >= 0.0 and (best < 0.0 or t < best):
+			best = t
+	return best
+
+
 func reset_motion() -> void:
 	parked = false
 	distance_m = 0.0
@@ -119,6 +144,10 @@ func advance_motion(delta: float, travelled: float) -> void:
 		greeting_time += delta
 		if greeting_time >= 3.0 - 0.000001:
 			greeting_time = -1.0
+	if startle_time >= 0.0:
+		startle_time += delta
+		if startle_time >= STARTLE_SECONDS:
+			startle_time = -1.0
 	_pose()
 
 
@@ -138,6 +167,11 @@ func _pose() -> void:
 	else:
 		_sample(_walk, _walk_clip, fposmod(distance_m / STRIDE, 1.0) * WALK_SECONDS)
 	_sample(_driver, _greet_clip if greeting_time >= 0.0 else _drive_clip, greeting_time if greeting_time >= 0.0 else fposmod(_time, 3.0))
+	var shy: float = sin(PI * startle_time / STARTLE_SECONDS) if startle_time >= 0.0 else 0.0
+	_donkey.position.x = 0.22 * shy                       # shies off the line, then steps back into the shafts
+	var head: int = _donkey_skeleton.find_bone("head")
+	if head >= 0 and shy > 0.0:                           # throws its head up
+		_donkey_skeleton.set_bone_pose_rotation(head, _donkey_skeleton.get_bone_pose_rotation(head) * Quaternion(Vector3.RIGHT, -0.55 * shy))
 	_donkey_skeleton.force_update_all_bone_transforms()
 	_farmer_skeleton.force_update_all_bone_transforms()
 	for wheel in _wheels:

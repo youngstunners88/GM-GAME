@@ -236,6 +236,24 @@ func _ready() -> void:
 		for i in 240:
 			wl.step(1.0 / 60.0)
 		_check("...it drops and lies on the forest floor; the others fly on", target.position.y <= 0.07 and wl.get_bird_count() == before_n - 1)
+	# 2026-11-19: a round at the farmer's donkey used to pass straight through it. It now lands: the donkey startles, then plods on
+	var cart: Ep2RoadCart = w._cart as Ep2RoadCart
+	if cart != null:
+		var body: Vector3 = cart.global_transform * Vector3(0.0, 0.95, 1.55)
+		var eye_d: Vector3 = body + cart.global_transform.basis.x.normalized() * 8.0
+		var dir_d: Vector3 = (body - eye_d).normalized()
+		var hit_d: float = cart.ray_distance(eye_d, dir_d)
+		_check("a round at the farmer's donkey lands in it (no longer passes through)", hit_d > 7.0 and hit_d < 8.0, "t %.2f" % hit_d)
+		_check("...a miss beside it does not", cart.ray_distance(eye_d, (dir_d + Vector3.UP * 0.6).normalized()) < 0.0)
+		cart.startle()
+		var mid_ok: bool = true
+		for i in 30:
+			cart.advance_motion(1.0 / 60.0, 0.0)
+		mid_ok = cart.startle_time > 0.0 and (not cart.ready_art or absf(cart._donkey.position.x) > 0.1)
+		for i in 60:
+			cart.advance_motion(1.0 / 60.0, 0.0)
+		_check("...it startles (shies off the line), then settles back and stays alive for the trip", mid_ok and cart.startle_time < 0.0
+			and is_instance_valid(cart) and (not cart.ready_art or absf(cart._donkey.position.x) < 0.001) and cart.startles == 1)
 	# the founder's TRIPO bears, not the Meshy ones (2026-10-10): the rigged bear file is the Tripo body on the bear skeleton,
 	# its bow-less arms lowered out of the archer T, plus two Tripo bear-archer sentries drawing on the approach
 	var cb: Ep2Actor = (w.get_scouts()[0] as Ep2BearBrain).actor

@@ -2286,6 +2286,21 @@ func _on_player_shot() -> void:
 	var bear_t: float = eye.distance_to(hit_info.get("point", eye + dir * 171.0))
 	if str(cast_hit.get("id", "")) in preload("res://src/episode2/actors/ep2_protected_retaliation.gd").ENABLED and cast_t < bear_t and not _ray_tree_blocked(eye, dir, cast_t, 0.0, 0.0):
 		if _protected_trace.retaliation.begin(self, str(cast_hit.id), cast_hit.folk): return
+	# the farmer's donkey on the line takes the round: it startles and shies, the farmer protests (never killed - it carries his trip)
+	if _cart is Ep2RoadCart and is_instance_valid(_cart) and _cart.is_inside_tree():
+		var cart: Ep2RoadCart = _cart as Ep2RoadCart
+		var donkey_t: float = cart.ray_distance(eye, dir)
+		if donkey_t >= 0.0 and donkey_t < bear_t and not _ray_tree_blocked(eye, dir, donkey_t, 0.0, 0.0):
+			cart.startle()
+			if _hud:
+				_hud.hit_marker(false)
+			const DONKEY_CRY := "res://src/episode2/extras/audio/town/horse_whinny.ogg"   # streamed; pitched down as the startled bray
+			if not _sounds.has("donkey_cry") and Ep2Extras.has(DONKEY_CRY):
+				_sounds["donkey_cry"] = load(DONKEY_CRY)
+			if _sounds.get("donkey_cry") != null:            # not yet streamed: silent this time, retried next shot
+				_sfx3d("donkey_cry", eye + dir * donkey_t, -2.0, 0.78, 50.0)
+			_noise(_player_pos, SHOT_HEARING, "shot")
+			return
 	# a songbird on the line takes the round (it no longer passes through); every other bird bursts away from the shot
 	if _wildlife != null:
 		var bird_t: float = _wildlife.ray_distance(eye, dir)
