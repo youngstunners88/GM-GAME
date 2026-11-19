@@ -33,6 +33,10 @@ var _t_flock: float = 20.0
 var calls_played: int = 0
 var gusts_played: int = 0
 var flocks_flushed: int = 0
+var birds_shot: int = 0
+## A shot songbird drops out of the air and lies on the forest floor (founder 2026-11-05: bullets must not pass through animals).
+const HIT_RADIUS := 0.32                  # the body is 24 cm: a little generous, like every small target in the game
+var _fallen: Array = []                  # [node, wing_l, wing_r, velocity] - falling, then lying still
 
 
 func setup(listener: Node3D, centre: Vector3, half_extent: Vector2, canopy_y: float, play_ambience: bool = true) -> void:
@@ -119,8 +123,87 @@ func _random_air_point(low: bool) -> Vector3:
 	return Vector3(x, y, z)
 
 
+## Metres along the ray to the nearest flying bird, or -1.0. Nothing is hurt here.
+func ray_distance(eye: Vector3, dir: Vector3) -> float:
+	var best: float = -1.0
+	for b in _birds:
+		var t: float = _ray_sphere(eye, dir, (b[0] as Node3D).global_position, HIT_RADIUS)
+		if t >= 0.0 and (best < 0.0 or t < best):
+			best = t
+	return best
+
+
+## The round lands on the nearest bird on the ray: it falls, the rest scatter. Returns true when a bird was hit.
+func shoot(eye: Vector3, dir: Vector3) -> bool:
+	var hit: int = -1
+	var best: float = INF
+	for i in _birds.size():
+		var t: float = _ray_sphere(eye, dir, (_birds[i][0] as Node3D).global_position, HIT_RADIUS)
+		if t >= 0.0 and t < best:
+			best = t
+			hit = i
+	scare((_birds[hit][0] as Node3D).global_position if hit >= 0 else eye + dir * 20.0)
+	if hit < 0:
+		return false
+	var b: Array = _birds[hit]
+	_birds.remove_at(hit)
+	_fallen.append([b[0], b[1], b[2], (b[3] as Vector3) * 0.25 + dir * 2.0])
+	birds_shot += 1
+	return true
+
+
+## A gunshot (or a near miss): every bird still flying bursts away from it and climbs, with the wing flutter.
+func scare(at: Vector3) -> void:
+	for b in _birds:
+		var n: Node3D = b[0]
+		var away: Vector3 = n.global_position - at
+		away.y = 0.0
+		away = away.normalized() if away.length() > 0.01 else Vector3(1, 0, 0)
+		b[3] = away * float(b[6]) * 1.3 + Vector3(0.0, 5.0, 0.0)
+		b[4] = n.position + away * 45.0 + Vector3(0.0, 12.0, 0.0)
+	if ResourceLoader.exists(FLUTTER) and not _calls.is_empty():
+		var p: AudioStreamPlayer3D = _calls[(calls_played + 2) % _calls.size()]
+		p.stream = load(FLUTTER)
+		p.global_position = at
+		p.play()
+
+
+func get_fallen_count() -> int:
+	return _fallen.size()
+
+
+static func _ray_sphere(o: Vector3, d: Vector3, c: Vector3, r: float) -> float:
+	var oc: Vector3 = o - c
+	var b: float = oc.dot(d)
+	var disc: float = b * b - (oc.length_squared() - r * r)
+	if disc < 0.0:
+		return -1.0
+	var t: float = -b - sqrt(disc)
+	return t if t >= 0.0 else -1.0
+
+
+func _step_fallen(delta: float) -> void:
+	for f in _fallen:
+		var n: Node3D = f[0]
+		if n.position.y <= 0.06:
+			continue                                  # on the forest floor: it stays there
+		var v: Vector3 = f[3]
+		v.y -= 9.8 * delta
+		v.x = move_toward(v.x, 0.0, delta * 1.5)
+		v.z = move_toward(v.z, 0.0, delta * 1.5)
+		f[3] = v
+		n.position += v * delta
+		n.rotation.z += delta * 6.0                   # it tumbles, wings limp
+		(f[1] as Node3D).rotation.z = 0.35
+		(f[2] as Node3D).rotation.z = -0.35
+		if n.position.y <= 0.06:
+			n.position.y = 0.06
+			n.rotation = Vector3(0.0, n.rotation.y, PI * 0.5)    # on its side among the needles
+
+
 ## Advance the birds and the soundscape by `delta` seconds.
 func step(delta: float) -> void:
+	_step_fallen(delta)
 	if _listener != null and is_instance_valid(_listener):
 		var lp: Vector3 = _listener.global_position
 		_centre = Vector3(lp.x, 0.0, lp.z)            # the wood's life follows the player

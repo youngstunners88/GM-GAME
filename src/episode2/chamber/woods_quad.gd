@@ -2286,6 +2286,16 @@ func _on_player_shot() -> void:
 	var bear_t: float = eye.distance_to(hit_info.get("point", eye + dir * 171.0))
 	if str(cast_hit.get("id", "")) in preload("res://src/episode2/actors/ep2_protected_retaliation.gd").ENABLED and cast_t < bear_t and not _ray_tree_blocked(eye, dir, cast_t, 0.0, 0.0):
 		if _protected_trace.retaliation.begin(self, str(cast_hit.id), cast_hit.folk): return
+	# a songbird on the line takes the round (it no longer passes through); every other bird bursts away from the shot
+	if _wildlife != null:
+		var bird_t: float = _wildlife.ray_distance(eye, dir)
+		if bird_t >= 0.0 and bird_t < bear_t and not _ray_tree_blocked(eye, dir, bird_t, 0.0, 0.0):
+			_wildlife.shoot(eye, dir)
+			if _hud:
+				_hud.hit_marker(true)
+			_noise(_player_pos, SHOT_HEARING, "shot")
+			return
+		_wildlife.scare(eye + dir * 20.0)
 	var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 	if hit != null:
 		var was_alive: bool = not hit.is_dead()

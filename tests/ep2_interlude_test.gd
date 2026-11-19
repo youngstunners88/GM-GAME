@@ -226,6 +226,16 @@ func _ready() -> void:
 	var bird0: Vector3 = (wl._birds[0][0] as Node3D).position if wl != null and not wl._birds.is_empty() else Vector3.ZERO
 	_run(w, 1.0)
 	_check("birds fly in the wood (a few, moving)", wl != null and wl.get_bird_count() >= 5 and (wl._birds[0][0] as Node3D).position.distance_to(bird0) > 3.0)
+	# STATUS 2026-11-05 "the small songbirds in the woods cannot be shot yet" - fixed 2026-11-19
+	if wl != null and not wl._birds.is_empty():
+		var before_n: int = wl.get_bird_count()
+		var target: Node3D = wl._birds[0][0]
+		var eye_b: Vector3 = target.global_position + Vector3(0.0, -1.0, -6.0)
+		var dir_b: Vector3 = (target.global_position - eye_b).normalized()
+		_check("a round on a songbird lands in it (it no longer passes through)", wl.ray_distance(eye_b, dir_b) > 0.0 and wl.shoot(eye_b, dir_b) and wl.get_bird_count() == before_n - 1 and wl.get_fallen_count() == 1)
+		for i in 240:
+			wl.step(1.0 / 60.0)
+		_check("...it drops and lies on the forest floor; the others fly on", target.position.y <= 0.07 and wl.get_bird_count() == before_n - 1)
 	# the founder's TRIPO bears, not the Meshy ones (2026-10-10): the rigged bear file is the Tripo body on the bear skeleton,
 	# its bow-less arms lowered out of the archer T, plus two Tripo bear-archer sentries drawing on the approach
 	var cb: Ep2Actor = (w.get_scouts()[0] as Ep2BearBrain).actor
