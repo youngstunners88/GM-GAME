@@ -80,6 +80,7 @@ var _sheriff: Ep2TownFolk = null
 var _minister: Ep2TownFolk = null
 var _cast: Array = []
 var _horses: Array = []
+var donkey_hits: int = 0                                    # rounds into the farmer's donkey (it startles; never killed)
 var _buildings: Array = []
 var _effects: Array = []
 var _bam: Ep2TownFolk = null
@@ -276,6 +277,13 @@ func trace(eye: Vector3, direction: Vector3, in_draw: bool = false) -> Dictionar
 		if t < best_t:
 			best_t = t
 			best = {"kind": "horse", "node": horse, "t": t, "point": eye + direction * t}
+	# the farmer's donkey (Ep2FarmerTrip parks it at the trough below the Armory): a round lands in it, it is never killed
+	var cart: Ep2RoadCart = _visuals.get_node_or_null("DonkeyCart") as Ep2RoadCart if _visuals != null else null
+	if cart != null and cart.visible:
+		var donkey_t: float = cart.ray_distance(eye, direction)
+		if donkey_t >= 0.0 and donkey_t < best_t:
+			best_t = donkey_t
+			best = {"kind": "donkey", "node": cart, "t": donkey_t, "point": eye + direction * donkey_t}
 	var structural: Dictionary = _trace_buildings(eye, direction, best_t)
 	if not structural.is_empty():
 		best = structural
@@ -332,6 +340,12 @@ func _resolve_hit(hit: Dictionary, direction: Vector3) -> void:
 			_wound_story(hit, direction)
 		"horse":
 			_hit_horse(hit, direction)
+		"donkey":
+			(hit["node"] as Ep2RoadCart).startle()             # head up, shies, the farmer turns on the shooter
+			_play_sound("horse_whinny.ogg", hit["point"], -3.0)
+			donkey_hits += 1
+			if _people != null:
+				_people.notify_danger(hit["point"], 20.0)
 		"facade":
 			_hit_facade(hit, direction)
 		"window":
