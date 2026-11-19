@@ -243,6 +243,7 @@ func _build_wagon() -> void:
 	var model: Node3D = scene.instantiate() as Node3D if scene != null else null
 	if model != null:
 		_wagon.add_child(model)
+		model.scale = Vector3.ONE * WoodsQuadChamber.CART_SCALE   # the fused Tripo cart is authored ~1 m long: full size, as on the desert road
 		model.rotation.z = 0.12                   # the dead axle: it lists to one side
 	else:
 		_box(Vector3(3.6, 1.0, 1.7), Vector3(0, 0.8, 0), _plain(Color(0.4, 0.27, 0.15)), _wagon)

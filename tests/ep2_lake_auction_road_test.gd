@@ -130,6 +130,12 @@ func _ready() -> void:
 	road._player_pos = road.at(road.CLAIM_S - 10.0)
 	_advance(road, 0.2)
 	check("the claim wagon is reached (CLAIM beat)", road.get_beat_name() == "CLAIM", road.get_beat_name())
+	# 2026-11-19: the fused cart model is authored ~1 m long and stood on the road as a toy under a floating sign
+	var wagon_len: float = 0.0
+	for mi in road._wagon.find_children("*", "MeshInstance3D", true, false):
+		var box: AABB = (road._wagon.global_transform.affine_inverse() * (mi as MeshInstance3D).global_transform) * (mi as MeshInstance3D).get_aabb()   # the wagon's own frame (the road is diagonal)
+		wagon_len = maxf(wagon_len, maxf(box.size.x, box.size.z))
+	check("the claim wagon is full size (a real cart across the road, not a toy)", wagon_len > 3.0 and wagon_len < 5.0, "%.2f m" % wagon_len)
 	road._player_pos = road.at(road.CLAIM_S - 5.0)
 	check("the wagon holds the road until he talks", road.road_s(road._collide(road.at(road.CLAIM_S + 10.0))) <= road.CLAIM_S - 3.9)
 	check("show papers starts the claim talk", road.start_rig())
