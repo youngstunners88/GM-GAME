@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-21 — The auction band really plays: each musician now moves like the player in your Flow video. Pushed, DEPLOYING (build id to follow); NOT founder-verified.**
+- **What changed in the hall:** all five players have their own motion from your reference videos (fiddle, banjo, harmonica, singer, bass), instead of one shared borrowed Idle. Each starts at a different point in its loop, so they never sway in unison.
+- **The grips (your decision):** the fiddle now sits under the chin (it rode at mid-chest). The fretting hands on the fiddle, banjo and bass hold the neck instead of hovering flat beside it. The harmonica is at his lips with both hands cupped round it, as in the video (it sat at his collar). The bass player plucks a little higher up the strings so his hand stays on them.
+- **Honest limits:** these characters have no finger bones, so the fingers stay straight. The singer's and bassist's legs are hidden in the videos (skirt / the bass), so they stand with planted feet; their upper bodies follow the video.
+- **Nothing else changed:** only the band's motion; the models, textures and everything else in the hall are byte-identical (checked file by file, plus before/after captures). The streamed pack grows by about 0.17 MB (it had 2.06 MB of room).
+- **Where:** `src/episode2/extras/auction/band_play.gd`, the five `auction_band_*.glb` in `src/episode2/extras/people/`, clip recipe `tools/ep2_motion/clips_band.json`. Captures: `tools/ep2_shots/auction_house_shot.tscn -- band` (each player face on) and `-- bandwide`.
+
 **2026-11-20 — Visitor carriages outside the auction (your four reference images) — LIVE on itch, BUILD `2026-11-20-bc4faf6` (master CI 44686297831, butler pushed); NOT founder-verified.**
 - **What you see on arrival:** five parked visitor rigs on the auction grounds. The gold palace carriage with its three black horses stands in the rich spot beside the hall, about 9 m tall, as in your reference. The black-and-gold royal coach with three black horses is beside the road halfway up. Three 1880s wooden carriages with brown horses (one pair, two singles) are near the gate and the porch.
 - **Rules kept:** the horses match the stable horses' height; hooves and wheels are on the ground (tested); the road from the gate to the porch stays clear (tested); nobody walks through a carriage. Static; no driving.
