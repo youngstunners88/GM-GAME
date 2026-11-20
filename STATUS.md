@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-21 — The auction band really plays: each musician now moves like the player in your Flow video. Pushed, DEPLOYING (build id to follow); NOT founder-verified.**
+**2026-11-21 — The auction band really plays: each musician now moves like the player in your Flow video. LIVE on itch, BUILD `2026-11-20-0e1b759` (master CI 44779861562, butler pushed); NOT founder-verified.**
 - **What changed in the hall:** all five players have their own motion from your reference videos (fiddle, banjo, harmonica, singer, bass), instead of one shared borrowed Idle. Each starts at a different point in its loop, so they never sway in unison.
 - **The grips (your decision):** the fiddle now sits under the chin (it rode at mid-chest). The fretting hands on the fiddle, banjo and bass hold the neck instead of hovering flat beside it. The harmonica is at his lips with both hands cupped round it, as in the video (it sat at his collar). The bass player plucks a little higher up the strings so his hand stays on them.
 - **Honest limits:** these characters have no finger bones, so the fingers stay straight. The singer's and bassist's legs are hidden in the videos (skirt / the bass), so they stand with planted feet; their upper bodies follow the video.
