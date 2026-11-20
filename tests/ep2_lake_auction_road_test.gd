@@ -305,6 +305,22 @@ func _ready() -> void:
 		var body_fwd: Vector3 = Vector3.UP.cross(across.normalized())
 		worst_turn = maxf(worst_turn, rad_to_deg(body_fwd.angle_to((f as Node3D).global_basis.z.normalized())))
 	check("every auction player and the doorman face the way they are turned (chest within 25 degrees)", worst_turn < 25.0, "%.0f deg" % worst_turn)
+	# 2026-11-21: each player holds the clip captured from the founder's Flow video for that role (not the one borrowed Idle), each at
+	# its own point in the loop so the five never sway in unison
+	var own_clips: Dictionary = {}
+	var phases: Dictionary = {}
+	for f in house._band:
+		var play: Node = (f as Node).get_node_or_null("Plays")
+		var ap: AnimationPlayer = (f as Ep2TownFolk).anim_player()
+		if play == null or ap == null:
+			continue
+		var want: String = str(play.CLIP.get(str(play.kind), ""))
+		if (f as Ep2TownFolk).current_clip() == want.to_lower() and ap.is_playing():
+			own_clips[want] = true
+			phases[snappedf(fmod(ap.current_animation_position / maxf(ap.current_animation_length, 0.01), 1.0), 0.01)] = true
+	if Ep2AuctionHouse.band_ready():
+		check("each of the five plays its own captured clip, out of step with the others", own_clips.size() == 5 and phases.size() == 5,
+			"%s / phases %s" % [own_clips.keys(), phases.keys()])
 	check("the hall score plays inside the hall when it is in the pack (night bed only until then)",
 		road.hall_score_on() == Ep2Extras.has(AuctionRoadChamber.HALL_SCORE), str(road.hall_score_on()))
 	# the floor answers like people (founder 2026-11-14): no two on one frame as a chorus, a mix of answers, one cheer recording per cooldown
