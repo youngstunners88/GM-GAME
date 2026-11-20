@@ -72,6 +72,19 @@ func _ready() -> void:
 			var eye: Vector3 = road.from_house(eye_l)
 			var tgt: Vector3 = road.from_house(at)
 			shots.append(["29_%s" % str(row[3]).to_lower(), eye, atan2(tgt.x - eye.x, tgt.z - eye.z), -0.12, 0.4])
+	if OS.get_cmdline_user_args().has("visitors"):  # 2026-11-20 visitor carriages: arrival read, each rig side-on for hooves + wheels
+		shots = []
+		for row in [["30_gate_arrival", Vector3(0.0, 0, -46.0), Vector3(4.0, 0, -10.0), 0.08],
+				["31_palace", Vector3(5.0, 0, -18.0), Vector3(17.0, 0, -11.0), 0.25],
+				["32_palace_side", Vector3(6.5, 0, -11.0), Vector3(17.0, 0, -11.0), 0.0],
+				["33_coach_side", Vector3(3.0, 0, -25.0), Vector3(9.0, 0, -24.5), -0.12],
+				["34_pair_side", Vector3(3.0, 0, -35.0), Vector3(9.2, 0, -35.0), -0.12],
+				["35_single_left", Vector3(-4.0, 0, -8.5), Vector3(-10.5, 0, -8.0), -0.12],
+				["36_single_gate", Vector3(-4.0, 0, -36.0), Vector3(-10.4, 0, -35.5), -0.12],
+				["37_porch_back", Vector3(0.0, 0, -2.0), Vector3(2.0, 0, -30.0), 0.0]]:
+			var eye_v: Vector3 = road.from_house(row[1])
+			var tgt_v: Vector3 = road.from_house(row[2])
+			shots.append([row[0], eye_v, atan2(tgt_v.x - eye_v.x, tgt_v.z - eye_v.z), row[3], 0.4])
 	for s in shots:
 		if s.size() > 5 and road.house() != null and road.house().grand != null:
 			var g: Node = road.house().grand

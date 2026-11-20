@@ -34,7 +34,19 @@ const RADIUS := 0.35
 const JACK_MARK := Vector3(-8.4, 0, 21.4)
 const RENEGADE_MARK := Vector3(0.45, STAGE_H, 25.3)       # beside the rostrum, not behind it: the whole host reads from the floor
 const HITCH := Vector3(-6.5, 0, -15.0)              # the hitching rail, beside the road short of the porch
-const HALL_POOL := 2.6                              # chandelier pool energy; the stage keeps 2.4 over a 9 m pool plus the 6.0 key, so the block stays brightest
+const VISITOR_DIR := "res://src/episode2/extras/auction/visitors/"
+## [model, centre (house-local), yaw]. Not a parade line: each sits a little off square. The gate is at z -44, the porch at z 0.
+const VISITORS := [
+	["visitor_royal_palace", Vector3(17.0, 0, -11.0), 0.06],
+	["visitor_royal_coach", Vector3(9.0, 0, -24.5), -0.08],
+	["visitor_common_pair", Vector3(9.2, 0, -35.0), 0.12],
+	["visitor_common_single", Vector3(-10.5, 0, -8.0), 0.1],
+	["visitor_common_single", Vector3(-10.4, 0, -35.5), -0.14],
+]
+## Footprint half-extents (x, z) of each rig as built (tools: .farm/chariots prep, 2026-11-20), less a little so the push is not early.
+const VISITOR_HALF := {"visitor_royal_palace": Vector2(2.6, 4.6), "visitor_royal_coach": Vector2(1.0, 3.1),
+	"visitor_common_pair": Vector2(0.9, 2.7), "visitor_common_single": Vector2(1.05, 2.25)}
+const HALL_POOL := 2.6                             # chandelier pool energy; the stage keeps 2.4 over a 9 m pool plus the 6.0 key, so the block stays brightest
 const HALL_WARM := Color(1.0, 0.76, 0.5)            # lamplight, a little less orange than the porch so faces read
 const MURMUR_OFF := -40.0                           # before he is in the hall
 const MURMUR_BED := -13.0                           # settled: under the auctioneer and the night bed
@@ -104,6 +116,7 @@ var _murmur: AudioStreamPlayer3D
 var grand: Node3D
 var _swell: float = 0.0                             # 1 just after a call or on arrival, decays to 0
 var _tied: Array = []                               # the horses at the hitching rail
+var visitors: Array = []                            # the parked visitor carriages (_visitors)
 var _arrival: Ep2TownFolk
 var _t: float = 0.0
 var _line: int = -1
@@ -370,6 +383,31 @@ func _furnish() -> void:
 			if (ap as AnimationPlayer).has_animation("horse_stand"):
 				(ap as AnimationPlayer).play("horse_stand")
 		_solid(h.position.x, h.position.z, 1.0, 0.45)
+	_visitors()
+
+
+## The claim-night visitors' rigs parked on the grounds (founder brief 2026-11-20, four reference images): the gold palace carriage
+## in the rich spot beside the hall, the black-and-gold coach, and the working carriages near the gate. Each GLB is one fused
+## team + carriage, horses toward local +Z, scaled so the horses stand at the stable horses' height, hooves and wheels on y = 0.
+## All of them sit clear of the lamp-lit road (|x| < 4.6) and the hitching rail; each is a solid so nobody walks through a wheel.
+func _visitors() -> void:
+	var lit := false
+	for v in VISITORS:
+		var path: String = VISITOR_DIR + str(v[0]) + ".glb"
+		if not ResourceLoader.exists(path):
+			continue
+		var scene: PackedScene = load(path)
+		var rig: Node3D = scene.instantiate() as Node3D
+		rig.name = "Visitor_%s_%d" % [v[0], visitors.size()]
+		var pos: Vector3 = v[1]
+		rig.transform = Transform3D(Basis(Vector3.UP, float(v[2])), pos)
+		add_child(rig)
+		visitors.append(rig)
+		var half: Vector2 = VISITOR_HALF[str(v[0])]
+		_solid(pos.x, pos.z, half.x, half.y)
+		if str(v[0]) == "visitor_royal_palace" and not lit:
+			lit = true
+			_light(pos + Vector3(-4.0, 3.5, 0.0), 2.2, 11.0)       # the palace carriage catches the porch lamps' colour
 
 
 func _person(model: String, pos: Vector3, height: float = 1.74) -> Ep2TownFolk:

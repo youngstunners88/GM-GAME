@@ -154,6 +154,41 @@ func _ready() -> void:
 	# 8. the auction house (brief PROMPT_AUCTION_HOUSE_RENEGADE_JACK_HAMMER_2026-11-08), in the same room
 	var house: Ep2AuctionHouse = road.house()
 	check("the auction house is built inside the road room (CAD kit streamed)", house != null and house.built)
+	# 8b. visitor carriages parked outside (founder brief 2026-11-20): all four reference styles, grounded, horse-scaled, off the road
+	var kinds := {}
+	var grounded := true
+	var off_road := true
+	var heights := {}
+	var floors: Array = []
+	for rig in house.visitors:
+		var k: String = str(rig.name).trim_prefix("Visitor_").rsplit("_", true, 1)[0]
+		kinds[k] = true
+		var lo := Vector3(INF, INF, INF)
+		var hi := -lo
+		for mi in (rig as Node3D).find_children("*", "MeshInstance3D", true, false):
+			var xf: Transform3D = house.global_transform.affine_inverse() * (mi as MeshInstance3D).global_transform
+			var bb: AABB = (mi as MeshInstance3D).get_aabb()
+			for i in 8:
+				var c: Vector3 = xf * bb.get_endpoint(i)
+				lo = lo.min(c)
+				hi = hi.max(c)
+		grounded = grounded and lo.y < 0.02 and lo.y > -0.08      # never floating; a few cm into the dirt (decimation + vertex compression) is fine
+		floors.append(snappedf(lo.y, 0.001))
+		off_road = off_road and (lo.x > 4.8 or hi.x < -4.8)
+		heights[k] = hi.y - lo.y
+	check("five visitor rigs stand outside, all four reference styles", house.visitors.size() == 5 and kinds.size() == 4, str(kinds.keys()))
+	check("every visitor rig's wheels and hooves are on the ground", grounded and not house.visitors.is_empty(), str(floors))
+	check("the visitor rigs sit clear of the lamp-lit road into the hall", off_road and not house.visitors.is_empty())
+	check("the working teams stand at horse height and the palace carriage towers over them",
+		heights.size() == 4 and absf(float(heights["visitor_common_pair"]) - 2.25) < 0.2 and absf(float(heights["visitor_common_single"]) - 2.25) < 0.2
+		and float(heights["visitor_royal_palace"]) > 7.0, str(heights))
+	var road_clear := true
+	for zi in range(-44, 0, 2):
+		var on_road: Vector3 = house.collide(Vector3(0.0, 0, float(zi)))
+		road_clear = road_clear and on_road.distance_to(Vector3(0.0, 0, float(zi))) < 0.01
+	check("the road from the gate to the porch is never blocked", road_clear)
+	var pushed: Vector3 = house.collide(Vector3(17.0, 0, -11.0))
+	check("nobody walks through the palace carriage", Vector2(pushed.x - 17.0, pushed.z + 11.0).length() > 2.0, str(pushed))
 	check("outside the hall the crowd bed is silent and the hall score is off", is_equal_approx(house.murmur_target(), house.MURMUR_OFF) and not road.hall_score_on())
 	check("the lake builds the road behind itself and holds the sign until it is ready", "prebuild_requested.emit(\"auction_road\")" in lake_src and "_can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok()" in lake_src)
 	check("the hand-over keeps the lake's gaze (no camera reset)", "_apply_handoff_gaze(ROAD_YAW" in road_src and not "_look_yaw = ROAD_YAW" in road_src)

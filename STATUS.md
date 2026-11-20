@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-20 — Visitor carriages outside the auction (your four reference images) — pushed to master, status updated when live.**
+- **What you see on arrival:** five parked visitor rigs on the auction grounds. The gold palace carriage with its three black horses stands in the rich spot beside the hall, about 9 m tall, as in your reference. The black-and-gold royal coach with three black horses is beside the road halfway up. Three 1880s wooden carriages with brown horses (one pair, two singles) are near the gate and the porch.
+- **Rules kept:** the horses match the stable horses' height; hooves and wheels are on the ground (tested); the road from the gate to the porch stays clear (tested); nobody walks through a carriage. Static; no driving.
+- **Files (for the next pass):** `src/episode2/extras/auction/visitors/visitor_royal_palace.glb`, `visitor_royal_coach.glb`, `visitor_common_pair.glb`, `visitor_common_single.glb` (streamed pack). Placed by `Ep2AuctionHouse._visitors()` in `src/episode2/chamber/ep2_auction_house.gd` (`VISITORS` table, house-local positions). Captures: `tools/ep2_shots/auction_house_shot.tscn -- visitors`.
+- **How they were made:** the Chrome extension was not connected, so the Tripo tab could not be used. I used the APIs instead: palace, coach and single-horse carriage on Meshy, the two-horse carriage on Tripo. Credits left: Meshy 11, Tripo 10 (top up before the next model pass).
+- **Pack room:** the streamed pack had 1 MB left. An unused duplicate sheriff model (`previous_sheriff/sheriff.glb` + its 3 textures; the game uses `sheriff_walk.glb`) was removed, so the pack is about 1 MB smaller even with the carriages in.
+
 **2026-11-19 — Episode 2 audit and fixes — LIVE on itch, BUILD `2026-11-19-1d3269a` (master CI 44465144747, butler pushed); NOT founder-verified.**
 - **Horses:** the chasing bandit's horse can be shot down (two rounds, it throws its rider). A town or stable horse you kill is still lying there after a reload.
 - **Songbirds:** a shot bird falls and lies on the forest floor; gunshots scatter the rest.
