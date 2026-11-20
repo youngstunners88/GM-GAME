@@ -52,6 +52,15 @@ func _ready() -> void:
 		var eye: Vector3 = road.at(road.CLAIM_S - 5.0, -2.2)
 		shots = [["20_claim_clerk", eye, atan2(cp.x - eye.x, cp.z - eye.z), -0.22, 0.4],
 			["21_claim_clerk_talk", road.at(road.CLAIM_S - 6.2, -1.6), atan2(cp.x - road.at(road.CLAIM_S - 6.2, -1.6).x, cp.z - road.at(road.CLAIM_S - 6.2, -1.6).z), -0.16, 0.4]]
+	if OS.get_cmdline_user_args().has("bandwide"):      # 2026-11-21 captured band clips: each player's own motion, fiddle at the chin, wrapped hands
+		var look := func(eye_l: Vector3, at_l: Vector3) -> float:
+			var e: Vector3 = road.from_house(eye_l)
+			var t: Vector3 = road.from_house(at_l)
+			return atan2(t.x - e.x, t.z - e.z)
+		shots = [["27_band_wide", road.from_house(Vector3(-4.6, 0, 17.4)), look.call(Vector3(-4.6, 0, 17.4), Vector3(-7.6, 0, 21.6)), -0.08, 0.4],
+			["27b_band_wide_later", road.from_house(Vector3(-4.6, 0, 17.4)), look.call(Vector3(-4.6, 0, 17.4), Vector3(-7.6, 0, 21.6)), -0.08, 0.4, "wait"],
+			["28_fiddle_banjo", road.from_house(Vector3(-7.0, 0, 18.9)), look.call(Vector3(-7.0, 0, 18.9), Vector3(-8.9, 0, 21.5)), -0.02, 0.4],
+			["29_bass_harmonica", road.from_house(Vector3(-4.2, 0, 19.0)), look.call(Vector3(-4.2, 0, 19.0), Vector3(-5.8, 0, 21.8)), -0.02, 0.4]]
 	if OS.get_cmdline_user_args().has("grand"):     # 2026-11-17 grand event: GM logos, braziers, flame jets, gold, the band really playing
 		var band_eye: Vector3 = road.from_house(Vector3(-4.6, 0, 17.4))
 		var band_at: Vector3 = road.from_house(Vector3(-7.6, 0, 21.6))
