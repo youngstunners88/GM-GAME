@@ -93,6 +93,7 @@ const BAND := [
 ]
 const BAND_PLAY := "res://src/episode2/extras/auction/band_play.gd"
 const SPECTACLE := "res://src/episode2/extras/auction/spectacle.gd"
+const CROWD_EXTRAS := "res://src/episode2/extras/auction/crowd_extras.gd"   # five more people in the hall (MPFB2, streamed)
 const BAND_KIND := {"Auc_Fiddle": "fiddle", "Auc_Banjo": "banjo", "Auc_Bass": "bass", "Auc_Harmonica": "harmonica"}
 const BAND_FACE := Vector3(2.0, 0, 12.0)            # they play to the room, not to the block
 const SCONCES := [[-1, 4.0], [-1, 12.0], [1, 4.0], [1, 12.0], [1, 20.0], [1, 28.0], [-1, 28.6]]      # [wall side, z]
@@ -352,6 +353,7 @@ func _furnish() -> void:
 		grand = load(SPECTACLE).new()
 		add_child(grand)
 		grand.build(SCONCES, W * 0.5)
+	if ResourceLoader.exists(CROWD_EXTRAS): add_child(load(CROWD_EXTRAS).new())
 	if _kit_piece("Auc_CheckDesk", DESK) != null:
 		_solid(DESK.x, DESK.z, 0.5, 0.33)
 	# the grounds: lamp posts pooling warm light up the last stretch of road, the hitching rail with two horses already tied

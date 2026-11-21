@@ -94,8 +94,28 @@ func _ready() -> void:
 			var eye_v: Vector3 = road.from_house(row[1])
 			var tgt_v: Vector3 = road.from_house(row[2])
 			shots.append([row[0], eye_v, atan2(tgt_v.x - eye_v.x, tgt_v.z - eye_v.z), row[3], 0.4])
+	if OS.get_cmdline_user_args().has("crowd"):     # 2026-11-21 five MPFB2 extras (crowd_extras.gd): where they stand, clapping on a swell
+		shots = []
+		for row in [["38_extras_from_door", Vector3(0.0, 0, 3.6), Vector3(0.0, 0, 20.0), 0.02],
+				["39_extras_right", Vector3(1.6, 0, 12.6), Vector3(6.7, 0, 13.0), -0.04],
+				["40_extras_left", Vector3(-1.8, 0, 11.6), Vector3(-6.8, 0, 13.0), -0.04],
+				["41_extras_clap", Vector3(-1.8, 0, 11.6), Vector3(-6.8, 0, 13.0), -0.04, "swell"]]:
+			var eye_c: Vector3 = road.from_house(row[1])
+			var tgt_c: Vector3 = road.from_house(row[2])
+			shots.append([row[0], eye_c, atan2(tgt_c.x - eye_c.x, tgt_c.z - eye_c.z), row[3], 0.4] + (["swell"] if row.size() > 4 else []))
+		for row in [["42_bidder", Vector2(6.6, 16.8)], ["43_lady", Vector2(-6.8, 17.4)], ["44_youth", Vector2(6.8, 9.8)],
+				["45_matron", Vector2(-7.2, 9.0)], ["46_elder", Vector2(-3.0, 7.0)]]:
+			var at_c := Vector3(row[1].x, 0, row[1].y)
+			var eye_l2: Vector3 = at_c + (Vector3(0, 0, 26.0) - at_c).normalized() * 2.6
+			var e2: Vector3 = road.from_house(eye_l2)
+			var t2: Vector3 = road.from_house(at_c)
+			shots.append([row[0], e2, atan2(t2.x - e2.x, t2.z - e2.z), -0.12, 0.4, "swell"])
 	for s in shots:
-		if s.size() > 5 and road.house() != null and road.house().grand != null:
+		if s.size() > 5 and s[5] == "swell" and road.house() != null:
+			road.house()._swell = 1.0
+			for i in 12:
+				await get_tree().process_frame
+		elif s.size() > 5 and road.house() != null and road.house().grand != null:
 			var g: Node = road.house().grand
 			if s[5] == "burst":
 				g._jet_t = 0.0
