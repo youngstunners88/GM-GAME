@@ -236,6 +236,10 @@ const MOUNT_R := 2.6                                   # how close to the post's
 const MOUNT_FOV := 66.0
 
 var _town_col: Dictionary = {}
+## The saloon's side ladder (Ep2GoldTown.SALOON_LADDER; founder 2026-11-21): "Climb [E]" at its foot takes Lil Blunt up to the balcony
+## where the two old regulars drink. Untyped: the script carries no class_name (no class-cache step).
+var _ladder = null
+var _ladder_prompt: String = ""
 var _sheriff: Ep2TownFolk = null
 var _minister: Ep2TownFolk = null
 var _sheriff_delay: float = 0.0
@@ -436,6 +440,7 @@ func _step_ground() -> void:
 
 func _step_town() -> void:
 	_town_col = Ep2GoldTown.build(_visuals, true)
+	_ladder = _town_col.get("ladder")
 	# the counter and the bar are solid (Lil Blunt stands at them, the sheriff and the barman behind)
 	var walls: Array = _town_col.get("walls", [])
 	for seg in [["Bldg_Certificates", Vector3(-1.45, 0, -4.2), Vector3(2.65, 0, -4.2)], ["Bldg_Saloon", Vector3(-5.1, 0, -8.55), Vector3(3.1, 0, -8.55)]]:
@@ -845,27 +850,33 @@ func look(relative: Vector2) -> void:
 		_look_yaw = _gatling.aim_yaw
 		_look_pitch = _gatling.aim_pitch
 		return
+	if _climbing() and has_player_control():
+		# on the rungs he faces the ladder (the climb turns him); the mouse still tilts his head up the ladder or down at the street
+		_look_pitch = clampf(_look_pitch - relative.y * LOOK_SENSITIVITY, FPS_PITCH_MIN, FPS_PITCH_MAX)
+		return
 	super(relative)
 
 
 func _move_player(delta: float) -> void:
-	if _mounted or _depart_mounted:
+	if _mounted or _depart_mounted or _climbing():
 		_moving = false
 		return
 	super(delta)
 
 
 func _can_jump() -> bool:
-	return not _mounted
+	return not _mounted and not _climbing()
 
 
 func set_aim(on: bool) -> void:
-	if _mounted:
+	if _mounted or (on and _climbing()):
 		return
 	super(on)
 
 
 func reload() -> bool:
+	if _climbing():
+		return false
 	if _mounted:
 		if _hud != null:
 			_hud.toast("THE DRUM IS ALL THERE IS", 1.4)
@@ -874,7 +885,7 @@ func reload() -> bool:
 
 
 func select_weapon(id: String) -> bool:
-	if _mounted:
+	if _mounted or _climbing():
 		return false
 	return super(id)
 
@@ -908,7 +919,7 @@ func _on_gatling_trace(origin: Vector3, direction: Vector3, hit: Dictionary) -> 
 
 func _set_eye_view(on: bool) -> void:
 	super(on)
-	if (_mounted or (_beat == Beat.DRAW and not _player_drawn)) and _vm != null:
+	if (_mounted or _climbing() or (_beat == Beat.DRAW and not _player_drawn)) and _vm != null:
 		_vm.set_shown(false)                                 # the Winchester stays out of the picture while his hands are on the crank
 
 
@@ -929,6 +940,8 @@ func start_rig(_payment: String = "") -> bool:
 		return true
 	if _can_loot():
 		_loot()
+		return true
+	if _ladder_try():
 		return true
 	if _mounted:
 		_dismount()
@@ -2554,6 +2567,7 @@ func _sheriff_look_at_player() -> void:
 
 
 func _tick(delta: float) -> void:
+	_tick_ladder(delta)
 	if _fine_toast_t > 0.0:
 		_fine_toast_t = maxf(0.0, _fine_toast_t - delta)
 		if _fine_toast_t == 0.0 and _hud != null:
@@ -2575,7 +2589,7 @@ func _tick(delta: float) -> void:
 		_town_audio.step(delta, _people, _player_pos, _hold > 0.0 or _show_active or intro_busy or _shop_open, duel)
 		if not _show_active and _hold <= 0.0 and not intro_busy and not duel and not _shop_open and _town_audio.has_queued():
 			_begin_carry_line(_town_audio.take_line())
-	if _bumps != null:
+	if _bumps != null and not _climbing() and not _on_balcony():
 		var shove: Vector3 = _bumps.step(delta, _player_pos)
 		if shove.length_squared() > 0.0001:
 			# Several ordinary collision moves, never a teleport through a wall. The town has no damage/hearts.
@@ -2667,7 +2681,7 @@ func _tick(delta: float) -> void:
 				elif _can_mount():
 					_hud.set_search_prompt("Take the crank [E]")
 				else:
-					_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else "")
+					_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else _ladder_prompt_text())
 			_check_geared()
 			_armory_t += delta
 			if _gear_t >= 0.0 and not _show_active and not _mounted and _hold <= 0.0 and (_town_audio == null or not _town_audio.has_queued()) and not (_intro != null and _intro.is_busy()):
@@ -2941,6 +2955,8 @@ func draw_weapon() -> bool:
 	return true
 
 func shoot() -> bool:
+	if _climbing():
+		return false                                   # both hands are on the rungs (no shot, reload or swap until he is off the ladder)
 	if _beat == Beat.DRAW and _draw_state == "go" and not _player_drawn:
 		# A phone has no Enter to draw with first: one tap draws AND fires, so the reaction starts
 		# at the tap exactly like the keyboard's Enter-then-fire (audit 2026-10-29 P1-4). A desktop
@@ -3262,6 +3278,14 @@ func _shows_health() -> bool:
 func _collide(p: Vector3) -> Vector3:
 	if _law != null and _law.cell_locked():
 		return _law.confine_cell(p)
+	if _on_balcony():
+		# up on the saloon's balcony: its boards, end rails, front rail and wall, round the chairs and the two old men
+		var up: Array = []
+		if _people != null:
+			for person in _people.people:
+				if absf(person.folk.position.y - Ep2GoldTown.BALCONY_Y) < 1.0:
+					up.append(person.folk.position)
+		return _ladder.collide_deck(p, up)
 	var c: Vector2 = Ep2GoldTown.collide(Vector2(p.x, p.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
 	if _people != null and p.y < 2.0:
 		for person in _people.people:
@@ -3273,3 +3297,82 @@ func _collide(p: Vector3) -> Vector3:
 				c = Ep2GoldTown.collide(c, 0.3, _town_col.get("walls", []), _town_col.get("props", []))
 	# Restore access to the original approach yard without opening the woods or any story gate.
 	return Vector3(clampf(c.x, -40.0, 40.0), p.y, clampf(c.y, Ep2StableYard.PADDOCK.position.y - 2.0, Ep2GoldTown.TOWN_Z + 95.0))
+
+
+# --- the saloon's side ladder (founder 2026-11-21; skill ep2-saloon-roof-access) --------------------------------------------------
+
+func _climbing() -> bool:
+	return _ladder != null and _ladder.busy()
+
+
+func _on_balcony() -> bool:
+	return _ladder != null and _ladder.on_top()
+
+
+## Not while a story beat has him (the draw, a show, a held line, the shop or the trade, the crank, the law): then [E] means that.
+func _ladder_allowed() -> bool:
+	if _ladder == null or not has_player_control() or _show_active or _hold > 0.0 or _shop_open or _mounted or _depart_mounted:
+		return false
+	if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW]:
+		return false
+	if _intro != null and _intro.is_busy():
+		return false
+	return _law == null or (not _law.cell_locked() and not _law.retaliation.active)
+
+
+## [E] / INTERACT at the foot (up) or at the gap in the balcony's end rail (down). True when a climb started.
+func _ladder_try() -> bool:
+	if not _ladder_allowed() or _player_pos.y > _ground_y + 0.05:
+		return false                                   # not in mid-jump
+	if _ladder.start_up(_player_pos) or _ladder.start_down(_player_pos):
+		_moving = false
+		set_aim(false)                                 # no sights up on a ladder
+		return true
+	return false
+
+
+## Every frame: drive a climb (his feet on the rungs, his eye with them, facing the ladder), keep him on the balcony's boards while
+## he is up there, and offer "Climb [E]" / "Climb down [E]" in reach.
+func _tick_ladder(delta: float) -> void:
+	if _ladder == null:
+		return
+	if _ladder.busy():
+		var s: Dictionary = _ladder.step(delta)
+		var at: Vector3 = s["pos"]
+		_player_pos = at
+		_set_ground(at.y)
+		_vel_y = 0.0
+		_look_yaw = lerp_angle(_look_yaw, float(s["yaw"]), clampf(7.0 * delta, 0.0, 1.0))
+		_player_yaw = _look_yaw
+		if s["done"]:
+			_look_yaw = lerp_angle(_look_yaw, float(s["yaw"]), 0.5)
+	elif _ladder.on_top():
+		if not _ladder.over_deck(_player_pos):
+			# a scripted beat moved him off the balcony (no climb): he is on the ground where it put him
+			_ladder.reset()
+			_ground_y = 0.0
+			_player_pos.y = 0.0
+			_vel_y = 0.0
+		elif _ground_y != Ep2GoldTown.BALCONY_Y:
+			_set_ground(Ep2GoldTown.BALCONY_Y)
+	if _hud == null:
+		return
+	var text: String = _ladder_prompt_text()
+	if text != "" or _ladder_prompt != "":               # in reach: every frame (other verbs write the same line); out of reach: once
+		_hud.set_search_prompt(text)
+	_ladder_prompt = text
+
+
+## "Climb [E]" / "Climb down [E]" (the phone's INTERACT button lights instead of naming a key), or "" out of reach.
+func _ladder_prompt_text() -> String:
+	if _ladder == null or not _ladder_allowed() or _ladder.busy():
+		return ""
+	var text: String = _ladder.prompt(_player_pos)
+	if text != "" and TouchUi.keys_shown():
+		text += " [E]"
+	return text
+
+
+## Evidence for tests and captures.
+func get_ladder():
+	return _ladder

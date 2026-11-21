@@ -41,6 +41,7 @@ const RICH := "res://src/episode2/extras/folk/rich_armory2.glb"
 const UTAH := "res://src/episode2/extras/folk/utah_armory2.glb"
 ## The town kit with REAL openings (windows, doors, side windows; 2026-10-19 openings pass): same piece names as town_kit.glb.
 const TOWN_KIT := "res://src/episode2/extras/town/town_kit2.glb"
+const SALOON_LADDER := "res://src/episode2/extras/town/saloon_ladder.glb"   # the saloon's side ladder up to the balcony (tools/ep2_blender/build_saloon_ladder.py)
 ## The town's CAD interior furniture (founder 2026-10-25 "more furnished furniture and subtle details"): the saloon's bar, back bar,
 ## bentwood chairs, tables, piano, chandelier; the certificate office's counter, pigeonholes, desk, stove, safe; clocks, lamps, the jail's
 ## and the Armory's small things (Ep2KitProps Twn_*, placed by Ep2GoldTown._furnish).

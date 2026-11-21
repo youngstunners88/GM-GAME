@@ -19,6 +19,7 @@ const CRATE := "res://src/episode2/assets/mine_lift/mine_crate.glb"
 const ROCK := "res://src/episode2/assets/woods/woods_rock.glb"
 const PLANK_TEX := "res://src/episode2/assets/mine_lift/tex_lift_planks.jpg"
 const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
+const SALOON_LADDER := preload("res://src/episode2/chamber/ep2_saloon_ladder.gd")
 const TOWN_Z := 1400.0
 const STREET_HALF := 9.0
 const DROP_POINT := Vector3(0.0, 0.0, 1403.0)        # where the quad stops and Lil Blunt hops off
@@ -381,6 +382,7 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 	var a2: Node3D = _load_armory2()
 	var jl: Node3D = _load_jail()
 	var trims: Dictionary = {}                 # TrimAnchor kind -> [world Transform3D] (the streamed kit's CAD trim places)
+	var saloon_copy: Node3D = null
 	for e in LAYOUT:
 		var piece: String = str(e[0])
 		var src: Node3D = kit.find_child(piece, true, false) as Node3D
@@ -397,6 +399,7 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		_hang_signs(b)
 		if piece == "Bldg_Saloon":
 			doors.append(_hang_batwings(b, kit))
+			saloon_copy = b
 		if kit_v2:
 			_collect_trim(b, trims)
 		walls.append_array(_walls_of(piece, building_xform(e)))
@@ -471,6 +474,8 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		load(Ep2Extras.STOCKPILE_SITE).build_site(root, walls, props)
 	Ep2TownPosters.build(root, props)                   # the wanted posters: notice board, shop fronts, the jail (streamed images)
 	_balcony_furniture(root, kit)                       # two chairs and a little table on the saloon's balcony (its drinkers sit there)
+	# the side ladder up to that balcony (founder 2026-11-21: a ladder on the outside, not an interior stair; skill ep2-saloon-roof-access)
+	var ladder: Node3D = SALOON_LADDER.build(root, saloon_copy, props)
 	if interiors:
 		_furnish(root, kit, a2, props)
 	kit.free()
@@ -478,7 +483,7 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		a2.free()
 	if jl != null:
 		jl.free()
-	return {"walls": walls, "props": props, "doors": doors}
+	return {"walls": walls, "props": props, "doors": doors, "ladder": ladder}
 
 
 ## The saloon's batwings as real hinged leaves (Ep2SwingDoor, founder 2026-11-05: "saloon doors don't swing; characters walk straight
