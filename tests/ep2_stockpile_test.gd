@@ -26,7 +26,7 @@ func _ready() -> void:
 	check("the Stockpile is drawn in the town", SITE.stockpile_drawn and town.find_child("Stockpile", true, false) != null)
 	check("the Reserve is drawn in the town", SITE.reserve_drawn and town.find_child("Reserve", true, false) != null)
 	var sp: Node = town._stockpile
-	check("the Stockpile's workers are built", sp != null and sp.workers.size() == 6, "%d" % (sp.workers.size() if sp else 0))
+	check("the Stockpile's workers are built", sp != null and sp.workers.size() == 5, "%d" % (sp.workers.size() if sp else 0))
 	check("the back-lot miners are all still there", town._miners != null and town._miners.miners.size() == Ep2BackLotMiners.MINERS.size())
 	if sp == null or sp.workers.is_empty():
 		_done(town)

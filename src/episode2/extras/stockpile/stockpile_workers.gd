@@ -1,8 +1,8 @@
 extends Node3D
-## THE STOCKPILE'S WORKERS (founder prompt STOCKPILE_RESERVE_PROMPT 2026-11-21): six MPFB2 townsmen (CC0, mpfb_folk.gd) at work in
+## THE STOCKPILE'S WORKERS (founder prompt STOCKPILE_RESERVE_PROMPT 2026-11-21): five MPFB2 townsmen (CC0, mpfb_folk.gd) at work in
 ## and around the open depot behind Bldg_F, plus the Reserve's one inspect. Built by the town chamber (gold_town.gd) when the streamed
 ## extras are mounted; loaded by path, no class_name.
-##   - two shovel gold nuggets from a heap into the crates beside it (Dig, the shovel laid along both hands every frame),
+##   - one shovels gold nuggets from a heap into the crates beside it (five, not six: the streamed pack's room, 2026-11-21) (Dig, the shovel laid along both hands every frame),
 ##   - two push loaded wheelbarrows on a fixed loop between the back-lot miners' ore pile and the depot yard: Walk, both hands on the
 ##     grips (Ep2ArmIK), the wheel turns with the distance rolled, the barrow is set down on its legs whenever he stops, the load is
 ##     on from the ore pile to the yard and gone after he tips it,
@@ -38,7 +38,6 @@ const TIP_AT := 3
 ## [id, height, station (local x, z), work point (local), clip, tool]
 const STATIONS: Array = [
 	["sp_shovel_a", 1.78, Vector2(2.55, 5.15), Vector2(3.6, 6.0), "Dig", "shovel"],
-	["sp_shovel_b", 1.74, Vector2(4.65, 6.85), Vector2(3.6, 6.0), "Dig", "shovel"],
 	["sp_weigher", 1.70, Vector2(-3.2, 3.15), Vector2(-3.2, 2.25), "Lift", ""],
 	["sp_fire", 1.68, Vector2(-7.2, 2.75), Vector2(-6.05, 3.97), "Tend", ""],
 ]

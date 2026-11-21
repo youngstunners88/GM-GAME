@@ -34,8 +34,6 @@ FOLK = {
     # THE STOCKPILE WORKERS (work dress; the game dirties them like the back-lot miners)
     "sp_shovel_a": dict(gender=1.0, age=0.55, muscle=0.72, weight=0.55, height=0.55, race=(0.0, 1.0, 0.0),
                         skin="young_caucasian_male", clothes=["male_worksuit01", "shoes06"], hat="fedora_cocked", hair="short02"),
-    "sp_shovel_b": dict(gender=1.0, age=0.68, muscle=0.62, weight=0.62, height=0.48, race=(1.0, 0.0, 0.0),
-                        skin="middleage_african_male", clothes=["male_worksuit01", "shoes01"], hat="fedora01", hair="short04"),
     "sp_barrow_a": dict(gender=1.0, age=0.5, muscle=0.6, weight=0.45, height=0.6, race=(0.0, 0.8, 0.2),
                         skin="young_caucasian_male2", clothes=["male_casualsuit03", "shoes06"], hat="fedora01", hair="short01"),
     "sp_barrow_b": dict(gender=1.0, age=0.6, muscle=0.7, weight=0.72, height=0.5, race=(0.2, 0.2, 0.6),
@@ -154,8 +152,8 @@ def build(fid, spec):
         side = SMALL_TEX if ("fedora" in nm or "hair" in nm or any(h in nm for h in ("short0", "bob0", "braid", "afro", "ponytail", "long0"))) else TEX
         if "normal" in nm or "_ao" in nm or "bump" in nm or "rough" in nm:
             side = 64                     # dropped below: background people carry colour only
-        if "shoe" in nm:
-            side = SMALL_TEX
+        if "shoe" in nm or "fedora" in nm:
+            side = 64                          # a hat band and a pair of boots at 10-30 m
         if img.size[0] > side:
             img.scale(side, side)
             img.pack()                         # export the scaled pixels, not the full-size file on disk
