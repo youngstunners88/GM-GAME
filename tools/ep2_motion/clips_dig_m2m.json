@@ -1,0 +1,12 @@
+{
+ "_doc": "Back-lot digger pick swing: Mesh2Motion CC0 stock (mesh2motion-app static/assets/human/animations/mining.glb, commit 017169ae) -> m2m_to_bvh.py -> retarget_bvh.py --glb townsman_oldtimer.glb --fps 24 -> tools/meshy/extract_clip.gd. The founder's Flow dig takes lost the forward bend (single-view depth); shovel-dig held its shaft level with no prop IK, so it is not shipped.",
+ "clips": [
+  {
+   "name": "Dig_Pick",
+   "bvh": "m2m_mining",
+   "start": 0.0,
+   "frame_time": 0.041667,
+   "loop": false
+  }
+ ]
+}

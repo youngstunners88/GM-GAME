@@ -27,9 +27,12 @@ const VOICE_DB := -3.0
 ## (a "clip_res" is a Meshy library clip extracted by tools/meshy/extract_clip.gd for his own rig); face: the point he works toward;
 ## tool: shovel | pitchfork | pick | ""; grip: "two" = held in both hands along the swing, otherwise the working end sits on "rest".
 const MINERS: Array = [
-	# the long-beard digger breaking ground at his heap with a pick (ref 1; Meshy "Heavy Hammer Swing", 2026-11-08, 3 credits)
+	# the long-beard digger breaking ground at his heap with a pick (ref 1). MOTION FIX T3 (2026-11-21): a real overhead pick swing - the CC0
+	# Mesh2Motion "mining" clip retarget onto his own rig (tools/ep2_motion/clips_dig_m2m.json, m2m_to_bvh.py). It replaces the Meshy "Heavy
+	# Hammer Swing" stand-in (oldtimer_dig.res, kept as the fallback file). The founder's Flow dig takes lost the forward bend in MediaPipe
+	# (single-view depth: he digs toward the camera); a shovel loop was tried and held its shaft level, so no shovel dig ships yet.
 	{"id": "digger", "lot": "L", "body": "townsman_oldtimer.glb", "voice": "oldtimer", "h": 1.70, "bulk": 1.0, "at": Vector2(-21.4, 1424.2),
-		"face": Vector2(-22.4, 1424.9), "clip": "Dig", "clip_res": "oldtimer_dig.res", "tool": "pick", "grip": "two",
+		"face": Vector2(-22.4, 1424.9), "clip": "Dig", "clip_res": "oldtimer_dig_pick.res", "tool": "pick", "grip": "two",
 		"rest": Vector3(-21.84, 0.10, 1424.5), "mound": Vector3(-22.75, 0.0, 1425.1)},
 	# the strong man on his pitchfork by the second heap (ref 2). Every so often he stands the fork up, kneels and pulls a rock out of the
 	# dirt to look at it ("Pull Radish", 3 credits: as a forking motion it dragged the fork flat along the ground, so it is his rock pull)
