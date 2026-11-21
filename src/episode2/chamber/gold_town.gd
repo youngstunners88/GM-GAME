@@ -275,6 +275,7 @@ var _town_audio: Ep2TownSoundscape = null
 var _bumps: TOWN_BUMPS = null
 var _law: Ep2TownLaw = null
 var _miners: Ep2BackLotMiners = null          # the local gold miners in the back lots behind the fronts (PROMPT_BACK_MINERS_2026-11-08)
+var _stockpile: Node3D = null              # the Stockpile's workers + the Reserve's inspect (streamed: Ep2Extras.STOCKPILE_WORKERS)
 var _fine_toast_t: float = 0.0
 var _fine_toast_text: String = ""
 var _stable_yard: Ep2StableYard = null
@@ -531,6 +532,13 @@ func _build_back_lot_miners() -> void:
 	_miners.build()
 	if _town_col.has("props"):
 		(_town_col["props"] as Array).append_array(_miners.circles)
+	if _stockpile != null and is_instance_valid(_stockpile): _stockpile.queue_free()
+	_stockpile = null
+	if Ep2Extras.has(Ep2Extras.STOCKPILE_WORKERS) and _town_col.has("props"):
+		_stockpile = load(Ep2Extras.STOCKPILE_WORKERS).new()
+		_stockpile.name = "StockpileWorkers"
+		_visuals.add_child(_stockpile)
+		_stockpile.build(_town_col["props"], self)
 
 
 ## The walk-in shops' keepers (founder fix pack 2026-10-27: "two more shopkeepers (women are fine) behind the counters"): the General
@@ -2948,6 +2956,7 @@ func shoot() -> bool:
 			_mount_bursts += 1
 			if _people != null: _people.notify_danger(_player_pos, 32.0)
 			if _miners != null: _miners.notify_danger(_player_pos)
+			if _stockpile != null: _stockpile.notify_danger(_player_pos)
 			return true
 		if _hud != null:
 			_hud.toast("THE DRUM IS EMPTY", 1.4)
@@ -2968,6 +2977,7 @@ func shoot() -> bool:
 func _on_player_shot() -> void:
 	if _people != null: _people.notify_danger(_player_pos)
 	if _miners != null: _miners.notify_danger(_player_pos)
+	if _stockpile != null: _stockpile.notify_danger(_player_pos)
 	var eye: Vector3 = _camera.global_position if _camera != null else _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = -_camera.global_transform.basis.z if _camera != null else Vector3(sin(_look_yaw), 0.0, cos(_look_yaw))
 	var in_draw: bool = _beat == Beat.DRAW and _draw_state == "go"
