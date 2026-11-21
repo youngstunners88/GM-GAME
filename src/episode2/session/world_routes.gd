@@ -44,6 +44,7 @@ func park(session: Node, room: Node) -> void:
 func travel(session: Node, id: String, position: Vector3) -> bool:
  if not rooms.has(id): return false
  var previous: Node = session._active
+ if previous is RiverCoverChamber: previous.return_lake()
  if previous is LogansLakeChamber: Ep2DrawMusic.finish_lake(previous)
  if previous is LakeTrailChamber: previous.restore_departure()
  var yaw: float = previous._look_yaw
@@ -126,9 +127,18 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  for sound in entry.sounds:
   if is_instance_valid(sound[0]): sound[0].play(sound[1])
  if room is GoldTownChamber: Ep2DrawMusic.begin_town(room)
+ if room is RiverCoverChamber and previous is LogansLakeChamber:
+  room.lend_lake(previous)
+  room.set_meta("left_home",false)
+ if room is LogansLakeChamber and previous is RiverCoverChamber:
+  room.set_meta("ridge_armed",false)
  if room is LogansLakeChamber:
   room._look_yaw=wrapf(yaw-(previous.lake_transform().basis.get_euler().y if previous is LakeTrailChamber else 0.0),-PI,PI)
-  room.arrive_from_trail(previous is LakeTrailChamber and previous.is_mounted())
+  room.arrive_from_trail((previous is LakeTrailChamber or previous is AuctionRoadChamber) and previous.is_mounted())
+  if previous is AuctionRoadChamber:
+   room.set_meta("road_parked",true)          # the road is kept: riding back out takes him onto THAT road, not a rebuilt one
+   if not previous.is_mounted() and room._horse != null and room._riding == false:
+    room._horse.visible=false;room._horse_state="gone"     # his horse stands at the auction rail, not back at the water
   Ep2DrawMusic.begin_lake(room)
  elif room is LakeTrailChamber:
   if room.get_route_distance()>=room.get_route_length()-room.LAKE_REVEAL_DISTANCE:Ep2DrawMusic.begin_lake(room)
@@ -137,6 +147,11 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  cooldown=1.0
  session.mode_changed.emit(session._mode)
  return true
+## The road to the auction leaves the lake by Logan's sign: same compass, the sign's side of the shore.
+static func lake_from_road() -> Vector3:
+ var into: Vector3 = LogansLakeChamber.LOGAN_MARK - LogansLakeChamber.AUCTION_SIGN
+ into.y = 0.0
+ return LogansLakeChamber.AUCTION_SIGN + into.normalized() * (LogansLakeChamber.AUCTION_REACH + 1.5)
 func tick(session: Node, delta: float) -> void:
  cooldown=maxf(0,cooldown-delta)
  var c: Node=session._active
@@ -155,8 +170,33 @@ func tick(session: Node, delta: float) -> void:
   travel(session,"logans_lake",c.lake_transform().affine_inverse()*c.get_player_position())
   return
  if not c.has_player_control() or c._move_input.length()<0.05:return
+ # One world: after day-88 the overlook path still climbs onto the river ridge, and the ridge walks back down to the lake.
+ # Each side arms only once he has stepped clear of the seam, so standing on it never bounces him between the two.
+ if id=="logans_lake" and rooms.has("river_cover") and c._beat==c.Beat.ROAD and not c.is_riding_horse():
+  if p.z<LogansLakeChamber.WALK_ON_Z-2.0: c.set_meta("ridge_armed",true)
+  elif p.z>=LogansLakeChamber.WALK_ON_Z and c.get_meta("ridge_armed",false):
+   travel(session,"river_cover",p+RiverCoverChamber.LAKE_OFFSET)
+   return
+ if id=="river_cover" and c._world_revisit:
+  var s: float=c.ridge_s(p)
+  if s>RiverCoverChamber.HOME_S+2.0: c.set_meta("left_home",true)
+  elif s<=RiverCoverChamber.HOME_S and c.get_meta("left_home",false) and rooms.has("logans_lake"):
+   travel(session,"logans_lake",p-RiverCoverChamber.LAKE_OFFSET)
+   return
  if id=="logans_lake" and p.z<LogansLakeChamber.SPAWN.z-0.7:
   travel(session,"lake_trail",Vector3.ZERO)
+  return
+ # One world (founder 2026-11-17): the auction road is walked back to the lake, and ridden out again onto the same road.
+ if id=="auction_road" and c.road_s(p)<AuctionRoadChamber.START_S-1.0 and rooms.has("logans_lake"):
+  travel(session,"logans_lake",lake_from_road())
+  return
+ if id=="logans_lake" and rooms.has("auction_road") and c._near_auction_sign():
+  var road: Node=rooms.auction_road.node
+  var riding: bool=c.is_riding_horse()
+  travel(session,"auction_road",road.at(AuctionRoadChamber.START_S))
+  road._mounted=riding
+  if riding:
+   road._hitched=false;road.eye_height=AuctionRoadChamber.MOUNTED_EYE;road.walk_speed=AuctionRoadChamber.MOUNTED_SPEED
   return
  if id=="lake_trail" and c._in_departure_area and p.z>TOWN_LINE_Z and rooms.has("gold_town"):
   travel(session,"gold_town",p+GoldTownChamber.DEPART_HORSE)

@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://djiq7i70j14hy"
+path="res://.godot/imported/au_elder_male_casualsuit05_diffuse.jpg-5232868987ff9b9da70335335b4ad8ff.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "7545fa8b38a5096a45f7991aa7fb1908"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/folk_mpfb/au_elder_male_casualsuit05_diffuse.jpg"
+dest_files=["res://.godot/imported/au_elder_male_casualsuit05_diffuse.jpg-5232868987ff9b9da70335335b4ad8ff.ctex"]
+
+[params]
+
+compress/mode=1
+compress/high_quality=false
+compress/lossy_quality=0.65
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1

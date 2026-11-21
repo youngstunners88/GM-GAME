@@ -1,10 +1,14 @@
 # lil-blunt-icp — Layer 4 canisters
 
-The Internet Computer half of Lil Blunt. Currently **one canister**: a
-tamper-evident leaderboard.
+The manifest declares three Motoko canisters. The public game configuration inspected on 21 November 2026 had empty IDs for all three.
 
-Full reasoning, including why this canister and not the price feed, lives in
-[`../docs/architecture/adr-icp-integration.md`](../docs/architecture/adr-icp-integration.md).
+| Canister | Configuration key | Player-facing behavior |
+|---|---|---|
+| Leaderboard | `icp.leaderboard_canister_id` | The game reads the Worker leaderboard while this ID is empty. |
+| Price feed | `icp.price_feed_canister_id` | The client uses its fallback price source while this ID is empty. |
+| Player registry | `icp.player_registry_canister_id` | The canister stores principal-linked profiles. Confirm the intended registration client before activation. |
+
+The client also supports `icp.nft_canister_id` for submitting locally recorded awards. The NFT ledger requires a separately identified deployment and issuance contract.
 
 ## Toolchain
 

@@ -1,0 +1,45 @@
+{
+  "_doc": "Auction band playing clips (2026-11-21) captured from the founder's Flow/Veo reference videos: MediaPipe 0.10.21 pose_landmarker_full (CPU) -> tools/ep2_motion/solve_landmarks_to_bvh.py <role> --clean [--neutral-legs] (direction solve, MediaPipe world z points AWAY from the camera, camera pitch levelled from the legs, loop found + crossfaded, feet IK-planted, BVH authored facing +X) -> this spec -> retarget_bvh.py --glb <band GLB> --fps 24 --export-glb -> append_glb_clips.py onto the PRISTINE GLB (re-appending onto an appended GLB orphans the replaced clip's bytes). loop=false: the loop is already closed in the BVH (2 pad frames for the skipped CMU T-pose frames + a wrap frame). yaw_deg -90: the band GLBs face +X (Ep2TownFolk.SIDEWAYS_EXPORTS) and retarget_bvh pre-multiplies its yaw. --neutral-legs: band_lead (skirt hides the legs), band_bass (occluded). Arms are overridden by band_play.gd's two Ep2ArmIK + HandAim for the four instrumentalists; the lead's arms are the clip's. Workspace: ~/Documents/SmokeRealm-mocap.",
+  "clips": [
+    {
+      "name": "Band_Fiddle",
+      "bvh": "band_fiddle",
+      "start": 0.0,
+      "frame_time": 0.041667,
+      "yaw_deg": -90.0,
+      "loop": false
+    },
+    {
+      "name": "Band_Banjo",
+      "bvh": "band_banjo",
+      "start": 0.0,
+      "frame_time": 0.041667,
+      "yaw_deg": -90.0,
+      "loop": false
+    },
+    {
+      "name": "Band_Harmonica",
+      "bvh": "band_harmonica",
+      "start": 0.0,
+      "frame_time": 0.041667,
+      "yaw_deg": -90.0,
+      "loop": false
+    },
+    {
+      "name": "Band_Lead",
+      "bvh": "band_lead",
+      "start": 0.0,
+      "frame_time": 0.041667,
+      "yaw_deg": -90.0,
+      "loop": false
+    },
+    {
+      "name": "Band_Bass",
+      "bvh": "band_bass",
+      "start": 0.0,
+      "frame_time": 0.041667,
+      "yaw_deg": -90.0,
+      "loop": false
+    }
+  ]
+}

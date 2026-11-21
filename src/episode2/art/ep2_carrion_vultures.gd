@@ -147,9 +147,9 @@ func _call_from(at: Vector3) -> void:
 		_cry = AudioStreamPlayer3D.new()
 		_cry.name = "VultureCry"
 		_cry.bus = "SFX"
-		_cry.unit_size = 22.0
+		_cry.unit_size = 30.0
 		_cry.max_distance = 150.0
-		_cry.volume_db = -14.0
+		_cry.volume_db = -6.0
 		add_child(_cry)
 		var path: String = CRY if ResourceLoader.exists(CRY) else CRY_FALLBACK
 		_cry.stream = load(path) as AudioStream if ResourceLoader.exists(path) else null

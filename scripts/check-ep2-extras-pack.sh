@@ -48,6 +48,17 @@ printf '%s\n' "${onrepo[@]}" | grep -q 'extras/lake/logan.glb'      || { echo "�
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/rich_armory2.glb' || { echo "✗ Rich v2 (extras/folk/rich_armory2.glb) is not in the repo's extras"; fail=1; }
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/utah_armory2.glb' || { echo "✗ Utah v2 (extras/folk/utah_armory2.glb) is not in the repo's extras"; fail=1; }
 
+# Official Jack Hammer must ship; a stale JPEG remap would win the old loader's extension search.
+rel="src/episode2/extras/town/posters/town_posters_builder.gd"
+grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
+rel="src/episode2/extras/town/posters/wanted_billboard.gd"
+grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
+rel="src/episode2/extras/town/posters/poster_jack_hammer.png.import"
+grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
+if grep -aqF 'src/episode2/extras/town/posters/poster_jack_hammer.jpg' "$extras"; then
+  echo "✗ retired Jack Hammer JPEG still resolves in extras"; fail=1
+fi
+
 # 3. the scenes the player flow runs through must be in the main pack (chamber chain: town -> the ride -> Logan's Lake)
 for s in gold_town lake_trail logans_lake; do
   grep -aqF "src/episode2/chamber/$s.tscn" "$main" || miss "index.pck" "src/episode2/chamber/$s.tscn"

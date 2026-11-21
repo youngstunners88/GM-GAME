@@ -122,8 +122,14 @@ func _bull_props() -> void:
 	for i in 90:
 		f.step(1.0 / 60.0)
 	var gun: Node3D = f._bull_guard_rifle
-	_check("his own Winchester is shown", gun != null and gun.is_visible_in_tree())
-	if gun:
+	if Ep2BullHero.PAINTED_GLB:
+		# The painted Bull (2026-11 v3) has his Winchester modelled into his left fist; the prop is only the hidden grip/aim
+		# reference, so the gun is never drawn twice (smelting_facility.gd: `not Ep2BullHero.PAINTED_GLB`).
+		_check("his own Winchester is the painted one in his fist: the prop is kept as a hidden reference, never a second gun",
+			gun != null and not gun.visible and gun.is_inside_tree())
+	else:
+		_check("his own Winchester is shown", gun != null and gun.is_visible_in_tree())
+	if gun and not Ep2BullHero.PAINTED_GLB:
 		var muzzle_dir: Vector3 = gun.global_transform.basis.z.normalized()
 		_check("...shoulder-carried, muzzle up (dir.y %.2f)" % muzzle_dir.y, muzzle_dir.y > 0.85)
 		_check("...at a readable size (scale %.2f)" % gun.global_transform.basis.get_scale().x,

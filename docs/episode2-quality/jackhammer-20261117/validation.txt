@@ -1,0 +1,25 @@
+Pinned Godot 4.3 stable, Compatibility renderer.
+Official source JPEG hash prefix: 2f8056dc2537b898 (full public hash in release-receipt.json).
+EP2_WANTED_REBALANCE: 40 checks, 0 failed
+CENSUS Jack Hammer=13 / 3.5916 m2; RH=3 / 0.9494 m2 (range billboard excluded)
+EP2_GATLING_HITS: ALL PASS (150-round billboard, holes, shred; five old plates remain hittable)
+EP2_ARMORY_GUNS: ALL PASS
+LOGAN_CABIN: 34 checks, 0 failed
+EP2_GOLD_TOWN: ALL PASS
+EP2_HIDEOUT_WARM: ALL PASS (8 pass, 0 fail), including replay against exported packs.
+Tabs ledger, Logan lake and fix-pack 1115 checks also pass.
+Three mutations correctly rejected: RH in largest saloon slot; zero billboard hit rectangle; incorrect baked-paper roll.
+Local release web export: 0 SCRIPT ERROR/Parse Error.
+Extras-pack presence gate: PASS; canonical PNG present, old JPEG absent.
+Security Sentinel: no high/critical blockers.
+Native 1280x720 Compatibility captures reviewed: board, saloon, Armory front, mounted range clean/burst/shredded.
+Fresh-import release core pack: 199224848 bytes; extras pack: 198936608 bytes (each below 199229440).
+Replayed census against the exact exported core + extras, with only test fixtures overlaid: 40 checks, 0 failed; runtime/art came from the exported packs.
+CI run 44020326089: complete gameplay/render/export/security PASS; actual butler upload confirmed.
+Public browser loaded and reloaded BUILD 2026-11-17-b1d62a9; both packs HTTP 200, extras ready, no browser script errors.
+Published core: 199224768 bytes; published extras: 198940512 bytes (both under the existing 199229440-byte limit).
+Published-pack replay: poster 40/40, Gatling player-path ALL PASS, hideout warm 8/8.
+Canonical poster texture extracted from the public extras is byte-identical to the verified official import.
+All ten captures in this directory now come from the exact downloaded public packs, rendered natively in Compatibility and reviewed.
+Full local headless gate runner PASS; its three documented pause tap-target machine differences were tolerated by the existing runner. CI passes all checks without that local exception.
+Founder hard-refresh walk remains pending. FIXED is not claimed.

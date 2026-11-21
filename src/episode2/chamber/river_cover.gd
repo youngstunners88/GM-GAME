@@ -40,6 +40,8 @@ const RIDGE_POINTS: Array = [Vector3(-29, 6.5, -179), Vector3(-30, 8.5, -140), V
 	Vector3(-36, 21, 96), Vector3(-32, 15, 112), Vector3(-30, 15, 124), Vector3(-31, 15, 160), Vector3(-30, 14.5, 196), Vector3(-27, 13, 212),
 	Vector3(-24, 8, 228), Vector3(-22, 8, 241)]                 # ends at the last overlook: the dock below stays in clear view
 const RIDGE_HALF := 3.0
+## Walking home after the dock: this close to the ridge's first point (Logan's path) he is back on the lake's own ground.
+const HOME_S := 1.5
 const RIDGE_STEP := 2.0                      # the ridge skin's cross-sections along the path (m)
 const CLIFF_ROWS := 6                        # the cliff's ledges from the lip to the bank
 const MARKER := Vector3(-35, 22, -8)         # the DAY-88 cairn and post: crossing it arms the run
@@ -166,6 +168,9 @@ var _ray_t: float = INF                      # distance along the last _raider_o
 var _arrows: Array = []                      # node, from, to, t, flight
 var _valley: MeshInstance3D
 var _lake_root: Node3D
+var _lake_visuals: Node3D                       # the lake standing behind the ridge (adopted on the first climb, lent on a revisit)
+var _lent_from: Node3D
+var _lent_horse: Node3D
 var _ridge_sections: Array = []              # [centre, mitred offset toward the river, arc] along the ridge skin
 var _rock_mesh: Mesh                         # the Tripo sandstone (Ep2Extras.RIVER_ROCK), loaded once
 var _rock_mat: StandardMaterial3D
@@ -1076,6 +1081,37 @@ func get_rich() -> Ep2TownFolk: return _rich
 
 ## LOGAN'S LAKE STAYS BEHIND HIM. Called in the frame the session swaps the rooms: the lake's own terrain, water, trees, camp and Logan move
 ## here at LAKE_OFFSET, with its light, so the frame after [E] is the frame before it and the lake is really at his back on the climb.
+## Walked back up from the lake after day-88 (one world): the LIVE lake stands behind the ridge - its horse, its Logan - not the
+## copy kept from the first climb. Handed back by `return_lake` when he walks down again.
+func lend_lake(lake: Node3D) -> void:
+	var visuals: Node3D = lake.get("_visuals")
+	if visuals == null or _lake_root == null:
+		return
+	if is_instance_valid(_lake_visuals) and _lake_visuals != visuals:
+		_lake_visuals.queue_free()                          # the first climb's copy (and its horse) is stale now
+	visuals.reparent(_lake_root, false)
+	visuals.position = Vector3.ZERO
+	_lake_visuals = visuals
+	_lent_from = lake
+	var horse: Node3D = lake.get("_horse")
+	if horse != null and horse.get_parent() == lake:
+		horse.reparent(visuals, false)
+		_lent_horse = horse
+
+
+func return_lake() -> void:
+	if not is_instance_valid(_lent_from):
+		return
+	if is_instance_valid(_lent_horse):
+		_lent_horse.reparent(_lent_from, false)
+	if is_instance_valid(_lake_visuals):
+		_lake_visuals.reparent(_lent_from, false)
+		_lake_visuals.position = Vector3.ZERO
+	_lake_visuals = null
+	_lent_from = null
+	_lent_horse = null
+
+
 func adopt_lake(lake: Node3D) -> void:
 	var visuals: Node3D = lake.get("_visuals")
 	if visuals == null or _lake_root != null:
@@ -1086,6 +1122,7 @@ func adopt_lake(lake: Node3D) -> void:
 	_visuals.add_child(_lake_root)
 	visuals.reparent(_lake_root, false)
 	visuals.position = Vector3.ZERO
+	_lake_visuals = visuals
 	var horse: Node3D = lake.get("_horse")
 	if horse != null:
 		horse.reparent(visuals, false)                      # the horse he left at the water stays at the water
@@ -1317,6 +1354,10 @@ func _tick(delta: float) -> void:
 			_tick_run(delta)
 		Beat.DOCK:
 			_tick_dock(delta)
+		Beat.DONE:
+			if not _world_revisit and ridge_s(_player_pos) <= HOME_S and not _resolved and has_player_control() and _handoff_ok():
+				_resolve({"next_chamber": "logans_lake", "after_day88": true, "river_complete": true, "gates": _gates_passed, "losses": _losses,
+					"downs": _downs, "companion": ""})
 	_tick_rich(delta)
 	if _crate != null:
 		_place_crate(delta)
@@ -2330,9 +2371,12 @@ func _tick_dock(delta: float) -> void:
 	if _dock_t >= 2.4 + _line_len() + 0.6 and rich_done:
 		_set_tabs_live(false)
 		_advance_to(Beat.DONE)
-		# founder brief 2026-11-08: Utah has it - back to Logan's Lake, where his horse is already drinking, then the road to the auction
-		_resolve({"next_chamber": "logans_lake", "after_day88": true, "river_complete": true, "gates": _gates_passed, "losses": _losses,
-			"downs": _downs, "companion": ""})
+		# founder brief 2026-11-08: Utah has it - back to Logan's Lake, where his horse is already drinking, then the road to the auction.
+		# ONE WORLD (founder 2026-11-17 "not a series of realities ... teleporting the player"): no cut from the dock to the lake. He walks
+		# back along this same ridge; it ends on Logan's own path (RIDGE_POINTS[0] is that path), and the lake takes over there (_tick).
+		prebuild_requested.emit("logans_lake")          # built off screen during the walk: the lake's first frame never waits on a build
+		if _hud != null:
+			_hud.objective = "Utah has the Shipment. Walk back up the ridge to Logan's Lake: your horse is at the water."
 
 
 func _hand_off_line() -> void:
@@ -2489,4 +2533,8 @@ func get_handoff() -> Dictionary:
 	var result: Dictionary = super.get_handoff()
 	if _beat == Beat.DONE:
 		result["after_day88"] = true
+		# the lake goes on from exactly here: the same point on Logan's path, the same way he is looking (both rooms share the yaw)
+		result["lake_player"] = Vector3(_player_pos.x - LAKE_OFFSET.x, _player_pos.y - LAKE_OFFSET.y, _player_pos.z - LAKE_OFFSET.z)
+		result["lake_yaw"] = _look_yaw
+		result["lake_pitch"] = _look_pitch
 	return result

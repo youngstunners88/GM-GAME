@@ -176,7 +176,10 @@ static func attach_rifle(folk: Ep2TownFolk) -> Node3D:
 	if not folk.has_meta("sharps_hand_transform"): return null
 	var holder: Node3D = make_rifle()
 	if holder == null: return null
-	if not folk.attach_prop(holder, "hand_r"):
+	# the right hand by the rig's own name: "hand_r" on the old UE Rich, "mixamorig:RightHand" on New Rich (2026-11-21)
+	var sks: Array = folk.model.find_children("*", "Skeleton3D", true, false) if folk.model != null else []
+	var rh: int = SOLVE._find(sks[0], "RightHand") if not sks.is_empty() else -1
+	if rh < 0 or not folk.attach_prop(holder, (sks[0] as Skeleton3D).get_bone_name(rh)):
 		holder.free()
 		return null
 	holder.transform = folk.get_meta("sharps_hand_transform")

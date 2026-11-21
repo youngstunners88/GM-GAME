@@ -831,13 +831,16 @@ func _on_beat_entered(b: int) -> void:
 			_sfx("ep2_lift_start")
 			_start_show([
 				{"do": "call", "fn": func() -> void: look_toward(get_lever_position() + Vector3(0.0, 0.1, 0.0), 2.6)},
-				{"do": "face", "at": LEVER_POS + Vector3(0.0, 0.0, 0.0)},
-				{"do": "reach", "at": LEVER_POS + Vector3(0.12, 0.2, 0.0), "ramp": 0.45, "hold": 0.3, "lean": 0.0},
+				{"do": "walk", "to": LEVER_REACH_SPOT, "speed": 2.0},
+				{"do": "face", "at": LEVER_POS + Vector3(0.25, 0.0, -0.35)},
+				# motion fix T6 (2026-11-21): his LEFT fist (the rifle hand) takes the grip - the right fist is sculpted into his flask
+				# pouch and tears it when lifted. The lever moves only while the fist is on its grip, and the fist rides it through the arc.
+				{"do": "reach", "side": "Left", "at": _lever_wrist_target(), "ramp": 0.35, "hold": 0.15, "lean": 0.25},
 				{"do": "call", "fn": _pull_lever},
-				{"do": "wait", "t": 0.6},
+				{"do": "until", "pred": func() -> bool: return _lever_t >= 1.0, "timeout": 2.5},    # his hand stays on it to the end of the arc
 				# the cage starts as his hand comes off the lever: the RISE show turns him to Lil Blunt, so no separate turn is waited
 				# out here with the lift standing still
-				{"do": "release", "ramp": 0.45, "t": 0.4}])
+				{"do": "release", "side": "Left", "ramp": 0.45, "t": 0.2}])
 		Beat.RISE:
 			release_look()
 			_rise_t = 0.0
@@ -873,6 +876,51 @@ func _on_beat_entered(b: int) -> void:
 
 func _pull_lever() -> void:
 	_lever_t = 0.0
+	_lever_wait = 0.0
+
+
+## How close the fist must be to its press point on the grip for the lever to move (metres).
+const LEVER_CONTACT_M := 0.07
+## The fist is closed round his rifle, so it cannot enclose the grip: it presses on it from his side. Fist centre -> grip at contact (metres,
+## native 2.4 m; the painted fist is about 0.2 m across).
+const FIST_RADIUS_M := 0.11
+var _lever_wait: float = 0.0
+var _lever_wrist: Vector3 = Vector3.INF
+
+
+## The lever's grip, world.
+func lever_grip_position() -> Vector3:
+	var g: Node3D = _lever.find_child("Grip", true, false) as Node3D if _lever != null else null
+	return g.global_position if g != null and g.is_inside_tree() else LEVER_POS + Vector3(0.0, 0.25, 0.0)
+
+
+## Where he stands to work the lever with his LEFT fist: one step from his corner, the lever at his front-left (cage-local, the cage stands at
+## the shaft origin while it waits).
+const LEVER_REACH_SPOT := Vector3(-1.36, 0.0, 0.58)   # 0.55 m from his corner (CAGE_STAND_BULL), straight toward the lever
+
+
+## Where his LEFT wrist goes for his fist (the painted fist round the rifle sits a hand's length past the wrist, Ep2BullHero.LEFT_PALM_M) to
+## close on the grip: short of it along his reach.
+func _lever_wrist_target() -> Vector3:
+	if _bull == null:
+		return lever_grip_position()
+	return Ep2BullHero.wrist_for_fist_at(_bull, _lever_press_point())
+
+
+## Where the fist's centre sits when it presses the grip: on his side of it, a fist's radius away.
+func _lever_press_point() -> Vector3:
+	var grip: Vector3 = lever_grip_position()
+	if _bull == null:
+		return grip
+	var toward: Vector3 = (_bull.global_position + Vector3.UP * _bull.height_m * 0.6) - grip
+	return grip + toward.normalized() * FIST_RADIUS_M * _bull.height_m / 2.4
+
+
+## His fist to the lever's grip (metres): how far contact is from true (proofs and the lever's contact gate).
+func lever_contact_error() -> float:
+	if _bull == null or _bull.skeleton == null:
+		return INF
+	return Ep2BullHero.final_grip_world(_bull).distance_to(_lever_press_point())
 
 
 ## The climb lasts as long as Inferno's plan: the line he may still be carrying, his turn to face Lil Blunt, then plan 1-3 with their
@@ -917,10 +965,22 @@ func _tick(delta: float) -> void:
 	_surface_light()
 	# lever animation: the iron handle swings from back (-35 deg) to forward (+35 deg) as Inferno pulls it
 	if _lever_t >= 0.0 and _lever_t < 1.0 and _lever:
-		_lever_t = minf(1.0, _lever_t + delta / 0.7)
+		# contact first: the handle only travels while his fist is on it (a short grace so a miss can never stall the beat)
+		_lever_wait += delta
+		if lever_contact_error() <= LEVER_CONTACT_M or _lever_wait > 0.6:
+			_lever_t = minf(1.0, _lever_t + delta / 0.6)
 		var arm: Node3D = _lever.get_child(0) as Node3D
 		if arm:
 			arm.rotation.x = deg_to_rad(-35.0 + 70.0 * _lever_t)
+
+	# his fist on the grip: re-aimed every frame of the reach (the fist's offset from the wrist settles) and round the arc as it swings
+	var hero: Ep2BullHero = _bull.get_node_or_null("BullHero") as Ep2BullHero if _bull else null
+	if hero != null and hero.hip != null:
+		hero.hip.rifle_up = 0.6 * _bull.reach_weight("Left") if _beat == Beat.LEVER else 0.0     # the rifle stays upright in that fist
+	if _beat == Beat.LEVER and _bull and _bull.reach_weight("Left") > 0.05:
+		# damped: the fist's offset from the wrist moves with the target, so an undamped feedback rings
+		_lever_wrist = _lever_wrist.lerp(_lever_wrist_target(), 0.25) if _lever_wrist.is_finite() else _lever_wrist_target()
+		_bull.retarget_reach("Left", _lever_wrist)
 	# the walkway gate: raised (open) while they board, it drops shut when the lever beat starts
 	_gate_in_k = move_toward(_gate_in_k, _gate_in_goal, delta / 0.6)
 	if _gate_in:

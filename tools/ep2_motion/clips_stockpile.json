@@ -1,0 +1,66 @@
+{
+  "_doc": "Clips for the MPFB2 background folk (2026-11-21, STOCKPILE_RESERVE_PROMPT): the six Stockpile workers and the auction hall's five extra people share ONE skeleton (MPFB 'mixamo' rig), so this set is retargeted once onto sp_shovel_a.glb (blender -b --factory-startup -P tools/ep2_motion/retarget_bvh.py -- --spec tools/ep2_motion/clips_stockpile.json --bvh-dir ~/tools/mocap/cmu --glb <sp_shovel_a.glb> --export-glb <clips.glb> --fps 24), stripped to the skeleton (tools/ep2_blender/strip_clip_donor.py) and shipped as src/episode2/extras/folk_mpfb/folk_clips.glb; the game copies its clips onto every figure. CMU sources (commercial use allowed, tools/ep2_motion/fetch_cmu.sh): 77_02 standing, 81_03 walk, 80_05 digging a hole, 26_09 bend + pick up, 15_06 lean forward + reach for, 13_27 wave/point. Pushing the wheelbarrow is Walk with both hands laid on its grips by Ep2ArmIK; clapping is Ep2ArmIK too (no CMU clip claps).",
+  "clips": [
+    {
+      "name": "Idle",
+      "bvh": "77_02",
+      "start": 0.5,
+      "end": 7.5,
+      "autoloop": [
+        3.0,
+        7.0
+      ],
+      "loop": true
+    },
+    {
+      "name": "Walk",
+      "bvh": "81_03",
+      "start": 1.0,
+      "end": 3.2,
+      "autoloop": [
+        0.9,
+        1.4
+      ],
+      "loop": true
+    },
+    {
+      "name": "Dig",
+      "bvh": "80_05",
+      "start": 1.0,
+      "end": 9.5,
+      "autoloop": [
+        2.0,
+        4.5
+      ],
+      "loop": true
+    },
+    {
+      "name": "Lift",
+      "bvh": "26_09",
+      "start": 0.3,
+      "end": 5.5,
+      "autoloop": [
+        3.5,
+        5.2
+      ],
+      "loop": true
+    },
+    {
+      "name": "Tend",
+      "bvh": "15_06",
+      "start": 1.0,
+      "end": 12.0,
+      "autoloop": [
+        2.5,
+        5.0
+      ],
+      "loop": true
+    },
+    {
+      "name": "Bid",
+      "bvh": "13_27",
+      "start": 0.6,
+      "end": 2.8
+    }
+  ]
+}

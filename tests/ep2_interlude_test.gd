@@ -226,6 +226,34 @@ func _ready() -> void:
 	var bird0: Vector3 = (wl._birds[0][0] as Node3D).position if wl != null and not wl._birds.is_empty() else Vector3.ZERO
 	_run(w, 1.0)
 	_check("birds fly in the wood (a few, moving)", wl != null and wl.get_bird_count() >= 5 and (wl._birds[0][0] as Node3D).position.distance_to(bird0) > 3.0)
+	# STATUS 2026-11-05 "the small songbirds in the woods cannot be shot yet" - fixed 2026-11-19
+	if wl != null and not wl._birds.is_empty():
+		var before_n: int = wl.get_bird_count()
+		var target: Node3D = wl._birds[0][0]
+		var eye_b: Vector3 = target.global_position + Vector3(0.0, -1.0, -6.0)
+		var dir_b: Vector3 = (target.global_position - eye_b).normalized()
+		_check("a round on a songbird lands in it (it no longer passes through)", wl.ray_distance(eye_b, dir_b) > 0.0 and wl.shoot(eye_b, dir_b) and wl.get_bird_count() == before_n - 1 and wl.get_fallen_count() == 1)
+		for i in 240:
+			wl.step(1.0 / 60.0)
+		_check("...it drops and lies on the forest floor; the others fly on", target.position.y <= 0.07 and wl.get_bird_count() == before_n - 1)
+	# 2026-11-19: a round at the farmer's donkey used to pass straight through it. It now lands: the donkey startles, then plods on
+	var cart: Ep2RoadCart = w._cart as Ep2RoadCart
+	if cart != null:
+		var body: Vector3 = cart.global_transform * Vector3(0.0, 0.95, 1.55)
+		var eye_d: Vector3 = body + cart.global_transform.basis.x.normalized() * 8.0
+		var dir_d: Vector3 = (body - eye_d).normalized()
+		var hit_d: float = cart.ray_distance(eye_d, dir_d)
+		_check("a round at the farmer's donkey lands in it (no longer passes through)", hit_d > 7.0 and hit_d < 8.0, "t %.2f" % hit_d)
+		_check("...a miss beside it does not", cart.ray_distance(eye_d, (dir_d + Vector3.UP * 0.6).normalized()) < 0.0)
+		cart.startle()
+		var mid_ok: bool = true
+		for i in 30:
+			cart.advance_motion(1.0 / 60.0, 0.0)
+		mid_ok = cart.startle_time > 0.0 and (not cart.ready_art or absf(cart._donkey.position.x) > 0.1)
+		for i in 60:
+			cart.advance_motion(1.0 / 60.0, 0.0)
+		_check("...it startles (shies off the line), then settles back and stays alive for the trip", mid_ok and cart.startle_time < 0.0
+			and is_instance_valid(cart) and (not cart.ready_art or absf(cart._donkey.position.x) < 0.001) and cart.startles == 1)
 	# the founder's TRIPO bears, not the Meshy ones (2026-10-10): the rigged bear file is the Tripo body on the bear skeleton,
 	# its bow-less arms lowered out of the archer T, plus two Tripo bear-archer sentries drawing on the approach
 	var cb: Ep2Actor = (w.get_scouts()[0] as Ep2BearBrain).actor
@@ -553,7 +581,14 @@ func _ready() -> void:
 	hf.step(0.016)
 	_check("at the exit door the hideout WAITS for the lift to be built (a pause at worst, never a blackout)", hf_resolved.is_empty() and hf.is_waiting_for_handoff())
 	hf._look_yaw = 0.3
-	root2.step(0.016)      # (the root is idle in this test: it finishes the background build, the hideout steps itself)
+	# (the root is idle in this test: it finishes the background build, the hideout steps itself). The build is spread over frames
+	# (ep2-prebuild-frame-budget), so step the root until the lift is ready - bounded, never an endless wait.
+	var build_steps: int = 0
+	while not hf._handoff_ok() and build_steps < 1200:
+		root2.step(0.016)
+		build_steps += 1
+	# since the open-door portal (founder 2026-10-24) he leaves by walking THROUGH the doorway, not by standing at it
+	hf._player_pos.z = SmeltingFacilityChamber.PORTAL_Z + 0.05
 	hf.step(0.016)
 	_check("...the moment it is built the door opens: the hideout resolves toward the lift", hf_resolved.size() == 1 and str(hf_resolved[0].get("next_chamber", "")) == "mine_lift")
 	root2.queue_free()

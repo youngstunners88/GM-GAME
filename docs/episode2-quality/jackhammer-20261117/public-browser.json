@@ -1,0 +1,30 @@
+{
+  "url": "https://html-classic.itch.zone/html/18305533-2412784/index.html?v=1794893249&ep2=1&verify=1794893252734",
+  "logs": [
+    "[BUILD] Lil Blunt Adventure — build 2026-11-17-b1d62a9",
+    "[EP2] code prompt",
+    "[EP2] extras ready (ready)",
+    "[BUILD] Lil Blunt Adventure — build 2026-11-17-b1d62a9",
+    "[EP2] code prompt",
+    "[EP2] extras ready (ready)"
+  ],
+  "errors": [],
+  "responses": [
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2412784/index.pck",
+      "status": 200
+    },
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2412784/ep2_extras.pck?v=2026-11-17-b1d62a9",
+      "status": 200
+    },
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2412784/index.pck",
+      "status": 200
+    },
+    {
+      "url": "https://html-classic.itch.zone/html/18305533-2412784/ep2_extras.pck?v=2026-11-17-b1d62a9",
+      "status": 200
+    }
+  ]
+}

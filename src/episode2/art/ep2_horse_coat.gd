@@ -31,6 +31,8 @@ void fragment() {
 }
 """
 static var _shader: Shader = null
+## The coat of Dude's horse Lil Blunt rides (set where the trail builds it): the lake and the auction road wear the same one.
+static var ridden: String = "brown"
 
 
 static func names() -> Array:

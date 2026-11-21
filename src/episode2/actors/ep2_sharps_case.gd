@@ -19,12 +19,20 @@ const FELT_Y := 0.925
 const CASE_CENTRE := Vector3(2.6, 0.0, -5.2)
 const RIFLE_X := 2.47                    # off the centre line toward Rich's side, and clear of the lamp tube (x 2.6) as it rises
 const LIFT := 0.50                       # how far the rifle rises before it turns to his chest: its belly clears the case top (1.355)
-const LID_OPEN := 1.30                   # radians the lid stands open (about 75 degrees)
+const LID_OPEN := 1.0                    # radians the lid stands open (about 57 degrees): the pull must stay in his hand all the way up - at
+                                         # 75 degrees it swung out of New Rich's reach and moved ahead of his hand (2026-11-21, 0.26 m short)
 const PULL := Vector3(2.36, 1.36, -5.45) # the brass pull on Rich's edge of the lid (closed); kept in step with build_armory2.py
-const REACH_SPOT := Vector3(2.03, 0.0, -5.45)   # where he stands to reach in: between the counter's end and the case
+const REACH_SPOT := Vector3(2.10, 0.0, -5.45)   # where he stands to reach in: between the counter's end and the case (7 cm nearer for New Rich's reach, 2026-11-21)
+## How far his spine leans toward the right hand's target (radians at full reach): the open lid's pull is high over the far edge.
+const REACH_LEAN := 0.40
 ## Seconds in SHARPS_REACH (out) and SHARPS_BACK (back). Ep2ArmoryIntro owns the stage lengths and the moments the rifle changes hands.
 const OUT := {"to_pull": 0.5, "lid": 1.0, "to_grip": 1.5, "lift": 2.1, "to_chest": 2.9}
 const BACK := {"to_case": 1.05, "down": 1.65, "to_pull": 2.15, "lid": 2.75, "let_go": 3.25}
+## BODY clips from the founder's Flow take (motion fix T4, 2026-11-21: sharps_present.mp4 -> MediaPipe -> New Rich): he leans into the case,
+## looks down at the rifle, takes its weight in the shoulders as it comes up and straightens with it. The take's lift is played over the
+## founder's stage lengths (REACH_S out, BACK_S reversed for the put-back), so his timings never move. The arms stay contact-solved
+## (Ep2ArmIK on lid pull, grip and fore-end): the clip brings the body, the IK keeps the hands on the glass and the rifle.
+const BODY_OUT := "SharpsOut"
 
 var rifle: Node3D = null                 # the rifle while it is not in his hand (in the case, or moving)
 var lid: Node3D = null
@@ -188,6 +196,8 @@ func _release_held(at: Vector3) -> void:
 
 func _out(t: float) -> void:
 	var grip_wrist: Vector3 = _rest * POSE.wrist_on_rifle("Right")
+	if t < OUT["to_chest"]:
+		_play_body(BODY_OUT, Ep2ArmoryIntro.REACH_S)
 	if t < OUT["to_pull"]:
 		_set_lid(0.0)
 		_arms(_ease(t / OUT["to_pull"]), _pull_wrist(0.0), 0.0, Vector3.ZERO)
@@ -224,7 +234,10 @@ func _back(t: float) -> void:
 	if t < Ep2ArmoryIntro.OUT_OF_HAND_AT:
 		_arms(0.0, Vector3.ZERO, 0.0, Vector3.ZERO)
 		return
-	_play("Counter")
+	# the put-back is the lift in reverse, phase for phase: his body shows the lift's matching moment (an unaligned reversed clip had him
+	# bent into the case while his hand went up to the lid)
+	if not _scrub_body(BODY_OUT, _back_to_out_time(t)):
+		_play("Counter")
 	if t < BACK["to_case"]:
 		var k: float = _ease((t - Ep2ArmoryIntro.OUT_OF_HAND_AT) / (BACK["to_case"] - Ep2ArmoryIntro.OUT_OF_HAND_AT))
 		_place(_from_hand.interpolate_with(_raised(), k), 1.0 - k)
@@ -283,6 +296,63 @@ func _arms(right: float, right_at: Vector3, left: float, left_at: Vector3) -> vo
 		ik.influence = clampf(w, 0.0, 1.0)
 		ik.reaching = w > 0.001
 		ik.target_world = right_at if side == "Right" else left_at
+		if side == "Right":
+			# he leans in to it (shortfall measured 0.18-0.31 m at the open lid with the body upright)
+			ik.lean_toward = right_at
+			ik.spine_lean = REACH_LEAN * ik.influence
+
+
+## BACK seconds -> the matching SharpsOut moment (OUT seconds), piecewise linear over the two stage tables.
+static func _back_to_out_time(t: float) -> float:
+	var b: Array = [Ep2ArmoryIntro.OUT_OF_HAND_AT, BACK["to_case"], BACK["down"], BACK["to_pull"], BACK["lid"], BACK["let_go"]]
+	var o: Array = [OUT["to_chest"], OUT["lift"], OUT["to_grip"], OUT["lid"], OUT["to_pull"], 0.0]
+	if t <= b[0]: return o[0]
+	for i in range(1, b.size()):
+		if t <= b[i]:
+			return lerpf(o[i - 1], o[i], (t - b[i - 1]) / maxf(b[i] - b[i - 1], 0.001))
+	return 0.0
+
+
+## Hold `clip` at the moment of the lift that is `out_t` seconds into SHARPS_REACH (scaled to the clip's own length).
+func _scrub_body(clip: String, out_t: float) -> bool:
+	if _rich == null:
+		return false
+	var ap: AnimationPlayer = _rich.anim_player()
+	if ap == null:
+		return false
+	var name: String = ""
+	for a in ap.get_animation_list():
+		if str(a).to_lower().ends_with(clip.to_lower()):
+			name = str(a)
+	if name == "":
+		return false
+	if _played != clip + "@scrub":
+		_played = clip + "@scrub"
+		_rich.hold_clip(clip)
+		_rich.play_clip(clip, 0.0)
+	ap.speed_scale = 0.0
+	ap.seek(clampf(out_t / Ep2ArmoryIntro.REACH_S, 0.0, 1.0) * ap.get_animation(name).length, true)
+	return true
+
+
+## Play `clip` once over `seconds` (its own length scaled to fit). False when this Rich has no such clip (the v1 fallback model).
+func _play_body(clip: String, seconds: float) -> bool:
+	if _rich == null:
+		return false
+	if _played == clip:
+		return true
+	var ap: AnimationPlayer = _rich.anim_player()
+	var len: float = 0.0
+	if ap != null:
+		for a in ap.get_animation_list():
+			if str(a).to_lower().ends_with(clip.to_lower()):
+				len = ap.get_animation(a).length
+	if len <= 0.0:
+		return false
+	_played = clip
+	_rich.hold_clip(clip)                       # his base clip too, or the folk's idle return takes it straight back to Counter
+	_rich.play_clip(clip, len / maxf(seconds, 0.1))
+	return true
 
 
 func _play(clip: String) -> void:

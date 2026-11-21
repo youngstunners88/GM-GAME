@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://61rhf3fdgi18"
+path="res://.godot/imported/au_matron_old_darkskinned_female_diffuse.jpg-72b68f3802103b24e9c8a450b227ac07.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "f298e9be4313102a2bbba515ed15a3d4"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/folk_mpfb/au_matron_old_darkskinned_female_diffuse.jpg"
+dest_files=["res://.godot/imported/au_matron_old_darkskinned_female_diffuse.jpg-72b68f3802103b24e9c8a450b227ac07.ctex"]
+
+[params]
+
+compress/mode=1
+compress/high_quality=false
+compress/lossy_quality=0.65
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1

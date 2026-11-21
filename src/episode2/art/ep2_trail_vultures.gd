@@ -44,7 +44,7 @@ var _states: Array = []
 var _rng := RandomNumberGenerator.new()
 var _wings: AudioStreamPlayer3D = null
 var _cry: AudioStreamPlayer3D = null
-var _cry_t: float = 8.0
+var _cry_t: float = 2.5
 var _heard_t: float = 0.0
 
 
@@ -84,10 +84,10 @@ func _scatter(st: Dictionary, index: int) -> void:
 
 
 func _build_audio() -> void:
-	_wings = _voice("VultureWings", 26.0, 170.0, -22.0, _stream(WINGS, WINGS_FALLBACK))
+	_wings = _voice("VultureWings", 30.0, 190.0, -11.0, _stream(WINGS, WINGS_FALLBACK))
 	if _wings.stream is AudioStreamOggVorbis:
 		(_wings.stream as AudioStreamOggVorbis).loop = true
-	_cry = _voice("VultureCry", 22.0, 150.0, -14.0, _stream(CRY, CRY_FALLBACK))
+	_cry = _voice("VultureCry", 30.0, 190.0, -5.0, _stream(CRY, CRY_FALLBACK))
 
 
 func _voice(label: String, unit: float, reach: float, db: float, stream: AudioStream) -> AudioStreamPlayer3D:
@@ -133,16 +133,19 @@ func _fly(st: Dictionary, delta: float) -> void:
 	_place(st)
 	var node: Node3D = st["node"]
 	var seed_v: float = float(st["seed"])
-	var flap_amount: float
-	if wounded:
-		# It fights the air: the wounded wing catches the downbeat every time.
-		flap_amount = 0.62 + 0.22 * sin(t * 5.7)
-	else:
-		# Soaring birds glide far more than they flap: a short burst now and then, the rest locked in the V.
-		flap_amount = clampf(sin(t * 0.31 + seed_v) * 3.2 - 2.2, 0.0, 1.0)
-	st["flap_t"] = float(st["flap_t"]) + delta * (7.0 if wounded else 3.4)
+	var flap_amount: float = _flap_amount(st)
+	st["flap_t"] = float(st["flap_t"]) + delta * (11.0 if wounded else 8.2)
 	node.rotation.z = -0.24 + (0.16 * sin(t * 3.1) if wounded else 0.03 * sin(t * 0.7 + seed_v))   # the inside wing dropped into the turn
 	Ep2VultureMesh.flap(node, float(st["flap_t"]), flap_amount)
+
+
+## How hard it is beating now. Founder 2026-11-17: "we don't see their wings flapping" - bursts of full wingbeats most of
+## the time and a working beat between them, never a frozen cut-out gliding round the thermal. Wounded, it fights the air.
+func _flap_amount(st: Dictionary) -> float:
+	var t: float = float(st["t"])
+	if bool(st["wounded"]):
+		return 0.62 + 0.22 * sin(t * 5.7)
+	return clampf(sin(t * 0.55 + float(st["seed"])) * 1.6 + 0.35, 0.3, 1.0)
 
 
 ## Its place in the shared thermal, facing along the turn.
@@ -152,6 +155,7 @@ func _place(st: Dictionary) -> void:
 	var radius: float = float(st["radius"]) + sag * WOUND_WIDEN
 	var column := Vector3(cos(phase * 0.17) * 7.0, 0.0, sin(phase * 0.13) * 7.0)     # the thermal itself drifts over the desert
 	var y: float = float(st["height"]) + sin(float(st["t"]) * 0.4 + float(st["seed"])) * 0.9 - sag * WOUND_SAG
+	y -= sin(float(st["flap_t"])) * 0.1 * _flap_amount(st)        # each downbeat lifts the body: the flap carries weight
 	var node: Node3D = st["node"]
 	node.position = column + Vector3(cos(angle) * radius, y, sin(angle) * radius)
 	var tangent := Vector3(-sin(angle), 0.0, cos(angle))
@@ -191,14 +195,28 @@ func _tick_audio(alive: int, delta: float) -> void:
 			_wings.play()
 		elif not near and _wings.playing:
 			_wings.stop()
-		_wings.position = Vector3(0.0, 23.0, 0.0)     # the wind layer belongs to the flock, not to one bird
+		_wings.position = _nearest_bird_local()       # the wingbeats come from the bird closest to him, not from empty sky
 	_cry_t -= delta
 	if _cry_t <= 0.0:
-		_cry_t = _rng.randf_range(9.0, 19.0)
+		_cry_t = _rng.randf_range(4.5, 9.5)
 		if near and listener.distance_to(global_position) < _cry.max_distance:
 			var pick: int = _rng.randi_range(0, birds.size() - 1)
 			if not bool(_states[pick]["dead"]):
 				_call_from(birds[pick])
+
+
+func _nearest_bird_local() -> Vector3:
+	var best := Vector3(0.0, 23.0, 0.0)
+	var best_d: float = INF
+	var here: Vector3 = to_local(listener) if is_inside_tree() else listener
+	for st in _states:
+		if bool(st["dead"]):
+			continue
+		var d: float = (st["node"] as Node3D).position.distance_to(here)
+		if d < best_d:
+			best_d = d
+			best = (st["node"] as Node3D).position
+	return best
 
 
 func _call_from(bird: Node3D) -> void:

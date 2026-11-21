@@ -7,7 +7,7 @@ extends Node
 const TRAIL := preload("res://src/episode2/chamber/lake_trail.tscn")
 const LAKE := preload("res://src/episode2/chamber/logans_lake.tscn")
 const TOWN := preload("res://src/episode2/chamber/gold_town.tscn")
-const CHECKS_PINNED := 118
+const CHECKS_PINNED := 127
 
 var _fail: int = 0
 var _count: int = 0
@@ -40,6 +40,8 @@ func _ready() -> void:
 	await _mount_dies_on_the_trail()
 	await get_tree().process_frame
 	_one_round_one_target()
+	await get_tree().process_frame
+	await _bandit_horse_takes_rounds()
 	await get_tree().process_frame
 	await _lake_horse()
 	await get_tree().process_frame
@@ -531,6 +533,58 @@ func _one_round_one_target() -> void:
 	GameManager.ep2_stampede_done = keep
 
 
+## STATUS 2026-11-05 "Not yet: bullets pass through the chasing bandits' horses" - fixed 2026-11-19.
+func _bandit_horse_takes_rounds() -> void:
+	print("-- THE CHASING RIDER'S HORSE CAN BE SHOT")
+	var keep: bool = GameManager.ep2_stampede_done
+	GameManager.ep2_stampede_done = true
+	var t: LakeTrailChamber = _trail()
+	var s: float = LakeTrailChamber.RIDER_START_S + 25.0
+	t._route_s = s
+	t._place_at_distance(s)
+	for i in 30:
+		t._tick_bandits(1.0 / 60.0)
+	var rider: Dictionary = {}
+	for b in t._bandits:
+		if bool(b["rider"]):
+			rider = b
+	var horse: Node3D = rider.get("horse", null)
+	_check("the chasing rider is out with a horse that has wounds", horse != null and (rider["root"] as Node3D).visible and Ep2CreatureHealth.of(horse) != null)
+	if horse == null:
+		t.free()
+		GameManager.ep2_stampede_done = keep
+		return
+	# low on the barrel, under his boots: only the horse is on this line
+	_aim_trail(t, horse.global_position + Vector3(0.0, 0.7, 0.0))
+	var eye: Vector3 = t._camera.global_position
+	var dir: Vector3 = -t._camera.global_transform.basis.z
+	_check("a round under the rider lands in his horse, not through it", str(t._creature_on_ray(eye, dir, false).get("kind", "")) == "bandit_horse", str(t._creature_on_ray(eye, dir, false)))
+	t._on_player_shot()
+	_check("one round wounds it and he rides on", Ep2CreatureHealth.of(horse).is_alive() and str(rider["state"]) != "dead")
+	t._on_player_shot()
+	_check("the second brings the horse down and throws him", not Ep2CreatureHealth.of(horse).is_alive() and str(rider["state"]) == "dead")
+	for i in 60:
+		t._tick_bandits(1.0 / 60.0)
+	await get_tree().create_timer(0.8).timeout          # the fall is a real tween over frames
+	_check("the horse lies on its side and the rider is on the ground", absf(horse.rotation.z) > 0.9 and (rider["folk"] as Node3D).position.y < 0.2, "%s %s" % [horse.rotation.z, (rider["folk"] as Node3D).position.y])
+	# aimed at the man in the saddle, the round is his, not the horse's (fresh rider after a retry)
+	t._retry_trail()
+	t._route_s = s
+	t._place_at_distance(s)
+	for i in 30:
+		t._tick_bandits(1.0 / 60.0)
+	var rider2: Dictionary = {}
+	for b in t._bandits:
+		if bool(b["rider"]):
+			rider2 = b
+	var chest: Vector3 = (rider2["root"] as Node3D).global_position + Vector3(0.0, LakeTrailChamber.SADDLE_HEIGHT + 0.55, 0.0)
+	_aim_trail(t, chest)
+	t._on_player_shot()
+	_check("a round at the rider's chest drops the rider and leaves the horse standing", str(rider2["state"]) == "dead" and Ep2CreatureHealth.of(rider2["horse"]).is_alive())
+	t.free()
+	GameManager.ep2_stampede_done = keep
+
+
 func _lake(st: Ep2ArmoryState, mounted: bool = true) -> LogansLakeChamber:
 	var c: LogansLakeChamber = LAKE.instantiate() as LogansLakeChamber
 	c.handoff = {"arrived_mounted": mounted}
@@ -692,6 +746,22 @@ func _town_horses() -> void:
 		if Ep2CreatureHealth.of(p.folk) != null:
 			folk_with_health += 1
 	_check("the town's people stay on their own system", folk_with_health == 0)
+	# STATUS 2026-11-05 "a town or stable horse you killed is back after a reload" - fixed 2026-11-19
+	var rail_key: String = "town:" + rail.name
+	var pad_key: String = "yard:" + paddock.name
+	_check("the dead horses are in the save", rail_key in GameManager.ep2_dead_horses and pad_key in GameManager.ep2_dead_horses and GameManager.session_data().get("ep2_dead_horses", []).has(rail_key), str(GameManager.ep2_dead_horses))
+	var reload_data: Dictionary = GameManager.session_data()
+	GameManager.ep2_dead_horses = []
+	GameManager._load_ledger(reload_data)
+	var c2: GoldTownChamber = _fresh_town()
+	var rail2: Node3D = c2.find_child(rail.name, true, false)
+	var pad2: Node3D = c2._stable_yard.horses[3]
+	await get_tree().create_timer(0.8).timeout
+	_check("after a reload the town horse still lies where it fell, and blocks nothing", rail2 != null and (Ep2CreatureHealth.of(rail2) as Ep2CreatureHealth).dead and absf(rail2.rotation.x) > 1.3
+		and Ep2GoldTown.collide(rail_at + Vector2(0.1, 0.0), 0.3, [], c2._town_col["props"]).distance_to(rail_at + Vector2(0.1, 0.0)) < 0.01)
+	_check("...and so does the yard horse, with no collider", (Ep2CreatureHealth.of(pad2) as Ep2CreatureHealth).dead and pad2.get_node_or_null("YardBody") == null and absf(pad2.rotation.x) > 1.3)
+	c2.free()
+	GameManager.ep2_dead_horses = []
 	GameManager.town_standing = "warm"
 	GameManager.town_debt_btc = 0
 	GameManager.save_session()

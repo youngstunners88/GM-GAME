@@ -1,0 +1,23 @@
+{
+ "_doc": "Bear brawler slam + archer draw from the founder's Flow takes (MediaPipe oneshot). yaw_deg -95 measured so the hips face the actor's +Z like Bear_Swipe (hips_face_deg ~0). Maul dropped: the lunge is toward the camera and MediaPipe lost it.",
+ "clips": [
+  {
+   "name": "Bear_Slam",
+   "bvh": "oneshot_bear_enraged",
+   "start": 0.0,
+   "end": 2.6,
+   "frame_time": 0.041667,
+   "loop": false,
+   "yaw_deg": -95.0
+  },
+  {
+   "name": "Bear_Archer",
+   "bvh": "oneshot_bear_archer",
+   "start": 0.0,
+   "end": 4.28,
+   "frame_time": 0.041667,
+   "loop": false,
+   "yaw_deg": -95.0
+  }
+ ]
+}

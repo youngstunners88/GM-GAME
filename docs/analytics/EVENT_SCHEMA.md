@@ -110,26 +110,11 @@ headers and is not affected.
 
 ---
 
-## Setup / what still needs a human
+## Configuring and verifying a web export
 
-| Item | Status |
-|---|---|
-| `POSTHOG_TOKEN` (`phc_…` project write key) | present in this environment's secrets |
-| `POSTHOG_PROJECT_ID` | present |
-| `config.json` → `analytics.posthog_token` | **empty in the repo on purpose** |
-| CI injection of the token at export time | **NOT YET WIRED — see below** |
+Set the repository Actions secret `POSTHOG_TOKEN` to the intended project's public `phc_` write key. Leave `analytics.posthog_token` empty in committed `config.json`. The web export workflow validates the key, inserts it when analytics is enabled, checks that the core PCK contains that configuration, and restores the tracked file. An absent secret produces a workflow warning and an export with analytics disabled.
 
-The token is intentionally not committed. Until it is injected, `_enabled`
-stays false and no analytics are sent. To activate, either:
-
-1. Paste the `phc_` key into `config.json` → `analytics.posthog_token` (it is
-   a public, append-only write key — this is safe, it is what ships in the
-   `<script>` tag of every PostHog-using website), **or**
-2. Add a CI step that writes `$POSTHOG_TOKEN` into `config.json` before the
-   Godot export runs (config.json is force-included in the pck via
-   `export_presets.cfg`, so it must be written *before* export, not after).
-
-Also human-only: creating the PostHog dashboards/insights for these events.
+After a release, compare the public BUILD with the Actions source SHA and verify one known game event in the intended PostHog project's activity view. The write key cannot read events or manage dashboards.
 
 ## Why the official wizard was not used
 

@@ -37,6 +37,12 @@ func _ready() -> void:
 	var before: Vector3=original.position
 	trip.tick(session,.25)
 	check("the farmer continues moving while the player is in town",original.position.distance_to(before)>.5)
+	# 2026-11-19: the town's rounds used to pass through the donkey. They land in it now; it startles and the trip goes on
+	var body: Vector3=original.global_transform*Vector3(0,.95,1.55)
+	var eye: Vector3=body+original.global_transform.basis.x.normalized()*6.0
+	var shot: Dictionary=town._law.player_shot(eye,(body-eye).normalized())
+	check("a town round at the farmer's donkey lands in it",str(shot.get("kind",""))=="donkey" and original.startles==1 and original.startle_time>=0.0 and town._law.donkey_hits==1)
+	check("...without a fine, a death or a stopped trip",is_instance_valid(original) and original.get_parent()==town._visuals and not town._law.pending_fine())
 	var travelled: float=original.distance_m
 	woods._tick_cart(1)
 	check("the old woods cannot advance his wheels a second time",is_equal_approx(original.distance_m,travelled))

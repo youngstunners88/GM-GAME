@@ -24,15 +24,9 @@ wrangler deploy                        # copy the https URL it prints
 ```
 Then put that URL in `../config.json` → `backend_base_url`, rebuild the game.
 
-## ⚠️ Blockers to go live (as of this build)
-1. **The `MISTRAL_API_KEY` in the dev environment returns `Unauthorized`** —
-   the Oracle proxy is correct but needs a valid key at `wrangler secret put`
-   time. Verify with:
-   `curl -s https://api.mistral.ai/v1/models -H "Authorization: Bearer $KEY"`
-2. **`config.json` contract addresses are empty** — the on-chain badge and
-   token-gated perks stay inert (game plays normally) until real deployed
-   SmokeRing/DIAMONDS/GoldMine + Survivor-Badge addresses are filled in.
-   Never hardcode them in GDScript (CLAUDE.md Global Rule) — only `config.json`.
+## Production status
+
+On 21 November 2026 the configured Worker responded to GET /health and /leaderboard. The deployed script had the GAME_KV binding, provider secret bindings, weekly and daily schedules, draft-only digests and a placeholder postal address. Confirm the approved mailing address before selecting automatic weekly digest delivery. Verify the current provider configuration in Cloudflare Workers and AgentMail.
 
 ## 🔒 Security hardening (checklist Section F) — status
 1. **Rate limiting (F2): ✅ implemented in `worker.js`.** Per-IP fixed-window

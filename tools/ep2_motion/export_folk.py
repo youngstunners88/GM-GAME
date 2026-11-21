@@ -26,7 +26,7 @@ arm.select_set(True)
 body.select_set(True)
 bpy.context.view_layer.objects.active = arm
 arm.animation_data_create()
-arm.animation_data.action = bpy.data.actions.get("Idle") or next(iter(bpy.data.actions))
+arm.animation_data.action = bpy.data.actions.get("Idle") or next(iter(bpy.data.actions), None)      # a rig with no clip yet still exports (clips are grafted after)
 os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
 bpy.ops.export_scene.gltf(
     filepath=a.out, export_format="GLB", use_selection=True, export_yup=True, export_apply=False,

@@ -41,12 +41,19 @@ const RICH := "res://src/episode2/extras/folk/rich_armory2.glb"
 const UTAH := "res://src/episode2/extras/folk/utah_armory2.glb"
 ## The town kit with REAL openings (windows, doors, side windows; 2026-10-19 openings pass): same piece names as town_kit.glb.
 const TOWN_KIT := "res://src/episode2/extras/town/town_kit2.glb"
+const SALOON_LADDER := "res://src/episode2/extras/town/saloon_ladder.glb"   # the saloon's side ladder up to the balcony (tools/ep2_blender/build_saloon_ladder.py)
 ## The town's CAD interior furniture (founder 2026-10-25 "more furnished furniture and subtle details"): the saloon's bar, back bar,
 ## bentwood chairs, tables, piano, chandelier; the certificate office's counter, pigeonholes, desk, stove, safe; clocks, lamps, the jail's
 ## and the Armory's small things (Ep2KitProps Twn_*, placed by Ep2GoldTown._furnish).
 const TOWN_FURNITURE := "res://src/episode2/extras/town/town_furniture.glb"
 ## The townspeople (Ep2TownPeople), one rigged GLB each.
 const PEOPLE_DIR := "res://src/episode2/extras/people/"
+## The town Stockpile (east back lot) and the Reserve (under Fort Knox's hill), founder prompt 2026-11-21: the depot model, the kit that
+## holds the wheelbarrows and the Reserve, the script that places both, and the depot's workers (MPFB2 folk in extras/folk_mpfb/).
+const STOCKPILE := "res://src/episode2/extras/stockpile/stockpile.glb"
+const RESERVE := "res://src/episode2/extras/stockpile/stockpile_kit.glb"      # its "Reserve" node
+const STOCKPILE_SITE := "res://src/episode2/extras/stockpile/stockpile_site.gd"
+const STOCKPILE_WORKERS := "res://src/episode2/extras/stockpile/stockpile_workers.gd"
 ## The jailhouse (founder lock 2026-10-20): building + cells + nav points, its painted sign, and the accomplice in cell A.
 const JAIL := "res://src/episode2/extras/jail/jailhouse.glb"
 const JAIL_SIGN := "res://src/episode2/extras/jail/sign_JAIL.png"
@@ -62,6 +69,16 @@ const SHERIFF_JAMES := "res://src/episode2/extras/folk/sheriff_james.glb"
 ## Renegade, the charismatic auctioneer who hosts the auction (founder Drive model 2026-10-27): Mixamo rig, gold suit, pipe;
 ## CMU clips Idle, Walk, Greet, Point, Talk, Counter (tools/ep2_motion/clips_renegade.json).
 const RENEGADE := "res://src/episode2/extras/folk/renegade.glb"
+## The auction's new cast (founder 2026-11-16, sheets in design/ep2/auction/cast-references-20261116): two license checkers and a
+## five-piece band. Each is used only when its GLB is in the pack; until then the checkers keep their old models and the band stays off.
+## Built from PEOPLE_DIR on purpose: scripts/check-ep2-extras-pack.sh requires every literal extras path in this file to be packed.
+const CHECKER_A := PEOPLE_DIR + "auction_checker_a.glb"      # the claim wagon's clerk ("Certificate man.jpg")
+const CHECKER_B := PEOPLE_DIR + "auction_checker_b.glb"      # the hall's doorman ("Certificate man2.jpg")
+const BAND_LEAD := PEOPLE_DIR + "auction_band_lead.glb"      # the woman who sings
+const BAND_FIDDLE := PEOPLE_DIR + "auction_band_fiddle.glb"
+const BAND_GUITAR := PEOPLE_DIR + "auction_band_guitar.glb"  # plays the banjo
+const BAND_BASS := PEOPLE_DIR + "auction_band_bass.glb"
+const BAND_HARMONICA := PEOPLE_DIR + "auction_band_harmonica.glb"
 ## The walk-in shops' two keepers (founder fix pack 2026-10-27: "two more shopkeepers (women are fine) behind the counters"): Hunyuan3D-2.1
 ## scans of SDXL references with a second, sharper head scan (tools/ep2_runpod/hunyuan cast_*.py), rigged on the townfolk skeleton by
 ## tools/ep2_motion/rig_scan_character.py --skirt (Idle, Greet, Point, Carry, Walk). The General Store's (apron) and the Hotel desk's.

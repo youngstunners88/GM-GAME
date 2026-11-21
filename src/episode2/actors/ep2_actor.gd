@@ -338,6 +338,14 @@ func release(side: String, ramp: float = 0.35) -> void:
 
 
 ## 0..1 how far the reach has eased in.
+## Move a running reach's target without restarting it (its ramp, lean and release are untouched): a hand that follows a moving handle.
+func retarget_reach(side: String, p: Vector3) -> void:
+	if not _reach.has(side):
+		return
+	var ik: Ep2ArmIK = _reach[side]["ik"]
+	ik.target_world = p
+
+
 func reach_weight(side: String) -> float:
 	return float(_reach[side]["w"]) if _reach.has(side) else 0.0
 

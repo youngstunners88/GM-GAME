@@ -440,6 +440,12 @@ func purse_spend(token: String, amount: int) -> bool:
 
 ## Set how the town treats Lil Blunt after his conduct there. Only the two
 ## authored standings are meaningful; an unchanged standing does not re-save.
+## A town or yard horse died: remembered for the save (idempotent).
+func note_dead_horse(key: String) -> void:
+    if key != "" and key not in ep2_dead_horses:
+        ep2_dead_horses.append(key)
+
+
 func set_town_standing(standing: String) -> void:
     if standing not in ["warm", "cold"] or standing == town_standing:
         return
@@ -478,6 +484,8 @@ var chill_buds: int = 0
 var dude_free_bud_claimed: bool = false
 ## The lake trail's buffalo stampede happens ONCE per save (founder 2026-11-01 "Guns Buff" §5): set when the herd has passed or fallen.
 var ep2_stampede_done: bool = false
+## Town and stable-yard horses shot dead stay dead across a reload ("town:Horse2", "yard:StableHorse1"): STATUS 2026-11-05 open gap.
+var ep2_dead_horses: Array = []
 var dude_credit_btc: int = 0
 var has_region_map: bool = false
 var map_active_destination: String = ""
@@ -560,6 +568,13 @@ func _load_ledger(data: Dictionary) -> void:
     chill_buds = maxi(0, SaveSafe.to_int(data.get("chill_buds", 0), 0))
     dude_free_bud_claimed = SaveSafe.to_int(data.get("dude_free_bud_claimed", 0), 0) != 0
     ep2_stampede_done = SaveSafe.to_int(data.get("ep2_stampede_done", 0), 0) != 0
+    ep2_dead_horses = []
+    var dead_raw: Variant = data.get("ep2_dead_horses", [])
+    if dead_raw is Array:
+        for key in dead_raw:
+            var k: String = SaveSafe.to_str(key).strip_edges()
+            if k.length() <= 48 and (k.begins_with("town:") or k.begins_with("yard:")) and k not in ep2_dead_horses and ep2_dead_horses.size() < 64:
+                ep2_dead_horses.append(k)
     has_region_map = SaveSafe.to_int(data.get("has_region_map", 0), 0) != 0
     map_active_destination = SaveSafe.to_str(data.get("map_active_destination", ""))
     if map_active_destination not in ["", "auction", "logans_lake"]: map_active_destination = ""
@@ -919,6 +934,7 @@ func reset_session() -> void:
     chill_buds = 0
     dude_free_bud_claimed = false
     ep2_stampede_done = false
+    ep2_dead_horses = []
     dude_credit_btc = 0
     has_region_map = false
     map_active_destination = ""
@@ -984,6 +1000,7 @@ func session_data() -> Dictionary:
         "chill_buds": chill_buds,
         "dude_free_bud_claimed": dude_free_bud_claimed,
         "ep2_stampede_done": ep2_stampede_done,
+        "ep2_dead_horses": ep2_dead_horses.duplicate(),
         "dude_credit_btc": dude_credit_btc,
         "has_region_map": has_region_map,
         "map_active_destination": map_active_destination,

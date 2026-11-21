@@ -500,9 +500,12 @@ func _build_horses(props: Array) -> void:
 		var phase: float = rng.randf_range(0.0, ap.get_animation(clip).length)
 		ap.seek(phase, true)
 		_horse_anims.append(ap)
-		Ep2CreatureHealth.attach(horse, Ep2ArmoryState.HORSE_WOUNDS_MAX).died.connect(_on_horse_died.bind(i))
+		var health := Ep2CreatureHealth.attach(horse, Ep2ArmoryState.HORSE_WOUNDS_MAX)
+		health.died.connect(_on_horse_died.bind(i))
 		horse.add_to_group(Ep2CreatureHealth.HORSE_GROUP)
 		_solid(horse, 0.95, 1.8, props)
+		if ("yard:" + horse.name) in GameManager.ep2_dead_horses:
+			health.take_hit(Ep2ArmoryState.HORSE_WOUNDS_MAX)     # shot dead before the reload: it is still lying where it fell
 
 
 ## A yard horse took its third wound. It goes down where it stands and stops being a wall: its prop row leaves the town survey and
@@ -515,6 +518,7 @@ func _on_horse_died(_at: Vector3, index: int) -> void:
 		return
 	_dead_horses[horse.get_instance_id()] = true
 	horse.set_meta("law_dead", true)
+	GameManager.note_dead_horse("yard:" + horse.name)
 	if index < _horse_anims.size():
 		(_horse_anims[index] as AnimationPlayer).speed_scale = 0.0
 	# Dude's seat is worked out from this same horse, so he comes off before it starts to go over.

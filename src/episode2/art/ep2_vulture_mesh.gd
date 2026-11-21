@@ -187,7 +187,7 @@ static func flap(node: Node3D, phase: float, amount: float) -> void:
 	if left == null or right == null:
 		return
 	# The left wing's tip is at -X, so a positive Z turn drops it: a raised tip is the negative turn on the left.
-	var lift: float = GLIDE_DIHEDRAL * (1.0 - amount * 0.6) + sin(phase) * 0.52 * amount
+	var lift: float = GLIDE_DIHEDRAL * (1.0 - amount * 0.6) + sin(phase) * 0.78 * amount     # a full stroke reads at 40 m
 	left.rotation = Vector3(0.0, 0.0, -lift)
 	right.rotation = Vector3(0.0, 0.0, lift)
 

@@ -372,14 +372,10 @@ func _route_sample(distance: float) -> Array:
 func _step_horse() -> void:
 	_horse = _horse_instance(_visuals)
 	_horse.name = "DudesHorse"
-	Ep2HorseCoat.apply(_horse, str(handoff.get("horse_coat", "brown")))     # the horse Lil Blunt picked at Dude's yard
+	Ep2HorseCoat.ridden = str(handoff.get("horse_coat", Ep2HorseCoat.ridden))     # the horse Lil Blunt picked at Dude's yard
+	Ep2HorseCoat.apply(_horse, Ep2HorseCoat.ridden)
 	_horse_anim = _find_horse_anim(_horse)
-	var leather: StandardMaterial3D = _plain(Color(0.16, 0.075, 0.035), 0.82)
-	_box(Vector3(0.72, 0.13, 0.76), Vector3(0.0, SADDLE_HEIGHT, -0.15), leather, _horse)
-	_box(Vector3(0.82, 0.07, 0.12), Vector3(0.0, SADDLE_HEIGHT + 0.11, -0.47), leather, _horse)
-	for side in [-1.0, 1.0]:
-		_box(Vector3(0.035, 0.52, 0.055), Vector3(side * 0.43, SADDLE_HEIGHT - 0.27, -0.12), leather, _horse)
-		_box(Vector3(0.13, 0.035, 0.22), Vector3(side * 0.43, SADDLE_HEIGHT - 0.52, -0.12), leather, _horse)
+	# Founder 2026-11-17: no saddle. Ridden bareback, the horse reads the same on the trail, at the water and on the road.
 	_set_horse_clip("horse_stand", 1.0)
 
 
@@ -546,6 +542,8 @@ func _spawn_rider() -> void:
 	root.visible = false
 	var horse: Node3D = _horse_instance(root)
 	horse.name = "BanditHorse"
+	# a horse like any other (founder 2026-11-05 wildlife combat): rounds land in it instead of passing through
+	Ep2CreatureHealth.attach(horse, Ep2ArmoryState.HORSE_WOUNDS_MAX - 1)
 	var anim: AnimationPlayer = _find_horse_anim(horse)
 	var height: float = 1.86
 	var parts: Dictionary = _make_rider(root, Color(0.24, 0.035, 0.025))
@@ -558,7 +556,7 @@ func _spawn_rider() -> void:
 		height = 1.0          # seated: saddle to the crown of his hat is the target, not a standing man
 	_bandits.append({"root": root, "home": Vector3.ZERO, "s": 0.0, "ambush": 2, "state": "cover",
 		"cool": 0.5, "tell": 0.0, "tell_need": 1.0, "last_tell": 0.0, "shots": 0, "rider": true,
-		"released": false, "chase_s": 0.0, "horse_anim": anim, "height": height, "folk": folk,
+		"released": false, "chase_s": 0.0, "horse_anim": anim, "horse": horse, "height": height, "folk": folk,
 		"gun": parts["gun"], "glint": parts["glint"], "accents": parts["accents"], "role": "ride",
 		"exposed": true, "rush_t": 0.0, "seat_y": float(parts["seat_y"]), "seated": bool(parts.get("seated", false))})
 
@@ -1270,6 +1268,9 @@ func _hit_along(eye: Vector3, direction: Vector3) -> void:
 			best = i
 	# One round, one target: whatever stands first on the line takes it, man or animal.
 	var creature: Dictionary = _creature_on_ray(eye, direction, not _melee)      # a swing from the saddle never lands on his own horse
+	# a round aimed at the rider sits in the saddle with him: his horse's barrel only takes what passes below him
+	if not creature.is_empty() and str(creature["kind"]) == "bandit_horse" and best >= 0 and (_bandits[best] as Dictionary).get("horse", null) == creature["node"]:
+		creature = {}
 	if not creature.is_empty() and float(creature["t"]) < best_t and float(creature["t"]) <= shot_reach(INF):
 		_hit_creature(creature, eye, direction)
 		return
@@ -1309,6 +1310,12 @@ func _creature_on_ray(eye: Vector3, dir: Vector3, own_mount: bool) -> Dictionary
 	if own_mount and _mounted and not _unhorse_active and _horse != null and _horse.visible:
 		# the trail horse's root faces +Z, like every trail actor
 		offer.call("mount", _horse_ray(_horse, _horse.global_transform.basis.z, eye, dir), _horse)
+	for b in _bandits:
+		var bandit_horse: Node3D = b.get("horse", null)
+		if bandit_horse != null and (b["root"] as Node3D).visible:
+			var bh := Ep2CreatureHealth.of(bandit_horse)
+			if bh != null and bh.is_alive():
+				offer.call("bandit_horse", _horse_ray(bandit_horse, bandit_horse.global_transform.basis.z, eye, dir), bandit_horse)
 	if _in_departure_area and is_inside_tree():
 		for node in get_tree().get_nodes_in_group(Ep2CreatureHealth.HORSE_GROUP):
 			var horse: Node3D = node as Node3D
@@ -1340,6 +1347,13 @@ func _hit_creature(hit: Dictionary, eye: Vector3, dir: Vector3) -> void:
 			_wound_mount()
 			killed = _horse_hp <= 0
 			_blood(eye + dir * float(hit["t"]), dir, _horse)
+		"bandit_horse":
+			var bandit_horse: Node3D = hit["node"]
+			var at: Vector3 = eye + dir * float(hit["t"])
+			killed = Ep2CreatureHealth.of(bandit_horse).take_hit(2 if buffalo_gun else 1, at)
+			_blood(at, dir, bandit_horse)
+			if killed:
+				_bandit_horse_down(bandit_horse)
 		"town_horse":
 			var horse: Node3D = hit["node"]
 			var point: Vector3 = eye + dir * float(hit["t"])
@@ -1347,6 +1361,21 @@ func _hit_creature(hit: Dictionary, eye: Vector3, dir: Vector3) -> void:
 			_blood(point, dir, horse)
 	if _hud != null:
 		_hud.hit_marker(killed)
+
+
+## The chasing rider's horse is shot down: it goes over on its side where it fell and stays there, and he is thrown with it.
+func _bandit_horse_down(horse: Node3D) -> void:
+	for i in _bandits.size():
+		var b: Dictionary = _bandits[i]
+		if b.get("horse", null) != horse:
+			continue
+		var anim: AnimationPlayer = b["horse_anim"] as AnimationPlayer
+		if anim != null:
+			anim.stop()
+		Ep2CreatureHealth.topple(horse, horse.rotation.x, LogansLakeChamber.DEAD_ROLL, horse.position.y + LogansLakeChamber.DEAD_LYING_Y)
+		_drop_bandit(i)
+		b["horse_down"] = true
+		return
 
 
 func _horse_ray(horse: Node3D, long_axis: Vector3, eye: Vector3, dir: Vector3) -> float:
@@ -1407,7 +1436,9 @@ func _drop_bandit(index: int) -> void:
 		(accent as Node3D).visible = false
 	_bandits_down += 1
 	var anim: AnimationPlayer = b["horse_anim"] as AnimationPlayer
-	if anim != null and anim.has_animation("horse_stand"):
+	var mount: Node3D = b.get("horse", null)
+	var mount_alive: bool = mount == null or Ep2CreatureHealth.of(mount) == null or Ep2CreatureHealth.of(mount).is_alive()
+	if anim != null and mount_alive and anim.has_animation("horse_stand"):
 		anim.play("horse_stand", 0.2)
 
 

@@ -190,8 +190,20 @@ func _test_full_run() -> void:
 	_advance(c, 60.0)
 	check("the dock approach clear, Utah walks out onto the lower dock", c.utah_visible() and c.get_beat_name() in ["DOCK", "DONE"])
 	_advance(c, 40.0)
-	check("the shipment reaches Utah under the crane: the run resolves, three gates, no loss", res.size() == 1
+	# one world (founder 2026-11-17): Utah has it, and he is NOT cut to the lake - he walks home along the same ridge
+	check("Utah has the crate and he stays on the ridge: no cut to the lake from the dock", c.get_beat_name() == "DONE" and res.is_empty()
+		and "Walk back up the ridge" in str(c.get_hud().objective), str(res))
+	var pts: Array = RiverCoverChamber.RIDGE_POINTS
+	for i in range(pts.size() - 1, -1, -1):
+		var from: Vector3 = c._player_pos
+		for k in 8:                                  # walk, a few metres a step, never a jump
+			_stand(c, c._collide(from.lerp(pts[i], float(k + 1) / 8.0)))
+			_advance(c, 0.1)
+	check("walked back to Logan's path, the run resolves: three gates, no loss", res.size() == 1
 		and bool(res[0].get("river_complete", false)) and int(res[0].get("gates", 0)) == 3 and int(res[0].get("losses", -1)) == 0, str(res))
+	var hand: Dictionary = c.get_handoff()
+	check("the lake goes on from where he stands on its path (same point, same heading)", hand.has("lake_player")
+		and ((hand["lake_player"] as Vector3) + RiverCoverChamber.LAKE_OFFSET).distance_to(c._player_pos) < 0.01 and is_equal_approx(float(hand.get("lake_yaw", 99.0)), c._look_yaw), str(hand))
 	check("Rich collected the shipment: he lifted the crate and carried it off the dock (a visible beat, not a line)", c.crate_collected() and c.get_crate() != null and not c.get_crate().visible)
 	check("Logan stays at his lake", c.find_child("Logan", true, false) == null)
 	check("the Shipment is still his (logistics gear, never confiscated or spent)", st.river_gear)
@@ -312,6 +324,17 @@ func _test_lake_is_logans_alone() -> void:
 	lake.setup(0, [], 0)
 	check("Logan's Lake: never Rich, never Utah (Rich is at the dock, not the lake)", lake.find_child("Rich", true, false) == null and lake.find_child("Utah", true, false) == null)
 	lake.free()
+	# walked home from the dock (2026-11-17): the lake starts him on its path where the ridge left him, after day 88, heading kept
+	var home: Vector3 = (RiverCoverChamber.RIDGE_POINTS[0] as Vector3) - RiverCoverChamber.LAKE_OFFSET
+	var back: LogansLakeChamber = LAKE.instantiate() as LogansLakeChamber
+	back.handoff = {"after_day88": true, "lake_player": home, "lake_yaw": PI, "lake_pitch": 0.0}
+	add_child(back)
+	back.set_physics_process(false)
+	back.setup(0, [], 0)
+	for i in 10: back.step(1.0 / 30.0)
+	check("home from the dock: the lake picks him up on Logan's path, not at its spawn", Vector2(back._player_pos.x - home.x, back._player_pos.z - home.z).length() < 1.0
+		and back.after_day88 and is_equal_approx(back._look_yaw, PI), "%s vs %s" % [back._player_pos, home])
+	back.free()
 
 
 ## Founder 2026-11-04: "must literally continue from when Lil Blunt is walking forward up the ridge ... Right now the stage inverts after pressing E".

@@ -365,6 +365,7 @@ func _build_horses(props: Array) -> void:
 		var row: Array = [Vector2(float(h[0]), float(h[1])), 1.0]
 		props.append(row)                                              # solid: Lil Blunt walks around a horse
 		_horse_rows[horse.get_instance_id()] = row
+		_restore_dead(horse)
 	_walker = _horse(scene, "horse_walk")
 	_walker.name = "HorseRoaming"
 	_walker.position = WALK_FROM
@@ -378,6 +379,7 @@ func _build_horses(props: Array) -> void:
 	_hooves.max_distance = 30.0
 	_hooves.volume_db = -15.0
 	_hooves.set_meta("base_db", -15.0)
+	_restore_dead(_walker)
 
 
 func _horse_voice(horse: Node3D, label: String) -> AudioStreamPlayer3D:
@@ -400,8 +402,16 @@ func _register_horse(horse: Node3D) -> void:
 
 
 func _attach_health(horse: Node3D, pool: int) -> void:
-	Ep2CreatureHealth.attach(horse, pool).died.connect(_on_horse_died.bind(horse))
+	var health := Ep2CreatureHealth.attach(horse, pool)
+	health.died.connect(_on_horse_died.bind(horse))
 	horse.add_to_group(Ep2CreatureHealth.HORSE_GROUP)
+
+
+## Shot dead before the reload: it is still lying where it fell. Called once its prop row exists, so the row goes with it.
+func _restore_dead(horse: Node3D) -> void:
+	var health := Ep2CreatureHealth.of(horse)
+	if health != null and ("town:" + horse.name) in GameManager.ep2_dead_horses:
+		health.take_hit(health.max_hp)
 
 
 ## A town horse took its third wound. It falls where it stands, its prop row leaves the town survey (no invisible barrier), and
@@ -412,6 +422,7 @@ func _on_horse_died(_at: Vector3, horse: Node3D) -> void:
 	var id: int = horse.get_instance_id()
 	_dead_horses[id] = true
 	horse.set_meta("law_dead", true)
+	GameManager.note_dead_horse("town:" + horse.name)
 	if _horse_rows.has(id):
 		var row: Array = _horse_rows[id]
 		if _props != null:

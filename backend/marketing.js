@@ -728,19 +728,22 @@ async function handleSupportEmail(env, message) {
   const containsEmail = /[^\s@]+@[^\s@]+\.[^\s@]{2,}/.test(answer);
   const contentSafe = answer.length <= 1200 && strayLinks.length === 0 && !containsEmail;
   const confident = Number(parsed.confidence) >= 0.7 && parsed.category === "question" && contentSafe;
-  const labels = [confident ? "auto_resolved" : "human_review"];
+  const labels = [];
   if (parsed.category === "bug_report") labels.push("bug_report");
   if (parsed.category === "feature_request") labels.push("feature_request");
-  if (inboxId && messageId) await labelMessage(env, inboxId, messageId, labels);
 
   const reply = T.supportReply(env, { subject, body: answer });
   const key = "support:" + (messageId || token());
-  if (confident) {
-    const sent = await draftThenSend(env, { to: fromAddr, ...reply, labels, key, inbox: inboxId });
-    return { ok: true, action: sent.ok ? "auto_resolved" : "human_review", sent: !!sent.ok };
-  }
-  await createDraft(env, { to: fromAddr, ...reply, labels, key, inbox: inboxId });
-  return { ok: true, action: "human_review", draft: true };
+  const autoSend = confident && env.DIGEST_DRAFT_ONLY !== "1";
+  const msg = {
+    to: fromAddr, ...reply, key, inbox: inboxId,
+    labels: [...labels, autoSend ? "support_reply" : "human_review"],
+  };
+  const result = confident ? await draftThenSend(env, msg) : await createDraft(env, msg);
+  const sent = autoSend && result.ok && !result.draftOnly;
+  const action = sent ? "auto_resolved" : "human_review";
+  if (inboxId && messageId) await labelMessage(env, inboxId, messageId, [...labels, action]);
+  return { ok: result.ok, action, sent, draft: result.ok && !sent };
 }
 
 // ===========================================================================
@@ -802,7 +805,7 @@ async function weeklyDigests(env) {
     // Drafts API path (human-in-the-loop capable): draft, then send unless
     // DIGEST_DRAFT_ONLY=1 pauses at review stage.
     const sent = await draftThenSend(env, { to: rec.email, ...msg, labels: ["weekly_digest"], key: `digest:${week}:${pid}` });
-    if (sent.ok) {
+    if (sent.ok && !sent.draftOnly) {
       await markSent(env, pid, rec);
       if (idx >= 0) await env.GAME_KV.put("digestrank:" + pid, JSON.stringify({ week, rank: idx + 1, score: weekly[idx].score }));
     }

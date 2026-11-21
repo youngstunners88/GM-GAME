@@ -1,0 +1,43 @@
+{
+  "source_commit": "b1d62a9a291c2001809dac87c182b6b378c640b1",
+  "build_id": "2026-11-17-b1d62a9",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "official_art_sha256": "2f8056dc2537b8986cbe67121379264a5fc65d23a4ba551a14096b3a53aea252",
+  "canonical_png_sha256": "022c41c2d3592f2eda9408e3e5dc142635332df4cadd77a93c4b73d50313d65d",
+  "official_texture_sha256": "da257a6351f70347dd136b750d9b7868f01d9e8dde87c71a7aae258155703a5e",
+  "main_sha256": "24406dd74b50ec69e9906820038f37dc17061fbd9c347984cf3ee75a02927243",
+  "extras_sha256": "ecb683db32a7af0a7b46f205f13a5acdc7c71e6f905c923f43e883d3774bb59f",
+  "deployment": {
+    "run_id": 44020326089,
+    "job_id": 133828009488,
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/44020326089",
+    "outcome": "success",
+    "butler_upload": "confirmed by actual Pushed notice"
+  },
+  "public_browser": {
+    "observed_build": "2026-11-17-b1d62a9",
+    "reload": true,
+    "core_http": 200,
+    "extras_http": 200,
+    "script_errors": 0,
+    "evidence": "public-browser.json"
+  },
+  "published_packs": {
+    "core_bytes": 199224768,
+    "extras_bytes": 198940512,
+    "canonical_texture_byte_identical_to_verified_import": true
+  },
+  "published_pack_checks": {
+    "poster_checks": 40,
+    "poster_result": "PASS",
+    "jack_hammer_bills": 13,
+    "rh_bills": 3,
+    "jack_hammer_area_m2": 3.5916,
+    "rh_area_m2": 0.9494,
+    "range_billboard_excluded_from_census": true,
+    "gatling_player_path": "ALL PASS; full drum, visible holes and shred; all five original plates still hittable",
+    "hideout_warm": "8/8 PASS"
+  },
+  "verification_method": "Native Godot 4.3 replay/render of exact downloaded public core and extras. Test/capture fixtures only were overlaid; runtime and art were not replaced. Public Chromium verified BUILD, reload, extras and access gate.",
+  "founder_hard_refresh_acceptance": "pending; FIXED is not claimed"
+}

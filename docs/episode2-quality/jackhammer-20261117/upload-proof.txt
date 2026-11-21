@@ -1,0 +1,6 @@
+2026-11-17T05:06:37.1919701Z EP2_HIDEOUT_WARM: ALL PASS (8 pass, 0 fail)
+2026-11-17T05:12:59.8219369Z EP2_WANTED_REBALANCE: 40 checks, 0 failed
+2026-11-17T05:13:10.2133105Z EP2_GATLING_HITS: ALL PASS
+2026-11-17T05:24:22.6346365Z EXTRAS_PACK: 1118 files, 198940512 bytes -> web/game/ep2_extras.pck
+2026-11-17T05:24:26.4377793Z index.pck = 189 MB (itch per-file limit: 200 MB; CI gate: 190 MB)
+2026-11-17T05:25:34.3837817Z ##[notice]Pushed to https://youngstunners88.itch.io/smokerealm

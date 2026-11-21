@@ -179,6 +179,9 @@ jobs:
           echo "$BUN_DIR/package/bin" >> "$GITHUB_PATH"
 
       - name: Download Godot editor + export templates
+        env:
+          # Authenticated API calls: anonymous ones share a 60/hour per-IP limit and came back 403 (master run 44446006161).
+          GH_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p godot
@@ -194,20 +197,29 @@ jobs:
           TEMPLATES_URL="https://api.github.com/repos/godotengine/godot-builds/releases/assets/186099742"
           EDITOR_SHA512="fd52bb4ba8acc30ca5accd1c566d470ad7282f891ccc0995dfafabcf92bcf76280ce182bf9d80ebd885f3ed2165d01e1fc3f2928436b15498dfbd98656c2a45a"
           TEMPLATES_SHA512="476366caf0fd45a8f24136cf9cf1dc0bc2b96f7c82d53e5f82200b55aefd07b286d283fd6f1ce29e0de70648c5a51d3b12f96c6d4fafd4e8c4878ecda6406d6a"
+          EDITOR_FALLBACK="https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip"
+          TEMPLATES_FALLBACK="https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz"
           download_checked() {
-            local url="$1" file="$2" expected="$3"
-            curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
+            local url="$1" file="$2" expected="$3" fallback="$4"
+            local auth=()
+            if [ -n "${GH_API_TOKEN:-}" ]; then auth=(-H "Authorization: Bearer ${GH_API_TOKEN}"); fi
+            # curl sends the Authorization header to api.github.com only, not to the storage host it redirects to
+            if ! curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
               --connect-timeout 30 --max-time 300 --retry-max-time 180 \
-              -H "Accept: application/octet-stream" -o "$file" "$url"
+              "${auth[@]}" -H "Accept: application/octet-stream" -o "$file" "$url"; then
+              echo "::warning::release-asset API download failed; trying the public release URL (same SHA-512 check)"
+              curl -fL --retry 5 --retry-delay 10 --retry-all-errors \
+                --connect-timeout 30 --max-time 300 --retry-max-time 180 -o "$file" "$fallback"
+            fi
             echo "$expected  $file" | sha512sum -c -
           }
-          download_checked "$EDITOR_URL" godot-editor.zip "$EDITOR_SHA512"
+          download_checked "$EDITOR_URL" godot-editor.zip "$EDITOR_SHA512" "$EDITOR_FALLBACK"
           unzip -q godot-editor.zip
           EDITOR_BIN=$(find . -maxdepth 1 -name "Godot_v*_linux.x86_64" -type f | head -1)
           chmod +x "$EDITOR_BIN"
           echo "GODOT_BIN=$(pwd)/$EDITOR_BIN" >> "$GITHUB_ENV"
 
-          download_checked "$TEMPLATES_URL" templates.tpz "$TEMPLATES_SHA512"
+          download_checked "$TEMPLATES_URL" templates.tpz "$TEMPLATES_SHA512" "$TEMPLATES_FALLBACK"
 
           # Templates must live at ~/.local/share/godot/export_templates/<version>/
           # NOTE: Godot names the dir "4.3.stable" (dot), not the release tag "4.3-stable".
@@ -243,6 +255,10 @@ jobs:
           #   exclude_filter docs/,tests/,prompts/,scripts/,portals/ -> dev-only dirs that
           #        all_resources would otherwise sweep into the .pck (docs/
           #        captures alone was ~15MB of dead weight).
+          #   2026-11-17: vercel.json, skills-lock.json, marketing/, web/manifest.json (not game files) and six scripts that
+          #   nothing in src/ or project.godot references by file or class (src/space asteroid_field + space_ship, protocol_portals
+          #   SmokePlate / WhitepaperJump / VideoShrine, boss/shard_projectile): ~32 KB, the main pack was 13 KB over. Wire one
+          #   of those scripts into the game again -> remove it from this list in the same commit.
           #   design/,work-notes/,tools/,assets/keyart/,web_verify/,web/game/ -> reference
           #        images, notes, capture rigs and local export output nothing loads at runtime
           #        (2026-10-01: ~14 MB; the Episode 2 hideout's Meshy models pushed the pck over 190 MB).
@@ -258,6 +274,9 @@ jobs:
           #   src/assets/sprites/sprite_prop_train-goldmine{,_256}.png + sprite_train_goldmine_blender-render.png -> unused train sprite variants
           #        (the game loads only sprite_prop_train-goldmine_512.png: src/level/distant_train.gd, Ep2SurfaceSet). No reference by any name in
           #        code, scenes, resources or data; the blender-render file is only written by tools/ep2_blender/train_fidelity_pass.py (~1.0 MB pck, 2026-10-18).
+          #   src/assets/music/goldmine_dreams.mp3 + goldmine_high.mp3 -> the founder's 2026-09-06 runner tracks, superseded 2026-09-09 by Run.mp3/Run_1.mp3
+          #        and asserted UNWIRED by tests/ep2_runner_music_test.gd; no reference by any name anywhere in src. Kept in the repo (real client
+          #        assets), only left out of the web pack (~4.2 MB; main pack had gone over its 190 MiB gate, 2026-11-19).
           #   variant/thread_support=false -> non-threaded: no SharedArrayBuffer/
           #        COOP/COEP needed, so it boots on itch.io/iframes/mobile.
           #   html/head_include            -> loads web/web3.js (copied beside
@@ -271,7 +290,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json,src/episode2/config/grounded_walk.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,assets/*.json,package.json,package-lock.json,lil-blunt-icp/*,assets/pixellab/*,game-verify*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_fud_reject.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
+          exclude_filter="*.yml,*.yaml,*.md,vercel.json,skills-lock.json,marketing/*,web/manifest.json,src/space/asteroid_field.gd,src/space/space_ship.gd,src/protocol_portals/SmokePlate.gd,src/protocol_portals/WhitepaperJump.gd,src/protocol_portals/VideoShrine.gd,src/boss/shard_projectile.gd,src/assets/music/goldmine_dreams.mp3,src/assets/music/goldmine_high.mp3,docs/*,tests/*,prompts/*,scripts/*,assets/*.json,package.json,package-lock.json,lil-blunt-icp/*,assets/pixellab/*,game-verify*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_fud_reject.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -322,6 +341,15 @@ jobs:
           grep -q 'QUIZ_PROTOCOL_ONLY: ALL PASS' quiz-tests.log
           timeout 90 "$GODOT_BIN" --headless res://tests/nft_issuer_test.tscn 2>&1 | tee nft-tests.log
           grep -q 'NFT_ISSUER: ALL PASS' nft-tests.log
+          (
+            node scripts/icp-price-fixture.mjs 8788 > icp-fixture.log 2>&1 &
+            fixture_pid=$!
+            trap 'kill "$fixture_pid" 2>/dev/null || true' EXIT
+            curl --silent --show-error --fail --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8788/prices > /dev/null
+            kill -0 "$fixture_pid"
+            timeout 90 "$GODOT_BIN" --headless res://tests/icp_contract_test.tscn -- http://127.0.0.1:8788 | tee icp-contract.log
+            grep -q 'ICP_CONTRACT: ALL PASS' icp-contract.log
+          )
           timeout 180 "$GODOT_BIN" --headless res://tests/transition_feedback_test.tscn 2>&1 | tee transition-feedback-tests.log
           grep -q 'TRANSITION_FEEDBACK: ALL PASS' transition-feedback-tests.log
           timeout 180 "$GODOT_BIN" --headless res://tests/transition2_test.tscn 2>&1 | tee transition2-tests.log
@@ -361,7 +389,7 @@ jobs:
           grep -q 'EP2_HEALING_TABS: 14 checks, 0 failed' healing-tabs-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' healing-tabs-tests.log; then exit 1; fi
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_farmer_trip_test.tscn > farmer-trip-tests.log 2>&1
-          grep -q 'EP2_FARMER_TRIP: 34 checks, 0 failed' farmer-trip-tests.log
+          grep -qF 'EP2_FARMER_TRIP: 36 checks, 0 failed' farmer-trip-tests.log || { grep -E 'FAIL|SCRIPT ERROR|EP2_FARMER' farmer-trip-tests.log | head -30; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' farmer-trip-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless res://tests/ep2_lake_theme_test.tscn > lake-theme-tests.log 2>&1
           grep -q 'EP2_LAKE_THEME: 8 checks, 0 failed' lake-theme-tests.log
@@ -375,13 +403,16 @@ jobs:
           grep -q 'EP2_QUAD_MUSIC: ALL PASS' quad-music-tests.log
           # Photo-scanned PBR dressing + the CAD Colt Gatling (founder 2026-10-25 CAD pass): authored colour kept, period bronze, sightline clear.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_pbr_test.tscn 2>&1 | tee ep2-pbr-tests.log
-          grep -q 'EP2_PBR: ALL PASS' ep2-pbr-tests.log
+          grep -q 'EP2_PBR: ALL PASS' ep2-pbr-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-pbr-tests.log | head -40; tail -25 ep2-pbr-tests.log; exit 1; }
           # The smelter's CAD prop kit (founder 2026-10-25 "not grey primitives"): every prop present, stand-in -> CAD upgrade, the hideout dressed with it.
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_smelter_kit_test.tscn 2>&1 | tee ep2-smelter-kit-tests.log
-          grep -q 'EP2_SMELTER_KIT: ALL PASS' ep2-smelter-kit-tests.log
+          grep -q 'EP2_SMELTER_KIT: ALL PASS' ep2-smelter-kit-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-smelter-kit-tests.log | head -40; tail -25 ep2-smelter-kit-tests.log; exit 1; }
           # The town's CAD furniture (founder 2026-10-25 "more furnished furniture and subtle details"): every piece present, the old box -> CAD in place, rooms furnished, no story mark blocked.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_furniture_test.tscn 2>&1 | tee ep2-town-furniture-tests.log
-          grep -q 'EP2_TOWN_FURNITURE: ALL PASS' ep2-town-furniture-tests.log
+          grep -q 'EP2_TOWN_FURNITURE: ALL PASS' ep2-town-furniture-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-town-furniture-tests.log | head -40; tail -25 ep2-town-furniture-tests.log; exit 1; }
+          # The saloon's side ladder (founder 2026-11-21: the old regulars drink up on the balcony; a ladder on the outside, not a stair): placed clear of doors/rails/horses, stand-in -> streamed, climb up/down, balcony walk, batwings still open.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_saloon_ladder_test.tscn 2>&1 | tee ep2-saloon-ladder-tests.log
+          grep -q 'SALOON_LADDER: 40 checks, 0 failed' ep2-saloon-ladder-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-saloon-ladder-tests.log | head -40; tail -25 ep2-saloon-ladder-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-feedback-tests.log; then exit 1; fi
           # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
           # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).
@@ -492,11 +523,11 @@ jobs:
           # Mobile sprint 2026-11-10: no forced wait at the lava door or on the lift, the quad reveal after a late arrival, Inferno's
           # one-way walk to the bar, the quad never idling in front of Lil Blunt, the ride/lake songs blending under speech.
           # The cart-exit film (mobile sprint 2026-11-12): every resource the hideout loads behind the film is read before the cart starts.
-          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_hideout_warm_test.tscn > hideout-warm-tests.log 2>&1
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_hideout_warm_test.tscn 2>&1 | tee hideout-warm-tests.log
           grep -q 'EP2_HIDEOUT_WARM: ALL PASS' hideout-warm-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' hideout-warm-tests.log; then exit 1; fi
           timeout 420 "$GODOT_BIN" --headless res://tests/ep2_mobile_critical_path_test.tscn > mobile-critical-path-tests.log 2>&1
-          grep -q 'EP2_MOBILE_CRITICAL_PATH: ALL PASS' mobile-critical-path-tests.log
+          grep -q 'EP2_MOBILE_CRITICAL_PATH: ALL PASS' mobile-critical-path-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error|EP2_MOBILE' mobile-critical-path-tests.log | head -60; tail -20 mobile-critical-path-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' mobile-critical-path-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_interior_visible_test.tscn > interior-visible-tests.log 2>&1
           grep -q 'INTERIOR_VISIBLE: ALL PASS' interior-visible-tests.log
@@ -508,6 +539,11 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_back_lot_miners_test.tscn > back-lot-miners-tests.log 2>&1
           grep -q 'BACK_LOT_MINERS: ALL PASS' back-lot-miners-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' back-lot-miners-tests.log; then exit 1; fi
+          # The town Stockpile + Reserve (founder 2026-11-21): off Main Street, seen from the street gap, workers clear, the barrow loop
+          # clear of every wall and prop, barrows roll/load/tip/stop for Lil Blunt, gunfire stops all, the Reserve reached on foot.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_stockpile_test.tscn > stockpile-tests.log 2>&1
+          grep -q 'STOCKPILE: ALL PASS' stockpile-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' stockpile-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_lake_ecotone_test.tscn > lake-ecotone-tests.log 2>&1
           grep -q 'LAKE_ECOTONE: ALL PASS' lake-ecotone-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-ecotone-tests.log; then exit 1; fi
@@ -517,6 +553,88 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_wildlife_combat_test.tscn > wildlife-combat-tests.log 2>&1
           grep -q 'EP2_WILDLIFE_COMBAT: ALL PASS' wildlife-combat-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' wildlife-combat-tests.log; then exit 1; fi
+          timeout 400 "$GODOT_BIN" --headless res://tests/ep2_interlude_test.tscn > interlude-tests.log 2>&1
+          grep -q 'EP2_INTERLUDE: ALL PASS' interlude-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' interlude-tests.log | head -40; tail -25 interlude-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' interlude-tests.log; then exit 1; fi
+          timeout 400 "$GODOT_BIN" --headless res://tests/ep2_hideout_corrections_test.tscn > hideout-corrections-tests.log 2>&1
+          grep -q 'EP2_HIDEOUT_CORRECTIONS: ALL PASS' hideout-corrections-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' hideout-corrections-tests.log | head -40; tail -25 hideout-corrections-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' hideout-corrections-tests.log; then exit 1; fi
+          # 2026-11-19 audit: Episode 2 gates that existed but never ran in CI (two had already rotted unseen)
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_art_direction_test.tscn > ep2-art-direction-tests.log 2>&1
+          grep -qF 'EP2_ART_DIRECTION: ALL PASS' ep2-art-direction-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-art-direction-tests.log | head -40; tail -25 ep2-art-direction-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-art-direction-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_audio_buses_test.tscn > ep2-audio-buses-tests.log 2>&1
+          grep -qF 'EP2_AUDIO_BUSES: ALL PASS' ep2-audio-buses-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-audio-buses-tests.log | head -40; tail -25 ep2-audio-buses-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-audio-buses-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_audio_mix_test.tscn > ep2-audio-mix-tests.log 2>&1
+          grep -qF 'EP2_AUDIO_MIX: ALL PASS' ep2-audio-mix-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-audio-mix-tests.log | head -40; tail -25 ep2-audio-mix-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-audio-mix-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_camera_framing_test.tscn > ep2-camera-framing-tests.log 2>&1
+          grep -qF 'CAMERA FRAMING: PASS' ep2-camera-framing-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-camera-framing-tests.log | head -40; tail -25 ep2-camera-framing-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-camera-framing-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_cinematic_test.tscn > ep2-cinematic-tests.log 2>&1
+          grep -qF 'EP2_CINEMATIC: ALL PASS' ep2-cinematic-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-cinematic-tests.log | head -40; tail -25 ep2-cinematic-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-cinematic-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_fort_knox_arc_test.tscn > ep2-fort-knox-arc-tests.log 2>&1
+          grep -qF 'EP2_FORT_KNOX_ARC: ALL PASS' ep2-fort-knox-arc-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-fort-knox-arc-tests.log | head -40; tail -25 ep2-fort-knox-arc-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-fort-knox-arc-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_glb_pipeline_test.tscn > ep2-glb-pipeline-tests.log 2>&1
+          grep -qF 'EP2_GLB_PIPELINE: ALL PASS' ep2-glb-pipeline-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-glb-pipeline-tests.log | head -40; tail -25 ep2-glb-pipeline-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-glb-pipeline-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_miner_shaft_test.tscn > ep2-miner-shaft-tests.log 2>&1
+          grep -qF 'EP2_MINER_SHAFT: ALL PASS' ep2-miner-shaft-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-miner-shaft-tests.log | head -40; tail -25 ep2-miner-shaft-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-miner-shaft-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_narrative_canon_test.tscn > ep2-narrative-canon-tests.log 2>&1
+          grep -qF 'EP2_NARRATIVE_CANON: ALL PASS' ep2-narrative-canon-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-narrative-canon-tests.log | head -40; tail -25 ep2-narrative-canon-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-narrative-canon-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_range_lesson_test.tscn > ep2-range-lesson-tests.log 2>&1
+          grep -qF 'EP2_RANGE_LESSON: ALL PASS' ep2-range-lesson-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-range-lesson-tests.log | head -40; tail -25 ep2-range-lesson-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-range-lesson-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_range_v3_test.tscn > ep2-range-v3-tests.log 2>&1
+          grep -qF 'EP2_RANGE_V3: ALL PASS' ep2-range-v3-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-range-v3-tests.log | head -40; tail -25 ep2-range-v3-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-range-v3-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_reachability_test.tscn > ep2-reachability-tests.log 2>&1
+          grep -qF 'EP2_REACHABILITY: ALL PASS' ep2-reachability-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-reachability-tests.log | head -40; tail -25 ep2-reachability-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-reachability-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_residuals_1028_test.tscn > ep2-residuals-1028-tests.log 2>&1
+          grep -qF 'EP2_RESIDUALS_1028: 192 checks, 0 failed' ep2-residuals-1028-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-residuals-1028-tests.log | head -40; tail -25 ep2-residuals-1028-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-residuals-1028-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_audio_test.tscn > ep2-runner-audio-tests.log 2>&1
+          grep -qF 'ALL PASS' ep2-runner-audio-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-audio-tests.log | head -40; tail -25 ep2-runner-audio-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-audio-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_carts_test.tscn > ep2-runner-carts-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_CARTS: ALL PASS' ep2-runner-carts-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-carts-tests.log | head -40; tail -25 ep2-runner-carts-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-carts-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_graybox_test.tscn > ep2-runner-graybox-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_GRAYBOX: ALL PASS' ep2-runner-graybox-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-graybox-tests.log | head -40; tail -25 ep2-runner-graybox-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-graybox-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_motion_test.tscn > ep2-runner-motion-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_MOTION: ALL PASS' ep2-runner-motion-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-motion-tests.log | head -40; tail -25 ep2-runner-motion-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-motion-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_music_test.tscn > ep2-runner-music-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_MUSIC: ALL PASS' ep2-runner-music-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-music-tests.log | head -40; tail -25 ep2-runner-music-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-music-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_revolver_test.tscn > ep2-runner-revolver-tests.log 2>&1
+          grep -qF 'EP2_RUNNER_REVOLVER: ALL PASS' ep2-runner-revolver-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-revolver-tests.log | head -40; tail -25 ep2-runner-revolver-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-revolver-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_voice_test.tscn > ep2-runner-voice-tests.log 2>&1
+          grep -qF 'VOICE TEST: PASS' ep2-runner-voice-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-voice-tests.log | head -40; tail -25 ep2-runner-voice-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-runner-voice-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_transition_prebuild_test.tscn > ep2-transition-prebuild-tests.log 2>&1
+          grep -qF 'EP2_TRANSITION_PREBUILD: ALL PASS' ep2-transition-prebuild-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-transition-prebuild-tests.log | head -40; tail -25 ep2-transition-prebuild-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-transition-prebuild-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_voice_duck_test.tscn > ep2-voice-duck-tests.log 2>&1
+          grep -qF 'EP2_VOICE_DUCK: ALL PASS' ep2-voice-duck-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-voice-duck-tests.log | head -40; tail -25 ep2-voice-duck-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-voice-duck-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_weapon_consistency_test.tscn > ep2-weapon-consistency-tests.log 2>&1
+          grep -qF 'EP2_WEAPON_CONSISTENCY: ALL PASS' ep2-weapon-consistency-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-weapon-consistency-tests.log | head -40; tail -25 ep2-weapon-consistency-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-weapon-consistency-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_winchester_logo_test.tscn > ep2-winchester-logo-tests.log 2>&1
+          grep -qF 'EP2_WINCHESTER_LOGO: ALL PASS' ep2-winchester-logo-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-winchester-logo-tests.log | head -40; tail -25 ep2-winchester-logo-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-winchester-logo-tests.log; then exit 1; fi
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_smelting_facility_test.tscn > ep2-smelting-facility-tests.log 2>&1
+          grep -qF 'EP2_SMELTING_FACILITY: ALL PASS' ep2-smelting-facility-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-smelting-facility-tests.log | head -40; tail -25 ep2-smelting-facility-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-smelting-facility-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_lake_life_test.tscn > lake-life-tests.log 2>&1
           grep -q 'LAKE_LIFE: 0 failed' lake-life-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-life-tests.log; then exit 1; fi
@@ -585,13 +703,13 @@ jobs:
           # Lake -> road -> auction grounds -> hall as one room (founder 2026-11-08): no swap at the door, solid hall, Renegade, Jack Hammer's flee.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_auction_road_test.tscn > lake-auction-road-tests.log 2>&1
           if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-auction-road-tests.log; then exit 1; fi
-          grep -q 'EP2_LAKE_AUCTION_ROAD: 51 checks, 0 FAIL' lake-auction-road-tests.log
+          grep -qF 'EP2_LAKE_AUCTION_ROAD: 81 checks, 0 FAIL' lake-auction-road-tests.log || { grep -E 'FAIL|SCRIPT ERROR|EP2_LAKE_AUCTION' lake-auction-road-tests.log | head -30; exit 1; }
           # Founder playtest preset "dude" (2026-11-09): Dude's stables, every gun, 2000 rounds, 64 BTC; Save/Continue; no change without it.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_playtest_dude_test.tscn > playtest-dude-tests.log 2>&1
           if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' playtest-dude-tests.log; then exit 1; fi
           grep -q 'EP2_PLAYTEST_DUDE: 63 checks, 0 failed' playtest-dude-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
-          grep -q 'EP2_WORLD_ROUTES: 29 checks, 0 failed' world-route-tests.log
+          grep -q 'EP2_WORLD_ROUTES: 39 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_audit_1117_test.tscn > audit-revisit-tests.log 2>&1
           grep -q 'EP2_AUDIT_1117: ALL PASS' audit-revisit-tests.log
@@ -611,6 +729,9 @@ jobs:
           grep -q 'EP2_ARMORY_GUNS: ALL PASS' armory-guns-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-guns-tests.log; then exit 1; fi
           # The player's Gatling hits what the crosshair is on (founder 2026-10-27: "it doesnt hit any of the targets"): real mouse path, real camera ray.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_wanted_rebalance_test.tscn 2>&1 | tee wanted-rebalance-tests.log
+          grep -q "EP2_WANTED_REBALANCE: 40 checks, 0 failed" wanted-rebalance-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' wanted-rebalance-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gatling_hits_test.tscn 2>&1 | tee gatling-hits-tests.log
           grep -q 'EP2_GATLING_HITS: ALL PASS' gatling-hits-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gatling-hits-tests.log; then exit 1; fi
@@ -812,6 +933,29 @@ jobs:
             exit 1
           fi
 
+      - name: Configure web analytics for this export
+        env:
+          POSTHOG_TOKEN: ${{ secrets.POSTHOG_TOKEN }}
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("config.json")
+          config = json.loads(path.read_bytes())
+          analytics = config["analytics"]
+          token = os.environ.get("POSTHOG_TOKEN", "")
+          if analytics["enabled"] and token:
+              if not re.fullmatch(r"phc_[A-Za-z0-9]{20,80}", token):
+                  raise SystemExit("POSTHOG_TOKEN must be a public project write key")
+              analytics["posthog_token"] = token
+              path.write_text(json.dumps(config, indent=2) + "\n")
+          elif analytics["enabled"]:
+              print("::warning::POSTHOG_TOKEN is unavailable. This export has game analytics disabled.")
+          PYTHON
+
       - name: Export game to Web
         id: export
         run: |
@@ -835,6 +979,15 @@ jobs:
             cat export.log
             exit 1
           fi
+          # config.json is exported verbatim. Verify the complete runtime config without logging its contents.
+          python3 - <<'PYTHON'
+          import mmap
+          from pathlib import Path
+
+          with open("web/game/index.pck", "rb") as stream, mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as pack:
+              if pack.find(Path("config.json").read_bytes()) < 0:
+                  raise SystemExit("Exported core pack does not contain the configured config.json")
+          PYTHON
           # Episode 2 extras (founder 2026-10-19: "Stream Episode 2 extras"): res://src/episode2/extras/ is excluded from
           # index.pck above and packed here into ep2_extras.pck, deployed next to it; the game downloads and mounts it when
           # Episode 2 starts (src/episode2/ep2_extras.gd). Skill: ep2-armory-two-story.
@@ -879,7 +1032,7 @@ jobs:
         # The .pck on disk already carries it; the repo does not need it.
         if: always()
         run: |
-          git checkout -- src/autoload/game_manager.gd || true
+          git restore -- src/autoload/game_manager.gd config.json
           git status --porcelain
 
       - name: Verify export output
@@ -1032,7 +1185,10 @@ jobs:
               # -X theirs: while rebasing, "theirs" is OUR export commit, so a conflict in the generated
               # web/game/index.html (another session's export landed first) resolves to the fresh export
               # instead of failing 5 times and silently skipping the itch deploy (cost the founder 3 deploys).
-              if git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push -u origin HEAD; then
+              # --autostash: the export leaves unstaged files behind (the un-added .pck files and other build
+              # output), and a plain rebase refuses ("You have unstaged changes"), so a master push that landed
+              # mid-run skipped the itch deploy (run 44215031614, 2026-11-18).
+              if git pull --rebase --autostash -X theirs origin "${GITHUB_REF_NAME}" && git push -u origin HEAD; then
                 pushed="yes"
                 echo "Export pushed (attempt ${attempt})"
                 break

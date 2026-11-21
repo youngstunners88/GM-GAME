@@ -344,6 +344,13 @@ func _ready() -> void:
 			var material := sm as StandardMaterial3D
 			# Hand-attached rifle/glass meshes also live under this skeleton.
 			# Their separate metal/glass materials are not the Bull skin atlas.
+			if Ep2BullHero.PAINTED_GLB:
+				# the painted Bull (v3) keeps its own UV-matched textures; every body surface is forced matte (metallic 0, no metal map),
+				# which is what this gate protects: no glTF metallic=1 default turning his fur to oil
+				if material.resource_name == "InfernoBullRestoredPBR" or mi.get_parent() is Skeleton3D:
+					body_materials += 1
+					matte = matte and material.metallic <= 0.05 and material.metallic_texture == null
+				continue
 			if material.resource_name != "InfernoBullRestoredPBR":
 				continue
 			body_materials += 1

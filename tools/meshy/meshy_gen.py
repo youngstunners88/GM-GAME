@@ -52,6 +52,7 @@ def main() -> int:
     ap.add_argument("--polycount", type=int, default=8000)
     ap.add_argument("--pose", default="keep", choices=["keep", "a-pose", "t-pose"])
     ap.add_argument("--texture-prompt", default="")
+    ap.add_argument("--ai-model", default="latest", help="latest (30 cr textured) or meshy-5 (15 cr)")
     ap.add_argument("--pbr", action="store_true",
                     help="also generate normal + metallic/roughness maps (the surface detail)")
     a = ap.parse_args()
@@ -66,7 +67,7 @@ def main() -> int:
 
     body = {
         "image_url": uri,
-        "ai_model": "latest",
+        "ai_model": a.ai_model,
         "should_remesh": True,
         "topology": "triangle",
         "target_polycount": a.polycount,

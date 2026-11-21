@@ -1,0 +1,118 @@
+{
+ "people": {
+  "checker_a": {
+   "mesh_task": "16c86ecd-3f26-443c-8384-4f1367efa42e",
+   "file": "auction_checker_a.glb",
+   "height": 1.82,
+   "presets": [
+    "preset:biped:idle",
+    "preset:biped:greet_01",
+    "preset:biped:complain_01"
+   ],
+   "clips": [
+    "Idle",
+    "Greet",
+    "Talk"
+   ],
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "d028c5da-ba4c-4786-9277-8984ef95a7e7",
+   "retarget_task": "aa664018-4d23-45b8-91a7-2614cd648d51",
+   "retarget_output_keys": [
+    "model_url"
+   ]
+  },
+  "checker_b": {
+   "file": "auction_checker_b.glb",
+   "height": 1.78,
+   "presets": [
+    "preset:biped:idle",
+    "preset:biped:greet_01",
+    "preset:biped:complain_01"
+   ],
+   "clips": [
+    "Idle",
+    "Greet",
+    "Talk"
+   ],
+   "mesh_task": "c01ebb1e-1d37-4c1b-9f6f-e57a5eda344d",
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "d8675c40-b592-4a78-9ac0-10f6c2c02eef",
+   "retarget_task": "2f7b20f3-f637-40ec-b2ad-8e752f13b566",
+   "retarget_output_keys": [
+    "model_url"
+   ]
+  },
+  "band_lead": {
+   "file": "auction_band_lead.glb",
+   "height": 1.66,
+   "presets": [
+    "preset:biped:idle",
+    "preset:biped:sing_01"
+   ],
+   "clips": [
+    "Idle",
+    "Play"
+   ],
+   "mesh_task": "bcfc289b-d205-4ba5-822b-0133f0257e63",
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "520d5df7-b8e9-4aea-934b-26243acec5c2",
+   "retarget_task": "6e8c2db8-5b1b-453f-a44b-cf54cde1f563",
+   "retarget_output_keys": [
+    "model_url"
+   ]
+  },
+  "band_fiddle": {
+   "file": "auction_band_fiddle.glb",
+   "height": 1.76,
+   "presets": [],
+   "clips": [],
+   "mesh_task": "e5f47f3d-8b48-4ca4-a1cd-ca45773f8594",
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "1c8c03aa-ae54-488a-be68-949dd5aa39ef"
+  },
+  "band_guitar": {
+   "file": "auction_band_guitar.glb",
+   "height": 1.8,
+   "presets": [],
+   "clips": [],
+   "mesh_task": "8ef70e6e-1815-40ea-975f-cfb6e46d0711",
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "8054d7d7-978e-4315-a939-0bc9f4b6fd9d"
+  },
+  "band_bass": {
+   "file": "auction_band_bass.glb",
+   "height": 1.84,
+   "presets": [],
+   "clips": [],
+   "mesh_task": "0f799372-7fe2-471c-b608-6a5420c67d5b",
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "0d7e8869-9ac6-49b2-9c09-1e7228ce66cd"
+  },
+  "band_harmonica": {
+   "file": "auction_band_harmonica.glb",
+   "height": 1.77,
+   "presets": [],
+   "clips": [],
+   "mesh_task": "905566fa-42e9-45ec-b00d-50d4364a9a47",
+   "riggable": true,
+   "rig_type": "biped",
+   "rig_task": "9ea7b950-0e90-4bd4-8c52-547d6b199184"
+  }
+ },
+ "credits_spent_runs": [
+  {
+   "before": 475.0,
+   "after": 420.0
+  },
+  {
+   "before": 420.0,
+   "after": 40.0
+  }
+ ]
+}

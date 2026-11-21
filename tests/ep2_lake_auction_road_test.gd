@@ -4,6 +4,7 @@ extends Node
 ## diagonal road to the auction (one claim beat, one vulture/dust spook, zero Hammersmen) that ends at the auction gate.
 const LAKE := preload("res://src/episode2/chamber/logans_lake.tscn")
 const ROAD := preload("res://src/episode2/chamber/auction_road.tscn")
+const ARM_CLEAR := 1.2        # hand clearance / shoulder width: 1.27-1.31 with the arm override, 1.01-1.14 pinned to his sides without it
 var failures: int = 0
 var checks: int = 0
 
@@ -32,6 +33,42 @@ func _lake(st: Ep2ArmoryState, after: bool) -> LogansLakeChamber:
 func _advance(c: Node, seconds: float) -> void:
 	for i in int(seconds * 30.0):
 		c.step(1.0 / 30.0)
+
+
+## Renegade's Idle at 3 frames: [hand clearance / shoulder width, shoulder->hand span / rest arm length] per frame (worse side).
+func _arm_report(folk: Ep2TownFolk) -> Array:
+	var out: Array = []
+	var ap: AnimationPlayer = folk.anim_player() if folk != null else null
+	var rigs: Array = folk.model.find_children("*", "Skeleton3D", true, false) if folk != null and folk.model != null else []
+	if ap == null or rigs.is_empty() or not ap.has_animation("Idle"):
+		return out
+	var sk: Skeleton3D = rigs[0]
+	var pose := preload("res://src/episode2/actors/ep2_ranch_pose.gd")
+	var hips: int = pose._find(sk, "Hips")
+	var length: float = ap.get_animation("Idle").length
+	ap.play("Idle")
+	for frac in [0.1, 0.45, 0.8]:
+		ap.seek(length * frac, true)
+		sk.force_update_all_bone_transforms()
+		var centre: Vector3 = sk.get_bone_global_pose(hips).origin
+		var clear: float = 9.0
+		var span: float = 9.0
+		for side in ["Left", "Right"]:
+			var a: int = pose._find(sk, side + "Arm")
+			var f: int = pose._find(sk, side + "ForeArm")
+			var h: int = pose._find(sk, side + "Hand")
+			var shoulder: Vector3 = sk.get_bone_global_pose(a).origin
+			var hand: Vector3 = sk.get_bone_global_pose(h).origin
+			var arm_len: float = sk.get_bone_rest(f).origin.length() + sk.get_bone_rest(h).origin.length()
+			span = minf(span, shoulder.distance_to(hand) / maxf(arm_len, 0.0001))
+			# how far the hand is from the body's vertical axis, as a fraction of the shoulder's own distance (measured flat)
+			var up: Vector3 = (sk.global_basis.inverse() * Vector3.UP).normalized()
+			var hs: Vector3 = hand - centre
+			var ss: Vector3 = shoulder - centre
+			clear = minf(clear, (hs - up * hs.dot(up)).length() / maxf((ss - up * ss.dot(up)).length(), 0.0001))
+		out.append([snappedf(clear, 0.01), snappedf(span, 0.01)])
+	folk.hold_clip("Idle")
+	return out
 
 
 func _ready() -> void:
@@ -93,6 +130,12 @@ func _ready() -> void:
 	road._player_pos = road.at(road.CLAIM_S - 10.0)
 	_advance(road, 0.2)
 	check("the claim wagon is reached (CLAIM beat)", road.get_beat_name() == "CLAIM", road.get_beat_name())
+	# 2026-11-19: the fused cart model is authored ~1 m long and stood on the road as a toy under a floating sign
+	var wagon_len: float = 0.0
+	for mi in road._wagon.find_children("*", "MeshInstance3D", true, false):
+		var box: AABB = (road._wagon.global_transform.affine_inverse() * (mi as MeshInstance3D).global_transform) * (mi as MeshInstance3D).get_aabb()   # the wagon's own frame (the road is diagonal)
+		wagon_len = maxf(wagon_len, maxf(box.size.x, box.size.z))
+	check("the claim wagon is full size (a real cart across the road, not a toy)", wagon_len > 3.0 and wagon_len < 5.0, "%.2f m" % wagon_len)
 	road._player_pos = road.at(road.CLAIM_S - 5.0)
 	check("the wagon holds the road until he talks", road.road_s(road._collide(road.at(road.CLAIM_S + 10.0))) <= road.CLAIM_S - 3.9)
 	check("show papers starts the claim talk", road.start_rig())
@@ -111,6 +154,42 @@ func _ready() -> void:
 	# 8. the auction house (brief PROMPT_AUCTION_HOUSE_RENEGADE_JACK_HAMMER_2026-11-08), in the same room
 	var house: Ep2AuctionHouse = road.house()
 	check("the auction house is built inside the road room (CAD kit streamed)", house != null and house.built)
+	# 8b. visitor carriages parked outside (founder brief 2026-11-20): all four reference styles, grounded, horse-scaled, off the road
+	var kinds := {}
+	var grounded := true
+	var off_road := true
+	var heights := {}
+	var floors: Array = []
+	for rig in house.visitors:
+		var k: String = str(rig.name).trim_prefix("Visitor_").rsplit("_", true, 1)[0]
+		kinds[k] = true
+		var lo := Vector3(INF, INF, INF)
+		var hi := -lo
+		for mi in (rig as Node3D).find_children("*", "MeshInstance3D", true, false):
+			var xf: Transform3D = house.global_transform.affine_inverse() * (mi as MeshInstance3D).global_transform
+			var bb: AABB = (mi as MeshInstance3D).get_aabb()
+			for i in 8:
+				var c: Vector3 = xf * bb.get_endpoint(i)
+				lo = lo.min(c)
+				hi = hi.max(c)
+		grounded = grounded and lo.y < 0.02 and lo.y > -0.08      # never floating; a few cm into the dirt (decimation + vertex compression) is fine
+		floors.append(snappedf(lo.y, 0.001))
+		off_road = off_road and (lo.x > 4.8 or hi.x < -4.8)
+		heights[k] = hi.y - lo.y
+	check("five visitor rigs stand outside, all four reference styles", house.visitors.size() == 5 and kinds.size() == 4, str(kinds.keys()))
+	check("every visitor rig's wheels and hooves are on the ground", grounded and not house.visitors.is_empty(), str(floors))
+	check("the visitor rigs sit clear of the lamp-lit road into the hall", off_road and not house.visitors.is_empty())
+	check("the working teams stand at horse height and the palace carriage towers over them",
+		heights.size() == 4 and absf(float(heights["visitor_common_pair"]) - 2.25) < 0.2 and absf(float(heights["visitor_common_single"]) - 2.25) < 0.2
+		and float(heights["visitor_royal_palace"]) > 7.0, str(heights))
+	var road_clear := true
+	for zi in range(-44, 0, 2):
+		var on_road: Vector3 = house.collide(Vector3(0.0, 0, float(zi)))
+		road_clear = road_clear and on_road.distance_to(Vector3(0.0, 0, float(zi))) < 0.01
+	check("the road from the gate to the porch is never blocked", road_clear)
+	var pushed: Vector3 = house.collide(Vector3(17.0, 0, -11.0))
+	check("nobody walks through the palace carriage", Vector2(pushed.x - 17.0, pushed.z + 11.0).length() > 2.0, str(pushed))
+	check("outside the hall the crowd bed is silent and the hall score is off", is_equal_approx(house.murmur_target(), house.MURMUR_OFF) and not road.hall_score_on())
 	check("the lake builds the road behind itself and holds the sign until it is ready", "prebuild_requested.emit(\"auction_road\")" in lake_src and "_can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok()" in lake_src)
 	check("the hand-over keeps the lake's gaze (no camera reset)", "_apply_handoff_gaze(ROAD_YAW" in road_src and not "_look_yaw = ROAD_YAW" in road_src)
 	road._player_pos = road.at(road.DISMOUNT_S + 1.0)
@@ -132,9 +211,118 @@ func _ready() -> void:
 	check("Renegade (the Drive GLB) is the host on the block, with lent clips", house.renegade != null and house.renegade.has_clips()
 		and house.renegade.position.y > 1.0 and absf(house.renegade.position.x) < 0.5)
 	check("Jack Hammer can run (Dude's run lent to his rig)", house.jack.anim_player() != null and house.jack.anim_player().has_animation("lent/Run"))
+	# 8b. the auction cast brief (PROMPT_EPISODE2_AUCTION_CAST_TPOSE_CAD_ARMS_2026-11-16)
+	var arms: Array = _arm_report(house.renegade)
+	check("Renegade's Idle: both hands outside the torso at 3 sampled frames", arms.size() == 3 and arms.all(func(r): return r[0] >= ARM_CLEAR), str(arms))
+	check("Renegade's Idle: shoulder-to-hand span not collapsed (>= 55% of the arm) at 3 frames", arms.size() == 3 and arms.all(func(r): return r[1] >= 0.55), str(arms))
+	var coats: Dictionary = {}
+	for h in house._tied:
+		coats[Ep2HorseCoat.coat_of(h)] = true
+	check("the horses tied at the rail wear at least two different coats", house._tied.size() >= 2 and coats.size() >= 2, str(coats.keys()))
+	var house_src: String = _text("res://src/episode2/chamber/ep2_auction_house.gd")
+	# founder 2026-11-17: one horse - the road horse wears the coat Lil Blunt picked at Dude's, and the hall never touches it
+	check("the road horse wears the stable's coat; the auction never recolours it", not house._tied.has(road._horse) and house_src.count("Ep2HorseCoat.apply(") == 1
+		and (road._horse.find_children("*", "MeshInstance3D", true, false).is_empty() or Ep2HorseCoat.coat_of(road._horse) == Ep2HorseCoat.ridden),
+		Ep2HorseCoat.coat_of(road._horse))
+	var clerk: Ep2TownFolk = road.find_child("ClaimClerk", true, false) as Ep2TownFolk
+	check("checker A is the claim clerk when his model is in the pack (the old clerk until then)", clerk != null
+		and ResourceLoader.exists(AuctionRoadChamber.clerk_model_path())
+		and (AuctionRoadChamber.clerk_model_path() == Ep2Extras.CHECKER_A) == ResourceLoader.exists(Ep2Extras.CHECKER_A), AuctionRoadChamber.clerk_model_path())
+	check("checker B is the hall doorman when his model is in the pack (the rancher until then)", house._doorman != null and house._doorman.has_clips()
+		and (Ep2AuctionHouse.doorman_model() == Ep2Extras.CHECKER_B) == ResourceLoader.exists(Ep2Extras.CHECKER_B), Ep2AuctionHouse.doorman_model())
+	check("the band is five, or not there at all (never a part-band or stand-in faces)",
+		house._band.size() == (5 if Ep2AuctionHouse.band_ready() else 0), "%d players, ready=%s" % [house._band.size(), Ep2AuctionHouse.band_ready()])
+	var band_ok: bool = str(Ep2AuctionHouse.BAND[0][0]) == Ep2Extras.BAND_LEAD and Ep2AuctionHouse.BAND.size() == 5
+	for row in Ep2AuctionHouse.BAND:
+		band_ok = band_ok and float(row[1]) < -3.0 and float(row[2]) < house.STAGE_Z0 and float(row[2]) > house.RAIL_Z
+	check("the band's marks: the woman who sings leads, all five stage-left of the aisle, on the floor in front of the stage", band_ok)
+	var aisle_ok: bool = true
+	for zi in range(2, 24):
+		var a: Vector3 = house.collide(Vector3(0, 0, float(zi)))
+		aisle_ok = aisle_ok and absf(a.x) < 0.001 and absf(a.z - float(zi)) < 0.001
+	check("the centre aisle is clear from the doors to the stage (z 2..23)", aisle_ok)
+	var kit_ok: bool = true
+	for piece in ["Auc_Sconce", "Auc_CheckDesk", "Auc_Fiddle", "Auc_FiddleBow", "Auc_Banjo", "Auc_Bass", "Auc_Harmonica"]:
+		kit_ok = kit_ok and house._kit.find_child(piece, true, false) != null
+	check("the CAD kit carries the interior pass and the band's period instruments", kit_ok)
 	road._player_pos = road.from_house(Vector3(0.0, 0, 8.0))
 	_advance(road, 0.2)
 	check("inside the hall Renegade starts calling (HALL)", road.get_beat_name() == "HALL" and house.phase == "calls", road.get_beat_name())
+	check("in the hall the crowd murmurs under the auctioneer, swelling on arrival (never above bed + swell)",
+		house.murmur_target() > house.MURMUR_BED - 0.01 and house.murmur_target() <= house.MURMUR_BED + house.MURMUR_SWELL + 0.01, str(house.murmur_target()))
+	# 2026-11-17 grand event: the GM logo over the block and on both walls, fire, and the flame jets erupt on the calls
+	var grand_ok: bool = not ResourceLoader.exists(Ep2AuctionHouse.SPECTACLE) or (house.grand != null
+		and house.grand.find_children("GMLogo*", "MeshInstance3D", true, false).size() == 3 and house.grand.jets_fired >= 1
+		and house.grand.find_children("*", "CPUParticles3D", true, false).size() >= 2 + 4 + Ep2AuctionHouse.SCONCES.size())
+	check("a grand event: three GM logo discs, two braziers, four flame jets that fired on the first call, a flame in every lantern", grand_ok,
+		str(house.grand.jets_fired) if house.grand != null else "no grand layer")
+	# the instrumentalists really play (founder 2026-11-17): both hands reach the instrument the body holds, every frame
+	# the solved pose is only there right after the skeleton's modifiers ran: measure on its skeleton_updated signal
+	# (the test fast-forwards the room between frames; give the players a few real frames to settle into the beat first)
+	for i in 3:
+		await get_tree().process_frame
+	var probe: Dictionary = {"worst": 0.0, "seen": 0}
+	var players: int = 0
+	var hooks: Array = []
+	for f in house._band:
+		var play: Node = (f as Node).get_node_or_null("Plays")
+		if play == null or str(play.kind) == "lead":
+			continue
+		players += 1
+		var sk: Skeleton3D = play._sk
+		var hook := func() -> void:
+			probe["seen"] = int(probe["seen"]) + 1
+			for arm in ["Left", "Right"]:
+				var hand: Vector3 = sk.global_transform * sk.get_bone_global_pose(int(play._bones[arm + "Hand"])).origin
+				probe["worst"] = maxf(float(probe["worst"]), hand.distance_to((play._ik[arm] as Ep2ArmIK).target_world))
+		sk.skeleton_updated.connect(hook)
+		hooks.append([sk, hook])
+		check("...the %s's instrument is held by the body, not glued to a hand bone" % str(play.kind),
+			play.instrument != null and play.instrument.get_parent() == f)
+	for i in 6:
+		await get_tree().process_frame
+	for h in hooks:
+		(h[0] as Skeleton3D).skeleton_updated.disconnect(h[1])
+	if Ep2AuctionHouse.band_ready():
+		check("four instrumentalists play with both hands on the instrument (every wrist within 6 cm of its grip; 4.5 measured in the hall)",
+			players == 4 and int(probe["seen"]) >= 8 and float(probe["worst"]) < 0.06, "%d players, %d poses, worst %.3f m" % [players, int(probe["seen"]), float(probe["worst"])])
+	# 2026-11-17: the seven Tripo auction people were exported facing +X, so the band played side-on to the room. Measured from the shoulders.
+	var worst_turn: float = 0.0
+	for f in house._band + ([house._doorman] if house._doorman != null else []):
+		var sks: Array = (f as Ep2TownFolk).model.find_children("*", "Skeleton3D", true, false)
+		if sks.is_empty():
+			continue
+		var sk: Skeleton3D = sks[0]
+		var la: int = -1
+		var ra: int = -1
+		for b in sk.get_bone_count():
+			if sk.get_bone_name(b).ends_with("LeftArm"): la = b
+			if sk.get_bone_name(b).ends_with("RightArm"): ra = b
+		if la < 0 or ra < 0:
+			continue
+		var across: Vector3 = sk.global_transform * sk.get_bone_global_pose(ra).origin - sk.global_transform * sk.get_bone_global_pose(la).origin
+		across.y = 0.0
+		var body_fwd: Vector3 = Vector3.UP.cross(across.normalized())
+		worst_turn = maxf(worst_turn, rad_to_deg(body_fwd.angle_to((f as Node3D).global_basis.z.normalized())))
+	check("every auction player and the doorman face the way they are turned (chest within 25 degrees)", worst_turn < 25.0, "%.0f deg" % worst_turn)
+	# 2026-11-21: each player holds the clip captured from the founder's Flow video for that role (not the one borrowed Idle), each at
+	# its own point in the loop so the five never sway in unison
+	var own_clips: Dictionary = {}
+	var phases: Dictionary = {}
+	for f in house._band:
+		var play: Node = (f as Node).get_node_or_null("Plays")
+		var ap: AnimationPlayer = (f as Ep2TownFolk).anim_player()
+		if play == null or ap == null:
+			continue
+		var want: String = str(play.CLIP.get(str(play.kind), ""))
+		if (f as Ep2TownFolk).current_clip() == want.to_lower() and ap.is_playing():
+			own_clips[want] = true
+			phases[snappedf(fmod(ap.current_animation_position / maxf(ap.current_animation_length, 0.01), 1.0), 0.01)] = true
+	if Ep2AuctionHouse.band_ready():
+		check("each of the five plays its own captured clip, out of step with the others", own_clips.size() == 5 and phases.size() == 5,
+			"%s / phases %s" % [own_clips.keys(), phases.keys()])
+	check("the hall score plays inside the hall when it is in the pack (night bed only until then)",
+		road.hall_score_on() == Ep2Extras.has(AuctionRoadChamber.HALL_SCORE), str(road.hall_score_on()))
 	# the floor answers like people (founder 2026-11-14): no two on one frame as a chorus, a mix of answers, one cheer recording per cooldown
 	var waits: Dictionary = {}
 	var clips: Dictionary = {}
@@ -151,12 +339,14 @@ func _ready() -> void:
 	check("Jack Hammer is recognised (JACK)", road.get_beat_name() == "JACK", road.get_beat_name())
 	_advance(road, 3.9 * house.JACK_LINES.size() + 0.3)
 	check("he flees (FLEE): running, the side door swings", road.get_beat_name() == "FLEE" and house.jack.is_walking(), road.get_beat_name())
+	check("the room hushes while Jack runs", is_equal_approx(house.murmur_target(), house.MURMUR_HUSH), str(house.murmur_target()))
 	_advance(road, 14.0)
 	check("he is gone and the auction carries on (AFTER), alive", road.get_beat_name() == "AFTER" and not house.jack.visible and not house.jack.dead, road.get_beat_name())
 	check("no teleport, no hand-off while he was in the hall", res.is_empty())
 	road._player_pos = road.from_house(Vector3(0.0, 0, -1.5))
 	_advance(road, 0.2)
 	check("out the front doors the slice ends cleanly", res.size() == 1 and bool(res[0].get("jack_fled", false)) and bool(res[0].get("end_session", false)), str(res))
+	check("the hall score fades out when he leaves by the porch", not road.hall_score_on())
 	# a shot inside is pressure: Jack runs at once and is never killed here
 	road.setup(0, [], 0)
 	check("a retry puts Jack back at the claim board", house.phase == "" and house.jack.visible and house.jack.position.distance_to(house.JACK_MARK) < 0.2)

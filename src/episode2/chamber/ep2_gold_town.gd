@@ -19,6 +19,7 @@ const CRATE := "res://src/episode2/assets/mine_lift/mine_crate.glb"
 const ROCK := "res://src/episode2/assets/woods/woods_rock.glb"
 const PLANK_TEX := "res://src/episode2/assets/mine_lift/tex_lift_planks.jpg"
 const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
+const SALOON_LADDER := preload("res://src/episode2/chamber/ep2_saloon_ladder.gd")
 const TOWN_Z := 1400.0
 const STREET_HALF := 9.0
 const DROP_POINT := Vector3(0.0, 0.0, 1403.0)        # where the quad stops and Lil Blunt hops off
@@ -300,6 +301,8 @@ static func ground_y(world: Vector3) -> float:
 ## into the yard). The Armory faces -z (yaw PI), so local +x is world -x: at rest the bore points west over open ground, away from the street. The gun
 ## is NOT FOR SALE; the plates and bales are the firing yard it is demonstrated on.
 const GATLING_POST := Vector3(9.6, 0.0, 1.6)         # beyond the porch's right end and clear of the grazing horse (-27, 1462.5): founder, "dont replace the horses"
+const GATLING_BILLBOARD := Vector3(42.0, 3.5, 1.6)  # 4 m square; bottom 1.5 m, behind all existing targets
+const GATLING_BILLBOARD_SIZE := Vector2(4.0, 4.0)
 const GATLING_STAND_BACK := 1.0
 const GATLING_PLATES: Array = [Vector3(17.0, 0.0, 0.4), Vector3(20.5, 0.0, 3.6), Vector3(24.0, 0.0, -0.9), Vector3(27.5, 0.0, 2.4), Vector3(31.0, 0.0, 0.2)]
 const GATLING_BALES: Array = [Vector3(36.0, 0.0, 1.6), Vector3(19.0, 0.0, 5.6)]
@@ -320,6 +323,8 @@ static var jail_blocks: Array = []
 static var jail_lights: Array = []
 ## Where the desert scatter (scrub, rock) keeps clear around the jailhouse, so it does not stand in brush (x, z rectangle).
 const JAIL_CLEAR := Rect2(-46.0, 1390.0, 24.0, 20.0)
+## ...and around the Stockpile, its wheelbarrow loop and the Reserve (only when they are drawn: Ep2Extras.STOCKPILE).
+const STOCKPILE_CLEAR := Rect2(19.0, 1428.0, 26.0, 66.0)
 
 
 ## The yaw that turns a kit piece's local +Z front toward the street.
@@ -377,6 +382,7 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 	var a2: Node3D = _load_armory2()
 	var jl: Node3D = _load_jail()
 	var trims: Dictionary = {}                 # TrimAnchor kind -> [world Transform3D] (the streamed kit's CAD trim places)
+	var saloon_copy: Node3D = null
 	for e in LAYOUT:
 		var piece: String = str(e[0])
 		var src: Node3D = kit.find_child(piece, true, false) as Node3D
@@ -393,6 +399,7 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		_hang_signs(b)
 		if piece == "Bldg_Saloon":
 			doors.append(_hang_batwings(b, kit))
+			saloon_copy = b
 		if kit_v2:
 			_collect_trim(b, trims)
 		walls.append_array(_walls_of(piece, building_xform(e)))
@@ -463,8 +470,12 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 			_flag(fort, (fa as Node3D).position)
 	Ep2TownLife.build(root, props)                      # horses at the rails, the river, the railway and the train
 	Ep2StableYard.build(root, props, walls)              # original surface stable, shared by the quad approach and town
+	if Ep2Extras.has(Ep2Extras.STOCKPILE_SITE):         # the Stockpile (east back lot) and the Reserve: streamed, same coordinates in every room
+		load(Ep2Extras.STOCKPILE_SITE).build_site(root, walls, props)
 	Ep2TownPosters.build(root, props)                   # the wanted posters: notice board, shop fronts, the jail (streamed images)
 	_balcony_furniture(root, kit)                       # two chairs and a little table on the saloon's balcony (its drinkers sit there)
+	# the side ladder up to that balcony (founder 2026-11-21: a ladder on the outside, not an interior stair; skill ep2-saloon-roof-access)
+	var ladder: Node3D = SALOON_LADDER.build(root, saloon_copy, props)
 	if interiors:
 		_furnish(root, kit, a2, props)
 	kit.free()
@@ -472,7 +483,7 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 		a2.free()
 	if jl != null:
 		jl.free()
-	return {"walls": walls, "props": props, "doors": doors}
+	return {"walls": walls, "props": props, "doors": doors, "ladder": ladder}
 
 
 ## The saloon's batwings as real hinged leaves (Ep2SwingDoor, founder 2026-11-05: "saloon doors don't swing; characters walk straight
@@ -1071,6 +1082,7 @@ static func _road_dist(p: Vector2, road: Array) -> float:
 static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world_end_z: float, scrub_mesh: Mesh, rock_mesh: Mesh,
 		scrub_mat: Material, rock_mat: Material, z_from: float = -1e9) -> void:
 	var rocks: Array = []
+	var sp_clear: bool = Ep2Extras.has(Ep2Extras.STOCKPILE)
 	var z: float = forest_end_z - 100.0
 	while z < world_end_z:
 		if z + 60.0 < z_from:
@@ -1085,7 +1097,7 @@ static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world
 			var near_road: float = _road_dist(p, road)
 			var in_town: bool = (absf(p.x) < 26.0 and p.y > TOWN_Z - 6.0 and p.y < TOWN_Z + 90.0) \
 				or (p.y > RIVER_Z - RIVER_W and p.y < TRACK_Z + 8.0) \
-				or JAIL_CLEAR.has_point(p) \
+				or JAIL_CLEAR.has_point(p) or (sp_clear and STOCKPILE_CLEAR.has_point(p)) \
 				or Ep2StableYard.PADDOCK.grow(6.0).has_point(p) or Ep2StableYard.ACCESS_CLEAR.has_point(p)
 			var open_k: float = clampf((p.y - (forest_end_z - 100.0)) / 120.0, 0.0, 1.0)      # scrub takes over as the pines thin
 			if near_road > 3.5 and not in_town and h1 < 0.55 * open_k:
