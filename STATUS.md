@@ -1,6 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-21 — Episode 2 full audit (run 2026-11-17): two soft-locks, a dead end and an access-code bypass closed (pushed; see the ship line below for live state). NOT founder-verified, not yet seen in a browser.**
+**2026-11-21 — Episode 2 full audit (run 2026-11-17): two soft-locks, a dead end and an access-code bypass closed. LIVE on itch, BUILD `2026-11-21-b017643` (master CI 44928142917, butler "Pushed to"). NOT founder-verified; the return routes have not been played on the live build.**
+- **Checked on the live game itself:** with `?ep2=1&ep2unlock=1` (and `ep2gate=skip`) the access-code screen still appears and no run starts (`HARNESS_INERT_BROWSER: ALL PASS` against the itch build).
 - **How it was audited:** all 107 Episode 2 test scenes run on master with a clean save each (104 passed; the 3 that fail are stale checks, not in CI), the session, world-route, shared first-person room, boot/pause/exit and save code read in full, and pattern scans over the rest. No browser or phone playthrough, no look at the art, no listen to the mix: those layers are covered only by their existing tests. Full report: `docs/episode2-quality/full-audit-2026-11-17/AUDIT.md`.
 - **Frozen at Dude's (P0):** after riding out, coming back into town and pressing E on "Mount horse" at the rail froze the game for good. That prompt is closed on a return visit.
 - **No way back to the lake (P0):** once you rode north into town there was no route back to the lake trail, on foot or on the horse. Riding back down the street now puts you on the trail again where you stand, every time.

@@ -74,13 +74,13 @@ read clean - not that they were play-tested.
 
 | Boundary / rule | Headless gate | Failed before the fix? | Local web export seen? | Live hard-refresh seen? | Status |
 |---|---|---|---|---|---|
-| 1 frozen mount at Dude's on a revisit | `EP2_AUDIT_1117` A (4 checks) | yes: `active=GoldTown town running=false resolved=true` | no | no | GATED |
-| 2 town -> lake trail | `EP2_AUDIT_1117` A, B | yes: `active=GoldTown pos=(-12, 0, 1239.7)` after 30 s of riding | no | no | GATED |
-| 3 Sharps before the ridge | `EP2_AUDIT_1117` D; `LOGANS_LAKE` new check | yes (mutant): 2 checks fail, objective stays "Meet Logan at the shore" | no | no | GATED |
-| 4 stale saddle | `EP2_AUDIT_1117` C | yes (mutant): `eye=2.18 pace=7.0` | no | no | GATED |
-| 5 eye height / horse home | `EP2_AUDIT_1117` A, B | yes (mutant): eye `2.18`, horse not the trail's | no | no | GATED |
-| 6 retry keeps gear | `EP2_AUDIT_1117` E | yes (mutant) | no | no | GATED |
-| 7 `ep2unlock` inert | `CHECK_HARNESS_HOOKS: ALL PASS`, `HARNESS_HOOKS_INERT` | n/a (static) | no | no | IN CODE + checker |
+| 1 frozen mount at Dude's on a revisit | `EP2_AUDIT_1117` A (4 checks) | yes: `active=GoldTown town running=false resolved=true` | no | deployed `2026-11-21-b017643`, not hard-refresh played | GATED + DEPLOYED |
+| 2 town -> lake trail | `EP2_AUDIT_1117` A, B | yes: `active=GoldTown pos=(-12, 0, 1239.7)` after 30 s of riding | no | deployed `2026-11-21-b017643`, not hard-refresh played | GATED + DEPLOYED |
+| 3 Sharps before the ridge | `EP2_AUDIT_1117` D; `LOGANS_LAKE` new check | yes (mutant): 2 checks fail, objective stays "Meet Logan at the shore" | no | deployed `2026-11-21-b017643`, not hard-refresh played | GATED + DEPLOYED |
+| 4 stale saddle | `EP2_AUDIT_1117` C | yes (mutant): `eye=2.18 pace=7.0` | no | deployed `2026-11-21-b017643`, not hard-refresh played | GATED + DEPLOYED |
+| 5 eye height / horse home | `EP2_AUDIT_1117` A, B | yes (mutant): eye `2.18`, horse not the trail's | no | deployed `2026-11-21-b017643`, not hard-refresh played | GATED + DEPLOYED |
+| 6 retry keeps gear | `EP2_AUDIT_1117` E | yes (mutant) | no | deployed `2026-11-21-b017643`, not hard-refresh played | GATED + DEPLOYED |
+| 7 `ep2unlock` inert | `CHECK_HARNESS_HOOKS: ALL PASS`, `HARNESS_HOOKS_INERT` | n/a (static) | yes: `HARNESS_INERT_BROWSER: ALL PASS` on the local CI-identical export | yes: `HARNESS_INERT_BROWSER: ALL PASS` against the itch build `2026-11-21-b017643` (access prompt shown, no run) | SEEN LIVE |
 
 Mutation check: with each fix reverted in place (constants kept so the test still parses) the gate prints `EP2_AUDIT_1117: 22 checks,
 13 failed`; on the fixed code `22 checks, 0 failed`. After the fixes the whole battery (111 scenes: every `ep2_*` plus harness-inert,
