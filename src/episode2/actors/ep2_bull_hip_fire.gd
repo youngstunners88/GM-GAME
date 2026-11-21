@@ -30,11 +30,23 @@ var recoil: float = 0.0
 ## World point to aim at while `has_target`.
 var aim_target: Vector3 = Vector3.ZERO
 var has_target: bool = false
+## 0..1: turn the left fist so the rifle stands upright (his carry) while that hand does something else (the lift lever, motion fix T6) -
+## otherwise the rifle follows the forearm and sticks out through whatever he is working at. Applied after any IK reach.
+var rifle_up: float = 0.0
 
 
 func _process_modification() -> void:
 	var sk: Skeleton3D = get_skeleton()
-	if sk == null or actor == null or (weight <= 0.001 and recoil <= 0.001):
+	if sk == null or actor == null:
+		return
+	if rifle_up > 0.001 and weight <= 0.001:
+		var h: int = sk.find_bone("LeftHand")
+		if h >= 0:
+			var cur: Vector3 = Ep2BullHero.rifle_axis_skeleton(sk, h)
+			var up: Vector3 = (sk.global_transform.basis.inverse() * Vector3.UP).normalized()
+			_turn_hand(sk, h, cur, cur.slerp(up, clampf(rifle_up, 0.0, 1.0)).normalized())
+		return
+	if weight <= 0.001 and recoil <= 0.001:
 		return
 	var arm: int = sk.find_bone("LeftArm")
 	var fore: int = sk.find_bone("LeftForeArm")

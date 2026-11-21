@@ -25,6 +25,10 @@ var _hand: int = -1
 var _scale: float = 1.5
 var motion: Ep2MotionLayer = null
 var hip: Ep2BullHipFire = null
+## The fist's world position on the FINAL drawn pose (after every modifier), refreshed on skeleton_updated. Godot 4.3 restores modified bone
+## poses after the pass, so anything measuring contact outside it (the lever's gate, proofs) must read this, not the bones.
+var final_grip: Vector3 = Vector3.INF
+var final_wrist: Vector3 = Vector3.INF
 var aim_target: Vector3 = Vector3.ZERO
 var aim_until: float = -1.0
 var shot_time: float = -99.0
@@ -189,6 +193,9 @@ func fire_at(target_world: Vector3) -> Vector3:
 
 
 func _sync_rifle() -> void:
+	if _hand >= 0:
+		final_grip = grip_world(bull)
+		final_wrist = bull.skeleton.global_transform * bull.skeleton.get_bone_global_pose(_hand).origin
 	if rifle == null or _hand < 0:
 		return
 	place_on_rifle(rifle, bull, _scale)
@@ -210,6 +217,21 @@ static func add_hip_fire(b: Ep2Actor) -> Ep2BullHipFire:
 ## The rifle's barrel direction in skeleton space, from the current LeftHand pose.
 static func rifle_axis_skeleton(sk: Skeleton3D, hand: int) -> Vector3:
 	return (sk.get_bone_global_pose(hand).basis.orthonormalized() * RIFLE_AXIS).normalized()
+
+
+## The fist on the final drawn pose (see final_grip); falls back to the current bones when the Bull is not dressed.
+static func final_grip_world(b: Ep2Actor) -> Vector3:
+	var h: Ep2BullHero = b.get_node_or_null("BullHero") as Ep2BullHero if b != null else null
+	return h.final_grip if h != null and h.final_grip.is_finite() else grip_world(b)
+
+
+## Where the LEFT wrist must go for the fist to land on `point` (world), from the fist's offset on the final drawn pose: feed it back every
+## frame of a reach and it converges as the hand settles.
+static func wrist_for_fist_at(b: Ep2Actor, point: Vector3) -> Vector3:
+	var h: Ep2BullHero = b.get_node_or_null("BullHero") as Ep2BullHero if b != null else null
+	if h == null or not h.final_grip.is_finite() or not h.final_wrist.is_finite():
+		return point
+	return point - (h.final_grip - h.final_wrist)
 
 
 ## A LeftHand-local landmark (metres, native 2.4 m) -> world, on the final drawn pose.

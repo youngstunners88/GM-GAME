@@ -1362,15 +1362,18 @@ func _on_beat_entered(b: int) -> void:
 			_bull.stop()
 			if _hud:
 				_hud.objective = ""
-			var bull_at := Vector3(QUAD_POS.x + 3.0, 0.0, QUAD_POS.z - 1.2)
+			# motion fix T6 (2026-11-21): he takes the camouflage net's edge in his LEFT fist (the right is sculpted into his flask pouch and
+			# tears when lifted) and drags it back; each clump comes away only when the pull reaches it, spreading from his hand through the
+			# net - not ninety pieces leaping off on their own the moment he lifts a hand.
 			_start_show([
-				{"do": "walk", "to": bull_at, "speed": 2.2},
-				{"do": "face", "at": QUAD_POS},
+				{"do": "walk", "to": QUAD_POS + NET_STAND, "speed": 2.2},
+				{"do": "face", "at": QUAD_POS + NET_GRAB},
 				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_quad_reveal")},
-				{"do": "reach", "at": QUAD_POS + Vector3(0.0, 1.5, 0.0), "ramp": 0.5, "hold": 0.2, "lean": 0.35},
+				{"do": "reach", "side": "Left", "at": _net_wrist_target(), "ramp": 0.45, "hold": 0.1, "lean": 0.3},
+				{"do": "until", "pred": func() -> bool: return net_contact_error() <= NET_CONTACT_M, "timeout": 1.2},
 				{"do": "call", "fn": _reveal_quad},
 				{"do": "wait", "t": 1.2},
-				{"do": "release", "ramp": 0.5, "t": 0.4},
+				{"do": "release", "side": "Left", "ramp": 0.5, "t": 0.4},
 				{"do": "until", "pred": func() -> bool: return _hold <= 0.0},
 				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_lb_quad_ok")}], true)
 			look_toward(QUAD_POS + Vector3(0.0, 1.3, 0.0), 2.2)
@@ -1403,8 +1406,55 @@ func _show_finished() -> void:
 
 
 
+## The net's edge on his side (QUAD_POS-relative) and where he stands to take it; the pull drags it back toward him.
+const NET_GRAB := Vector3(1.35, 1.45, -0.75)   # chest-high on a 2.9 m Inferno: the draped net's edge on his side
+const NET_STAND := Vector3(1.98, 0.0, -1.05)
+const NET_PULL := 0.6                 # metres his fist drags the edge back
+const NET_SPEED := 4.0                # m/s the pull runs through the net from his hand
+const NET_CONTACT_M := 0.09
+var _net_wrist: Vector3 = Vector3.INF
+var _net_delay: Array = []            # per cover bit: seconds after the pull starts that it comes away
+var _net_back: Vector3 = Vector3.ZERO  # the way the net is dragged (a checkpoint retry rebuilds it; the bits' own throw is never rewritten)
+
+
+## Where his fist is on the net: the grab point, dragged back toward him once the pull starts.
+func _net_point() -> Vector3:
+	var p: Vector3 = QUAD_POS + NET_GRAB
+	if _reveal_t >= 0.0 and _bull != null:
+		var back: Vector3 = Vector3(_bull.global_position.x - p.x, 0.0, _bull.global_position.z - p.z).normalized()
+		p += back * NET_PULL * clampf(_reveal_t / 0.6, 0.0, 1.0)
+	return p
+
+
+func _net_wrist_target() -> Vector3:
+	return Ep2BullHero.wrist_for_fist_at(_bull, _net_point()) if _bull != null else _net_point()
+
+
+## His fist to the net's edge (final drawn pose, metres): the pull may only start on contact.
+func net_contact_error() -> float:
+	return Ep2BullHero.final_grip_world(_bull).distance_to(_net_point()) if _bull != null else INF
+
+
+func _tick_net_hand() -> void:
+	var hero: Ep2BullHero = _bull.get_node_or_null("BullHero") as Ep2BullHero if _bull else null
+	if hero != null and hero.hip != null:
+		hero.hip.rifle_up = 0.6 * _bull.reach_weight("Left") if _beat == Beat.REVEAL else 0.0     # the rifle stays upright in that fist
+	if _beat != Beat.REVEAL or _bull == null or _bull.reach_weight("Left") <= 0.05:
+		_net_wrist = Vector3.INF
+		return
+	_net_wrist = _net_wrist.lerp(_net_wrist_target(), 0.25) if _net_wrist.is_finite() else _net_wrist_target()
+	_bull.retarget_reach("Left", _net_wrist)
+
+
 func _reveal_quad() -> void:
 	_reveal_t = 0.0
+	var grab: Vector3 = QUAD_POS + NET_GRAB
+	var back: Vector3 = Vector3(_bull.global_position.x - grab.x, 0.0, _bull.global_position.z - grab.z).normalized() if _bull else Vector3.RIGHT
+	_net_delay.clear()
+	for bit in _cover_bits:
+		var n: Node3D = bit[0]
+		_net_delay.append(n.global_position.distance_to(grab) / NET_SPEED)
+	_net_back = back
 	_sfx("ep2_leaves_pull")
 	_noise(QUAD_POS, 10.0, "leaves")
 
@@ -2068,21 +2118,26 @@ func _flash(at: Vector3) -> void:
 
 
 func _tick_cover(delta: float) -> void:
+	_tick_net_hand()
 	if _reveal_t < 0.0 or _cover == null or not is_instance_valid(_cover):
 		return
-	if _reveal_t >= 1.5:
+	var last: float = 1.5 + (_net_delay.max() if not _net_delay.is_empty() else 0.0)
+	if _reveal_t >= last:
 		return
 	_reveal_t += delta
-	var k: float = clampf(_reveal_t / 1.5, 0.0, 1.0)
-	for bit in _cover_bits:
+	for i in _cover_bits.size():
+		var bit: Array = _cover_bits[i]
+		var local: float = _reveal_t - (float(_net_delay[i]) if i < _net_delay.size() else 0.0)
+		if local <= 0.0:
+			continue                          # the pull has not reached this clump yet: it stays put
+		var k: float = clampf(local / 1.5, 0.0, 1.0)
 		var n: Node3D = bit[0]
-		var vel: Vector3 = bit[1]
+		var vel: Vector3 = (bit[1] as Vector3) * 0.6 + _net_back * 2.2      # thrown the way the net is dragged
 		n.position += vel * delta * (1.0 - k * 0.6)
 		n.rotation.y += float(bit[2]) * delta
 		n.scale = Vector3.ONE * maxf(0.0, 1.0 - k * k)
-	if k >= 1.0:
+	if _reveal_t >= last:
 		_cover.visible = false
-		_reveal_t = 1.5
 
 
 func _tick_ride(delta: float) -> void:
