@@ -19,7 +19,7 @@ func _process_modification() -> void:
 		_sample_time = actor.motion_time
 		_base.clear()
 	var state: String = str(actor.get_meta("pose", "idle"))
-	if state in ["dead", "hit", "leap", "swipe", "bite"]:
+	if state in ["dead", "hit", "leap", "swipe", "bite", "slam"]:
 		return
 	var t: float = actor.motion_time + phase_offset
 	var breath: float = sin(t * (1.6 if state == "sleep" else 1.9)) * 0.012

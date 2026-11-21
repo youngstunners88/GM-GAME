@@ -72,7 +72,8 @@ func _ready() -> void:
 	var far := _brawler(world, Vector3(10, 0, 0), 12)
 	far._pick_attack(2.2)
 	check("right on top of the player a bear bites (at arm's length it rears and swipes)",
-		(close._attack_kind in ["bite", "swipe"]) and far._attack_kind == "swipe" and far._strike_at == Ep2BearKit.SWIPE_IMPACT)
+		(close._attack_kind in ["bite", "swipe"]) and far._attack_kind in ["swipe", "slam"]
+		and far._strike_at == (Ep2BearKit.SWIPE_IMPACT if far._attack_kind == "swipe" else Ep2BearKit.SLAM_IMPACT))
 	var landed: Array = []
 	var brain := _brawler(world, Vector3(0, 0, 20), 13)
 	brain.swiped.connect(func(_bb: Ep2BearBrain) -> void: landed.append(brain._attack_t))
@@ -86,7 +87,7 @@ func _ready() -> void:
 	check("a brawler beside the player attacks and lands one blow", landed.size() == 1,
 		"kind %s pose %s" % [brain._attack_kind, Ep2BearKit.pose_name(brain.actor)])
 	check("...with a real attack pose, struck at the clip's contact time (not the old fixed 0.55 s punch)",
-		Ep2BearKit.pose_name(brain.actor) in ["bite", "swipe"] and not landed.is_empty() and absf(float(landed[0]) - brain._strike_at) < 0.1)
+		Ep2BearKit.pose_name(brain.actor) in ["bite", "swipe", "slam"] and not landed.is_empty() and absf(float(landed[0]) - brain._strike_at) < 0.1)
 	var out_of_reach := _brawler(world, Vector3(30, 0, 0), 14)
 	var struck: Array = []
 	out_of_reach.swiped.connect(func(_bb: Ep2BearBrain) -> void: struck.append(1))
@@ -95,6 +96,34 @@ func _ready() -> void:
 	for i in 120:
 		out_of_reach.step(1.0 / 60.0, Vector3(30, 0, 8.0))   # he stepped away to 8 m before the blow: it misses
 	check("a blow only lands if the player is still in reach when it connects", struck.is_empty())
+	# Motion fix T2 (2026-11-21): the founder's Flow takes on the bear rig (streamed). The slam rears both paws overhead and crashes them down
+	# by its strike time; the archer's draw is one clip from the draw through the loose to the follow-through (never restarted at the loose).
+	var sb: Ep2Actor = Ep2BearKit.make_bear(world, Vector3(40, 0, 0), 2.2)
+	if sb.anim and sb.anim.has_animation(Ep2BearKit.SLAM):
+		Ep2BearKit.pose(sb, "slam")
+		var top: float = -INF
+		var at_strike: float = INF
+		var t: float = 0.0
+		while t < Ep2BearKit.SLAM_IMPACT + 0.1:
+			sb.step(1.0 / 60.0)
+			t += 1.0 / 60.0
+			var sk: Skeleton3D = sb.skeleton
+			var py: float = minf((sk.global_transform * sk.get_bone_global_pose(sk.find_bone("LeftHand")).origin).y,
+				(sk.global_transform * sk.get_bone_global_pose(sk.find_bone("RightHand")).origin).y)
+			top = maxf(top, py)
+			if t >= Ep2BearKit.SLAM_IMPACT - 0.02: at_strike = minf(at_strike, py)
+		check("the slam rears BOTH paws high (%.2f m) and brings them down by the strike (%.2f m)" % [top, at_strike], top > 1.75 and top - at_strike > 0.35)
+		var ab: Ep2Actor = Ep2BearKit.make_bear(world, Vector3(50, 0, 0), 2.2)
+		Ep2BearKit.add_bow(ab)
+		Ep2BearKit.pose(ab, "aim")
+		for i in 69: ab.step(1.0 / 60.0)              # 1.15 s: the brain looses here
+		var before: float = ab.anim.current_animation_position
+		Ep2BearKit.pose(ab, "shot")
+		ab.step(1.0 / 60.0)
+		check("the archer's loose falls on the take's release and the clip carries on through it (%.2f s of %.2f)" % [before, Ep2BearKit.ARCHER_RELEASE],
+			ab.current_clip() == Ep2BearKit.ARCHER and absf(before - Ep2BearKit.ARCHER_RELEASE) < 0.1 and ab.anim.current_animation_position > before)
+	else:
+		check("the bear mocap clips are streamed in (extras/bears)", false)
 	world.queue_free()
 	print("EP2_BEAR_ATTACKS: ALL PASS" if failures == 0 else "EP2_BEAR_ATTACKS: FAILED %d" % failures)
 	get_tree().quit(0 if failures == 0 else 1)

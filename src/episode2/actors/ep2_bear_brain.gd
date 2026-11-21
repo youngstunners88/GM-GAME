@@ -51,6 +51,7 @@ var _attack_t: float = -1.0          # >= 0: an attack is winding up / recoverin
 var _attack_kind: String = "leap"    # which brawler attack is playing: swipe (rear up, claw slash), bite (lunge + shake) or the old leap
 var _strike_at: float = 0.55         # seconds into the attack at which the blow connects
 var _reach: float = 2.6              # how close the player must still be when it connects
+var _attack_end: float = 1.5         # seconds the whole attack takes (the heavier mocap blows run longer, motion fix T2)
 var _cool: float = 0.0
 var _rng := RandomNumberGenerator.new()
 var _sense_t: float = 0.0
@@ -458,7 +459,7 @@ func _step_combat(delta: float, player: Vector3) -> void:
 			p["_struck"] = true
 			if d < _reach:
 				swiped.emit(self)
-		if _attack_t >= 1.5:
+		if _attack_t >= _attack_end:
 			_attack_t = -1.0
 			p["_struck"] = false
 			_cool = 1.0 + _rng.randf() * 0.6
@@ -483,6 +484,11 @@ func _step_combat(delta: float, player: Vector3) -> void:
 ## head-first and bites, shaking its head. Falls back to the old punch clip if the combat clips are not on this rig.
 func _pick_attack(d: float) -> void:
 	var has_clips: bool = actor != null and actor.anim != null and actor.anim.has_animation(Ep2BearKit.SWIPE)
+	# motion fix T2: about half the arm's-length attacks are the heavier slam from the founder's take when it is streamed in
+	# (deterministic per bear and moment: never consumes the seeded stream)
+	var slam: bool = actor != null and actor.anim != null and actor.anim.has_animation(Ep2BearKit.SLAM) \
+		and fmod(_t * 5.3 + float(get_instance_id() % 7) * 0.37, 1.0) < 0.5
+	_attack_end = 1.5
 	if not has_clips:
 		_attack_kind = "leap"
 		_strike_at = 0.55
@@ -491,6 +497,11 @@ func _pick_attack(d: float) -> void:
 		_attack_kind = "bite"
 		_strike_at = Ep2BearKit.BITE_IMPACT
 		_reach = 2.3
+	elif slam:
+		_attack_kind = "slam"
+		_strike_at = Ep2BearKit.SLAM_IMPACT
+		_reach = 2.6
+		_attack_end = Ep2BearKit.clip_len(actor, Ep2BearKit.SLAM) / Ep2BearKit.SLAM_SPEED
 	else:
 		_attack_kind = "swipe"
 		_strike_at = Ep2BearKit.SWIPE_IMPACT

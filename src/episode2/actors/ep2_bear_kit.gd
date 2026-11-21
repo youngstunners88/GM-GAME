@@ -23,6 +23,17 @@ const SWIPE := "Bear_Swipe"
 const BITE := "Bear_Bite"
 ## Seconds into each attack clip at which the blow connects (swipe: paw lands at frame 15; bite: jaws close at frame 12, 30 fps).
 const SWIPE_IMPACT := 0.5
+## MOTION FIX T2 (2026-11-21): a heavier brawler blow and a real archer's draw from the founder's Flow takes (bear_enraged.mp4, bear_archer.mp4 ->
+## MediaPipe -> this 24-joint rig, tools/meshy/extract_clip.gd). STREAMED (ep2_extras.pck): without them the bear keeps swipe/bite and the idle
+## stand-in for the draw. Strike/release seconds are measured in the takes (wrist speed peaks) and scaled by each clip's play speed.
+const MOCAP_DIR := "res://src/episode2/extras/bears/"
+const SLAM := "Bear_Slam"                  # rears up, both paws high, crashes them down (take 1.0-3.6 s). The take's lunge/maul was dropped: it runs toward the camera and MediaPipe lost it
+const ARCHER := "Bear_Archer"              # nock, draw to the anchor, hold, release, follow-through, lower (take 2.3-6.6 s)
+const SLAM_SPEED := 1.6
+const SLAM_IMPACT := 2.0 / SLAM_SPEED      # paws hit at 3.0 s of the take
+const ARCHER_RELEASE := 2.6                # seconds into Bear_Archer the string is loosed (4.9 s of the take)
+## The archer's clip is played so its release lands on the brain's loose time (Ep2BearBrain looses at 1.15 s of its draw).
+const ARCHER_SPEED := ARCHER_RELEASE / 1.15
 const BITE_IMPACT := 0.42
 const SIT := "Chair_Sit_Idle_M"
 const READ_SIT := "Bear_Read_Seat"
@@ -54,6 +65,14 @@ static func make_bear(parent: Node3D, pos: Vector3, height: float = 2.2) -> Ep2A
 			b.anim.get_animation(c).loop_mode = Animation.LOOP_LINEAR
 		for c in [SWIPE, BITE]:
 			b.anim.get_animation(c).loop_mode = Animation.LOOP_NONE
+	if b.anim:
+		var lib0: AnimationLibrary = b.anim.get_animation_library("")
+		for c in [SLAM, ARCHER]:
+			var path: String = MOCAP_DIR + c.to_lower() + ".res"
+			if Ep2Extras.has(path) and not lib0.has_animation(c):
+				var clip: Animation = (load(path) as Animation).duplicate()
+				clip.loop_mode = Animation.LOOP_NONE
+				lib0.add_animation(c, clip)
 	if b.anim:
 		var library: AnimationLibrary = b.anim.get_animation_library("")
 		if not library.has_animation(READ_SIT):
@@ -150,7 +169,7 @@ static func pose(b: Ep2Actor, state: String) -> void:
 		contact.targets.clear()
 		contact.finger_directions.clear()
 		contact.prop_frame = null
-		var carrying_bow: bool = b.has_meta("bow") and state not in ["dead", "sleep", "hit", "leap", "swipe", "bite", "sit_read"]
+		var carrying_bow: bool = b.has_meta("bow") and state not in ["dead", "sleep", "hit", "leap", "swipe", "bite", "slam", "sit_read"]
 		contact.influence = 1.0 if reading or carrying_bow else 0.0
 		if reading:
 			var magazine: Node3D = b.get_meta("prop_magazine")
@@ -184,15 +203,23 @@ static func pose(b: Ep2Actor, state: String) -> void:
 				b.anim.seek(_clip_len(b, FALL) - 0.05, true)
 			b.anim.speed_scale = -1.6
 		"aim":
-			b.play(IDLE, 1.0, 0.3)       # authored contact draw; the old scan clip throws the body outside bow reach
+			# the archer's whole body draws (shoulders back, bow arm out, anchor at the jaw); the paws stay on grip and nock by contact
+			if b.anim and b.anim.has_animation(ARCHER):
+				b.play(ARCHER, ARCHER_SPEED, 0.2)
+			else:
+				b.play(IDLE, 1.0, 0.3)   # authored contact draw; the old scan clip throws the body outside bow reach
 		"shot":
-			b.play(IDLE, 1.0, 0.12)      # string/paw release and local recoil own the shot phase
+			# the same clip carries on through the release and follow-through (never restarted at the loose)
+			if b.current_clip() != ARCHER:
+				b.play(IDLE, 1.0, 0.12)  # string/paw release and local recoil own the shot phase
 		"leap":
 			b.play(LEAP, 1.15, 0.12)
 		"swipe":
 			b.play(SWIPE, 1.0, 0.12)
 		"bite":
 			b.play(BITE, 1.0, 0.12)
+		"slam":
+			b.play(SLAM, SLAM_SPEED, 0.12)
 		"stomp":
 			b.play(STOMP, 1.0, 0.2)
 		"hit":
