@@ -27,7 +27,7 @@ set -euo pipefail
 
 GODOT_VERSION="${GODOT_VERSION:-4.3-stable}"
 CACHE_DIR="${GODOT_CACHE_DIR:-$(pwd)/.godot-cache}"
-TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION/-/.}"
+TEMPLATE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/godot/export_templates/${GODOT_VERSION/-/.}"
 
 mkdir -p "$CACHE_DIR"
 cd "$CACHE_DIR"
@@ -67,7 +67,7 @@ else
 fi
 
 # --- Web export templates: skip if the target version dir is already populated ---
-if [ -d "$TEMPLATE_DIR" ] && [ -n "$(ls -A "$TEMPLATE_DIR" 2>/dev/null)" ]; then
+if [ -s "$TEMPLATE_DIR/web_nothreads_release.zip" ]; then
   echo "Export templates already installed: $TEMPLATE_DIR" >&2
 else
   BASE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}"

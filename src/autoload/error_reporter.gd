@@ -93,7 +93,7 @@ func _boot() -> void:
 	  var env = 'unknown';
 	  try {
 	    var h = String(location.hostname || '');
-	    if (h.indexOf('itch.io') !== -1 || h.indexOf('hwcdn.net') !== -1) env = 'itch';
+	    if (['itch.io', 'itch.zone', 'hwcdn.net'].some(function(domain){ return h === domain || h.endsWith('.' + domain); })) env = 'itch';
 	    else if (h.indexOf('vercel.app') !== -1) env = 'vercel';
 	    else if (h.indexOf('netlify') !== -1) env = 'netlify';
 	    else if (h.indexOf('pages.dev') !== -1) env = 'cloudflare';
@@ -117,6 +117,7 @@ func _boot() -> void:
 	      window.Sentry.init({
 	        dsn: '%s',
 	        release: '%s',
+	        dist: '%s',
 	        environment: env,
 	        sendDefaultPii: false,
 	        tracesSampleRate: 0,
@@ -168,7 +169,7 @@ func _boot() -> void:
 	    try { if (window.Sentry && window.Sentry.setUser) window.Sentry.setUser({id:id}); } catch(_){}
 	  };
 	})();
-	""" % [_js_dsn(_dsn), _js_ident(_release)]
+	""" % [_js_dsn(_dsn), _js_ident(_release), _js_ident(GameManager.BUILD_TAG)]
 	JavaScriptBridge.eval(js, true)
 	_loaded = true
 	# Pseudonymous, salted — see the privacy note above.

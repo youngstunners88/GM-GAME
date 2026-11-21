@@ -341,6 +341,15 @@ jobs:
           grep -q 'QUIZ_PROTOCOL_ONLY: ALL PASS' quiz-tests.log
           timeout 90 "$GODOT_BIN" --headless res://tests/nft_issuer_test.tscn 2>&1 | tee nft-tests.log
           grep -q 'NFT_ISSUER: ALL PASS' nft-tests.log
+          (
+            node scripts/icp-price-fixture.mjs 8788 > icp-fixture.log 2>&1 &
+            fixture_pid=$!
+            trap 'kill "$fixture_pid" 2>/dev/null || true' EXIT
+            curl --silent --show-error --fail --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8788/prices > /dev/null
+            kill -0 "$fixture_pid"
+            timeout 90 "$GODOT_BIN" --headless res://tests/icp_contract_test.tscn -- http://127.0.0.1:8788 | tee icp-contract.log
+            grep -q 'ICP_CONTRACT: ALL PASS' icp-contract.log
+          )
           timeout 180 "$GODOT_BIN" --headless res://tests/transition_feedback_test.tscn 2>&1 | tee transition-feedback-tests.log
           grep -q 'TRANSITION_FEEDBACK: ALL PASS' transition-feedback-tests.log
           timeout 180 "$GODOT_BIN" --headless res://tests/transition2_test.tscn 2>&1 | tee transition2-tests.log
@@ -918,6 +927,29 @@ jobs:
             exit 1
           fi
 
+      - name: Configure web analytics for this export
+        env:
+          POSTHOG_TOKEN: ${{ secrets.POSTHOG_TOKEN }}
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("config.json")
+          config = json.loads(path.read_bytes())
+          analytics = config["analytics"]
+          token = os.environ.get("POSTHOG_TOKEN", "")
+          if analytics["enabled"] and token:
+              if not re.fullmatch(r"phc_[A-Za-z0-9]{20,80}", token):
+                  raise SystemExit("POSTHOG_TOKEN must be a public project write key")
+              analytics["posthog_token"] = token
+              path.write_text(json.dumps(config, indent=2) + "\n")
+          elif analytics["enabled"]:
+              print("::warning::POSTHOG_TOKEN is unavailable. This export has game analytics disabled.")
+          PYTHON
+
       - name: Export game to Web
         id: export
         run: |
@@ -941,6 +973,15 @@ jobs:
             cat export.log
             exit 1
           fi
+          # config.json is exported verbatim. Verify the complete runtime config without logging its contents.
+          python3 - <<'PYTHON'
+          import mmap
+          from pathlib import Path
+
+          with open("web/game/index.pck", "rb") as stream, mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as pack:
+              if pack.find(Path("config.json").read_bytes()) < 0:
+                  raise SystemExit("Exported core pack does not contain the configured config.json")
+          PYTHON
           # Episode 2 extras (founder 2026-10-19: "Stream Episode 2 extras"): res://src/episode2/extras/ is excluded from
           # index.pck above and packed here into ep2_extras.pck, deployed next to it; the game downloads and mounts it when
           # Episode 2 starts (src/episode2/ep2_extras.gd). Skill: ep2-armory-two-story.
@@ -985,7 +1026,7 @@ jobs:
         # The .pck on disk already carries it; the repo does not need it.
         if: always()
         run: |
-          git checkout -- src/autoload/game_manager.gd || true
+          git restore -- src/autoload/game_manager.gd config.json
           git status --porcelain
 
       - name: Verify export output
