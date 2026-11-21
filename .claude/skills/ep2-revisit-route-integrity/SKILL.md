@@ -25,7 +25,7 @@ teleports (`ep2-one-world-no-e-teleport`), not blackouts (`ep2-no-blackouts`).
 | `src/episode2/chamber/gold_town.gd` `can_mount_departure` | the first-departure mount; closed on a revisit |
 | `src/episode2/chamber/logans_lake.gd` (the `WALK_ON_Z` hand-over, `_sharps_told`) | the Sharps check before the one-way ridge |
 | `tests/ep2_audit_1117_test.gd` / `.tscn` | the gate (`EP2_AUDIT_1117: ALL PASS`, 22 checks), in CI |
-| `tests/ep2_world_routes_test.gd` | the older route gate (29 checks); keep both green |
+| `tests/ep2_world_routes_test.gd` | the older route gate (39 checks since the auction-road loop); keep both green |
 
 ## The four rules
 
@@ -39,7 +39,8 @@ Every row has a return row, on the same physical line, with hysteresis. Keep thi
 | lake trail -> lake | shore run done, lake parked | lake -> trail: `z < SPAWN.z - 0.7` |
 | gold town -> woods | `z < 1150` (only before the first ride out; afterwards the trail owns that ground) | woods -> town: revisit, `z > 1152`, trail NOT parked |
 | woods <-> mine lift, mine lift <-> facility | the lift pad / the doorway plane | symmetric already |
-| lake -> day-88 ridge, ridge -> lake (after day-88), lake -> auction road | story hand-overs | **ONE-WAY** (see rule 4) |
+| lake -> auction road (after the first ride down it) | lake: `_near_auction_sign()`, road parked | road -> lake: `road_s(p) < START_S - 1` (added by the auction session, 2026-11-17) |
+| lake -> day-88 ridge, ridge -> lake (after day-88), lake -> auction road (first time) | story hand-overs | **ONE-WAY** (see rule 4) |
 
 Once he has ridden out of town, the ground between town `z` 1150 and 1348 (Dude's ranch, the lake road) belongs to the **trail**, which
 carries the town's own streets (`adopt_departure`). Never route a revisit into the town room on that ground.
@@ -77,7 +78,7 @@ A new "needs X" is a finding until you can name the room that turns him round.
    fails without the fix, then fix.
 
 ## Definition of Done
-- [ ] `tests/ep2_audit_1117_test.tscn` prints `EP2_AUDIT_1117: ALL PASS` (pinned check count updated) and `tests/ep2_world_routes_test.tscn` prints `29 checks, 0 failed`.
+- [ ] `tests/ep2_audit_1117_test.tscn` prints `EP2_AUDIT_1117: ALL PASS` (pinned check count updated) and `tests/ep2_world_routes_test.tscn` prints `39 checks, 0 failed`.
 - [ ] The new or changed check was seen to FAIL on the unfixed code (paste both lines).
 - [ ] The gates of every room touched are green (`ep2_gold_town`, `ep2_lake_trail`, `ep2_logans_lake`, `ep2_horse_and_logan`, `ep2_river_cover`, `ep2_fix_document`, `ep2_playtest_dude`).
 - [ ] **Hard-refresh proof on the live build** (Ctrl+Shift+R on the itch page, BUILD tag read from the title screen): `?playtest=dude`, buy
