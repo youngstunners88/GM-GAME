@@ -47,6 +47,12 @@ const TOWN_KIT := "res://src/episode2/extras/town/town_kit2.glb"
 const TOWN_FURNITURE := "res://src/episode2/extras/town/town_furniture.glb"
 ## The townspeople (Ep2TownPeople), one rigged GLB each.
 const PEOPLE_DIR := "res://src/episode2/extras/people/"
+## The town Stockpile (east back lot) and the Reserve (under Fort Knox's hill), founder prompt 2026-11-21: the depot model, the kit that
+## holds the wheelbarrows and the Reserve, the script that places both, and the depot's workers (MPFB2 folk in extras/folk_mpfb/).
+const STOCKPILE := "res://src/episode2/extras/stockpile/stockpile.glb"
+const RESERVE := "res://src/episode2/extras/stockpile/stockpile_kit.glb"      # its "Reserve" node
+const STOCKPILE_SITE := "res://src/episode2/extras/stockpile/stockpile_site.gd"
+const STOCKPILE_WORKERS := "res://src/episode2/extras/stockpile/stockpile_workers.gd"
 ## The jailhouse (founder lock 2026-10-20): building + cells + nav points, its painted sign, and the accomplice in cell A.
 const JAIL := "res://src/episode2/extras/jail/jailhouse.glb"
 const JAIL_SIGN := "res://src/episode2/extras/jail/sign_JAIL.png"

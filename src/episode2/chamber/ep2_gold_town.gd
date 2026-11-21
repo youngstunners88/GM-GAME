@@ -322,6 +322,8 @@ static var jail_blocks: Array = []
 static var jail_lights: Array = []
 ## Where the desert scatter (scrub, rock) keeps clear around the jailhouse, so it does not stand in brush (x, z rectangle).
 const JAIL_CLEAR := Rect2(-46.0, 1390.0, 24.0, 20.0)
+## ...and around the Stockpile, its wheelbarrow loop and the Reserve (only when they are drawn: Ep2Extras.STOCKPILE).
+const STOCKPILE_CLEAR := Rect2(19.0, 1428.0, 26.0, 66.0)
 
 
 ## The yaw that turns a kit piece's local +Z front toward the street.
@@ -465,6 +467,8 @@ static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Di
 			_flag(fort, (fa as Node3D).position)
 	Ep2TownLife.build(root, props)                      # horses at the rails, the river, the railway and the train
 	Ep2StableYard.build(root, props, walls)              # original surface stable, shared by the quad approach and town
+	if Ep2Extras.has(Ep2Extras.STOCKPILE_SITE):         # the Stockpile (east back lot) and the Reserve: streamed, same coordinates in every room
+		load(Ep2Extras.STOCKPILE_SITE).build_site(root, walls, props)
 	Ep2TownPosters.build(root, props)                   # the wanted posters: notice board, shop fronts, the jail (streamed images)
 	_balcony_furniture(root, kit)                       # two chairs and a little table on the saloon's balcony (its drinkers sit there)
 	if interiors:
@@ -1073,6 +1077,7 @@ static func _road_dist(p: Vector2, road: Array) -> float:
 static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world_end_z: float, scrub_mesh: Mesh, rock_mesh: Mesh,
 		scrub_mat: Material, rock_mat: Material, z_from: float = -1e9) -> void:
 	var rocks: Array = []
+	var sp_clear: bool = Ep2Extras.has(Ep2Extras.STOCKPILE)
 	var z: float = forest_end_z - 100.0
 	while z < world_end_z:
 		if z + 60.0 < z_from:
@@ -1087,7 +1092,7 @@ static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world
 			var near_road: float = _road_dist(p, road)
 			var in_town: bool = (absf(p.x) < 26.0 and p.y > TOWN_Z - 6.0 and p.y < TOWN_Z + 90.0) \
 				or (p.y > RIVER_Z - RIVER_W and p.y < TRACK_Z + 8.0) \
-				or JAIL_CLEAR.has_point(p) \
+				or JAIL_CLEAR.has_point(p) or (sp_clear and STOCKPILE_CLEAR.has_point(p)) \
 				or Ep2StableYard.PADDOCK.grow(6.0).has_point(p) or Ep2StableYard.ACCESS_CLEAR.has_point(p)
 			var open_k: float = clampf((p.y - (forest_end_z - 100.0)) / 120.0, 0.0, 1.0)      # scrub takes over as the pines thin
 			if near_road > 3.5 and not in_town and h1 < 0.55 * open_k:
