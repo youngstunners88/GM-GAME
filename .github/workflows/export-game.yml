@@ -527,6 +527,11 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_back_lot_miners_test.tscn > back-lot-miners-tests.log 2>&1
           grep -q 'BACK_LOT_MINERS: ALL PASS' back-lot-miners-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' back-lot-miners-tests.log; then exit 1; fi
+          # The town Stockpile + Reserve (founder 2026-11-21): off Main Street, seen from the street gap, workers clear, the barrow loop
+          # clear of every wall and prop, barrows roll/load/tip/stop for Lil Blunt, gunfire stops all, the Reserve reached on foot.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_stockpile_test.tscn > stockpile-tests.log 2>&1
+          grep -q 'STOCKPILE: ALL PASS' stockpile-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' stockpile-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_lake_ecotone_test.tscn > lake-ecotone-tests.log 2>&1
           grep -q 'LAKE_ECOTONE: ALL PASS' lake-ecotone-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-ecotone-tests.log; then exit 1; fi
