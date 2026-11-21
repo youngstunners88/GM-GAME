@@ -192,7 +192,7 @@ for m in me.materials:
 for img in bpy.data.images:
     if img.size[0] == 0:
         continue
-    side = 512 if "normal" in img.name.lower() else int(os.environ.get("SP_TEX", "1024"))
+    side = 512 if "normal" in img.name.lower() else int(os.environ.get("SP_TEX", "768"))
     if img.size[0] > side:
         img.scale(side, side)
     print("IMG", img.name, img.size[:])

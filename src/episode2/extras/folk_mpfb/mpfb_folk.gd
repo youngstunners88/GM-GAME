@@ -1,12 +1,12 @@
 extends RefCounted
 ## THE MPFB2 BACKGROUND FOLK (founder prompt STOCKPILE_RESERVE_PROMPT 2026-11-21): the Stockpile's six workers and the auction hall's
 ## five extra people. Made with MPFB2 from MakeHuman's CC0 assets (tools/ep2_blender/build_mpfb_folk.py), all on ONE skeleton, so a
-## single clip library (folk_clips.glb: Idle, Walk, Dig, Lift, Tend, Talk, Bid - CMU mocap, tools/ep2_motion/clips_stockpile.json) is
+## single clip library (folk_clips.glb: Idle, Walk, Dig, Lift, Tend, Bid - CMU mocap, tools/ep2_motion/clips_stockpile.json) is
 ## copied onto every figure here instead of being baked into eleven GLBs. Streamed (Ep2Extras); loaded by path, no class_name.
 
 const DIR := "res://src/episode2/extras/folk_mpfb/"
 const CLIPS := DIR + "folk_clips.glb"
-const LOOPING := ["Idle", "Walk", "Dig", "Lift", "Tend", "Talk"]
+const LOOPING := ["Idle", "Walk", "Dig", "Lift", "Tend"]
 
 static var _src_clips: Dictionary = {}       # clip name -> Animation (track paths relative to the donor's Skeleton3D, prefix stripped)
 static var _src_hips_y: float = 0.0          # the donor's hips rest height (the clips' hip bob and crouch are scaled per figure)

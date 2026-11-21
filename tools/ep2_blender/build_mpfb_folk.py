@@ -59,7 +59,7 @@ FOLK = {
 PROXY = "proxy741"
 TEX = 256
 SMALL_TEX = 128
-CLOTH_RATIO = float(os.environ.get("FOLK_CLOTH_RATIO", "0.22"))
+CLOTH_RATIO = float(os.environ.get("FOLK_CLOTH_RATIO", "0.16"))
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.preferences.addon_enable(module="bl_ext.user_default.mpfb")
@@ -136,7 +136,7 @@ def build(fid, spec):
         is_body = PROXY in low
         if not is_body:
             d = o.modifiers.new("dec", "DECIMATE")
-            d.ratio = 0.2 if "shoes" in low else (0.35 if any(h in low for h in ("bob0", "braid", "short0", "ponytail", "long0", "afro")) else CLOTH_RATIO)
+            d.ratio = 0.15 if "shoes" in low else (0.25 if any(h in low for h in ("bob0", "braid", "short0", "ponytail", "long0", "afro")) else CLOTH_RATIO)
             # the armature modifier must stay last
             while o.modifiers[-1].name != "dec" and False:
                 pass

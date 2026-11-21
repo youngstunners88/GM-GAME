@@ -16,7 +16,7 @@ const EXTRAS: Array = [
 	["au_bidder", 1.76, 6.6, 16.8, "Idle", "bid"],
 	["au_lady", 1.64, -6.8, 17.4, "Idle", "clap"],
 	["au_youth", 1.80, 6.8, 9.8, "Idle", "clap"],
-	["au_matron", 1.60, -7.2, 9.0, "Talk", "clap"],
+	["au_matron", 1.60, -7.2, 9.0, "Idle", "clap"],
 	["au_elder", 1.66, -3.0, 7.0, "Idle", ""],
 ]
 
