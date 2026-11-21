@@ -213,6 +213,7 @@ var _glass_node: Node3D = null
 var _bull_guard_rifle: Node3D = null # Bull's own gun, separate from the traded reward
 var _bull_rest_arm: Ep2BullRestArm = null
 var _bull_rifle_ready: bool = false
+var _bull_hip: Ep2BullHipFire = null
 var _bull_motion: Ep2MotionLayer = null
 var _bull_shot_time: float = -99.0
 var _cigar_tip: MeshInstance3D = null
@@ -1975,14 +1976,22 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	seat.name = "BullSeat"
 	_build_bull_props()
 	_bull_rest_arm = Ep2BullRestArm.new()
+	_bull_rest_arm.hold_left = Ep2BullHero.PAINTED_GLB    # rifle arm still from the first (seated) frame
 	_bull.skeleton.add_child(_bull_rest_arm)
 	_bull_motion = Ep2MotionLayer.new()
 	_bull_motion.actor = _bull
 	_bull_motion.bull_carry = true
 	_bull.skeleton.add_child(_bull_motion)
+	_bull_hip = Ep2BullHero.add_hip_fire(_bull)
 	_bull.pose_stepped.connect(func(dt: float) -> void:
 		_bull_motion.aim_weight = move_toward(_bull_motion.aim_weight, 1.0 if _bull_rifle_ready else 0.0, dt * 4.0)
-		_bull_motion.recoil = exp(-maxf(0.0, _bull.motion_time - _bull_shot_time) * 14.0) if _bull.motion_time - _bull_shot_time < 0.5 else 0.0)
+		_bull_motion.recoil = exp(-maxf(0.0, _bull.motion_time - _bull_shot_time) * 14.0) if _bull.motion_time - _bull_shot_time < 0.5 else 0.0
+		if _bull_hip:
+			# The demo hip fire (motion fix T1): left fist only, barrel level at the plate he breaks.
+			_bull_hip.weight = _bull_motion.aim_weight
+			_bull_hip.recoil = _bull_motion.recoil
+			_bull_hip.has_target = _bull_rifle_ready
+			_bull_hip.aim_target = get_mold_position(1))
 	_bull.skeleton.skeleton_updated.connect(_sync_bull_hand_props)
 
 
@@ -2069,8 +2078,6 @@ func _sync_bull_hand_props() -> void:
 	if _bull == null or _bull.skeleton == null:
 		return
 	var sk: Skeleton3D = _bull.skeleton
-	var forward: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.FORWARD
-	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT
 	var carrying_trade: bool = _rifle_node != null and _rifle_node.get_parent() == _bull.holder("RightHand")
 	if _bull_guard_rifle:
 		# The painted Bull already holds his rifle; keep the prop (the aim code reads its muzzle) but never draw it.
@@ -2079,36 +2086,18 @@ func _sync_bull_hand_props() -> void:
 	var hand: int = sk.find_bone("RightHand" if carrying_trade else "LeftHand")
 	if gun == null or not gun.visible or hand < 0:
 		return
-	var hand_world: Transform3D = sk.global_transform * sk.get_bone_global_pose(hand)
-	var anchor: Vector3 = Ep2BullHero.RIGHT_PALM_M if carrying_trade else Ep2BullHero.LEFT_PALM_M
-	var palm: Vector3 = hand_world * (anchor * _bull.height_m / 2.4 / sk.global_transform.basis.get_scale().x)
 	if carrying_trade:
+		# The traded reward Winchester rides in his RIGHT fist on the walk to the counter (unchanged).
+		var hand_world: Transform3D = sk.global_transform * sk.get_bone_global_pose(hand)
+		var palm: Vector3 = hand_world * (Ep2BullHero.RIGHT_PALM_M * _bull.height_m / 2.4 / sk.global_transform.basis.get_scale().x)
 		var stock_axis: Vector3 = Vector3(-1.0, 0.15, -0.10).normalized()
 		var depth: Vector3 = stock_axis.cross(Vector3.UP).normalized()
 		var up: Vector3 = depth.cross(stock_axis).normalized()
 		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * (Ep2BullHero.GRIP_ALONG * 1.05))
 		return
-	if _bull_rifle_ready:
-		# Restrained hip fire: preserve the sculpted fist/pouch; the free left fist holds the rifle.
-		var fwd_front: Vector3 = -forward
-		var muz: Vector3 = (fwd_front + Vector3.UP * 0.06).normalized()
-		var sd: Vector3 = muz.cross(Vector3.UP).normalized()
-		var lf: Vector3 = sd.cross(muz).normalized()
-		gun.global_transform = Transform3D(Basis(sd, lf, muz).scaled(Vector3.ONE * BULL_RIFLE_SCALE),
-			palm + muz * (Ep2BullHero.GRIP_ALONG * BULL_RIFLE_SCALE))
-		return
-	# His OWN Winchester: shoulder carry. Muzzle up past his right shoulder, tipped a little out and back, gripped
-	# at the wrist of the stock, so its whole silhouette stands clear of his body from the front and both sides.
-	# (The old low diagonal hid it behind his hip: founder 2026-10-04 "we still can't see his rifle".)
-	# Rifle GLB: 1.2 m, muzzle +Z, centred (skill ep2-handoff-props). `across` is his LEFT, `forward` his BACK.
-	var muzzle: Vector3 = (Vector3.UP * 0.94 - across * 0.20 + forward * 0.16).normalized()
-	var side: Vector3 = muzzle.cross(-across).normalized()
-	if side.dot(forward) < 0.0:
-		side = -side
-	var lift: Vector3 = muzzle.cross(side).normalized()     # right-handed: side x lift = muzzle
-	var s: float = BULL_RIFLE_SCALE
-	gun.global_transform = Transform3D(Basis(side, lift, muzzle).scaled(Vector3.ONE * s),
-		palm + muzzle * (Ep2BullHero.GRIP_ALONG * s))
+	# His OWN Winchester (on the painted Bull the invisible aim/grip reference): the ONE placement shared with the
+	# woods and every Ep2BullHero scene - exactly on the rifle sculpted into his left fist, whatever the arm does.
+	Ep2BullHero.place_on_rifle(gun, _bull, BULL_RIFLE_SCALE)
 
 
 func _stand_up_done() -> bool:
@@ -2337,6 +2326,7 @@ func _animate_bull(delta: float) -> void:
 		_bull.play(BULL_IDLE)
 	if _bull_rest_arm:
 		_bull_rest_arm.resting = _bull.reach_weight("Right") < 0.01 and _bull.reach_weight("Left") < 0.01 and (_bull.current_clip() == BULL_IDLE or _bull.is_walking())
+		_bull_rest_arm.hold_left = Ep2BullHero.PAINTED_GLB and _bull.reach_weight("Left") < 0.01    # the rifle hand (motion fix T1)
 	# Rest means REST: no idle sips, no waving. Arms only move for an action beat (grab, hand-over).
 	_follow_player_in_fps(delta)
 	if _bull_blocker_i >= 0 and _bull_blocker_i < _blockers.size():
@@ -3010,7 +3000,7 @@ func _demo_fire() -> void:
 	_play_winchester()
 	if _bull:
 		_bull_shot_time = _bull.motion_time
-		var muzzle: Vector3 = _bull_guard_rifle.to_global(Vector3(0, 0, 0.60)) if _bull_guard_rifle else _bull.position + _bull_front() * 1.5 + Vector3.UP * 1.2
+		var muzzle: Vector3 = Ep2BullHero.muzzle_world(_bull)    # the real barrel, sculpted into his fist
 		var lt := OmniLight3D.new()
 		lt.light_color = Color(1.0, 0.8, 0.5)
 		lt.light_energy = 5.0

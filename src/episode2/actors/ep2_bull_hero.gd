@@ -24,12 +24,20 @@ var rest_arm: Ep2BullRestArm = null
 var _hand: int = -1
 var _scale: float = 1.5
 var motion: Ep2MotionLayer = null
+var hip: Ep2BullHipFire = null
 var aim_target: Vector3 = Vector3.ZERO
 var aim_until: float = -1.0
 var shot_time: float = -99.0
-var _muzzle_dir: Vector3 = Vector3.UP
-## Source skin surface landmarks: left vertex 61101, right vertex 28464 (native 2.4 m).
-const LEFT_PALM_M := Vector3(0.088063, -0.086519, -0.038417)
+## Hand-bone-local landmarks in metres of the native 2.4 m model (scaled by height_m / 2.4 / skeleton scale at runtime).
+## LEFT_PALM_M is the centre of the painted left fist ON the sculpted rifle's axis (motion fix 2026-11-21, measured from
+## the GLB: barrel PCA axis at fist height). The old value (vertex 61101 of the pre-2026-10-16 Tripo body) sat 0.196 m
+## off the painted fist, so every grip number measured a point beside his hand. Right: vertex 28464 (old body, unused
+## by the painted rifle).
+const LEFT_PALM_M := Vector3(0.1346, -0.2094, 0.1168)
+## Muzzle tip of the sculpted rifle, and the barrel's direction, in the same LeftHand frame (rigid to the fist since
+## tools/ep2_forge/bull_rifle_rigid.py). Shots, flashes and the invisible aim prop all come from these.
+const RIFLE_MUZZLE_M := Vector3(0.998, -0.2025, 0.174)
+const RIFLE_AXIS := Vector3(0.9989, -0.0155, 0.0439)
 const RIGHT_PALM_M := Vector3(0.020910, 0.045520, -0.045412)
 var _palm_m := Vector3.ZERO
 
@@ -81,11 +89,13 @@ func _setup(with_rifle: bool) -> void:
 		grade(bull.model)
 	rest_arm = Ep2BullRestArm.new()
 	rest_arm.name = "BullHeroRestArm"
+	rest_arm.hold_left = PAINTED_GLB
 	sk.add_child(rest_arm)
 	motion = Ep2MotionLayer.new()
 	motion.actor = bull
 	motion.bull_carry = true
 	sk.add_child(motion)
+	hip = add_hip_fire(bull)
 	bull.pose_stepped.connect(_step)
 	sk.skeleton_updated.connect(_sync_rifle)
 	_add_lamp(sk)
@@ -94,34 +104,20 @@ func _setup(with_rifle: bool) -> void:
 	if not with_rifle or _hand < 0 or not ResourceLoader.exists(RIFLE_MODEL):
 		return
 	_scale = RIFLE_SCALE_PER_M * bull.height_m
-	# Desired rest frame in skeleton space: muzzle up with a slight forward/outward tip, the rifle's TOP (lift, +Y)
-	# facing out to his left so the side plate - lever, receiver, stock - reads in profile from the front (sheet).
-	var muzzle := Vector3(0.06, 1.0, 0.10).normalized()
-	var lift := Vector3(1.0, 0.0, 0.0)
-	var side := lift.cross(muzzle).normalized()           # right-handed: side x lift = muzzle
-	lift = muzzle.cross(side).normalized()
-	# GRIP = the hand bone itself (a little past the wrist toward the knuckles), not a measured rest point: the old
-	# GRIP_REST sat ~0.2 m off the drawn fist and the rifle hovered beside him (founder 2026-10-11 "WHY THE SEPARATION").
-	var rest: Transform3D = sk.get_bone_global_rest(_hand)
-	var sk_scale: float = maxf(sk.global_transform.basis.get_scale().x, 0.0001)
-	var grip: Vector3 = rest.origin + rest.basis * (_palm_m / sk_scale)
-	grip += muzzle * (GRIP_ALONG * _scale / sk_scale)
 	rifle = (load(RIFLE_MODEL) as PackedScene).instantiate() as Node3D
 	rifle.name = "BullHeroRifle"
 	_solid(rifle)
-	# Child of the LeftHand BoneAttachment3D: it follows the FINAL drawn hand (after every modifier), so the rifle can
-	# never part from his fist - no per-frame sync to drift.
+	# Kept under the LeftHand holder for scene-tree ownership, but placed in WORLD space from the final drawn hand
+	# every skeleton update (place_on_rifle), so it sits exactly on the sculpted rifle whatever the arm does.
 	var hold: Node3D = bull.holder("LeftHand")
 	if hold == null:
 		return
 	hold.add_child(rifle)
+	rifle.top_level = true
 	# Painted model: its own rifle is already in his left fist. This prop stays as the invisible grip/aim reference
 	# (recoil, muzzle point and the CI grip test measure it), so the rifle is never drawn twice.
 	rifle.visible = not PAINTED_GLB
-	# The holder is the hand bone's frame in METRES (Ep2Actor.holder undoes the rig's cm scale).
-	var rb: Basis = rest.basis.orthonormalized()
-	rifle.transform = Transform3D(rb.inverse() * Basis(side, lift, muzzle) * Basis.from_scale(Vector3.ONE * _scale),
-		rb.inverse() * (grip - rest.origin) * sk_scale)
+	place_on_rifle(rifle, bull, _scale)
 
 
 func _add_lamp(sk: Skeleton3D) -> void:
@@ -164,15 +160,18 @@ func _step(dt: float) -> void:
 	# The quad ride's seated clip (Chair_Sit_Idle) swings the sculpted arms into a torn, half-invisible elbow (founder 2026-10-11): only the
 	# drinking clip is allowed to move the arms; every other pose keeps them at the imported rest pose.
 	rest_arm.resting = (not seated or clip.contains("Chair")) and not reaching
+	rest_arm.hold_left = PAINTED_GLB and bull.reach_weight("Left") < 0.01
 	if rifle:
 		# Painted Bull: his own rifle is baked into the mesh; this prop is only the invisible grip/aim reference.
 		rifle.visible = not PAINTED_GLB and not seated and bull.is_visible_in_tree()
 	var aiming: bool = bull.motion_time < aim_until and not seated
-	var local_carry: Vector3 = bull.global_transform.basis * Vector3(0.06, 1.0, 0.10).normalized()
-	var wanted: Vector3 = (aim_target - bull.global_position - Vector3.UP * bull.height_m * 0.57).normalized() if aiming else local_carry
-	_muzzle_dir = _muzzle_dir.slerp(wanted, clampf(dt * 9.0, 0.0, 1.0)).normalized()
 	motion.aim_weight = move_toward(motion.aim_weight, 1.0 if aiming else 0.0, dt * 4.0)
 	motion.recoil = exp(-maxf(0.0, bull.motion_time - shot_time) * 14.0) if bull.motion_time - shot_time < 0.5 else 0.0
+	if hip:
+		hip.weight = motion.aim_weight
+		hip.recoil = motion.recoil
+		hip.has_target = aiming
+		hip.aim_target = aim_target
 
 
 func aim_at(target_world: Vector3) -> void:
@@ -184,25 +183,73 @@ func fire_at(target_world: Vector3) -> Vector3:
 	aim_at(target_world)
 	shot_time = bull.motion_time
 	# At the emission event use the actual barrel frame, with its contact pivot retained.
-	_muzzle_dir = (target_world - rifle.global_position).normalized() if rifle else Vector3.BACK
 	_sync_rifle()
-	return rifle.to_global(Vector3(0, 0, 0.60)) if rifle else bull.global_position + Vector3.UP * 1.5
+	# The REAL barrel (sculpted into his fist), not a prop's guess.
+	return muzzle_world(bull)
 
 
 func _sync_rifle() -> void:
 	if rifle == null or _hand < 0:
 		return
-	var sk: Skeleton3D = bull.skeleton
-	var hand_world: Transform3D = sk.global_transform * sk.get_bone_global_pose(_hand)
-	var palm: Vector3 = hand_world.origin + hand_world.basis * (_palm_m / sk.global_transform.basis.get_scale().x)
-	var muzzle: Vector3 = _muzzle_dir.normalized()
-	# Recoil rotates around the fist; translation along the barrel would break the grip.
-	var recoil: float = motion.recoil * 0.055 if motion else 0.0
-	var lift: Vector3 = bull.global_transform.basis.x if absf(muzzle.dot(Vector3.UP)) > 0.85 else Vector3.UP
+	place_on_rifle(rifle, bull, _scale)
+
+
+## --- the ONE rifle placement used by the hideout/smelting range, woods and every other Bull scene ---
+
+## Add the hip-fire arm modifier last on `b`'s skeleton (after the rest-arm lock and the motion layer).
+static func add_hip_fire(b: Ep2Actor) -> Ep2BullHipFire:
+	if b == null or b.skeleton == null:
+		return null
+	var h := Ep2BullHipFire.new()
+	h.name = "BullHipFire"
+	h.actor = b
+	b.skeleton.add_child(h)
+	return h
+
+
+## The rifle's barrel direction in skeleton space, from the current LeftHand pose.
+static func rifle_axis_skeleton(sk: Skeleton3D, hand: int) -> Vector3:
+	return (sk.get_bone_global_pose(hand).basis.orthonormalized() * RIFLE_AXIS).normalized()
+
+
+## A LeftHand-local landmark (metres, native 2.4 m) -> world, on the final drawn pose.
+static func hand_point_world(b: Ep2Actor, local_m: Vector3) -> Vector3:
+	var sk: Skeleton3D = b.skeleton
+	var hand: int = sk.find_bone("LeftHand")
+	if hand < 0:
+		return b.global_position + Vector3.UP * b.height_m * 0.6
+	var s: float = maxf(sk.global_transform.basis.get_scale().x, 0.0001)
+	var hw: Transform3D = sk.global_transform * sk.get_bone_global_pose(hand)
+	return Transform3D(hw.basis.orthonormalized().scaled(Vector3.ONE * s), hw.origin) * (local_m * b.height_m / 2.4 / s)
+
+
+## World point of the sculpted rifle's muzzle (shots and the flash start here).
+static func muzzle_world(b: Ep2Actor) -> Vector3:
+	return hand_point_world(b, RIFLE_MUZZLE_M)
+
+
+## World point of the grip in the fist.
+static func grip_world(b: Ep2Actor) -> Vector3:
+	return hand_point_world(b, LEFT_PALM_M)
+
+
+## Put a 1.2 m rifle prop (muzzle +Z, centred) exactly on the sculpted rifle: origin GRIP_ALONG past the fist along
+## the barrel, scaled by `scale`. On the painted Bull the prop is the invisible aim/grip reference; it can never part
+## from the fist because both come from the same hand pose.
+static func place_on_rifle(prop: Node3D, b: Ep2Actor, scale: float) -> void:
+	var sk: Skeleton3D = b.skeleton
+	var hand: int = sk.find_bone("LeftHand")
+	if hand < 0:
+		return
+	var muzzle: Vector3 = (sk.global_transform.basis * rifle_axis_skeleton(sk, hand)).normalized()
+	var hb: Basis = (sk.global_transform.basis * sk.get_bone_global_pose(hand).basis).orthonormalized()
+	var lift: Vector3 = hb.y - muzzle * hb.y.dot(muzzle)
+	if lift.length_squared() < 1e-6:
+		lift = Vector3.UP - muzzle * muzzle.y
+	lift = lift.normalized()
 	var side: Vector3 = lift.cross(muzzle).normalized()
-	muzzle = Basis(side, -recoil) * muzzle
-	lift = muzzle.cross(side).normalized()
-	rifle.global_transform = Transform3D(Basis(side, lift, muzzle).scaled(Vector3.ONE * _scale), palm + muzzle * (GRIP_ALONG * _scale))
+	prop.global_transform = Transform3D(Basis(side, lift, muzzle).scaled(Vector3.ONE * scale),
+		grip_world(b) + muzzle * (GRIP_ALONG * scale))
 
 
 ## Double-sided, opaque (skill ep2-solid-models): the rifle GLB is an open Tripo shell.

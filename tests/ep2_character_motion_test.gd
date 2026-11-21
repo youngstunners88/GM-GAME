@@ -115,5 +115,53 @@ func _ready() -> void:
 		await get_tree().process_frame
 	check("Bull aim, recoil and recovery preserve primary rifle grip %.4f m" % gun_error[0], gun_error[0] < 0.015)
 	check("painted Bull never draws a second rifle (the grip reference prop stays hidden)", not Ep2BullHero.PAINTED_GLB or not hero.rifle.visible)
+	# Motion fix T1 (2026-11-21): the rifle is sculpted into his left fist. Its barrel must be skinned to LeftHand ONLY
+	# (it was on Head/neck/Spine02 and the stock on LeftUpLeg, so it stretched like taffy whenever he moved).
+	var barrel_total: int = 0
+	var barrel_bad: int = 0
+	for mi in bull.model.find_children("*", "MeshInstance3D", true, false):
+		var m: MeshInstance3D = mi
+		if m.mesh == null or m.skin == null:
+			continue
+		var lh: int = -1
+		for bi in m.skin.get_bind_count():
+			if m.skin.get_bind_name(bi) == "LeftHand" or (m.skin.get_bind_bone(bi) >= 0 and bull.skeleton.get_bone_name(m.skin.get_bind_bone(bi)) == "LeftHand"):
+				lh = bi
+		for si in m.mesh.get_surface_count():
+			var arr: Array = m.mesh.surface_get_arrays(si)
+			var pos: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var bidx: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+			var wts: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
+			if bidx.is_empty():
+				continue
+			var per: int = bidx.size() / pos.size()
+			for vi in pos.size():
+				var v: Vector3 = pos[vi]
+				# upper barrel, glTF axes of the 2.4 m model: x 0.50-0.58, height 1.75-2.15, toward the front 0.45-0.62
+				if v.x > 0.50 and v.x < 0.58 and v.y > 1.75 and v.y < 2.15 and v.z > 0.45 and v.z < 0.62:
+					barrel_total += 1
+					for k in per:
+						if wts[vi * per + k] > 0.001 and bidx[vi * per + k] != lh:
+							barrel_bad += 1
+							break
+	check("Bull's sculpted barrel is skinned to LeftHand only (%d of %d vertices off)" % [barrel_bad, barrel_total], barrel_total > 100 and barrel_bad == 0)
+	# Hip fire: the visible (sculpted) barrel comes level on the target and the rifle never changes length.
+	var target := bull.global_position + Basis(Vector3.UP, bull.facing) * Vector3(0.6, 1.2, 9.0)
+	var hip_err: Array[float] = [999.0]
+	var len_span: Array[float] = [INF, -INF]
+	hero.hip.modification_processed.connect(func() -> void:
+		if hero.hip.weight < 0.99:
+			return
+		var g: Vector3 = Ep2BullHero.grip_world(bull)
+		var mz: Vector3 = Ep2BullHero.muzzle_world(bull)
+		hip_err[0] = minf(hip_err[0], rad_to_deg((mz - g).angle_to(target - g)))
+		len_span[0] = minf(len_span[0], g.distance_to(mz))
+		len_span[1] = maxf(len_span[1], g.distance_to(mz)))
+	for frame in 90:
+		hero.aim_at(target)
+		bull.step(1.0 / 60.0)
+		await get_tree().process_frame
+	check("Bull hip fire points the sculpted barrel at the target (%.1f deg)" % hip_err[0], hip_err[0] < 8.0)
+	check("Bull's rifle stays rigid under the hip fire (length span %.4f m)" % (len_span[1] - len_span[0]), len_span[1] - len_span[0] < 0.002)
 	print("EP2_CHARACTER_MOTION: ", "ALL PASS" if failures == 0 else "%d FAILURES" % failures)
 	get_tree().quit(0 if failures == 0 else 1)

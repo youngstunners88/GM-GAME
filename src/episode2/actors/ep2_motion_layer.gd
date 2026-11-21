@@ -29,9 +29,8 @@ func _process_modification() -> void:
 	elif state == "shot":
 		_rotate(sk, "Spine", Vector3.RIGHT, -0.025 + 0.008 * exp(-float(actor.get_meta("pose_t", 0.0)) * 12.0))
 	if bull_carry:
+		# The aiming arm and its recoil belong to Ep2BullHipFire (runs after this layer); only the torso rocks here.
 		_rotate(sk, "Spine", Vector3.RIGHT, -recoil * 0.025)
-		_rotate(sk, "LeftArm", Vector3.RIGHT, aim_weight * 0.10 - recoil * 0.035)
-		_rotate(sk, "LeftForeArm", Vector3.RIGHT, aim_weight * 0.08)
 	if state not in ["sleep", "sit_read", "aim"]:
 		_rotate(sk, "Head", Vector3.UP, sin(t * 0.85) * (0.07 if actor.is_walking() else 0.045))
 		_rotate(sk, "neck", Vector3.RIGHT, sin(t * 1.1) * 0.015)
