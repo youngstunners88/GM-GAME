@@ -149,7 +149,19 @@ func _ready() -> void:
 	c._player_pos = stand + Vector3(2.0, 0.0, 0.0)
 	_until(c, 40.0, func(): return intro.stage == Ep2ArmoryIntro.Stage.GATLING_DEMO)
 	check("he comes up and Utah starts the demonstration", intro.stage == Ep2ArmoryIntro.Stage.GATLING_DEMO)
-	_until(c, 40.0, func(): return intro.stage == Ep2ArmoryIntro.Stage.GATLING_OFFER)
+	# motion fix T5: while he cranks, his right hand rides the crank handle (IK target tracks the turning grip; no shortfall) and the left braces
+	var crank_short: Array[float] = [0.0]
+	var crank_off: Array[float] = [0.0]
+	var crank_seen: Array[int] = [0]
+	_until(c, 40.0, func():
+		if intro._gat_ik.has("Right") and intro._gat_w >= 0.99:
+			var ik: Ep2ArmIK = intro._gat_ik["Right"]
+			crank_short[0] = maxf(crank_short[0], ik.shortfall)
+			crank_off[0] = maxf(crank_off[0], ik.target_world.distance_to(c.get_gatling().crank_handle_position()))
+			crank_seen[0] += 1
+		return intro.stage == Ep2ArmoryIntro.Stage.GATLING_OFFER)
+	check("Utah's hand is on the crank while he turns it (%d frames, IK short %.3f m, target %.3f m off the turning grip)" % [crank_seen[0], crank_short[0], crank_off[0]],
+		crank_seen[0] > 30 and crank_short[0] < 0.02 and crank_off[0] < 0.09)
 	check("Utah laid the gun on the plates and cranked a burst (rounds left the drum, a plate rang)", c.get_gatling().shots_fired >= 8 and c.get_gatling().plates_rung >= 1,
 		"%d shots, %d plates" % [c.get_gatling().shots_fired, c.get_gatling().plates_rung])
 	said = ""

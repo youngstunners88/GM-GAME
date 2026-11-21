@@ -83,6 +83,9 @@ var _rich_arrived: bool = false
 var _burst_done: bool = false
 var _free_t: float = 0.0
 var _demo_step: int = 0
+## Utah's hands on the Gatling (motion fix T5): an Ep2ArmIK per arm on his rig, right -> the crank handle, left -> the frame.
+var _gat_ik: Dictionary = {}
+var _gat_w: float = 0.0
 
 
 ## Seconds into the current stage (Ep2SharpsCase reads it to pose the lid, the rifle and his arms).
@@ -145,6 +148,7 @@ func _on_arrived(who: String, _spot: String) -> void:
 
 
 func step(delta: float, player_world: Vector3) -> void:
+	_utah_hands_on_gun(delta)
 	if stage == Stage.IDLE or stage == Stage.DONE:
 		return
 	_t += delta
@@ -314,3 +318,57 @@ func _say(who: String, text: String) -> void:
 func _price_words() -> String:
 	var words: Array = ["No", "One", "Two", "Three", "Four", "Five", "Six"]
 	return words[sharps_price] if sharps_price >= 0 and sharps_price < words.size() else str(sharps_price)
+
+
+## MOTION FIX T5 (2026-11-21): the crank turns under Utah's hand. While he demonstrates, his right hand rides the crank handle's grip (the crank
+## is driven by the same angle as the barrels, so hand, crank and barrels can never drift apart) and his left hand braces the frame; his
+## "Crank" clip keeps only the body. In over 0.35 s once he is at the gun, out over 0.35 s when he steps back to offer it.
+func _utah_hands_on_gun(delta: float) -> void:
+	var want: float = 1.0 if stage == Stage.GATLING_DEMO and gatling != null and utah != null and utah.folk != null else 0.0
+	_gat_w = move_toward(_gat_w, want, delta / 0.35)
+	if _gat_w <= 0.0 and _gat_ik.is_empty():
+		return
+	if _gat_ik.is_empty():
+		_install_gat_ik()
+	for side in _gat_ik:
+		var ik: Ep2ArmIK = _gat_ik[side]
+		ik.influence = _gat_w
+		ik.reaching = _gat_w > 0.001
+		if gatling == null or utah == null:
+			continue
+		var at: Vector3 = gatling.crank_handle_position() if side == "Right" else gatling.brace_position()
+		# the IK places the WRIST: the palm closes round the grip a hand's length beyond it, so the wrist sits short of it toward him
+		var toward: Vector3 = (utah.folk.global_position + Vector3.UP * 1.3) - at
+		ik.target_world = at + toward.normalized() * 0.07
+
+
+func _install_gat_ik() -> void:
+	if utah == null or utah.folk == null or utah.folk.model == null:
+		return
+	var found: Array = utah.folk.model.find_children("*", "Skeleton3D", true, false)
+	if found.is_empty():
+		return
+	var sk: Skeleton3D = found[0]
+	for side in ["Right", "Left"]:
+		var ik := Ep2ArmIK.new()
+		ik.name = "GatlingHand" + side
+		ik.side = side
+		var names := PackedStringArray()
+		for part in [side + "Arm", side + "ForeArm", side + "Hand", "Hips"]:
+			var b: int = Ep2SharpsCase.SOLVE._find(sk, part)
+			if b < 0:
+				ik.free()
+				return
+			names.append(sk.get_bone_name(b))
+		ik.bone_names = names
+		ik.influence = 0.0
+		sk.add_child(ik)
+		_gat_ik[side] = ik
+
+
+## Hand-to-crank numbers for proofs and tests (palm-side wrist target vs the handle, metres; -1 when not demonstrating).
+func crank_hand_error() -> float:
+	if not _gat_ik.has("Right") or _gat_w < 0.99:
+		return -1.0
+	return (_gat_ik["Right"] as Ep2ArmIK).shortfall
+

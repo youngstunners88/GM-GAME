@@ -282,6 +282,23 @@ func clear_sight_ray() -> void:
 	_sight_ray_set = false
 
 
+## Motion fix T5 (2026-11-21): where the gunner's hands go, in the gun's own frames. The crank handle's wooden grip (Gat_Crank local, measured
+## from gatling_post.glb: 0.265 m out from the hub, 0.12 m off the side; the crank turns with the barrels, so a hand on it is phase-locked to
+## them by construction) and a bracing point on the frame's left side plate near the breech (Gat_Pitch local).
+const CRANK_GRIP_LOCAL := Vector3(0.0, 0.265, 0.125)
+const BRACE_LOCAL := Vector3(-0.30, 0.10, -0.20)
+
+
+## World point of the crank handle's grip, as it is turned now.
+func crank_handle_position() -> Vector3:
+	return _crank.global_transform * CRANK_GRIP_LOCAL if _crank != null else global_position + Vector3.UP * 1.4
+
+
+## World point on the gun's frame where the gunner's other hand braces.
+func brace_position() -> Vector3:
+	return _pitch_n.global_transform * BRACE_LOCAL if _pitch_n != null else global_position + Vector3.UP * 1.4
+
+
 ## Where he stands to work the crank: behind the breech on the post's axis, at the bore's heading.
 func stand_position() -> Vector3:
 	var back: Vector3 = Vector3(sin(heading), 0.0, cos(heading))
