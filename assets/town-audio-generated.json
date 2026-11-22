@@ -2650,5 +2650,29 @@
     "model_id": "eleven_v4",
     "seconds": 2.002708,
     "start_seconds": 0
+  },
+  "town_cert1_1": {
+    "source_hash": "f76b17bfc6ecbe79df3c71edee09361e62eff501b7735dbc61c309da9ba84b31",
+    "processing_version": 2,
+    "sha256": "ccda84292125cae07f0bdb456d3bb7590fdb4aad1806362f7995e581502bdc63",
+    "bytes": 46663,
+    "text": "We don't hand out paper for free. What you're looking at on the wall are the three licenses that actually sit on the wBTC vault.",
+    "speaker": "minister",
+    "voice_id": "CfxYdK3WmF3bmrvyLAiU",
+    "model_id": "eleven_v4",
+    "seconds": 8.605,
+    "start_seconds": 0
+  },
+  "town_cert1_2": {
+    "source_hash": "0e78d6aa1c78dd2877900cfdcf111ca8d1e48bb99b208027d3601f539ab52636",
+    "processing_version": 2,
+    "sha256": "984a847c66fa00d1873f5e2971c3090822387d5c2c8d1ac91a75bc70c9cc7481",
+    "bytes": 65765,
+    "text": "Prospector's is the floor. Then Miner's, then Goldsmith's at the top. Each one carries a bigger floor claim and better perks - pre-order queue, lower trade tax, Builder pool weight.",
+    "speaker": "minister",
+    "voice_id": "CfxYdK3WmF3bmrvyLAiU",
+    "model_id": "eleven_v4",
+    "seconds": 12.705,
+    "start_seconds": 0
   }
 }

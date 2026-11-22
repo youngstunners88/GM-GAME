@@ -3026,7 +3026,7 @@ func _wire_stable_yard() -> void:
 func _on_stable_line(who: String, text: String, id: String, _voice: String) -> void:
 	var seconds: float = Ep2Speech.pace(id, text)
 	if _hud != null:
-		_hud.speech("%s: %s" % [who, text], seconds, Ep2Speech.voiced(id))
+		_hud.speech("%s: %s" % [who, text], seconds, Ep2Speech.hide_caption(id))
 	if id != "":
 		line_spoken.emit(id)
 		if Ep2TownVoiceBank.LINES.has(id):

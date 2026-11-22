@@ -10,8 +10,19 @@ extends RefCounted
 ##   held for a reading time, so a failed download never turns a conversation into silence.
 ##
 ## Rooms ask `pace()` for the hold and pass `voiced()` to `Ep2FpsHud.speech()`, which records the line but draws nothing when voiced.
+##
+## 2026-11-22 (founder: "remove the subtitles", again): in town a line with no take is now SILENT, not captioned. The town rooms pass
+## `hide_caption(id)` instead of `voiced(id)`; the old caption fallback only comes back with the dev switch below.
 
 const GAP := 0.12                    # the breath between one speaker's last word and the next line
+
+## Dev-only switch: draw a caption for a town line whose take is missing. OFF in every build (founder 2026-11-22 "remove the subtitles").
+static var captions_for_missing_takes: bool = false
+
+
+## True when the HUD must NOT draw this line's words: it is heard, or it has no take and the dev caption switch is off.
+static func hide_caption(id: String) -> bool:
+	return voiced(id) or not captions_for_missing_takes
 
 
 ## True when this line will actually be heard (its recorded take is loadable right now).

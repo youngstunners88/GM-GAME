@@ -391,7 +391,7 @@ func _town_speaker(who: String) -> String:
 func _town_line(who: String, text: String) -> void:
 	var id: String = Ep2TownVoiceBank.id_for(_town_speaker(who), text)
 	if _hud != null:
-		_hud.speech("%s: %s" % [who, text], Ep2Speech.pace(id, text), Ep2Speech.voiced(id))
+		_hud.speech("%s: %s" % [who, text], Ep2Speech.pace(id, text), Ep2Speech.hide_caption(id))
 	if id != "": _speak(id)
 
 
@@ -1639,7 +1639,7 @@ func _jail_show_steps() -> Array:
 func _jail_line(who: String, text: String) -> void:
 	if _hud != null:
 		var jail_id: String = Ep2TownVoiceBank.id_for(_town_speaker(who), text)
-		_hud.speech("%s: %s" % [who, text], Ep2Speech.pace(jail_id, text), Ep2Speech.voiced(jail_id))
+		_hud.speech("%s: %s" % [who, text], Ep2Speech.pace(jail_id, text), Ep2Speech.hide_caption(jail_id))
 	if who == "ACCOMPLICE" and _accomplice != null:
 		_accomplice.face_point(_player_pos)
 		_accomplice.hold_clip("Greet")
@@ -1693,7 +1693,7 @@ func _caption_seconds(who: String, text: String) -> float:
 func _caption_line(who: String, text: String) -> void:
 	var id: String = Ep2TownVoiceBank.id_for(_town_speaker(who), text)
 	if _hud != null:
-		_hud.speech("%s: %s" % [who, text], _caption_seconds(who, text), Ep2Speech.voiced(id))
+		_hud.speech("%s: %s" % [who, text], _caption_seconds(who, text), Ep2Speech.hide_caption(id))
 	if id != "":
 		_speak(id)
 	captioned.emit(who, text)
@@ -2786,7 +2786,7 @@ func _stable_interaction_allowed() -> bool:
 func _on_stable_line(who: String, text: String, id: String, _voice: String) -> void:
 	var seconds: float = Ep2Speech.pace(id, text)
 	if _hud != null:
-		_hud.speech("%s: %s" % [who, text], seconds, Ep2Speech.voiced(id))
+		_hud.speech("%s: %s" % [who, text], seconds, Ep2Speech.hide_caption(id))
 	if id != "":
 		line_spoken.emit(id)
 		if Ep2TownVoiceBank.LINES.has(id):

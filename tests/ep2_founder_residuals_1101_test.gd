@@ -61,6 +61,14 @@ func _test_speech() -> void:
 	_check("a voiced line draws no subtitle", hud.toast_text == "" and hud.speech_log.size() == 1)
 	hud.speech("SHERIFF: (silent line)", 2.0, false)
 	_check("an unvoiced line still reaches the player as a caption", hud.toast_text == "SHERIFF: (silent line)")
+	# founder 2026-11-22 "remove the subtitles": town rooms ask hide_caption(), which keeps a missing take silent unless the dev switch is on
+	_check("town captions are off by default (no caption for a voiced line, none for a missing take)",
+		not Ep2Speech.captions_for_missing_takes and Ep2Speech.hide_caption(voiced_id) and Ep2Speech.hide_caption("no_such_line"))
+	Ep2Speech.captions_for_missing_takes = true
+	_check("the dev caption switch brings a missing take's caption back (and never a voiced one)", not Ep2Speech.hide_caption("no_such_line") and Ep2Speech.hide_caption(voiced_id))
+	Ep2Speech.captions_for_missing_takes = false
+	var town_src: String = FileAccess.get_file_as_string("res://src/episode2/chamber/gold_town.gd")
+	_check("every town speech call uses hide_caption (Mike Dean, Dude, jail, captions)", town_src.count("Ep2Speech.hide_caption(") == 4 and not town_src.contains("Ep2Speech.voiced(id))"))
 	hud.queue_free()
 
 

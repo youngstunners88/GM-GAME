@@ -576,6 +576,8 @@ func try_talk(player: Vector3, radius: float = TALK_RADIUS) -> bool:
 		# is Lil Blunt's the moment the deal line lands and he can ride whenever he likes - the lines after it play over the top of that
 		lines.append(_line("dude_ranch_07"))
 		lines.append(_line("dude_ranch_08"))
+		# founder 2026-11-22: "Lil Blunt doesn't respond to Dude in negotiation anymore" - his one haggle reply is back (still short: no counter line)
+		lines.append(_line("dude_ranch_09"))
 		lines.append(_line("dude_ranch_11" if _tender_for(HORSE_PRICE) != "" else "dude_ranch_12", "horse_deal"))
 		lines.append(_line("dude_ranch_13"))
 		# fix pack 2026-10-27 step 11: in the same talk Dude offers his Chill Buds (the first one is his gift; more on the next talk)

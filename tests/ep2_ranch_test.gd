@@ -91,6 +91,12 @@ func _ready() -> void:
 	check("referred negotiation starts", town.start_rig())
 	check("referred negotiation and Logan's Lake direction complete", _finish_conversation(town, yard))
 	check("horse deal debits two BTC exactly once", sales == [[2, 0]] and GameManager.purse_balance("btc") == 2)
+	var haggle_at: int = -1
+	var price_at: int = -1
+	for i in town_captions.size():
+		if str(town_captions[i][0]) == "LIL BLUNT" and str(town_captions[i][1]).contains("steep climb"): haggle_at = i
+		if str(town_captions[i][1]).contains("A saddled horse is two BTC"): price_at = i
+	check("Lil Blunt answers Dude's price (dude_ranch_09 right after dude_ranch_08, founder 2026-11-22)", price_at >= 0 and haggle_at == price_at + 1)
 	var lake_said: bool = false
 	for row in town_captions:
 		if str(row[1]).contains("Logan's Lake"): lake_said = true
