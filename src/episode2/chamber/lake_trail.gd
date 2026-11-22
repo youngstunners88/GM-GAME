@@ -255,11 +255,21 @@ func _step_departure_crowd() -> void:
 	if _return_crowd != null and _departure_parent != null:
 		_return_crowd.build(_departure_parent)
 
+## The trail's own floor. Founder 2026-11-22 (images 1 and 3, "sand on the green trail", asked again): the town rides along with him
+## (adopt_departure reparents its _visuals), and its 1400 x 1300 m DesertFloor sat at the SAME height as this floor and reached to trail
+## z -430, beside the lake. Where this floor greens toward the lake the two z-fought, and inside the lake rect (where this floor and the
+## ecotone discard for the lake's own ground) the town's sand showed whole. The town's floor is now hidden while it rides here, so this
+## floor covers the town's whole extent too: x -710..890, z -810..890 (the town's floor: x -687..713, z -430..870 in this frame).
+const FLOOR_SIZE := Vector2(1600.0, 1700.0)
+const FLOOR_CENTER := Vector3(90.0, -0.012, 40.0)
+const TOWN_FLOOR := "DesertFloor"
+var _hidden_town_floor: Node3D
+
 func _step_ground() -> void:
 	var ground := MeshInstance3D.new()
 	ground.name = "TrailDesertFloor"
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(1400.0, 1300.0)
+	plane.size = FLOOR_SIZE
 	ground.mesh = plane
 	_sand_material=ShaderMaterial.new()
 	_sand_material.shader=load("res://src/episode2/art/trail_sand.gdshader")
@@ -274,7 +284,7 @@ func _step_ground() -> void:
 		var start: Vector3 = lake_transform().affine_inverse() * _route_pts[0]
 		_sand_material.set_shader_parameter("approach_dir",(Vector2(start.x, start.z) - Vector2(Ep2LakeLandform.CENTER_X, 20.0)).normalized())
 	ground.material_override = _sand_material
-	ground.position = Vector3(170.0, -0.012, -140.0)
+	ground.position = FLOOR_CENTER
 	_visuals.add_child(ground)
 
 
@@ -1952,6 +1962,10 @@ func adopt_departure(town: Node3D, woods: Node3D = null) -> void:
 	if is_instance_valid(town._town_audio) and town._town_audio.get_parent()==town: town._town_audio.reparent(town._visuals)
 	if town._visuals.get_parent()!=_visuals: town._visuals.reparent(_visuals)
 	town._visuals.position=-GoldTownChamber.DEPART_HORSE
+	# One floor under the ride (founder 2026-11-22, images 1 and 3): the town's desert floor would z-fight this one and show as sand
+	# patches on the green stretch and at the lake. This floor already covers the town's ground, in the same sand.
+	_hidden_town_floor=town._visuals.get_node_or_null(TOWN_FLOOR) as Node3D
+	if _hidden_town_floor != null: _hidden_town_floor.hide()
 	# The retained town already has this exact road. Draw it once at the mapped origin.
 	if _road_survey != null: _road_survey.hide()
 	_town_walls=town._town_col.get("walls",[])
@@ -1973,6 +1987,8 @@ func adopt_departure(town: Node3D, woods: Node3D = null) -> void:
 				backdrop.add_child(child.duplicate())
 
 func restore_departure() -> void:
+	if is_instance_valid(_hidden_town_floor): _hidden_town_floor.show()
+	_hidden_town_floor=null
 	if is_instance_valid(_adopted_town):
 		_adopted_town._visuals.reparent(_adopted_town)
 		_adopted_town._visuals.position=Vector3.ZERO
