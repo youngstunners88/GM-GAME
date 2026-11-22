@@ -14,7 +14,7 @@ signal horse_chosen(index: int, coat: String)
 const DUDE := "res://src/episode2/assets/town/dude_stable_owner.glb"
 const ASSISTANT := "res://src/episode2/assets/town/stable_assistant.glb"
 const RANCH_POSE = preload("res://src/episode2/actors/ep2_ranch_pose.gd")
-const DUDE_VOICE := "3N5PpVsIKXqmtLAhF2Lj"
+const DUDE_VOICE := "Pe1gOSDKAuczOZqgCiEm"
 const LIL_BLUNT_VOICE := "HMGfKwZCRujgXyRDUW0b"
 const GREET := "dude_greet_01"
 const HORSE_PRICE := 2

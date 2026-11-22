@@ -37,9 +37,9 @@
       "source": "Existing protagonist, unchanged"
     },
     "dude": {
-      "voice_id": "3N5PpVsIKXqmtLAhF2Lj",
+      "voice_id": "Pe1gOSDKAuczOZqgCiEm",
       "name": "Dude",
-      "source": "Existing stable owner voice, unchanged",
+      "source": "Founder account voice \"Dude The Rancher\"; ID corrected 2026-11-22 (old 3N5PpVsIKXqmtLAhF2Lj is gone)",
       "production_binding": "ELEVEVE"
     },
     "clerk": {
@@ -124,18 +124,7 @@
       "source": "Founder-specified ElevenLabs voice id for the auctioneer; Jack Hammer, the doorman and the crowd keep their own voices"
     }
   },
-  "lines_pending_second_account": [
-    {
-      "id": "dude_ranch_16",
-      "speaker": "dude",
-      "text": "It's a long road to Logan's Lake, partner. My patch is just outside the east fence. Buy Chill Buds there, and they'll heal you on the way."
-    },
-    {
-      "id": "dude_ranch_17",
-      "speaker": "dude",
-      "text": "Well, that's rude, partner, walking off mid-sentence. Goodbye, then."
-    }
-  ],
+  "lines_pending_second_account": [],
   "lines": [
     {
       "id": "trail_lb_start",
@@ -1104,6 +1093,16 @@
       "id": "auction_renegade_6",
       "speaker": "renegade",
       "text": "Ladies and gentlemen - THAT is the kind of excitement GOLD buys! Back to the week's lot!"
+    },
+    {
+      "id": "dude_ranch_16",
+      "speaker": "dude",
+      "text": "It's a long road to Logan's Lake, partner. My patch is just outside the east fence. Buy Chill Buds there, and they'll heal you on the way."
+    },
+    {
+      "id": "dude_ranch_17",
+      "speaker": "dude",
+      "text": "Well, that's rude, partner, walking off mid-sentence. Goodbye, then."
     }
   ],
   "greetings": {
