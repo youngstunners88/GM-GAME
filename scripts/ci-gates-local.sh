@@ -21,7 +21,8 @@ LOGDIR=$(mktemp -d)
 # Run EVERY test (CI's block stops at the first failure; here we want the whole list), turning each CI exit into a marker.
 { sed -n "${start},$((end-1))p" "$WF" | sed 's/^          //' \
   | sed -E "s/^(grep -q '([^']+)' ([A-Za-z-]+\.log))\$/\1 || echo \"GATE_MISSING \3: \2\"/" \
-  | sed -E "s/then exit 1; fi/then echo GATE_ERRORS; fi/"; } > "$LOGDIR/gates.sh"
+  | sed -E "s/then exit 1; fi/then echo GATE_ERRORS; fi/" \
+  | sed -E 's/; exit 1; \}$/; echo GATE_ERRORS; }/'; } > "$LOGDIR/gates.sh"
 echo "→ CI gates (workflow lines $start-$((end-1))), logs in $LOGDIR"
 timeout 600 "$G" --headless --editor --quit >/dev/null 2>&1 || true   # fresh class cache
 timeout 600 "$G" --headless --import >/dev/null 2>&1 || true
@@ -41,6 +42,8 @@ bad=$(
     grep -HE '\[FAIL\]|SCRIPT ERROR|Parse Error' "$f" | { if [[ "$f" == */pause-tests.log ]]; then grep -vF "$KNOWN"; else cat; fi; }
   done
   grep -E 'GATE_MISSING' "$LOGDIR/run.log" | grep -v 'pause-tests.log'
+  # a test that prints its pass line but exits non-zero (a crash at exit) fails CI under set -e: count it here too (2026-11-22)
+  grep -E 'GODOT_EXIT [1-9]' "$LOGDIR/run.log" | grep -v 'pause-tests.log'
   grep -E 'timed out|Terminated' "$LOGDIR/run.log"
 )
 if [ -n "$bad" ]; then
