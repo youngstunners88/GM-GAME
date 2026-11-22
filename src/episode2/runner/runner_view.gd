@@ -127,10 +127,10 @@ const HERO_H := 1.9
 const HERO_MUZZLE := Vector3(0.45, 0.05, 0.48)     # a little behind the barrel tip (0.59)
 # Body yaw toward the aim. Small now: RunnerArmRest/RunnerAimModifier aim the revolver BARREL, so the
 # body no longer has to twist to point the baked gun (the twist hid the gun arm behind his back).
-const HERO_YAW_BASE := 0.2        # turned a little (sign flipped with the 2026-11-22 un-mirror): his arms swing out where the camera sees them
+const HERO_YAW_BASE := -0.2       # turned a little left: his gun arm swings out where the camera sees it
 const HERO_YAW_GAIN := 0.35
-const HERO_YAW_MIN := -0.3
-const HERO_YAW_MAX := 0.6
+const HERO_YAW_MIN := -0.6
+const HERO_YAW_MAX := 0.3
 const HERO_SEAT_DROP := 0.0         # extra floor offset (tuned by eye)
 const HERO_HIP_H := 0.773           # bind-pose hip height of lil_blunt_hero.glb (model units, feet at 0)
 const HERO_HIP_OVER_RIM := -0.05    # founder target: belt AT the rim, only chest/arms/hat above it
@@ -142,8 +142,8 @@ const BOARDER_LEAP_LEAD := 14.0    # the leap starts this far before the cart re
 const BOARDER_ARC := 1.6
 const GUN_NATIVE_LEN := 0.2        # golden_revolver.glb x ±0.10
 const GUN_LENGTH := 0.45
-const GUN_HAND := Vector3(0.42, 1.0, 0.22)    # his left (rider faces +Z: world +X is his left, screen-left)
-const AXE_HAND := Vector3(-0.42, 1.05, 0.15)  # his RIGHT hand (founder 2026-11-22), screen-right
+const GUN_HAND := Vector3(-0.42, 1.0, 0.22)   # screen-right = world -X
+const AXE_HAND := Vector3(0.42, 1.05, 0.15)   # the other hand
 const AXE_NATIVE_H := 0.6
 const AXE_LENGTH := 0.95
 const AXE_SWING_TIME := 0.25
@@ -1260,9 +1260,9 @@ func _build_rider() -> void:
 		# existing rider maths (feet at _rider.position) still holds.
 		_hero_mode = true
 		_rider_model = Node3D.new()
-		# Founder 2026-11-22: the axe is held in his RIGHT hand. The pick is baked into the anatomical RightHand, so the hero is
-		# no longer mirrored (the mirror put it in his left on screen); the revolver is the other hand.
-		hero.scale = Vector3(HERO_SCALE, HERO_SCALE, HERO_SCALE)
+		hero.scale = Vector3(-HERO_SCALE, HERO_SCALE, HERO_SCALE)   # mirrored: revolver in his RIGHT hand, pickaxe in his left
+		# (founder lock 2026-09-29, gated in ep2_runner_motion_test. The 2026-11-22 pack asks for the axe in the right hand too:
+		# un-mirroring this line swaps the hands - open question to the founder, not changed silently.)
 		# The hero is now RIGGED (Meshy rig, 10 library clips, weapons baked into the mesh). The
 		# rig's origin is at his FEET; the old static model was centred on his chest.
 		hero.position = Vector3.ZERO
