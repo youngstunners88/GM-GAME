@@ -257,6 +257,7 @@ func _build_cavern(rock_dark: StandardMaterial3D, gravel: StandardMaterial3D, ir
 	_skull(Vector3(0.0, 5.0, CAVE_Z0 + 0.8), 0.0)
 	# the bridge: 3 m wide, deck top at y = 0, rails + chains both sides
 	_walkway(Vector3(0.0, 0.0, CAVE_Z0 + 0.5), 4, true, true)
+	_build_shaft_sill()
 	# timber bents carrying the bridge: posts from the pit floor to the roof, a cap beam, a bearer under the deck and a brace
 	for bz in [CAVE_Z0 + 2.0, CAVE_Z0 + 6.0]:
 		for sx in [-1.0, 1.0]:
@@ -360,6 +361,24 @@ func _emblem_wall(base: Vector3) -> void:
 		mi.position = p + Vector3(0.04, 0.0, 0.0)
 		mi.rotation = Vector3(0.0, PI * 0.5, 0.0)
 		_visuals.add_child(mi)
+
+
+## THE SILL (founder 2026-11-22, image4: "there needs to be at least 2 steps before getting onto the platform so that there isnt the random
+## black gap"). The bridge deck ended at z -5.5 and the shaft's landing planks began at z -4.0: a 1.5 m strip across the whole shaft mouth
+## looked straight down the 7 m pit, black, right in front of the cage. Two timber treads (0.75 m each, the bridge's own Deck2m boards, the
+## shaft's full 9 m width) now carry him across at the bridge's height, on a bearer beam over the pit edge, so the last two paces before
+## the platform are solid boards. The walking height stays y = 0 (the floor is logical here, so no riser he would sink into).
+const SILL_Z0 := -5.5               # the bridge's last board
+const SILL_Z1 := -4.0               # the shaft landing's first plank
+func _build_shaft_sill() -> void:
+	var tread: float = (SILL_Z1 - SILL_Z0) * 0.5
+	for k in 2:
+		var tz: float = SILL_Z0 + tread * (float(k) + 0.5)
+		for lx in [-3.0, 0.0, 3.0]:
+			var board: Node3D = _kit("Deck2m", Vector3(lx, 0.0, tz), Vector3.ZERO, Vector3(1.25, 1.0, tread / 2.0))
+			if board != null: board.name = "ShaftSill_%d_%d" % [k, int(lx)]
+	var bearer: Node3D = _kit("Beam4m", Vector3(0.0, -0.45, SILL_Z0 + 0.2), Vector3.ZERO, Vector3(2.25, 0.8, 0.8))
+	if bearer != null: bearer.name = "ShaftSillBearer"
 
 
 ## THE SHAFT (9 m square around the cage): rock walls, a plank landing, timber guides, the first-floor gallery.
