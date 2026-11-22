@@ -52,14 +52,32 @@ func _ready() -> void:
 			var m: Material = (mi as MeshInstance3D).get_surface_override_material(0)
 			if m != null: overrides[m] = true
 	check("each recoloured horse owns its own material (they are not one shared brown)", overrides.size() >= 2)
-	var white: int = coats.find("white")
+	# founder 2026-11-22 "the horse must not change colour": the rail horse (the one he mounts) is the default pick, and a picked horse is led to it
+	check("by default the horse at the rail is the pick (no brown Dude's-horse default)", yard.chosen_index() == Ep2StableYard.RAIL and yard.mount_ready()
+		and yard.rail_horse().position.distance_to(GoldTownChamber.DEPART_HORSE) < 0.05)
+	check("Dude's own horse is not for sale", not yard.try_choose(yard.horses[0].global_position + Vector3(1.0, 0.0, 0.0)))
+	var white: int = coats.rfind("white")                 # the OTHER white horse, out in the paddock (index 1 is the rail horse)
+	var white_spot: Vector3 = yard.horses[white].position
 	var chosen: bool = yard.try_choose(yard.horses[white].global_position + Vector3(1.0, 0.0, 0.0))
-	check("[E] beside a horse chooses it, and the ride takes its coat", chosen and yard.chosen_index() == white and yard.chosen_coat() == "white")
+	check("[E] beside a horse chooses it, and the ride takes its coat", chosen and white != Ep2StableYard.RAIL and yard.chosen_index() == white and yard.chosen_coat() == "white")
+	check("...but he cannot mount until it is led to the rail", not yard.mount_ready())
+	for i in 200:
+		yard.step(0.1, white_spot + Vector3(2.0, 0.0, 0.0))
+		if yard.mount_ready(): break
+	check("the picked horse walks to the rail and stands there (the one he mounts is the one he chose)", yard.mount_ready() and yard.rail_horse() == yard.horses[white]
+		and yard.horses[white].position.distance_to(GoldTownChamber.DEPART_HORSE) < 0.05 and Ep2HorseCoat.coat_of(yard.rail_horse()) == yard.chosen_coat())
+	check("the old rail horse stands where the picked one was", yard.horses[Ep2StableYard.RAIL].position.distance_to(white_spot) < 0.05)
+	var trail_src: String = _src("res://src/episode2/chamber/lake_trail.gd")
+	check("the trail hides the horse at the rail and rides the picked coat; the lake and the auction road keep it", not trail_src.contains("_departure_yard.horses[1]")
+		and trail_src.contains("_departure_yard.rail_horse().hide()") and trail_src.contains("Ep2HorseCoat.apply(_horse, Ep2HorseCoat.ridden)")
+		and _src("res://src/episode2/chamber/auction_road.gd").contains("Ep2HorseCoat.apply(_horse, Ep2HorseCoat.ridden)")
+		and _src("res://src/episode2/chamber/logans_lake.gd").contains("Ep2HorseCoat.apply(_horse, Ep2HorseCoat.ridden)"))
 	var dude_at: Vector3 = yard.dude_position()
 	check("Dude greets by himself when Lil Blunt comes into sight (no [E])", yard.try_auto_greet(dude_at + Vector3(4.0, 0.0, 0.0)) and yard.conversation_active())
 	yard.step(0.1, dude_at + Vector3(Ep2StableYard.LEAVE_RADIUS + 2.0, 0.0, 0.0))
 	check("walking off mid-sentence before the horse is paid for gets the rude goodbye", str(yard._conv_current.get("id", "")) == "dude_ranch_17" and yard._conv_queue.is_empty())
-	check("the horse talk is short (the haggle and the reminder are gone)", not _src("res://src/episode2/chamber/ep2_stable_yard.gd").contains("dude_ranch_09\"))") )
+	check("the horse talk is short: Lil Blunt answers once, no counter-haggle (founder 2026-11-22 brought his reply back)", _src("res://src/episode2/chamber/ep2_stable_yard.gd").contains("dude_ranch_09\"))")
+		and not _src("res://src/episode2/chamber/ep2_stable_yard.gd").contains("dude_ranch_10\"))"))
 	check("paying for the horse sends him on to the ride without waiting for Dude to finish",
 		not _src("res://src/episode2/chamber/gold_town.gd").contains("(_stable_yard == null or not _stable_yard.conversation_active()):\n\t\t\t\t_after_story()"))
 	# 4. Logan

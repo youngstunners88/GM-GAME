@@ -1606,7 +1606,7 @@ func _on_beat_entered(b: int) -> void:
 				_hud.toast("TO LOGAN'S LAKE", 3.4)
 			# Wait here for the player to mount at the actual stables.
 		Beat.DONE:
-			_resolve({"next_chamber": "lake_trail", "horse": _horse_bought, "horse_coat": (_stable_yard.chosen_coat() if _stable_yard != null else "brown"), "got_map": _got_map, "peacemaker": _got_peacemaker,
+			_resolve({"next_chamber": "lake_trail", "horse": _horse_bought, "horse_coat": (_stable_yard.chosen_coat() if _stable_yard != null else "brown"), "horse_index": (_stable_yard.chosen_index() if _stable_yard != null else Ep2StableYard.RAIL), "got_map": _got_map, "peacemaker": _got_peacemaker,
 				"license_talk": _license_talk, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
 				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear,
@@ -2811,7 +2811,8 @@ func _on_stable_horse_bought(_paid: int, _credit: int) -> void:
 ## The FIRST ride out only. On a later visit the trail owns Dude's ranch and the horse (Ep2WorldRoutes hands him to it on the lake road);
 ## mounting here again resolved a room nobody was listening to and froze him at the rail (audit 2026-11-17).
 func can_mount_departure() -> bool:
-	return _beat == Beat.GEARED and _horse_bought and not _world_revisit and not _mounted_transport and not _depart_mounted and not _show_active and _player_pos.distance_to(DEPART_HORSE) < 3.0
+	return _beat == Beat.GEARED and _horse_bought and not _world_revisit and not _mounted_transport and not _depart_mounted and not _show_active and _player_pos.distance_to(DEPART_HORSE) < 3.0 \
+		and (_stable_yard == null or _stable_yard.mount_ready())       # the horse he picked has been led to the rail (founder 2026-11-22)
 
 func _wants_handoff() -> bool:
 	return _beat == Beat.GEARED and _depart_mounted and not _show_active

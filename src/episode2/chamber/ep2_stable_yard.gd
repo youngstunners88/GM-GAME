@@ -118,7 +118,15 @@ var _horse_deal_done: bool = false
 var _deal_paid: int = 0
 var _deal_credit: int = 0
 var _horse_followup_said: bool = false
-var _chosen_horse: int = 0                    # the horse Lil Blunt picked (E beside it); the ride to the lake takes this one's coat
+var _chosen_horse: int = RAIL                 # the horse Lil Blunt picked (E beside it); the ride to the lake takes this one's coat
+## THE RAIL (founder 2026-11-22: "the horse must not change colour"). He mounts at the rail by the road (HORSES[RAIL] = DEPART_HORSE) and
+## the trail rides the CHOSEN coat. Before, the rail horse was always horses[1] (white) and the default pick was horses[0] (Dude's brown):
+## he mounted a white horse and rode off on a brown one. Now the horse he picks is led to the rail and the rail horse walks to the spot it
+## left, so the horse under him is the one he chose; mounting waits for the short lead. Dude's own horse (0) is not for sale.
+const RAIL := 1
+const LEAD_SPEED := 1.6                       # m/s, a horse led at a walk
+var _rail_horse: int = RAIL                   # which horse stands at the rail now
+var _leads: Dictionary = {}                   # horse index -> {"from", "to", "yaw", "t", "dur", "clip"}
 var _auto_armed: bool = true                  # Dude greets on sight once per approach; re-armed when Lil Blunt has gone well away
 var _bud_packs_sold: int = 0
 var _patch_root: Node3D = null
@@ -742,18 +750,94 @@ func nearest_horse(player: Vector3) -> int:
 
 
 func can_choose(player: Vector3) -> bool:
-	var i: int = nearest_horse(player)
-	return i >= 0 and i != _chosen_horse and not is_dude_riding()
+	return _choosable(nearest_horse(player))
 
 
-## [E] beside a horse: it is the one Lil Blunt will ride. True when the choice changed.
+func _choosable(i: int) -> bool:
+	return i > 0 and i != _chosen_horse and not is_dude_riding() and _leads.is_empty()
+
+
+## [E] beside a horse: it is the one Lil Blunt will ride, and it is led to the rail. True when the choice changed.
 func try_choose(player: Vector3) -> bool:
 	var i: int = nearest_horse(player)
-	if i < 0 or i == _chosen_horse or is_dude_riding():
+	if not _choosable(i):
 		return false
 	_chosen_horse = i
+	_bring_to_rail(i, false)
 	horse_chosen.emit(i, Ep2HorseCoat.coat_of(horses[i]))
 	return true
+
+
+## The horse standing at the rail now (the one he mounts; the trail hides it under him).
+func rail_horse() -> Node3D:
+	return horses[_rail_horse] if _rail_horse >= 0 and _rail_horse < horses.size() else null
+
+
+func rail_index() -> int:
+	return _rail_horse
+
+
+## True once the horse he picked stands at the rail.
+func mount_ready() -> bool:
+	return _leads.is_empty() and _chosen_horse == _rail_horse
+
+
+## A rebuilt copy of the yard (the trail's own departure town) puts the picked horse at the rail at once.
+func bring_to_rail_now(i: int) -> void:
+	if i <= 0 or i >= horses.size():
+		return
+	_chosen_horse = i
+	_bring_to_rail(i, true)
+
+
+func _bring_to_rail(i: int, instant: bool) -> void:
+	if i == _rail_horse or i <= 0 or i >= horses.size() or _rail_horse < 0 or _rail_horse >= horses.size():
+		return
+	var old: int = _rail_horse
+	var spot: Vector3 = horses[i].position
+	var spot_yaw: float = horses[i].rotation.y
+	var spot_clip: String = "horse_graze" if str(HORSES[i][2]) == "horse_walk" or horses[i].name == WALKING_HORSE else str(HORSES[i][2])
+	_rail_horse = i
+	_lead_to(i, HORSES[RAIL][0], float(HORSES[RAIL][1]), str(HORSES[RAIL][2]), instant)
+	_lead_to(old, spot, spot_yaw, spot_clip, instant)
+
+
+func _lead_to(index: int, to: Vector3, yaw: float, clip: String, instant: bool) -> void:
+	var h: Node3D = horses[index]
+	var flat: Vector3 = Vector3(to.x - h.position.x, 0.0, to.z - h.position.z)
+	if instant or flat.length() < 0.05:
+		h.position = to
+		h.rotation.y = yaw
+		_play_horse(index, clip, 1.0)
+		_move_solid(h)
+		_leads.erase(index)
+		return
+	_leads[index] = {"from": h.position, "to": to, "yaw": yaw, "t": 0.0, "dur": flat.length() / LEAD_SPEED, "clip": clip}
+	h.rotation.y = atan2(-flat.z, flat.x)          # the yard horse model faces its local +X
+	_play_horse(index, "horse_walk", 0.85)
+
+
+func _tick_leads(delta: float) -> void:
+	for index in _leads.keys():
+		var l: Dictionary = _leads[index]
+		if not _horse_alive(int(index)):
+			_leads.erase(index)
+			continue
+		var h: Node3D = horses[int(index)]
+		l["t"] = float(l["t"]) + delta
+		var k: float = clampf(float(l["t"]) / maxf(float(l["dur"]), 0.001), 0.0, 1.0)
+		h.position = (l["from"] as Vector3).lerp(l["to"] as Vector3, k)
+		if k >= 1.0:
+			h.rotation.y = float(l["yaw"])
+			_play_horse(int(index), str(l["clip"]), 1.0)
+			_move_solid(h)
+			_leads.erase(index)
+
+
+func _move_solid(node: Node3D) -> void:
+	for entry in _solids:
+		if entry[0] == node:
+			(entry[1] as Array)[0] = Vector2(node.position.x, node.position.z)
 
 
 func chosen_coat() -> String:
@@ -788,6 +872,7 @@ func step(delta: float, player: Vector3, quiet: bool = false) -> void:
 	_tick_dude(dt, player, quiet)
 	_tick_assistant(dt, quiet)
 	if not quiet: _tick_walking_horse()
+	if not _leads.is_empty(): _tick_leads(dt)
 	_tick_drink(dt, quiet)
 	if not quiet and player.distance_to(STABLE_POS) < 65.0 and not horses.is_empty():
 		_horse_sound_left -= dt
@@ -1015,6 +1100,8 @@ func _tick_walking_horse() -> void:
 	for horse in horses:
 		if horse.name != WALKING_HORSE: continue
 		if _dead_horses.has(horse.get_instance_id()): return
+		var walker: int = horses.find(horse)
+		if walker == _rail_horse or _leads.has(walker) or walker == _chosen_horse: return     # led to the rail: it stands there now
 		var travel: float = fposmod(_time * 0.65, 8.0)
 		horse.position.z = 1233.0 + (travel if travel < 4.0 else 8.0 - travel)
 		horse.rotation.y = -PI * 0.5 if travel < 4.0 else PI * 0.5
@@ -1106,7 +1193,7 @@ func _tick_drink(_delta: float, quiet: bool) -> void:
 	var pick: int = 5 + _drink_cycle % 2
 	if not _horse_alive(pick):
 		pick = 5 if _horse_alive(5) else (6 if _horse_alive(6) else -1)
-	if pick < 0:
+	if pick < 0 or pick == _rail_horse or _leads.has(pick):
 		return
 	_drink_horse = pick
 	_drink_left = 5.5
@@ -1153,6 +1240,10 @@ func snapshot() -> Dictionary:
 			"index": _brains[i]["index"], "wait": _brains[i]["wait"]})
 	var horse_state: Array = []
 	for i in horses.size():
+		if _leads.has(i):          # a horse being led is saved where it is going, so a load never leaves it mid-yard
+			var l: Dictionary = _leads[i]
+			horse_state.append({"pos": l["to"], "yaw": l["yaw"], "clip": l["clip"], "speed": 1.0})
+			continue
 		horse_state.append({"pos": horses[i].position, "yaw": horses[i].rotation.y,
 			"clip": (_horse_anims[i] as AnimationPlayer).current_animation,
 			"speed": (_horse_anims[i] as AnimationPlayer).speed_scale})
@@ -1160,7 +1251,7 @@ func snapshot() -> Dictionary:
 		"horse_phases": _horse_anims.map(func(ap): return ap.current_animation_position), "horse_state": horse_state,
 		"patch_told": _patch_told, "greeted": _greeted, "referred": _referred, "horse_deal_done": _horse_deal_done,
 		"deal_paid": _deal_paid, "deal_credit": _deal_credit, "horse_followup": _horse_followup_said,
-		"bud_packs_sold": _bud_packs_sold, "chosen_horse": _chosen_horse, "auto_armed": _auto_armed,
+		"bud_packs_sold": _bud_packs_sold, "chosen_horse": _chosen_horse, "rail_horse": _rail_horse, "auto_armed": _auto_armed,
 		"conversation": {"active": _conv_active, "queue": _conv_queue.duplicate(true), "current": _conv_current.duplicate(true), "wait": _conv_wait},
 		"ride": {"state": _ride_state, "next": _ride_next, "path": _ride_path.duplicate(), "index": _ride_index,
 			"mount_t": _ride_mount_t, "from": _ride_from, "distance": _ride_distance},
@@ -1182,7 +1273,10 @@ func restore(data: Dictionary) -> void:
 	_deal_credit = int(data.get("deal_credit", 0))
 	_horse_followup_said = bool(data.get("horse_followup", false))
 	_bud_packs_sold = int(data.get("bud_packs_sold", 0))
-	_chosen_horse = int(data.get("chosen_horse", 0))
+	_chosen_horse = int(data.get("chosen_horse", RAIL))
+	if _chosen_horse <= 0: _chosen_horse = RAIL           # saves from before 2026-11-22 defaulted to Dude's own horse
+	_rail_horse = int(data.get("rail_horse", RAIL))
+	_leads.clear()
 	_auto_armed = bool(data.get("auto_armed", true))
 	_rng.state = int(data.get("rng_state", _rng.state))
 	var conversation: Dictionary = data.get("conversation", {})
@@ -1209,9 +1303,15 @@ func restore(data: Dictionary) -> void:
 		horses[i].position = row.get("pos", HORSES[i][0])
 		horses[i].rotation.y = float(row.get("yaw", float(HORSES[i][1])))
 		_play_horse(i, str(row.get("clip", str(HORSES[i][2]))), float(row.get("speed", 1.0)))
+		_move_solid(horses[i])
 	var phases: Array = data.get("horse_phases", [])
 	for i in mini(phases.size(), _horse_anims.size()):
 		(_horse_anims[i] as AnimationPlayer).seek(float(phases[i]), true)
+	if _rail_horse >= 0 and _rail_horse < horses.size():
+		horses[_rail_horse].position = HORSES[RAIL][0]          # a lead in progress at the save lands at the rail
+		horses[_rail_horse].rotation.y = float(HORSES[RAIL][1])
+		_move_solid(horses[_rail_horse])
+	if _chosen_horse != _rail_horse: _bring_to_rail(_chosen_horse, true)
 	_tick_walking_horse()
 	var ride: Dictionary = data.get("ride", {})
 	_ride_state = str(ride.get("state", ""))

@@ -233,9 +233,10 @@ func _step_departure_yard() -> void:
 	_departure_yard = parent.find_child("StableYard", true, false) as Ep2StableYard
 	# The purchased horse is beneath the camera, never duplicated in the paddock.
 	if _departure_yard != null and _departure_yard.horses.size() > 1:
-		_departure_yard.horses[1].hide()
+		_departure_yard.bring_to_rail_now(int(handoff.get("horse_index", Ep2StableYard.RAIL)))   # the picked horse, not a second one in the paddock
+		_departure_yard.rail_horse().hide()
 		for entry in _departure_yard._solids.duplicate():
-			if entry[0] == _departure_yard.horses[1]:
+			if entry[0] == _departure_yard.rail_horse():
 				_town_props.erase(entry[1])
 				_departure_yard._solids.erase(entry)
 	_departure_survey = survey
@@ -1958,9 +1959,9 @@ func adopt_departure(town: Node3D, woods: Node3D = null) -> void:
 	_departure_yard=town._stable_yard
 	_return_crowd=town._people
 	if _departure_yard != null:
-		_departure_yard.horses[1].hide()
+		_departure_yard.rail_horse().hide()          # the horse at the rail is the one he picked (founder 2026-11-22)
 		for entry in _departure_yard._solids.duplicate():
-			if entry[0]==_departure_yard.horses[1]:
+			if entry[0]==_departure_yard.rail_horse():
 				_town_props.erase(entry[1]);_departure_yard._solids.erase(entry)
 	if woods != null and _visuals.get_node_or_null("ExistingWoodsHorizon")==null:
 		var backdrop := Node3D.new()

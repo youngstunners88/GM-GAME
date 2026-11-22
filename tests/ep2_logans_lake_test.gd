@@ -58,8 +58,17 @@ func _ready() -> void:
 	c.toggle_armory()
 	c.set_physics_process(false)
 	check("closing armory resumes the scene", not get_tree().paused)
-	advance(c, 20)
-	check("short dialogue leads to one staging action", c.get_beat() == LogansLakeChamber.Beat.STAGE)
+	# The three lines are Logan's own takes since 2026-11-22 (P1-0): the talk lasts as long as the takes, never cut short, then one staging action.
+	var talk_budget: float = 0.0
+	for line in LogansLakeChamber.LINES:
+		var take: AudioStream = Ep2TownVoiceBank.stream(Ep2TownVoiceBank.id_for("logan", str(line).split(": ", true, 1)[1]))
+		talk_budget += (take.get_length() + Ep2Speech.GAP) if take != null else 6.5
+	var talked: float = 0.0
+	while talked < talk_budget + 1.0 and c.get_beat() != LogansLakeChamber.Beat.STAGE:
+		advance(c, 0.25)
+		talked += 0.25
+	print("  logan talk %.1f s of a %.1f s take budget" % [talked, talk_budget])
+	check("short dialogue leads to one staging action", c.get_beat() == LogansLakeChamber.Beat.STAGE and talked <= talk_budget + 1.0)
 	check("staging cannot be activated beside Logan", not c.start_rig())
 	check("walk to the staging crate", walk(c, Vector3(-6, 0, 17)))
 	c._hud.search_requested.emit()
