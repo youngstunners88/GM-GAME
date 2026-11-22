@@ -60,15 +60,15 @@
     "start_seconds": 0
   },
   "town_intro_sharps_lines_5": {
-    "source_hash": "00eb9a9ecaa84acbd5b5ac497acaa24be6c85ce09d96233d27ea52daeadd0212",
+    "source_hash": "bcc80385de30e66dd8c002d4aef806c7a589f279f34152b31c09b526510ad05d",
     "processing_version": 2,
-    "sha256": "ab14f1b0324b6999ef72921ac71fc25d4f85b13898ca6f90f3b64fdda258a2e9",
-    "bytes": 33718,
-    "seconds": 5.805,
-    "text": "three coin and she is yours, cartridges by the box. Coin, never credit.",
+    "sha256": "18ea0fd7976042f9e4525d77619af719f1676753d3d2884842ba03f6982070c2",
+    "bytes": 41489,
+    "text": "Three BTC or WBTC and she's yours, cartridges by the box. Coin, never credit.",
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
+    "seconds": 7.305,
     "start_seconds": 0
   },
   "town_intro_gatling_after_1": {

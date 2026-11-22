@@ -43,7 +43,7 @@ const SHARPS_LINES: Array = [
 	["UTAH", "Falling block. One shot, then you earn the next one."],
 	["RICH", "Thirty-inch octagon barrel, double set triggers, a tang sight you can read at six hundred yards."],
 	["RICH", "Set the back trigger and the front one breaks at a whisper. Take a look. Don't take her home yet."],
-	["RICH", "{price} coin and she is yours, cartridges by the box. Coin, never credit."],
+	["RICH", "{price} BTC or WBTC and she's yours, cartridges by the box. Coin, never credit."],   # founder 2026-11-22: either coin, said out loud
 ]
 ## Utah at the post.
 const GATLING_CALL: Array = [["UTAH", "Now the one that is not for sale. Follow me out front."]]

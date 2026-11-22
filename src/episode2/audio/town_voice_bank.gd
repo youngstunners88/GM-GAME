@@ -204,8 +204,8 @@ const LINES: Dictionary = {
 	},
 	"town_intro_sharps_lines_5": {
 		"speaker": "rich",
-		"text": "three coin and she is yours, cartridges by the box. Coin, never credit.",
-		"seconds": 5.805,
+		"text": "Three BTC or WBTC and she's yours, cartridges by the box. Coin, never credit.",
+		"seconds": 7.305,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_sharps_lines_5.ogg"

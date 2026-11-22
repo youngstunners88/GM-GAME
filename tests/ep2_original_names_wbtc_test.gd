@@ -56,6 +56,45 @@ func _ready() -> void:
 		and Ep2ArmoryState.NAMES[Ep2ArmoryState.MP18] == "Bergmann MP18"
 		and Ep2ArmoryState.NAMES[Ep2ArmoryState.BORCH] == "Borchardt C-93"
 		and Ep2ArmoryState.NAMES[Ep2ArmoryState.BUFF] == "Sharps 1874")
+	# founder 2026-11-22 "Rich takes WBTC, visibly, either/or": BTC and WBTC are two buttons always on the counter, each with its balance
+	get_window().size = Vector2i(1280, 720)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	GameManager.token_purse = {"eth": 0, "btc": 0, "sol": 0}
+	GameManager.purse_add("eth", 5)
+	var sharps_price: int = int(Ep2ArmoryState.shop_item(Ep2ArmoryState.SHARPS_ITEM)["price"])
+	GoldMineSystem.wbtc_balance = sharps_price + 4
+	var pay_town := GoldTownChamber.new()
+	pay_town.armory = Ep2ArmoryState.new()
+	pay_town.armory.river_gear = true
+	shop.buy_requested.connect(func(id: String, price: int, t: String) -> void: shop.purchase_result(id, pay_town.buy(id, price, t)))
+	shop.tender = "btc"
+	shop.open_shop(pay_town.armory, 0)
+	await get_tree().process_frame
+	var pay_btc: Button = shop.get_node_or_null("PayBTC")
+	var pay_wbtc: Button = shop.get_node_or_null("PayWBTC")
+	check("BTC and WBTC are two always-visible pay buttons (finger-sized)", pay_btc != null and pay_wbtc != null and pay_btc.is_visible_in_tree()
+		and pay_wbtc.is_visible_in_tree() and pay_btc.size.y >= 64.0 and pay_wbtc.size.y >= 64.0 and not pay_btc.get_rect().intersects(pay_wbtc.get_rect()))
+	check("with BTC empty the counter opens on WBTC, not ETH", shop.tender == "wbtc" and shop.purse == sharps_price + 4)
+	pay_btc.pressed.emit()
+	check("tapping BTC pays in BTC (holds 0)", shop.tender == "btc" and shop.purse == 0)
+	pay_wbtc.pressed.emit()
+	check("tapping WBTC pays in WBTC", shop.tender == "wbtc" and shop.purse == sharps_price + 4)
+	shop.index = 0
+	for i in Ep2ArmoryState.SHOP.size():
+		if str(Ep2ArmoryState.SHOP[i]["id"]) == Ep2ArmoryState.SHARPS_ITEM: shop.index = i
+	shop.grace = 0.0
+	shop._buy()
+	check("BTC 0 + WBTC >= price: the Sharps is bought and WBTC drops by exactly %d" % sharps_price,
+		pay_town.armory.sniper_owned and GoldMineSystem.wbtc_balance == 4 and GameManager.purse_balance("btc") == 0 and GameManager.purse_balance("eth") == 5)
+	var more: Button = shop.get_node_or_null("Tender")
+	more.pressed.emit()
+	check("MORE keeps the other tokens one tap away (ETH)", shop.tender == "eth" and shop.purse == 5)
+	var intro_src: String = FileAccess.get_file_as_string("res://src/episode2/actors/ep2_armory_intro.gd")
+	var price_line: String = "Three BTC or WBTC and she's yours, cartridges by the box. Coin, never credit."
+	check("Rich says BTC or WBTC out loud, and the line is recorded", intro_src.contains("{price} BTC or WBTC and she's yours")
+		and Ep2TownVoiceBank.stream(Ep2TownVoiceBank.id_for("rich", price_line)) != null)
+	pay_town.free()
 	# founder 2026-11-22 "everything slows after trading with Rich": the counter lays itself out only while it is up
 	shop.close_shop()
 	check("a closed counter stops its per-frame layout and its lit case", not shop.visible and not shop.is_processing()

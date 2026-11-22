@@ -19,6 +19,11 @@ const CLOSED := Color("5d4a38")
 ## Every token in Lil Blunt's purse pays (founder 2026-10-24: ETH, BTC, WBTC, Solana and TitanX, "at Rich or anywhere").
 const TENDER_NAMES := {"btc": "BTC", "eth": "ETH", "wbtc": "WBTC", "sol": "SOL", "titanx": "TITANX"}
 const TENDERS := ["btc", "eth", "wbtc", "sol", "titanx"]
+## Founder 2026-11-22 "Rich takes WBTC, visibly, either/or": BTC and WBTC are two pay buttons that are always on the counter, each
+## showing what he holds; the other tokens sit behind MORE. The counter opens on the first of these he can pay with.
+const PAY_BUTTONS := ["btc", "wbtc"]
+const MORE_TENDERS := ["eth", "sol", "titanx"]
+const OPEN_ORDER := ["btc", "wbtc", "eth", "sol", "titanx"]
 
 var state: Ep2ArmoryState = null
 var purse: int = 0
@@ -30,7 +35,8 @@ var grace: float = 0.25
 var flash: String = ""
 var _flash_t: float = 0.0
 var _rows: Array[Button] = []
-var _tender_btn: Button = null
+var _tender_btn: Button = null                # the MORE pay button (ETH / SOL / TITANX); keeps the old "Tender" node name
+var _pay_btns: Dictionary = {}                 # "btc" / "wbtc" -> Button
 ## The panel's words (the Chill Bud patch reuses this cabinet with its own).
 var heading_small: String = "RICH & UTAH"
 var heading: String = "ARMS"
@@ -282,15 +288,13 @@ func _ready() -> void:
 	# The purse strip is the tender control on a phone: ui_left/ui_right have no touch button, so
 	# a player holding ETH/SOL/WBTC read NOT ENOUGH CRYPTO on every row and could not fix it
 	# (audit 2026-10-29 P1-1). A tap cycles the same `tender` variable the keys cycle.
-	_tender_btn = Button.new()
-	_tender_btn.name = "Tender"
-	_tender_btn.flat = true
-	_tender_btn.focus_mode = Control.FOCUS_NONE
-	for style in ["normal", "hover", "pressed", "focus", "disabled"]:
-		_tender_btn.add_theme_stylebox_override(style, StyleBoxEmpty.new())
-	_tender_btn.pressed.connect(func() -> void: _cycle_tender(1))
-	add_child(_tender_btn)
-	move_child(_tender_btn, 0)                     # its finger-sized strip reaches under the first rows: a row or a tab wins where they overlap
+	# 2026-11-22: the strip is now three finger-sized pay buttons - BTC, WBTC (always there, with balances) and MORE.
+	for t in PAY_BUTTONS:
+		var pay := _pay_button("Pay" + str(t).to_upper())
+		pay.pressed.connect(func() -> void: pick_tender(str(t)))
+		_pay_btns[t] = pay
+	_tender_btn = _pay_button("Tender")
+	_tender_btn.pressed.connect(func() -> void: _more_tender())
 	_ensure_tab_buttons()
 	_up_btn = _arrow_button("ScrollUp", -1)
 	_down_btn = _arrow_button("ScrollDown", 1)
@@ -509,7 +513,7 @@ func open_shop(armory_state: Ep2ArmoryState, coin_purse: int) -> void:
 		# Open on a token he actually carries, including Episode 1 WBTC. Keep
 		# his selected tender whenever it still has a balance; never convert coins.
 		if purse == 0:
-			for token in TENDERS:
+			for token in OPEN_ORDER:
 				var balance: int = int(purse_of.call(token))
 				if balance > purse:
 					tender = token
@@ -611,11 +615,13 @@ func _process(delta: float) -> void:
 	scale = Vector2.ONE * ui
 	size = view / ui
 	if _tender_btn != null:
-		var compact: bool = size.x < 650.0 or _short()
-		var tw: float = maxf(80.0, minf(560.0 if compact else 700.0, size.x - 80.0))
-		var line_y: float = size.y * 0.075 + (44.0 if compact else 58.0)
-		_tender_btn.size = Vector2(tw, 88.0)
-		_tender_btn.position = Vector2((size.x - tw) * 0.5, line_y - 8.0)
+		var pr: Array = pay_rects()
+		for k in PAY_BUTTONS.size():
+			var pb: Button = _pay_btns[PAY_BUTTONS[k]]
+			pb.position = (pr[k] as Rect2).position
+			pb.size = (pr[k] as Rect2).size
+		_tender_btn.position = (pr[2] as Rect2).position
+		_tender_btn.size = (pr[2] as Rect2).size
 	_keep_visible()
 	_ensure_tab_buttons()
 	var shown_tabs: int = _tabs().size()
@@ -786,9 +792,16 @@ func _draw() -> void:
 	draw_line(Vector2(mid - minf(220, size.x * 0.34), line_y), Vector2(mid - 14, line_y), BRASS, 1)
 	draw_line(Vector2(mid + 14, line_y), Vector2(mid + minf(220, size.x * 0.34), line_y), BRASS, 1)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid, line_y - 5), Vector2(mid + 5, line_y), Vector2(mid, line_y + 5), Vector2(mid - 5, line_y)]), BRASS)
-	_text("PAY WITH  ◂ %s ▸  ·  YOU HOLD %d" % [TENDER_NAMES.get(tender, tender.to_upper()), purse],
-		Vector2(mid, line_y + (14 if compact else 20)), 11 if compact else 14, BRASS, true)
-	_text("BTC · ETH · WBTC · SOL · TITANX", Vector2(mid, line_y + (26 if compact else 32)), 9, PAPER, true)
+	var pr: Array = pay_rects()
+	var pill_h: float = 26.0 if compact else 30.0
+	for k in 3:
+		var t: String = str(PAY_BUTTONS[k]) if k < 2 else (tender if MORE_TENDERS.has(tender) else "")
+		var on: bool = t != "" and t == tender
+		var pill := Rect2((pr[k] as Rect2).position, Vector2((pr[k] as Rect2).size.x, pill_h))
+		_leather(pill, LEATHER if on else LEATHER_DIM, on)
+		var words: String = ("%s  %d" % [TENDER_NAMES[t], _balance(t)]) if t != "" else "MORE"
+		if k == 2: words += "  ▸"
+		_text(words, pill.position + Vector2(pill.size.x * 0.5, pill_h * 0.5 + (4.0 if compact else 5.0)), 12 if compact else 15, BRASS if on else PAPER, true)
 	var picked_tab: int = active_tab()
 	var tabs: Array = _tabs()
 	for t in tabs.size():
@@ -861,6 +874,45 @@ func _draw() -> void:
 
 ## One step through the tender ring. The keyboard's ui_left/ui_right and the tappable purse
 ## strip both land here, so there is exactly one place that decides what a step means.
+func pick_tender(t: String) -> void:
+	tender = t
+	_refresh_purse()
+
+
+## MORE: the next of the other tokens (ETH -> SOL -> TITANX -> ETH); from BTC or WBTC it starts at ETH.
+func _more_tender() -> void:
+	var i: int = MORE_TENDERS.find(tender)
+	pick_tender(str(MORE_TENDERS[(i + 1) % MORE_TENDERS.size()]))
+
+
+func _pay_button(node_name: String) -> Button:
+	var b := Button.new()
+	b.name = node_name
+	b.flat = true
+	b.focus_mode = Control.FOCUS_NONE
+	for style in ["normal", "hover", "pressed", "focus", "disabled"]:
+		b.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	add_child(b)
+	move_child(b, 0)                               # finger-sized, reaching under the first rows: a row or a tab wins where they overlap
+	return b
+
+
+## The three pay buttons' rects (BTC, WBTC, MORE), centred under the heading.
+func pay_rects() -> Array:
+	var compact: bool = size.x < 650.0 or _short()
+	var line_y: float = size.y * 0.075 + (44.0 if compact else 58.0)
+	var w_pay: float = 118.0 if compact else 170.0
+	var w_more: float = 92.0 if compact else 130.0
+	var gap: float = 8.0 if compact else 12.0
+	var x: float = (size.x - (w_pay * 2.0 + w_more + gap * 2.0)) * 0.5
+	var y: float = line_y + 4.0
+	return [Rect2(x, y, w_pay, 64.0), Rect2(x + w_pay + gap, y, w_pay, 64.0), Rect2(x + (w_pay + gap) * 2.0, y, w_more, 64.0)]
+
+
+func _balance(t: String) -> int:
+	return int(purse_of.call(t)) if purse_of.is_valid() else (purse if t == tender else 0)
+
+
 func _cycle_tender(k: int) -> void:
 	tender = TENDERS[(TENDERS.find(tender) + k + TENDERS.size()) % TENDERS.size()]
 	_refresh_purse()
