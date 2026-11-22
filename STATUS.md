@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**2026-11-22 — Founder doc "New shit!!!" Part 1: voices, subtitles, Rich's shop, horse colour, sand, lift, Reserve, Inferno, auction road, signposts, vultures.** SHIPPING (gates run on the Runpod gate pod); "live" only after master CI + butler.
+**2026-11-22 — Founder doc "New shit!!!" Part 1: voices, subtitles, Rich's shop, horse colour, sand, lift, Reserve, Inferno, auction road, signposts, vultures.** LIVE on itch, BUILD `2026-11-22-4bdf3e9` (master CI 45037684612, butler "Pushed to"; the itch page's game prints that tag, extras ready). NOT founder-verified.
 - **Voices (P1-0/P1-1):** Logan speaks (10 takes on his own account); Lil Blunt answers Dude in the haggle again; town captions are off by default (a recorded line shows no subtitle); Mike Dean's two licence lines recorded.
 - **Rich's shop (P1-2/P1-3):** the slowdown after trading was the hidden shop laying itself out every frame (24 ms); it now stops when closed. Two always-visible pay buttons, BTC and WBTC, each with its balance; Rich says "BTC or WBTC".
 - **Townsmen heard (P1-4):** a townsman's line within 12 m ducks the music (the two men behind the shops).
@@ -12,6 +12,7 @@
 - **Auction road (P1-10):** no teleport. The road leaves Logan's Lake through a cut in the lake's own ground, you land exactly where you crossed, looking where you looked, with the real lake behind you; the way back is the same.
 - **Signposts (P1-11):** the words are painted on real boards (they hung in the air past the planks); the ridge sign has a post and board.
 - **Vultures (P1-12):** a real wingbeat (the hand flexes at the wrist) and wing sound that swells on each downbeat, plus the cry.
+- **CI honesty fix:** the local gate (`scripts/ci-gates-local.sh`) used to stop at the first failing `|| { ...; exit 1; }` line and still say "all pass", so the first push (b96a1f20) failed master CI twice with no log. Fixed: every CI pin and test run now prints why it fails, and the local gate counts all of them.
 - **Gates:** new `ep2_lift_landing`, `ep2_signposts`; extended `ep2_ranch_road_presence` (13), `ep2_common_sense` (46), `ep2_playtest_dude` (68), `ep2_wildlife_combat` (134), `ep2_stockpile`, `ep2_fix_pack_1115`. Report: `~/Documents/SmokeRealm-mocap/newshit1122/PART1_REPORT.md`.
 
 **2026-11-22 — Road, Dude's buds, Tabs and the axe (founder residual pack).** PUSHED; not yet seen on a hard refresh.
