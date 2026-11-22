@@ -25,9 +25,12 @@ const DEPTH := 7.5
 ## Yard pieces of the model (its local frame), measured from the model's loose parts.
 const FIRE_PIT := Vector3(-6.05, 0.0, 3.97)
 const SCALE_POST := Vector3(-3.2, 0.0, 2.25)
-## The Reserve's frame: origin = middle of the front (the door), local +Z = out of the door (south, toward Fort Knox).
-const RESERVE_FRONT := Vector3(38.0, 0.0, 1489.0)
-const RESERVE_YAW := 0.0
+## The Reserve's frame: origin = middle of the front (the door), local +Z = out of the door.
+## Founder 2026-11-22 (image2): "turn this building 90 degrees so that the doorway faces the church". Yaw -PI/2 sends local +Z to world -X,
+## at the church (Ep2GoldTown LAYOUT "Church" (0, 1478)); the door moved 3.5 m so the turned block keeps its old plot
+## (x 34.1..41.9, z 1481.1..1489.9, was x 33.6..42.4, z 1481.6..1489.4). Inspect spot, lantern and walls are in this frame and turn with it.
+const RESERVE_FRONT := Vector3(34.5, 0.0, 1485.5)
+const RESERVE_YAW := -PI * 0.5
 const RESERVE_HALF := Vector2(4.4, 7.4)      # the plinth: x +-4.4, z 0.4 .. -7.4
 const RESERVE_INSPECT := Vector3(0.0, 0.0, 1.6)
 const RESERVE_LANTERN := Vector3(2.05, 2.64, 0.38)
@@ -90,10 +93,64 @@ static func build_site(root: Node3D, walls: Array, props: Array) -> void:
 			lamp.omni_range = 6.0
 			lamp.position = RESERVE_LANTERN
 			r.add_child(lamp)
+			_reserve_header(r)
 			walls.append_array(_rect_walls(Vector2(0.0, -(RESERVE_HALF.y - 0.4) * 0.5), Vector2(RESERVE_HALF.x, (RESERVE_HALF.y + 0.4) * 0.5),
 				reserve_xform()))
 			reserve_drawn = true
 		kit.free()
+
+
+## THE HEADER (founder 2026-11-22: the sign "is not fitting it needs to be above the door and more prominent to showcase a high status and
+## importance"). The kit's small placard left of the door goes; a carved header board spans above the lintel and keystone, wider than the
+## door surround, under a stone cap moulding, with RESERVE in raised gold-leaf letters (real TextMesh geometry in the town's western serif,
+## not a floating label). Reserve-local: the wall face is z -0.2, the lintel/keystone top y 3.9, the cornice starts at y 4.6.
+const HEADER_FONT := "res://src/episode2/assets/weapons/armory/western_bookman.otf"
+const HEADER_SIZE := Vector3(4.6, 0.6, 0.32)
+const HEADER_CENTER := Vector3(0.0, 4.22, -0.04)
+static func _reserve_header(r: Node3D) -> void:
+	for old in ["Reserve_Placard", "Reserve_Word"]:
+		var n: Node = r.find_child(old, true, false)
+		if n != null:
+			n.get_parent().remove_child(n)
+			n.free()
+	var head := Node3D.new()
+	head.name = "ReserveHeader"
+	r.add_child(head)
+	var timber: StandardMaterial3D = Ep2GoldTown._tex_mat("", Color(0.34, 0.22, 0.13), 0.9, Ep2GoldTown.TIMBER_TEX)
+	var stone: StandardMaterial3D = Ep2GoldTown._tex_mat("tex_fortstone.jpg", Color(0.86, 0.82, 0.76), 0.35)
+	var front: float = HEADER_CENTER.z + HEADER_SIZE.z * 0.5
+	_piece(head, "Board", HEADER_SIZE, HEADER_CENTER, timber)
+	_piece(head, "Cap", Vector3(HEADER_SIZE.x + 0.2, 0.07, HEADER_SIZE.z + 0.08), Vector3(0.0, HEADER_CENTER.y + HEADER_SIZE.y * 0.5 + 0.035, HEADER_CENTER.z + 0.04), stone)
+	_piece(head, "Sill", Vector3(HEADER_SIZE.x + 0.1, 0.05, HEADER_SIZE.z + 0.04), Vector3(0.0, HEADER_CENTER.y - HEADER_SIZE.y * 0.5 - 0.0, HEADER_CENTER.z + 0.02), stone)
+	for k in [[Vector3(HEADER_SIZE.x - 0.2, 0.04, 0.02), Vector3(0.0, HEADER_CENTER.y + HEADER_SIZE.y * 0.5 - 0.06, front + 0.01)],
+			[Vector3(HEADER_SIZE.x - 0.2, 0.04, 0.02), Vector3(0.0, HEADER_CENTER.y - HEADER_SIZE.y * 0.5 + 0.06, front + 0.01)],
+			[Vector3(0.04, HEADER_SIZE.y - 0.12, 0.02), Vector3(-(HEADER_SIZE.x * 0.5 - 0.1), HEADER_CENTER.y, front + 0.01)],
+			[Vector3(0.04, HEADER_SIZE.y - 0.12, 0.02), Vector3(HEADER_SIZE.x * 0.5 - 0.1, HEADER_CENTER.y, front + 0.01)]]:
+		_piece(head, "Gilt", k[0], k[1], gold())
+	var word := TextMesh.new()
+	word.text = "RESERVE"
+	if ResourceLoader.exists(HEADER_FONT):
+		word.font = load(HEADER_FONT)
+	word.font_size = 64
+	word.pixel_size = 0.0072
+	word.depth = 0.025
+	word.material = gold()
+	var letters := MeshInstance3D.new()
+	letters.name = "Word"
+	letters.mesh = word
+	letters.position = Vector3(0.0, HEADER_CENTER.y, front + word.depth * 0.5 + 0.002)
+	head.add_child(letters)
+
+
+static func _piece(parent: Node3D, n: String, size: Vector3, at: Vector3, mat: Material) -> void:
+	var mi := MeshInstance3D.new()
+	mi.name = n
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	mi.material_override = mat
+	mi.position = at
+	parent.add_child(mi)
 
 
 ## The kit's flat named materials get the town's own textures (no texture bytes in the kit): fort stone, timber; iron and gold keep

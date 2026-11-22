@@ -25,6 +25,26 @@ func _ready() -> void:
 	town.setup(0, [], 0)
 	check("the Stockpile is drawn in the town", SITE.stockpile_drawn and town.find_child("Stockpile", true, false) != null)
 	check("the Reserve is drawn in the town", SITE.reserve_drawn and town.find_child("Reserve", true, false) != null)
+	# founder 2026-11-22 (image2): the door faces the church; RESERVE is a prominent header above the door, not a small side plaque
+	var reserve: Node3D = town.find_child("Reserve", true, false) as Node3D
+	if reserve != null:
+		var door_dir: Vector3 = SITE.reserve_xform().basis * Vector3(0.0, 0.0, 1.0)
+		var church: Vector3 = Ep2GoldTown.local_to_world("Church", Vector3.ZERO)
+		var to_church: Vector3 = (church - SITE.RESERVE_FRONT) * Vector3(1.0, 0.0, 1.0)
+		check("the Reserve's door faces the church", door_dir.dot(to_church.normalized()) > 0.9, "dot %.2f" % door_dir.dot(to_church.normalized()))
+		var spot: Vector3 = SITE.reserve_xform() * SITE.RESERVE_INSPECT
+		check("...standing at its door, the church is ahead of him (not behind the block)", (church - spot).dot(door_dir) > 20.0)
+		check("the small side placard is gone", reserve.find_child("Reserve_Placard", true, false) == null and reserve.find_child("Reserve_Word", true, false) == null)
+		var head: Node3D = reserve.find_child("ReserveHeader", true, false) as Node3D
+		var board: MeshInstance3D = head.get_node_or_null("Board") as MeshInstance3D if head != null else null
+		var word: MeshInstance3D = head.get_node_or_null("Word") as MeshInstance3D if head != null else null
+		var bb: AABB = board.get_aabb() if board != null else AABB()
+		var board_bottom: float = (board.position.y + bb.position.y) if board != null else 0.0
+		check("RESERVE is a header board above the door's lintel and keystone (y > 3.9 m)", board != null and board_bottom >= 3.89, "bottom %.2f" % board_bottom)
+		check("...wider than the door surround (3.1 m lintel)", board != null and bb.size.x > 3.6, "%.1f m" % bb.size.x)
+		var tm: TextMesh = word.mesh as TextMesh if word != null else null
+		check("...in raised gold letters on the board's face", tm != null and tm.text == "RESERVE" and tm.depth > 0.0 and word.position.z > board.position.z + bb.size.z * 0.5)
+		check("...letters as tall as a hand-span at least (a high-status sign)", tm != null and word.get_aabb().size.y > 0.25, "%.2f m" % (word.get_aabb().size.y if word else 0.0))
 	var sp: Node = town._stockpile
 	check("the Stockpile's workers are built", sp != null and sp.workers.size() == 5, "%d" % (sp.workers.size() if sp else 0))
 	check("the back-lot miners are all still there", town._miners != null and town._miners.miners.size() == Ep2BackLotMiners.MINERS.size())
