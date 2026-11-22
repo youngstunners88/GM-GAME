@@ -679,7 +679,7 @@ func _shows_health() -> bool: return false
 ## without health (and full-health rooms) keep the bud and say why.
 func use_chill_bud() -> bool:
 	if GameManager.chill_buds <= 0:
-		if _hud != null:
+		if _hud != null and GameManager.chill_buds_unlocked:
 			_hud.toast("NO CHILL BUDS - VISIT DUDE", 1.6)
 		return false
 	if not _heal_full():

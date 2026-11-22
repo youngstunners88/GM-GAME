@@ -358,6 +358,8 @@ func _input(event: InputEvent) -> void:
 	# A raw physical key, deliberately not an InputMap action: H belongs to the
 	# open ledger and never becomes a gameplay binding in project.godot.
 	if event is InputEventKey and event.pressed and not event.is_echo() and event.physical_keycode == KEY_H:
+		if not GameManager.chill_buds_unlocked:
+			return                                      # no Chill Bud in Tabs before Dude (2026-11-22)
 		_panel.select_bud()
 		chill_bud_requested.emit()
 		get_viewport().set_input_as_handled()

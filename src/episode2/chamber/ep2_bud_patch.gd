@@ -7,14 +7,23 @@ extends RefCounted
 ## hearts when used). Nothing is free and nothing stacks without a payment.
 
 const POS := Vector3(-1.2, 0.0, 1210.6)         # outside the paddock's east fence (x = -4), 10 m south of the lake road
-const REACH := 2.6                               # E works within this many metres of the bed's centre
-const BED := Vector2(2.6, 2.1)
+const REACH := 3.6                               # E works within this many metres of the bed's centre (the bigger farm, 2026-11-22)
+const BED := Vector2(2.9, 2.3)                   # half-extents (x, z) of the tilled farm; its west edge stays east of the paddock fence (x = -4)
+## The bed's centre sits east/south of POS so the bigger farm grows away from the paddock fence (founder 2026-11-22: "reads miniature").
+const BED_OFFSET := Vector3(0.7, 0.0, 0.3)
 const LEAF_GLOW := 0.55
 const BUSH_RANGE := 110.0                        # the bed's plants stop drawing here (the trees stand on the horizon, so they never do)
 ## The founder's plants (Ep2Extras, streamed): the bed in front, the purple trees behind the back rail. Metres from the bed's centre.
 const PLANTS: Array = [
-	# The accepted source is already a grove of three rooted plants: place it once, leaving each root visible in soil.
+	# The accepted source is already a grove of three rooted plants. Founder 2026-11-22 ("more buds / larger farm presence"): seven groves
+	# in two staggered rows across the bigger tilled bed, so it reads as a small farm from the stable approach, roots still in soil.
 	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(0.0, 0.015, 0.0), "yaw": 0.12, "scale": 1.0, "tree": false},
+	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(-1.5, 0.015, -0.7), "yaw": 1.9, "scale": 0.92, "tree": false},
+	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(1.5, 0.015, -0.8), "yaw": 3.4, "scale": 0.95, "tree": false},
+	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(3.0, 0.015, -0.4), "yaw": 0.8, "scale": 0.88, "tree": false},
+	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(-1.1, 0.015, 1.3), "yaw": 4.6, "scale": 0.9, "tree": false},
+	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(0.8, 0.015, 1.5), "yaw": 2.7, "scale": 1.05, "tree": false},
+	{"path": Ep2Extras.PATCH_GROVE, "at": Vector3(2.4, 0.015, 1.2), "yaw": 5.5, "scale": 0.9, "tree": false},
 	{"path": Ep2Extras.PATCH_TREE, "at": Vector3(0.8, -0.025, -4.0), "yaw": 0.0, "scale": 1.0, "tree": true},
 	{"path": Ep2Extras.PATCH_TREE, "at": Vector3(-1.6, -0.025, -4.7), "yaw": 2.2, "scale": 0.82, "tree": true},
 ]
@@ -33,7 +42,7 @@ static func item(id: String) -> Dictionary:
 
 
 static func in_reach(player: Vector3) -> bool:
-	return Vector2(player.x - POS.x, player.z - POS.z).length() < REACH
+	return Vector2(player.x - POS.x - BED_OFFSET.x, player.z - POS.z - BED_OFFSET.z).length() < REACH
 
 
 ## Build the bed under `parent` (the stable yard, in town coordinates). Returns the patch root.
@@ -62,13 +71,15 @@ static func build(parent: Node3D) -> Node3D:
 	mound.name = "TilledBed"
 	mound.mesh = _soil_mound()
 	mound.material_override = soil
+	mound.position = BED_OFFSET
 	root.add_child(mound)
 	var wood := StandardMaterial3D.new()
 	wood.albedo_color = Color(0.45, 0.30, 0.16)
 	wood.roughness = 0.9
 	# Low boundary stakes leave the stems visible in earth; no rail crosses a flower crown.
-	for p in [Vector2(-1.52, -1.20), Vector2(1.52, -1.20), Vector2(-1.52, 1.20), Vector2(1.52, 1.20)]:
-		_box(root, "PatchPost", Vector3(p.x, 0.14, p.y), Vector3(0.07, 0.28, 0.07), wood)
+	for sx in [-1.0, 0.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			_box(root, "PatchPost", BED_OFFSET + Vector3(sx * (BED.x + 0.05), 0.14, sz * (BED.y + 0.05)), Vector3(0.07, 0.28, 0.07), wood)
 	var leaf_mat := StandardMaterial3D.new()
 	leaf_mat.albedo_color = Color(0.30, 0.58, 0.22)
 	leaf_mat.roughness = 0.75
@@ -82,10 +93,10 @@ static func build(parent: Node3D) -> Node3D:
 	stand_ins.name = "StandInBed"
 	root.add_child(stand_ins)
 	var i: int = 0
-	for row in [-0.45, 0.45]:
-		for col in [-0.9, -0.3, 0.3, 0.9]:
+	for row in [-1.2, 0.0, 1.2]:
+		for col in [-2.0, -1.2, -0.4, 0.4, 1.2, 2.0]:
 			var plant := _plant(leaf, leaf_mat, bud_mat, 0.55 + 0.12 * float((i * 5) % 3), float(i) * 1.37)
-			plant.position = Vector3(col, 0.12, row)
+			plant.position = BED_OFFSET + Vector3(col + (0.2 if row == 0.0 else 0.0), 0.12, row)
 			plant.name = "ChillBudPlant%d" % i
 			stand_ins.add_child(plant)
 			i += 1
@@ -96,10 +107,10 @@ static func build(parent: Node3D) -> Node3D:
 	sign.pixel_size = 0.008
 	sign.modulate = Color(0.97, 0.86, 0.58)
 	sign.outline_size = 4
-	sign.position = Vector3(1.75, 1.05, 0.0)
+	sign.position = BED_OFFSET + Vector3(BED.x + 0.35, 1.05, 0.0)
 	sign.rotation.y = PI * 0.25              # faces the bed's open front and the road side: never read from behind, mirrored
 	root.add_child(sign)
-	_box(root, "SignPost", Vector3(1.75, 0.5, 0.0), Vector3(0.08, 1.0, 0.08), wood)
+	_box(root, "SignPost", BED_OFFSET + Vector3(BED.x + 0.35, 0.5, 0.0), Vector3(0.08, 1.0, 0.08), wood)
 	return root
 
 
@@ -114,7 +125,7 @@ static func _soil_mound() -> ArrayMesh:
 				var r: float = point.x / 8.0
 				var angle: float = point.y * TAU / 32.0
 				var rim: float = 1.0 + 0.035 * sin(angle * 5.0) + 0.025 * cos(angle * 9.0)
-				corners.append(Vector3(cos(angle) * r * 1.44 * rim, 0.12 * pow(maxf(0.0, 1.0 - r * r), 1.5) - 0.04, sin(angle) * r * 1.16 * rim))
+				corners.append(Vector3(cos(angle) * r * BED.x * rim, 0.12 * pow(maxf(0.0, 1.0 - r * r), 1.5) - 0.04, sin(angle) * r * BED.y * rim))
 			for index in [0, 1, 2, 0, 2, 3]:
 				var p: Vector3 = corners[index]
 				st.set_uv(Vector2(p.x, p.z))

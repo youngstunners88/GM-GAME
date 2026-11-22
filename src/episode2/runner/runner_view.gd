@@ -127,10 +127,10 @@ const HERO_H := 1.9
 const HERO_MUZZLE := Vector3(0.45, 0.05, 0.48)     # a little behind the barrel tip (0.59)
 # Body yaw toward the aim. Small now: RunnerArmRest/RunnerAimModifier aim the revolver BARREL, so the
 # body no longer has to twist to point the baked gun (the twist hid the gun arm behind his back).
-const HERO_YAW_BASE := -0.2       # turned a little left: his gun arm swings out where the camera sees it
+const HERO_YAW_BASE := 0.2        # turned a little (sign flipped with the 2026-11-22 un-mirror): his arms swing out where the camera sees them
 const HERO_YAW_GAIN := 0.35
-const HERO_YAW_MIN := -0.6
-const HERO_YAW_MAX := 0.3
+const HERO_YAW_MIN := -0.3
+const HERO_YAW_MAX := 0.6
 const HERO_SEAT_DROP := 0.0         # extra floor offset (tuned by eye)
 const HERO_HIP_H := 0.773           # bind-pose hip height of lil_blunt_hero.glb (model units, feet at 0)
 const HERO_HIP_OVER_RIM := -0.05    # founder target: belt AT the rim, only chest/arms/hat above it
@@ -142,13 +142,11 @@ const BOARDER_LEAP_LEAD := 14.0    # the leap starts this far before the cart re
 const BOARDER_ARC := 1.6
 const GUN_NATIVE_LEN := 0.2        # golden_revolver.glb x ±0.10
 const GUN_LENGTH := 0.45
-const GUN_HAND := Vector3(-0.42, 1.0, 0.22)   # screen-right = world -X
-const AXE_HAND := Vector3(0.42, 1.05, 0.15)   # the other hand
+const GUN_HAND := Vector3(0.42, 1.0, 0.22)    # his left (rider faces +Z: world +X is his left, screen-left)
+const AXE_HAND := Vector3(-0.42, 1.05, 0.15)  # his RIGHT hand (founder 2026-11-22), screen-right
 const AXE_NATIVE_H := 0.6
 const AXE_LENGTH := 0.95
 const AXE_SWING_TIME := 0.25
-const AXE_START := 1.31            # rad; sweep 150° to -1.31
-const AXE_ARC := 2.62
 const BREAK_TILT := 1.22           # ~70° muzzle-up during reload
 const AIM_FALLBACK := 40.0
 const TUNNEL_SEG := 20.0
@@ -1262,7 +1260,9 @@ func _build_rider() -> void:
 		# existing rider maths (feet at _rider.position) still holds.
 		_hero_mode = true
 		_rider_model = Node3D.new()
-		hero.scale = Vector3(-HERO_SCALE, HERO_SCALE, HERO_SCALE)   # mirrored: revolver in his RIGHT hand, pickaxe in his left
+		# Founder 2026-11-22: the axe is held in his RIGHT hand. The pick is baked into the anatomical RightHand, so the hero is
+		# no longer mirrored (the mirror put it in his left on screen); the revolver is the other hand.
+		hero.scale = Vector3(HERO_SCALE, HERO_SCALE, HERO_SCALE)
 		# The hero is now RIGGED (Meshy rig, 10 library clips, weapons baked into the mesh). The
 		# rig's origin is at his FEET; the old static model was centred on his chest.
 		hero.position = Vector3.ZERO
@@ -2939,8 +2939,13 @@ func _update_rider(dist: float, delta: float) -> void:
 	# zipline hang) while he is on the cable; the pickaxe arm swings overhead for the chop.
 	if _arm_rest:
 		_arm_rest.influence = move_toward(float(_arm_rest.influence), 0.0 if zipping else 1.0, delta * 7.0)
-		var chop_t: float = 1.0 - clampf(_t_swipe / Motion.SWIPE_HOLD, 0.0, 1.0)
-		_arm_rest.pick_raise = move_toward(float(_arm_rest.pick_raise), sin(chop_t * PI) if _t_swipe < Motion.SWIPE_HOLD else 0.0, delta * 12.0)
+		if _t_swipe < Motion.SWIPE_HOLD:
+			var chop: Vector2 = chop_phase(_t_swipe / Motion.SWIPE_HOLD)
+			_arm_rest.pick_raise = chop.x
+			_arm_rest.pick_strike = chop.y
+		else:
+			_arm_rest.pick_raise = move_toward(float(_arm_rest.pick_raise), 0.0, delta * 12.0)
+			_arm_rest.pick_strike = move_toward(float(_arm_rest.pick_strike), 0.0, delta * 6.0)
 	# Gun arm aims at the reticle (RunnerAimModifier), eased off whenever the
 	# hands are busy: reload, pickaxe swipe, duck, hit reaction (the zipline is NOT busy: he shoots from the cable).
 	if _aim_mod:
@@ -3308,6 +3313,18 @@ func _update_gun(delta: float) -> void:
 	if _gun_spin_node:
 		_gun_spin_node.basis = Basis(Vector3.BACK, _gun_spin)
 
+## The chop as (wind-up, downstroke) weights over the swipe's 0..1 (founder 2026-11-22: "high-to-low slash, weighty").
+## A quick cock overhead (0 .. 0.2), an ACCELERATING cut down to a low finish (0.2 .. 0.42), a slower recovery to the rest
+## hold. Continuous at every seam: the wind-up drops to 0 only once the downstroke is fully on (which then owns the pose).
+static func chop_phase(u: float) -> Vector2:
+	u = clampf(u, 0.0, 1.0)
+	if u < 0.2:
+		return Vector2(sin(u / 0.2 * PI * 0.5), 0.0)
+	if u < 0.42:
+		var k: float = (u - 0.2) / 0.22
+		return Vector2(1.0, k * k)
+	return Vector2(0.0, 1.0 - smoothstep(0.0, 1.0, (u - 0.42) / 0.58))
+
 func _update_axe(delta: float) -> void:
 	if _axe_pivot == null:
 		return
@@ -3320,9 +3337,10 @@ func _update_axe(delta: float) -> void:
 	# the other); it only sweeps on a swipe.
 	_axe_pivot.visible = _sim == null or not bool(_sim.is_ziplining())
 	if swinging:
-		var u: float = clampf(_axe_t / AXE_SWING_TIME, 0.0, 1.0)
-		var e: float = 1.0 - (1.0 - u) * (1.0 - u)     # ease-out: fast strike
-		_axe_pivot.rotation = Vector3(-0.4, 0.0, AXE_START - AXE_ARC * e)
+		# High-to-low: cocked back over the shoulder (head behind, -X tip), then cut forward and DOWN past level (+X tip).
+		var chop: Vector2 = chop_phase(clampf(_axe_t / (AXE_SWING_TIME + 0.08), 0.0, 1.0))
+		var pitch: float = lerpf(lerpf(0.35, -1.1, chop.x), 2.1, chop.y)
+		_axe_pivot.rotation = Vector3(pitch, 0.0, lerpf(0.55, 0.15, maxf(chop.x, chop.y)))
 	else:
 		_axe_pivot.rotation = _axe_pivot.rotation.lerp(Vector3(0.35, 0.0, 0.55), clampf(delta * 8.0, 0.0, 1.0))
 

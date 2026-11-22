@@ -16,6 +16,10 @@ extends SkeletonModifier3D
 
 @export var pick_side: String = "Right"      # anatomical side holding the pickaxe (gun arm is the other)
 @export var pick_raise: float = 0.0
+## Founder 2026-11-22 "the axe actually cuts": 0..1 of the DOWNSTROKE. With pick_raise = 1 (the wind-up, head cocked back over
+## his shoulder) a rising pick_strike carries the arm and the head down and forward to a low finish in front of him: a
+## high-to-low slash, never the old symmetric up-and-back that read as a wrist flick.
+@export var pick_strike: float = 0.0
 ## Limb directions as (forward, up, outward) weights in the world frame.
 @export var gun_upper := Vector3(0.15, -0.55, 0.80)
 @export var gun_fore := Vector3(0.55, 0.05, 0.85)
@@ -82,10 +86,15 @@ func _process_modification() -> void:
 		var fd: Vector3 = (fwd * f.x + up * f.y + aout * f.z).normalized()
 		var hd: Vector3 = (fwd * h.x + up * h.y + aout * h.z).normalized()
 		if is_pick and pick_raise > 0.0:
-			# Chop: arm straight up overhead, the pick head coming forward over him.
+			# Wind-up: arm high overhead, the head cocked BACK over his shoulder (the cut needs somewhere to come from).
 			ud = ud.slerp((up * 0.95 + aout * 0.3).normalized(), pick_raise)
-			fd = fd.slerp((up * 1.0 + fwd * 0.2).normalized(), pick_raise)
-			hd = hd.slerp((up * 0.6 + fwd * 0.8).normalized(), pick_raise)
+			fd = fd.slerp((up * 0.9 - fwd * 0.35).normalized(), pick_raise)
+			hd = hd.slerp((up * 0.45 - fwd * 0.9).normalized(), pick_raise)
+		if is_pick and pick_strike > 0.0:
+			# The slash: shoulder drives the arm forward and down, the head leads the handle to a low finish ahead of the cart.
+			ud = ud.slerp((fwd * 0.75 - up * 0.30 + aout * 0.25).normalized(), pick_strike)
+			fd = fd.slerp((fwd * 0.80 - up * 0.55).normalized(), pick_strike)
+			hd = hd.slerp((fwd * 0.40 - up * 0.92).normalized(), pick_strike)
 		_chain(sk, side + "Arm", side + "ForeArm", ud)
 		_chain(sk, side + "ForeArm", side + "Hand", fd)
 		_aim_hand(sk, side + "Hand", handle_local if is_pick else barrel_local, hd)

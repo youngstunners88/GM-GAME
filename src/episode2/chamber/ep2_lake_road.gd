@@ -29,17 +29,23 @@ static func smooth(points: Array,spacing: float) -> PackedVector3Array:
 	out.append(Vector3(last.x,0,last.y))
 	return out
 
-static func build(parent: Node3D,origin: Vector3=Vector3.ZERO) -> Node3D:
-	var root := Node3D.new()
-	root.name="LakeRoadSurvey"
-	root.position=origin
-	parent.add_child(root)
+## The ONE brown dirt-road look (founder 2026-11-22: the Inferno -> town road was black, the road back to the stables brown).
+## The woods' logging road, the town-return road and the lake trail's dusty leg all use this material.
+static func dirt_road_material() -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader=load("res://src/episode2/art/lake_road.gdshader")
 	mat.set_shader_parameter("sand_tex",load("res://src/episode2/assets/town/tex_desert.jpg"))
 	mat.set_shader_parameter("gravel_tex",load("res://src/episode2/assets/textures/tex_gravel.jpg"))
 	if ResourceLoader.exists(Ep2LakeLandscape.FLOOR):
 		mat.set_shader_parameter("forest_tex",load(Ep2LakeLandscape.FLOOR))
+	return mat
+
+static func build(parent: Node3D,origin: Vector3=Vector3.ZERO) -> Node3D:
+	var root := Node3D.new()
+	root.name="LakeRoadSurvey"
+	root.position=origin
+	parent.add_child(root)
+	var mat: ShaderMaterial=dirt_road_material()
 	var points: PackedVector3Array=smooth(POINTS,1.5)
 	var arc: Array[float]=[0.0]
 	for i in range(1,points.size()):arc.append(arc[-1]+points[i].distance_to(points[i-1]))

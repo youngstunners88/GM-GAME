@@ -176,6 +176,8 @@ func _supply_button(label: String, action: Callable) -> Button:
 	return b
 
 func select_bud() -> void:
+	if not GameManager.chill_buds_unlocked:
+		return                                          # nothing to select before Dude's beat
 	bud_selected = true
 	refresh_supplies()
 	queue_redraw()
@@ -263,6 +265,11 @@ func _process(_delta: float) -> void:
 
 func refresh_supplies() -> void:
 	if bud_card==null or bud_use==null:return
+	# Founder 2026-11-22: absent (not greyed) until Dude has given/sold the first bud.
+	var known: bool = GameManager.chill_buds_unlocked
+	bud_card.visible = known
+	bud_use.visible = known
+	if not known: bud_selected = false
 	bud_card.text = ("DUDE'S CHILL BUD  ×%d" if TouchUi.keys_shown() else "×%d") % GameManager.chill_buds
 	bud_card.modulate = Color.WHITE
 	bud_card.add_theme_color_override("font_color", Color("ffd482") if bud_selected else PAPER)
@@ -511,7 +518,8 @@ func _draw_ledger(band: Rect2, compact: bool) -> void:
 	var bud_line: String = "%d / 3 · RESTORES ALL THREE HEARTS" % health
 	if health >= 3: bud_line = "3 / 3 · FEELING CHILL"
 	if GameManager.chill_buds <= 0: bud_line = "VISIT DUDE FOR CHILL BUDS"
-	if TouchUi.keys_shown(): bud_line += " · H TO USE"
+	if not GameManager.chill_buds_unlocked: bud_line = "HEALTH %d / 3" % health   # no bud spoiler before Dude
+	elif TouchUi.keys_shown(): bud_line += " · H TO USE"
 	else: bud_line = "%d / 3" % health
 	var runner_btc: int = GameManager.runner_btc_credited
 	if runner_btc > 0:

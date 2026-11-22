@@ -452,11 +452,11 @@ func _apply_light() -> void:
 func _build_trails() -> void:
 	var dirt: StandardMaterial3D = _tex(FLOOR_TEX, Color(0.58, 0.46, 0.36), 0.45) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.34, 0.27, 0.20), 0.5)
 	dirt.uv1_world_triplanar = true
-	var road: StandardMaterial3D = _tex(FLOOR_TEX, Color(0.50, 0.40, 0.31), 0.4) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.32, 0.26, 0.20), 0.5)
-	road.uv1_world_triplanar = true
 	var trail_mi := _ribbon(_smooth(SNEAK_TRAIL, 1.5), 2.2, dirt, 0.021)
 	trail_mi.name = "SneakTrail"
-	var road_mi := _ribbon(_ride_pts, 4.6, road, 0.02)
+	# Founder 2026-11-22: the quad road to town read BLACK (needle-floor texture under a dark tint, lit by the desert sun) while the
+	# road back to the stables is brown dust. One road, one look: the same dirt-road material as Ep2LakeRoad's town-return road.
+	var road_mi := Ep2LakeRoad.ribbon(_visuals, _ride_pts, 4.6, Ep2LakeRoad.dirt_road_material(), 0.02)
 	road_mi.name = "LoggingRoad"
 	var spawn_pad := _box(Vector3(6.0, 0.04, 6.0), Vector3(0.0, 0.02, 2.0), dirt)
 	spawn_pad.name = "LiftPad"

@@ -29,6 +29,7 @@ func _ready() -> void:
 	_test_real_bison()
 	_test_carrion()
 	_test_patch_plants()
+	_test_tabs_bud_gate_1122()
 	_test_dude_announces()
 	_test_horizon()
 	await _test_lake_horse()
@@ -292,6 +293,31 @@ func _test_patch_plants() -> void:
 	for row in Ep2BudPatch.PLANTS:
 		_check("not the pickaxe: " + str(row["path"]).get_file(), not "war_pick" in str(row["path"]))
 	root.queue_free()
+
+
+## Founder 2026-11-22 P0-B: Chill Buds are absent from Tabs until Dude's first grant (gift, ranch sale or patch), then stay.
+func _test_tabs_bud_gate_1122() -> void:
+	print("-- TABS: NO CHILL BUD BEFORE DUDE (2026-11-22)")
+	var saved: Dictionary = {"n": GameManager.chill_buds, "u": GameManager.chill_buds_unlocked}
+	GameManager.chill_buds = 0
+	GameManager.chill_buds_unlocked = false
+	var sel := Ep2WeaponSelector.new()
+	add_child(sel)
+	sel.refresh_supplies()
+	sel.select_bud()
+	_check("before Dude: no Chill Bud row and nothing to select", not sel.bud_card.visible and not sel.bud_use.visible and not sel.bud_selected)
+	GameManager.add_chill_buds(1)
+	sel.refresh_supplies()
+	_check("after Dude's gift: the row appears", GameManager.chill_buds_unlocked and sel.bud_card.visible)
+	GameManager.take_chill_bud()
+	sel.refresh_supplies()
+	_check("spending the last bud keeps the (earned) row", sel.bud_card.visible)
+	sel.queue_free()
+	GameManager.chill_buds = int(saved["n"])
+	GameManager.chill_buds_unlocked = bool(saved["u"])
+	# the bigger farm still stands clear of the paddock fence (x = -4) and reads as more than one cluster
+	_check("the farm's west edge clears the paddock fence", Ep2BudPatch.POS.x + Ep2BudPatch.BED_OFFSET.x - Ep2BudPatch.BED.x > -4.0)
+	_check("the farm holds several groves", Ep2BudPatch.PLANTS.filter(func(r): return not bool(r["tree"])).size() >= 6)
 
 
 func _test_dude_announces() -> void:

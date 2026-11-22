@@ -113,11 +113,14 @@ static func hero_pose(t_hit: float, t_shot: float, t_swipe: float, t_hop: float,
 	# Revolver recoil: the whole body kicks back and up.
 	pitch -= 0.15 * exp(-t_shot * 14.0)
 	bob += 0.035 * exp(-t_shot * 14.0)
-	# Pickaxe chop: lean hard into it and back.
+	# Pickaxe chop (founder 2026-11-22, high-to-low slash): rock back a touch on the wind-up, then drive the body down WITH the
+	# cut. Same phase split as RunnerView.chop_phase (wind-up 0..0.2, accelerating downstroke 0.2..0.42, recovery after).
 	if t_swipe < SWIPE_HOLD:
 		var u: float = t_swipe / SWIPE_HOLD
-		pitch += 0.85 * sin(PI * u)
-		bob -= 0.06 * sin(PI * u)
+		var wind: float = sin(clampf(u / 0.2, 0.0, 1.0) * PI * 0.5) if u < 0.42 else 0.0
+		var cut: float = pow(clampf((u - 0.2) / 0.22, 0.0, 1.0), 2.0) if u < 0.42 else 1.0 - smoothstep(0.0, 1.0, (u - 0.42) / 0.58)
+		pitch += -0.18 * wind * (1.0 - cut) + 0.85 * cut
+		bob -= 0.06 * cut
 	# Hit: thrown back, dropped.
 	if t_hit < HIT_HOLD:
 		pitch -= 0.42 * exp(-t_hit * 6.0)

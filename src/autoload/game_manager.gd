@@ -482,6 +482,9 @@ var chill_buds: int = 0
 ## Dude's ranch ledger. The one-time welcome bud and any horse credit are
 ## persistent holdings, saved alongside the purse rather than run currency.
 var dude_free_bud_claimed: bool = false
+## Founder 2026-11-22: Chill Buds stay OUT of Tabs (no row, no locked preview) until
+## the first real grant from Dude (gift, ranch sale or his patch). Set once, saved.
+var chill_buds_unlocked: bool = false
 ## The lake trail's buffalo stampede happens ONCE per save (founder 2026-11-01 "Guns Buff" §5): set when the herd has passed or fallen.
 var ep2_stampede_done: bool = false
 ## Town and stable-yard horses shot dead stay dead across a reload ("town:Horse2", "yard:StableHorse1"): STATUS 2026-11-05 open gap.
@@ -516,6 +519,7 @@ func add_chill_buds(n: int) -> void:
     if n <= 0:
         return
     chill_buds += n
+    chill_buds_unlocked = true
     chill_buds_changed.emit(chill_buds)
 
 ## Take one stored bud, or return false without changing the count when empty.
@@ -567,6 +571,8 @@ func _load_ledger(data: Dictionary) -> void:
     bears_wounded = clampi(SaveSafe.to_int(data.get("bears_wounded", 0), 0), 0, 1000000)
     chill_buds = maxi(0, SaveSafe.to_int(data.get("chill_buds", 0), 0))
     dude_free_bud_claimed = SaveSafe.to_int(data.get("dude_free_bud_claimed", 0), 0) != 0
+    # Older saves have no flag: holding buds or the claimed gift proves the Dude beat happened.
+    chill_buds_unlocked = SaveSafe.to_int(data.get("chill_buds_unlocked", 0), 0) != 0 or chill_buds > 0 or dude_free_bud_claimed
     ep2_stampede_done = SaveSafe.to_int(data.get("ep2_stampede_done", 0), 0) != 0
     ep2_dead_horses = []
     var dead_raw: Variant = data.get("ep2_dead_horses", [])
@@ -933,6 +939,7 @@ func reset_session() -> void:
     bears_wounded = 0
     chill_buds = 0
     dude_free_bud_claimed = false
+    chill_buds_unlocked = false
     ep2_stampede_done = false
     ep2_dead_horses = []
     dude_credit_btc = 0
@@ -999,6 +1006,7 @@ func session_data() -> Dictionary:
         "bears_wounded": bears_wounded,
         "chill_buds": chill_buds,
         "dude_free_bud_claimed": dude_free_bud_claimed,
+        "chill_buds_unlocked": chill_buds_unlocked,
         "ep2_stampede_done": ep2_stampede_done,
         "ep2_dead_horses": ep2_dead_horses.duplicate(),
         "dude_credit_btc": dude_credit_btc,

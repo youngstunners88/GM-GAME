@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-22 — Road, Dude's buds, Tabs and the axe (founder residual pack).** PUSHED; not yet seen on a hard refresh.
+- **One brown dirt road (P0-A):** the quad road from the woods into town used the dark forest-floor texture and read black in the desert; it now uses the same brown dirt-road material as the road back to the stables (`Ep2LakeRoad.dirt_road_material()`).
+- **Chill Buds are a surprise until Dude (P0-B):** no Chill Bud row, no "visit Dude" hint and no H shortcut in Tabs until Dude gives or sells the first bud (gift, ranch sale or patch). Saved, and older saves holding buds keep the row.
+- **Dude's farm reads real (P1):** the patch is now a bigger tilled bed with seven plant groves in two rows (was one), still in soil, clear of the paddock fence, the gate and the roads.
+- **Axe strike (P0-C, the cart runner):** the pick is now in Lil Blunt's RIGHT hand (the runner hero was mirrored, which put it in his left; the revolver is now in his left hand). The chop is a real high-to-low cut: a quick wind-up overhead, a fast downstroke to a low finish with the body driving into it, then recovery. Before, it went up and back down to the same place.
+- Not proven in a browser this session (no Godot here); new checks are in `ep2_founder_residuals_1101_test` and `ep2_runner_motion_test`.
+
 **2026-11-21 — Episode 2 full audit (run 2026-11-17): two soft-locks, a dead end and an access-code bypass closed. LIVE on itch, BUILD `2026-11-21-b017643` (master CI 44928142917, butler "Pushed to"). NOT founder-verified; the return routes have not been played on the live build.**
 - **Checked on the live game itself:** with `?ep2=1&ep2unlock=1` (and `ep2gate=skip`) the access-code screen still appears and no run starts (`HARNESS_INERT_BROWSER: ALL PASS` against the itch build).
 - **How it was audited:** all 107 Episode 2 test scenes run on master with a clean save each (104 passed; the 3 that fail are stale checks, not in CI), the session, world-route, shared first-person room, boot/pause/exit and save code read in full, and pattern scans over the rest. No browser or phone playthrough, no look at the art, no listen to the mix: those layers are covered only by their existing tests. Full report: `docs/episode2-quality/full-audit-2026-11-17/AUDIT.md`.
