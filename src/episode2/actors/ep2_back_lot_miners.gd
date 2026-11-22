@@ -267,8 +267,7 @@ func _step_talk(lot: String, delta: float) -> void:
 	who.folk.hold_clip("Rest" if who.clip == "Rest" else "Talk")    # the seated man talks from his crate
 	var take: AudioStream = Ep2TownVoiceBank.stream(id)
 	if take != null:
-		who.voice.stream = take
-		who.voice.play()
+		Ep2Speech.play_3d(who.voice, take, who.folk.position.distance_to(player_pos))   # heard over the music within 12 m (founder 2026-11-22)
 	talks_done.append([lot, id])
 	s["line"] = line
 	s["t"] = Ep2Speech.pace(id, str(Ep2TownVoiceBank.LINES.get(id, {}).get("text", "")))
