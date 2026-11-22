@@ -315,18 +315,11 @@ func _build_lake_signpost() -> void:
 	root.position = (sample[0] as Vector3) - right * 3.4
 	root.rotation.y = yaw + PI            # the board faces the oncoming rider
 	var wood: Material = _plain(Color(0.42, 0.27, 0.14), 0.9)
-	_box(Vector3(0.16, 2.6, 0.16), Vector3(0, 1.3, 0), wood, root)
-	_box(Vector3(2.5, 0.62, 0.1), Vector3(0, 2.05, 0), wood, root)
-	_box(Vector3(1.9, 0.42, 0.1), Vector3(0.18, 1.42, 0), wood, root)
-	for row in [["LOGAN'S LAKE", 2.05, 44], ["LOGAN'S CAMP AHEAD", 1.42, 30]]:
-		var label := Label3D.new()
-		label.text = str(row[0])
-		label.position = Vector3(0, float(row[1]), 0.06)      # the rider's side of the board (root +Z points back at him)
-		label.font_size = int(row[2])
-		label.pixel_size = 0.0095
-		label.modulate = Color(0.97, 0.84, 0.56)
-		label.outline_size = 4
-		root.add_child(label)
+	# founder 2026-11-22 ("the words are floating in mid air"): the post stands in the ground behind the boards and the words are painted
+	# on the boards (Ep2Signpost), fitted inside them; they used to run past the planks' ends.
+	_box(Vector3(0.16, 2.9, 0.16), Vector3(0, 1.15, -0.13), wood, root)
+	Ep2Signpost.board(root, Vector3(2.5, 0.62, 0.1), Vector3(0, 2.05, 0), wood, "LOGAN'S LAKE", Color(0.97, 0.84, 0.56))   # root +Z faces the rider
+	Ep2Signpost.board(root, Vector3(1.9, 0.42, 0.1), Vector3(0.18, 1.42, 0), wood, "LOGAN'S CAMP AHEAD", Color(0.97, 0.84, 0.56))
 
 
 func _step_desert() -> void:

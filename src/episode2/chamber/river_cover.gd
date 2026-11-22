@@ -699,16 +699,9 @@ func _dress_ridge() -> void:
 	for i in OVERLOOKS.size():
 		var box := _box(Vector3(0.9, 0.55, 0.6), OVERLOOKS[i] + Vector3(-3.0, 0.28, 1.6), plank, root)
 		box.name = "AmmoBox%d" % i
-	var sign := Label3D.new()
-	sign.text = "RIDGE TRAIL  >"
-	sign.font_size = 56
-	sign.pixel_size = 0.006
-	sign.modulate = Color(0.97, 0.86, 0.60)
-	sign.outline_size = 5
-	sign.position = (RIDGE_POINTS[1] as Vector3) + Vector3(-3.2, 2.0, 0)
-	sign.rotation.y = PI
-	root.add_child(sign)
-	_box(Vector3(0.16, 2.3, 0.16), (RIDGE_POINTS[1] as Vector3) + Vector3(-3.2, 1.1, 0.08), post, root)
+	# founder 2026-11-22 ("the signposts on the ridge ... the words are floating in mid air"): this one was a label in the air beside a post.
+	Ep2Signpost.standard(root, "RIDGE TRAIL  >", (RIDGE_POINTS[1] as Vector3) + Vector3(-3.2, 0.0, 0.0), PI, 1.9, post, 1.8, 0.5, 2.1,
+		Color(0.97, 0.86, 0.60))
 	# sandstone shoulders breaking the lower cliff, set into the face (half buried) and never under an overlook's view down
 	var cliff: Array = []
 	for i in range(3, _ridge_sections.size() - 2, 7):
@@ -777,18 +770,12 @@ func _build_marker() -> void:
 		band.free()
 	var wood := _pbr("wood_dark", Color(0.45, 0.30, 0.17), 0.8)
 	_box(Vector3(0.16, 2.6, 0.16), Vector3(-1.1, 1.3, 0), wood, root)
-	_box(Vector3(0.12, 0.8, 1.9), Vector3(-1.1, 2.2, 0), wood, root)
-	for face in [-1.0, 1.0]:
-		var label := Label3D.new()
-		label.text = "DAY 88\nRIVER RUN"
-		label.font_size = 64
-		label.pixel_size = 0.0055
-		label.modulate = Color(0.97, 0.86, 0.60)
-		label.outline_size = 6
-		label.outline_modulate = Color(0.20, 0.10, 0.05)
-		label.position = Vector3(-1.1 + face * 0.07, 2.2, 0)
-		label.rotation.y = PI * 0.5 * face
-		root.add_child(label)
+	var plank := Node3D.new()                               # the plank across the post, its words painted on both faces (Ep2Signpost)
+	plank.name = "Day88Plank"
+	plank.position = Vector3(-1.1, 0.0, 0.0)
+	plank.rotation.y = PI * 0.5
+	root.add_child(plank)
+	Ep2Signpost.board(plank, Vector3(1.9, 0.8, 0.2), Vector3(0.0, 2.2, 0.0), wood, "DAY 88\nRIVER RUN", Color(0.97, 0.86, 0.60))
 
 
 ## THE RECEIVING END (founder 2026-11-06: "the facility the shipment goes to ... must look like a dock", "not grey boxes"): the lower
@@ -889,6 +876,7 @@ func _build_dock() -> void:
 	root.add_child(hook)
 	# the receiving warehouse on its stone footing, its doors to the deck; the dock's sign on its gable over the doors
 	var sign_at: Vector3 = DOCK_DECK + Vector3(-6.4, 2.6, 0)
+	var sign_board: Material = timber
 	if Ep2Extras.has(Ep2Extras.RIVER_WAREHOUSE):
 		var house: Node3D = (load(Ep2Extras.RIVER_WAREHOUSE) as PackedScene).instantiate()
 		house.name = "ReceivingWarehouse"
@@ -896,19 +884,21 @@ func _build_dock() -> void:
 		root.add_child(house)
 		_box(Vector3(7.3, 1.6, 5.8), DOCK_DECK + WAREHOUSE_AT + Vector3(-0.08, -0.82, 0.28), _pbr("stone_rustic", Color(0.46, 0.40, 0.33), 1.5), root)
 		sign_at = DOCK_DECK + WAREHOUSE_AT + Vector3(3.62, 3.75, 0.3)
-		_box(Vector3(0.08, 0.62, 2.5), sign_at + Vector3(-0.06, 0, 0), _pbr("planks_raw", Color(0.40, 0.30, 0.21), 0.8), root)
+		sign_board = _pbr("planks_raw", Color(0.40, 0.30, 0.21), 0.8)
 	else:
 		_box(Vector3(5, 3.2, 4), DOCK_DECK + Vector3(-9, 1.6, 0), dry[0], root)
 		_box(Vector3(5.4, 0.25, 4.4), DOCK_DECK + Vector3(-9, 3.3, 0), timber, root)
-	var sign := Label3D.new()
-	sign.text = "DAY-88 DOCK"
-	sign.font_size = 56
-	sign.pixel_size = 0.006
-	sign.modulate = Color(0.97, 0.86, 0.60)
-	sign.outline_size = 5
-	sign.position = sign_at
-	sign.rotation.y = PI * 0.5
-	root.add_child(sign)
+	_wall_sign(root, "DAY-88 DOCK", sign_at + Vector3(-0.06, 0, 0), Vector2(2.5, 0.62), sign_board)
+
+
+## A board on a wall facing +X with its words painted on it (Ep2Signpost; founder 2026-11-22: no words in mid air).
+func _wall_sign(root: Node3D, words: String, at: Vector3, size: Vector2, wood: Material) -> void:
+	var holder := Node3D.new()
+	holder.name = "WallSign_" + words.replace(" ", "_")
+	holder.position = at
+	holder.rotation.y = PI * 0.5                            # the board's +Z face looks down +X, out over the dock
+	root.add_child(holder)
+	Ep2Signpost.board(holder, Vector3(size.x, size.y, 0.08), Vector3.ZERO, wood, words, Color(0.97, 0.86, 0.60), false)
 
 
 ## The plain dock (the streamed pack not mounted): deck, piles, a shed, and the A-frame crane that lifts the crate out.
@@ -931,15 +921,7 @@ func _build_dock_plain() -> void:
 	_box(Vector3(5.5, 0.28, 0.28), DOCK_DECK + Vector3(6.0, 6.0, 0), dark, root)
 	var rope := _box(Vector3(0.05, 4.0, 0.05), DOCK_DECK + Vector3(8.4, 4.0, 0), _mat(Color(0.72, 0.62, 0.42)), root)
 	rope.name = "CraneRope"
-	var sign := Label3D.new()
-	sign.text = "DAY-88 DOCK"
-	sign.font_size = 56
-	sign.pixel_size = 0.006
-	sign.modulate = Color(0.97, 0.86, 0.60)
-	sign.outline_size = 5
-	sign.position = DOCK_DECK + Vector3(-6.4, 2.6, 0)
-	sign.rotation.y = PI * 0.5
-	root.add_child(sign)
+	_wall_sign(root, "DAY-88 DOCK", DOCK_DECK + Vector3(-6.46, 2.6, 0), Vector2(2.6, 0.6), wood)
 
 
 ## THE SHIPMENT: only when he owns it (no free crate). It waits in the launch pool until the run is live.

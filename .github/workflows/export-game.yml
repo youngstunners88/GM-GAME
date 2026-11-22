@@ -401,6 +401,8 @@ jobs:
           grep -q 'EP2_EXIT_BRIDGE: ALL PASS' exit-bridge-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lift_landing_test.tscn 2>&1 | tee lift-landing-tests.log
           grep -q 'EP2_LIFT_LANDING: ALL PASS' lift-landing-tests.log
+          timeout 400 "$GODOT_BIN" --headless res://tests/ep2_signposts_test.tscn 2>&1 | tee signposts-tests.log
+          grep -q 'EP2_SIGNPOSTS: ALL PASS' signposts-tests.log
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_quad_music_test.tscn 2>&1 | tee quad-music-tests.log
           grep -q 'EP2_QUAD_MUSIC: ALL PASS' quad-music-tests.log
           # Photo-scanned PBR dressing + the CAD Colt Gatling (founder 2026-10-25 CAD pass): authored colour kept, period bronze, sightline clear.

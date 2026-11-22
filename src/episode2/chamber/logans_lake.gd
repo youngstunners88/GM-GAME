@@ -29,7 +29,7 @@ var _staged: bool = false
 var _sharps_told: bool = false                     # the overlook has told him the ridge needs the Sharps (once per climb)
 var _dialogue: Label
 var _dialogue_panel: PanelContainer
-var _marker_label: Label3D
+var _marker_label: TextMesh
 var _stage_calls: int = 0
 var _landscape := Ep2LakeLandscape.new()
 var _skiff: Ep2LoganSkiff
@@ -133,20 +133,12 @@ func _land() -> void:
 func _water() -> void:
 	_landscape.build_water(_sun)
 
-func _sign(words: String, p: Vector3, width: float = 2.6) -> Label3D:
+## A signpost on the ground at (p.x, p.z): the words painted on both faces of its board (Ep2Signpost, founder 2026-11-22 "the words are
+## floating in mid air"). The readable side faces the arrival (-Z), as the old label did.
+func _sign(words: String, p: Vector3, width: float = 2.6) -> TextMesh:
 	var wood: Material = _tex(TIMBER_TEX, Color(0.50, 0.33, 0.18), 0.5)
-	_box(Vector3(0.15, 2.3, 0.15), p + Vector3(0, 0.6, 0), wood)
-	_box(Vector3(width, 0.7, 0.13), p + Vector3(0, 1.5, 0), wood)
-	var label := Label3D.new()
-	label.text = words
-	label.position = p + Vector3(0, 1.5, -0.075)
-	label.rotation.y = PI
-	label.font_size = 40
-	label.pixel_size = 0.009
-	label.modulate = Color(0.96, 0.82, 0.55)
-	label.outline_size = 3
-	_visuals.add_child(label)
-	return label
+	var foot := Vector3(p.x, Ep2LakeLandform.drawn_height(p.x, p.z), p.z)
+	return Ep2Signpost.standard(_visuals, words, foot, PI, width, wood, 1.5, 0.7, 1.85)
 
 func _shore() -> void:
 	var dock: Node3D = (load(DOCK) as PackedScene).instantiate()
@@ -273,7 +265,7 @@ func _on_setup() -> void:
 	_staged = false
 	_stage_calls = 0
 	_gesture_t = 0
-	_marker_label.text = "STAGED CARGO"
+	Ep2Signpost.retext(_marker_label, "STAGED CARGO")
 	_cargo.position = Vector3(24, -0.08, 49)
 	if _logan != null: _logan.hold_clip("Idle")
 	if _skiff != null: _skiff.reset_routine()
@@ -308,7 +300,7 @@ func _on_setup() -> void:
 			_horse_state = "hurt"
 			_set_horse_clip("horse_stand", 0.6)
 		_staged = true
-		_marker_label.text = "CARGO CHECKED"
+		Ep2Signpost.retext(_marker_label, "CARGO CHECKED")
 		_cargo.position = Vector3(24, -0.08, 72)
 	elif armory.horse_is_down():
 		_horse_state = "gone"                       # shot out from under him on the trail: there is no horse at the lake to water or ride
@@ -431,7 +423,7 @@ func start_rig(_payment: String = "") -> bool:
 	if _beat == Beat.STAGE and _player_pos.distance_to(STAGING_MARK) < 2.8 and not _staged:
 		_staged = true
 		_stage_calls += 1
-		_marker_label.text = "CARGO CHECKED"
+		Ep2Signpost.retext(_marker_label, "CARGO CHECKED")
 		_hud.toast("STAGING CONFIRMED · DEPTH PROTECTED", 3)
 		_advance_to(Beat.HANDOFF)
 		return true
@@ -923,17 +915,9 @@ func _build_stock() -> void:
 	_auction_sign = Node3D.new()
 	_auction_sign.name = "AuctionSign"
 	_visuals.add_child(_auction_sign)
-	_auction_sign.position = Vector3(AUCTION_SIGN.x, path_height(AUCTION_SIGN.z), AUCTION_SIGN.z)
+	_auction_sign.position = Vector3(AUCTION_SIGN.x, Ep2LakeLandform.drawn_height(AUCTION_SIGN.x, AUCTION_SIGN.z), AUCTION_SIGN.z)
 	var wood: StandardMaterial3D = _plain(Color(0.36, 0.24, 0.13), 0.9)
-	_box(Vector3(0.14, 2.2, 0.14), Vector3(0, 1.1, 0), wood, _auction_sign)
-	_box(Vector3(1.9, 0.42, 0.07), Vector3(0.35, 1.85, 0), wood, _auction_sign)
-	var words := Label3D.new()
-	words.text = "AUCTION GROUNDS  >"
-	words.font_size = 44
-	words.pixel_size = 0.006
-	words.modulate = Color(0.95, 0.88, 0.7)
-	words.position = Vector3(0.35, 1.85, 0.05)
-	_auction_sign.add_child(words)
+	Ep2Signpost.standard(_auction_sign, "AUCTION GROUNDS  >", Vector3.ZERO, 0.0, 2.3, wood, 1.85, 0.46, 2.1, Color(0.95, 0.88, 0.7))
 	_auction_sign.visible = after_day88
 
 
