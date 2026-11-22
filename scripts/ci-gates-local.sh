@@ -44,6 +44,7 @@ bad=$(
   grep -E 'GATE_MISSING' "$LOGDIR/run.log" | grep -v 'pause-tests.log'
   # a test that prints its pass line but exits non-zero (a crash at exit) fails CI under set -e: count it here too (2026-11-22)
   grep -E 'GODOT_EXIT [1-9]' "$LOGDIR/run.log" | grep -v 'pause-tests.log'
+  grep -E 'GATE_ERRORS' "$LOGDIR/run.log"
   grep -E 'timed out|Terminated' "$LOGDIR/run.log"
 )
 if [ -n "$bad" ]; then

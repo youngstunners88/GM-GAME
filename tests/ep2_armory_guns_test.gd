@@ -135,7 +135,8 @@ func _ready() -> void:
 		said += str(ln[0]) + ": " + str(ln[1]) + "\n"
 	check("they introduce it by name: Sharps, Model 1874, the Buffalo Gun, falling block, octagon barrel, set triggers, tang sight",
 		"Sharps" in said and "1874" in said and "Buffalo Gun" in said and "Falling block" in said and "octagon" in said and "set trigger" in said.to_lower() and "tang sight" in said, said)
-	check("Rich prices the iron in the shop's own coins and never offers it free", "Three coin" in said and not ("free" in said.to_lower().replace("not for", "")), said)
+	# founder 2026-11-22 (P1-3): "Rich accept WBTC so this has to show so that Lil Blunt can pay with either or" - the line names both coins
+	check("Rich prices the iron in the shop's own coins and never offers it free", "Three BTC or WBTC" in said and not ("free" in said.to_lower().replace("not for", "")), said)
 	check("Lil Blunt cannot leave with the rifle: he does not own it until he pays", not c.has_sniper())
 	_until(c, 20.0, func(): return intro.stage == Ep2ArmoryIntro.Stage.GATLING_WALK)
 	check("the rifle is locked back in the case and Rich returns to his work", c.get_rich().held_prop("Sharps") == null and c._sharps_case.visible)

@@ -36,10 +36,12 @@ func _ready() -> void:
     if p.x > -14 and p.x < -2.5: trunks_clear=false
  var sign_found:bool=false
  var actor_sightline_clear:bool=true
- for node in c._visuals.get_children():
-  if node is MeshInstance3D and node.mesh is BoxMesh and node.position.distance_to(c.ARRIVAL_SIGN+Vector3(0,1.5,0))<.01:
+ # the arrival sign is an Ep2Signpost since 2026-11-22 (P1-11): its board stands 1.5 m over the drawn ground at ARRIVAL_SIGN
+ var board_at: Vector3=c.ARRIVAL_SIGN+Vector3(0,Ep2LakeLandform.drawn_height(c.ARRIVAL_SIGN.x,c.ARRIVAL_SIGN.z)+1.5,0)
+ for node in c._visuals.find_children("Board","MeshInstance3D",true,false):
+  if node.mesh is BoxMesh and node.global_position.distance_to(board_at)<.01:
    sign_found=true
-   var bounds:AABB=node.transform*node.get_aabb()
+   var bounds:AABB=node.global_transform*node.get_aabb()
    if bounds.intersects_segment(c.SPAWN+Vector3(0,2.18,-45),c.LOGAN_MARK+Vector3(0,1.2,0)):actor_sightline_clear=false
  check("arrival trees and sign leave the corridor and Logan sightline clear",trunks_clear and sign_found and actor_sightline_clear)
  check("Logan and cargo meet the actual drawn ground at their unchanged marks", absf(drawn_ground(c,c.LOGAN_MARK)-c.LOGAN_MARK.y)<.025 and absf(drawn_ground(c,c.STAGING_MARK)-c.STAGING_MARK.y)<.025 and absf(c.terrain_height(c.LOGAN_MARK.x,c.LOGAN_MARK.z))<.001)

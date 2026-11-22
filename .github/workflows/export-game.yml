@@ -336,11 +336,11 @@ jobs:
             exit 1
           }
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_room_test.gd 2>&1 | tee portal-tests.log
-          grep -q 'PORTAL ROOMS: ALL PASS' portal-tests.log
+          grep -q 'PORTAL ROOMS: ALL PASS' portal-tests.log || { echo "GATE_MISSING portal-tests.log: PORTAL ROOMS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' portal-tests.log | head -30; tail -8 portal-tests.log; exit 1; }
           timeout 60 "$GODOT_BIN" --headless --script res://tests/quiz_protocol_only_test.gd 2>&1 | tee quiz-tests.log
-          grep -q 'QUIZ_PROTOCOL_ONLY: ALL PASS' quiz-tests.log
+          grep -q 'QUIZ_PROTOCOL_ONLY: ALL PASS' quiz-tests.log || { echo "GATE_MISSING quiz-tests.log: QUIZ_PROTOCOL_ONLY: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' quiz-tests.log | head -30; tail -8 quiz-tests.log; exit 1; }
           timeout 90 "$GODOT_BIN" --headless res://tests/nft_issuer_test.tscn 2>&1 | tee nft-tests.log
-          grep -q 'NFT_ISSUER: ALL PASS' nft-tests.log
+          grep -q 'NFT_ISSUER: ALL PASS' nft-tests.log || { echo "GATE_MISSING nft-tests.log: NFT_ISSUER: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' nft-tests.log | head -30; tail -8 nft-tests.log; exit 1; }
           (
             node scripts/icp-price-fixture.mjs 8788 > icp-fixture.log 2>&1 &
             fixture_pid=$!
@@ -348,63 +348,63 @@ jobs:
             curl --silent --show-error --fail --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8788/prices > /dev/null
             kill -0 "$fixture_pid"
             timeout 90 "$GODOT_BIN" --headless res://tests/icp_contract_test.tscn -- http://127.0.0.1:8788 | tee icp-contract.log
-            grep -q 'ICP_CONTRACT: ALL PASS' icp-contract.log
+            grep -q 'ICP_CONTRACT: ALL PASS' icp-contract.log || { echo "GATE_MISSING icp-contract.log: ICP_CONTRACT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' icp-contract.log | head -30; tail -8 icp-contract.log; exit 1; }
           )
           timeout 180 "$GODOT_BIN" --headless res://tests/transition_feedback_test.tscn 2>&1 | tee transition-feedback-tests.log
-          grep -q 'TRANSITION_FEEDBACK: ALL PASS' transition-feedback-tests.log
+          grep -q 'TRANSITION_FEEDBACK: ALL PASS' transition-feedback-tests.log || { echo "GATE_MISSING transition-feedback-tests.log: TRANSITION_FEEDBACK: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' transition-feedback-tests.log | head -30; tail -8 transition-feedback-tests.log; exit 1; }
           timeout 180 "$GODOT_BIN" --headless res://tests/transition2_test.tscn 2>&1 | tee transition2-tests.log
-          grep -q 'TRANSITION2: ALL PASS' transition2-tests.log
+          grep -q 'TRANSITION2: ALL PASS' transition2-tests.log || { echo "GATE_MISSING transition2-tests.log: TRANSITION2: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' transition2-tests.log | head -30; tail -8 transition2-tests.log; exit 1; }
           # The REAL hideout -> prebuilt lift -> prebuilt woods chain (founder 2026-10-25: no door pause, empty elevator, no rewind).
           timeout 300 "$GODOT_BIN" --headless res://tests/seamless_chain_test.tscn 2>&1 | tee seamless-chain-tests.log
-          grep -q 'SEAMLESS_CHAIN: ALL PASS' seamless-chain-tests.log
+          grep -q 'SEAMLESS_CHAIN: ALL PASS' seamless-chain-tests.log || { echo "GATE_MISSING seamless-chain-tests.log: SEAMLESS_CHAIN: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' seamless-chain-tests.log | head -30; tail -8 seamless-chain-tests.log; exit 1; }
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_fix_document_test.tscn > fix-document-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc fix-document-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' fix-document-tests.log | head -40; tail -12 fix-document-tests.log; exit 1; }
-          grep -q 'EP2_FIX_DOCUMENT: 12 checks, 0 failed' fix-document-tests.log
+          grep -q 'EP2_FIX_DOCUMENT: 12 checks, 0 failed' fix-document-tests.log || { echo "GATE_MISSING fix-document-tests.log: EP2_FIX_DOCUMENT: 12 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' fix-document-tests.log | head -30; tail -8 fix-document-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-document-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_fix_motion_test.tscn > fix-motion-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc fix-motion-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' fix-motion-tests.log | head -40; tail -12 fix-motion-tests.log; exit 1; }
-          grep -q 'EP2_FIX_MOTION: 13 checks, 0 failed' fix-motion-tests.log
+          grep -q 'EP2_FIX_MOTION: 13 checks, 0 failed' fix-motion-tests.log || { echo "GATE_MISSING fix-motion-tests.log: EP2_FIX_MOTION: 13 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' fix-motion-tests.log | head -30; tail -8 fix-motion-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-motion-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_lake_preview_test.tscn > lake-preview-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc lake-preview-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' lake-preview-tests.log | head -40; tail -12 lake-preview-tests.log; exit 1; }
           if grep -qE 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-preview-tests.log; then cat lake-preview-tests.log; exit 1; fi
-          grep -q 'EP2_LAKE_PREVIEW: 8 checks, 0 failed' lake-preview-tests.log
+          grep -q 'EP2_LAKE_PREVIEW: 8 checks, 0 failed' lake-preview-tests.log || { echo "GATE_MISSING lake-preview-tests.log: EP2_LAKE_PREVIEW: 8 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-preview-tests.log | head -30; tail -8 lake-preview-tests.log; exit 1; }
           timeout 90 "$GODOT_BIN" --headless res://tests/ep2_region_score_test.tscn > region-score-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc region-score-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' region-score-tests.log | head -40; tail -12 region-score-tests.log; exit 1; }
           if grep -qE 'SCRIPT ERROR|Parse Error|\[FAIL\]' region-score-tests.log; then cat region-score-tests.log; exit 1; fi
-          grep -q 'EP2_REGION_SCORE: 12 checks, 0 failed' region-score-tests.log
+          grep -q 'EP2_REGION_SCORE: 12 checks, 0 failed' region-score-tests.log || { echo "GATE_MISSING region-score-tests.log: EP2_REGION_SCORE: 12 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' region-score-tests.log | head -30; tail -8 region-score-tests.log; exit 1; }
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_fix_continuity_test.tscn > fix-continuity-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc fix-continuity-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' fix-continuity-tests.log | head -40; tail -12 fix-continuity-tests.log; exit 1; }
-          grep -q 'EP2_FIX_CONTINUITY: 20 checks, 0 failed' fix-continuity-tests.log
+          grep -q 'EP2_FIX_CONTINUITY: 20 checks, 0 failed' fix-continuity-tests.log || { echo "GATE_MISSING fix-continuity-tests.log: EP2_FIX_CONTINUITY: 20 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' fix-continuity-tests.log | head -30; tail -8 fix-continuity-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-continuity-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless res://tests/ep2_door_crossing_test.tscn > door-crossing-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc door-crossing-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' door-crossing-tests.log | head -40; tail -12 door-crossing-tests.log; exit 1; }
-          grep -q 'EP2_DOOR_CROSSING: 8 checks, 0 failed' door-crossing-tests.log
+          grep -q 'EP2_DOOR_CROSSING: 8 checks, 0 failed' door-crossing-tests.log || { echo "GATE_MISSING door-crossing-tests.log: EP2_DOOR_CROSSING: 8 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' door-crossing-tests.log | head -30; tail -8 door-crossing-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' door-crossing-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless res://tests/panel_close_test.tscn > panel-close-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc panel-close-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' panel-close-tests.log | head -40; tail -12 panel-close-tests.log; exit 1; }
-          grep -q 'PANEL_CLOSE: 8 checks, 0 failed' panel-close-tests.log
+          grep -q 'PANEL_CLOSE: 8 checks, 0 failed' panel-close-tests.log || { echo "GATE_MISSING panel-close-tests.log: PANEL_CLOSE: 8 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' panel-close-tests.log | head -30; tail -8 panel-close-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' panel-close-tests.log; then exit 1; fi
           # Continuous rooms/roads, the original farmer's delivery, actionable full-heal Tabs and supplied lake track.
           timeout 90 "$GODOT_BIN" --headless res://tests/ep2_doorway_presence_test.tscn > doorway-presence-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc doorway-presence-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' doorway-presence-tests.log | head -40; tail -12 doorway-presence-tests.log; exit 1; }
-          grep -q 'EP2_DOORWAY_PRESENCE: 5 checks, 0 failed' doorway-presence-tests.log
+          grep -q 'EP2_DOORWAY_PRESENCE: 5 checks, 0 failed' doorway-presence-tests.log || { echo "GATE_MISSING doorway-presence-tests.log: EP2_DOORWAY_PRESENCE: 5 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' doorway-presence-tests.log | head -30; tail -8 doorway-presence-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' doorway-presence-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_ranch_road_presence_test.tscn > ranch-road-presence-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ranch-road-presence-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ranch-road-presence-tests.log | head -40; tail -12 ranch-road-presence-tests.log; exit 1; }
-          grep -q 'EP2_RANCH_ROAD_PRESENCE: 13 checks, 0 failed' ranch-road-presence-tests.log
+          grep -q 'EP2_RANCH_ROAD_PRESENCE: 13 checks, 0 failed' ranch-road-presence-tests.log || { echo "GATE_MISSING ranch-road-presence-tests.log: EP2_RANCH_ROAD_PRESENCE: 13 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' ranch-road-presence-tests.log | head -30; tail -8 ranch-road-presence-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ranch-road-presence-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_healing_tabs_test.tscn > healing-tabs-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc healing-tabs-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' healing-tabs-tests.log | head -40; tail -12 healing-tabs-tests.log; exit 1; }
-          grep -q 'EP2_HEALING_TABS: 14 checks, 0 failed' healing-tabs-tests.log
+          grep -q 'EP2_HEALING_TABS: 14 checks, 0 failed' healing-tabs-tests.log || { echo "GATE_MISSING healing-tabs-tests.log: EP2_HEALING_TABS: 14 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' healing-tabs-tests.log | head -30; tail -8 healing-tabs-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' healing-tabs-tests.log; then exit 1; fi
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_farmer_trip_test.tscn > farmer-trip-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc farmer-trip-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' farmer-trip-tests.log | head -40; tail -12 farmer-trip-tests.log; exit 1; }
           grep -qF 'EP2_FARMER_TRIP: 36 checks, 0 failed' farmer-trip-tests.log || { grep -E 'FAIL|SCRIPT ERROR|EP2_FARMER' farmer-trip-tests.log | head -30; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' farmer-trip-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless res://tests/ep2_lake_theme_test.tscn > lake-theme-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc lake-theme-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' lake-theme-tests.log | head -40; tail -12 lake-theme-tests.log; exit 1; }
-          grep -q 'EP2_LAKE_THEME: 8 checks, 0 failed' lake-theme-tests.log
+          grep -q 'EP2_LAKE_THEME: 8 checks, 0 failed' lake-theme-tests.log || { echo "GATE_MISSING lake-theme-tests.log: EP2_LAKE_THEME: 8 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-theme-tests.log | head -30; tail -8 lake-theme-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-theme-tests.log; then exit 1; fi
           # Founder 2026-10-27 P0: held W crosses the elevator door; nobody walks through the forest bridge's rails; the quad-ride music blends.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_door_stride_test.tscn 2>&1 | tee door-stride-tests.log
-          grep -q 'EP2_DOOR_STRIDE: ALL PASS' door-stride-tests.log
+          grep -q 'EP2_DOOR_STRIDE: ALL PASS' door-stride-tests.log || { echo "GATE_MISSING door-stride-tests.log: EP2_DOOR_STRIDE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' door-stride-tests.log | head -30; tail -8 door-stride-tests.log; exit 1; }
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_exit_bridge_test.tscn 2>&1 | tee exit-bridge-tests.log
-          grep -q 'EP2_EXIT_BRIDGE: ALL PASS' exit-bridge-tests.log
+          grep -q 'EP2_EXIT_BRIDGE: ALL PASS' exit-bridge-tests.log || { echo "GATE_MISSING exit-bridge-tests.log: EP2_EXIT_BRIDGE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' exit-bridge-tests.log | head -30; tail -8 exit-bridge-tests.log; exit 1; }
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lift_landing_test.tscn 2>&1 | tee lift-landing-tests.log
-          grep -q 'EP2_LIFT_LANDING: ALL PASS' lift-landing-tests.log
+          grep -q 'EP2_LIFT_LANDING: ALL PASS' lift-landing-tests.log || { echo "GATE_MISSING lift-landing-tests.log: EP2_LIFT_LANDING: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lift-landing-tests.log | head -30; tail -8 lift-landing-tests.log; exit 1; }
           timeout 400 "$GODOT_BIN" --headless res://tests/ep2_signposts_test.tscn 2>&1 | tee signposts-tests.log
-          grep -q 'EP2_SIGNPOSTS: ALL PASS' signposts-tests.log
+          grep -q 'EP2_SIGNPOSTS: ALL PASS' signposts-tests.log || { echo "GATE_MISSING signposts-tests.log: EP2_SIGNPOSTS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' signposts-tests.log | head -30; tail -8 signposts-tests.log; exit 1; }
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_quad_music_test.tscn 2>&1 | tee quad-music-tests.log
-          grep -q 'EP2_QUAD_MUSIC: ALL PASS' quad-music-tests.log
+          grep -q 'EP2_QUAD_MUSIC: ALL PASS' quad-music-tests.log || { echo "GATE_MISSING quad-music-tests.log: EP2_QUAD_MUSIC: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' quad-music-tests.log | head -30; tail -8 quad-music-tests.log; exit 1; }
           # Photo-scanned PBR dressing + the CAD Colt Gatling (founder 2026-10-25 CAD pass): authored colour kept, period bronze, sightline clear.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_pbr_test.tscn 2>&1 | tee ep2-pbr-tests.log
           grep -q 'EP2_PBR: ALL PASS' ep2-pbr-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-pbr-tests.log | head -40; tail -25 ep2-pbr-tests.log; exit 1; }
@@ -421,141 +421,141 @@ jobs:
           # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
           # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).
           timeout 180 "$GODOT_BIN" --headless res://tests/mobile_touch_controls_test.tscn 2>&1 | tee touch-tests.log
-          grep -q 'MOBILE_TOUCH_CONTROLS: ALL PASS' touch-tests.log
+          grep -q 'MOBILE_TOUCH_CONTROLS: ALL PASS' touch-tests.log || { echo "GATE_MISSING touch-tests.log: MOBILE_TOUCH_CONTROLS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' touch-tests.log | head -30; tail -8 touch-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' touch-tests.log; then exit 1; fi
           # Pause menu (src/ui/pause_menu.gd): Escape / the touch pause button pause and resume the
           # real Stage 1 and Smoke Lounge, the hero freezes, power-up timers stop draining, Talk and
           # other modals keep their own Escape, a second thumb can tap Resume. It was dead code for
           # as long as it existed (InputEvent has no is_action_just_pressed), so keep it gated.
           timeout 120 "$GODOT_BIN" --headless res://tests/save_compat_test.tscn > save-compat-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc save-compat-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' save-compat-tests.log | head -40; tail -12 save-compat-tests.log; exit 1; }
-          grep -q 'SAVE_COMPAT: ALL PASS' save-compat-tests.log
+          grep -q 'SAVE_COMPAT: ALL PASS' save-compat-tests.log || { echo "GATE_MISSING save-compat-tests.log: SAVE_COMPAT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' save-compat-tests.log | head -30; tail -8 save-compat-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' save-compat-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_region_map_test.tscn > region-map-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc region-map-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' region-map-tests.log | head -40; tail -12 region-map-tests.log; exit 1; }
-          grep -q 'REGION_MAP: 10 checks, 0 failed' region-map-tests.log
+          grep -q 'REGION_MAP: 10 checks, 0 failed' region-map-tests.log || { echo "GATE_MISSING region-map-tests.log: REGION_MAP: 10 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' region-map-tests.log | head -30; tail -8 region-map-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' region-map-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/manual_checkpoint_test.tscn > manual-checkpoint-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc manual-checkpoint-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' manual-checkpoint-tests.log | head -40; tail -12 manual-checkpoint-tests.log; exit 1; }
-          grep -q 'MANUAL_CHECKPOINT: 69 checks, 0 failed' manual-checkpoint-tests.log
+          grep -q 'MANUAL_CHECKPOINT: 69 checks, 0 failed' manual-checkpoint-tests.log || { echo "GATE_MISSING manual-checkpoint-tests.log: MANUAL_CHECKPOINT: 69 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' manual-checkpoint-tests.log | head -30; tail -8 manual-checkpoint-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' manual-checkpoint-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/pause_menu_test.tscn 2>&1 | tee pause-tests.log
-          grep -q 'PAUSE_MENU: ALL PASS' pause-tests.log
+          grep -q 'PAUSE_MENU: ALL PASS' pause-tests.log || { echo "GATE_MISSING pause-tests.log: PAUSE_MENU: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' pause-tests.log | head -30; tail -8 pause-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' pause-tests.log; then exit 1; fi
           # Vault NPC dialogues on a touch screen: Gideon's NEXT / CONFIRM STAKE / LEAVE buttons, and
           # proof that no stray tap (or GRAB) can stake GOLD without the explicit CONFIRM STAKE press.
           timeout 120 "$GODOT_BIN" --headless res://tests/vault_touch_dialogue_test.tscn 2>&1 | tee vault-touch-tests.log
-          grep -q 'VAULT_TOUCH_DIALOGUE: ALL PASS' vault-touch-tests.log
+          grep -q 'VAULT_TOUCH_DIALOGUE: ALL PASS' vault-touch-tests.log || { echo "GATE_MISSING vault-touch-tests.log: VAULT_TOUCH_DIALOGUE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' vault-touch-tests.log | head -30; tail -8 vault-touch-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' vault-touch-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless --path . res://tests/ep2_bow_test.tscn > bow-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc bow-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' bow-tests.log | head -40; tail -12 bow-tests.log; exit 1; }
           cat bow-tests.log
-          grep -q 'EP2_BOW: ALL PASS' bow-tests.log
+          grep -q 'EP2_BOW: ALL PASS' bow-tests.log || { echo "GATE_MISSING bow-tests.log: EP2_BOW: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' bow-tests.log | head -30; tail -8 bow-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error' bow-tests.log; then exit 1; fi
           # Actual skinned paw contacts throughout reading/draw/release, plus
           # the deterministic actor clock and Bull's grip-preserving recoil.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_character_motion_test.tscn 2>&1 | tee character-motion-tests.log
-          grep -q 'EP2_CHARACTER_MOTION: ALL PASS' character-motion-tests.log
+          grep -q 'EP2_CHARACTER_MOTION: ALL PASS' character-motion-tests.log || { echo "GATE_MISSING character-motion-tests.log: EP2_CHARACTER_MOTION: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' character-motion-tests.log | head -30; tail -8 character-motion-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' character-motion-tests.log; then exit 1; fi
           # Session-owned guns, finite ammo, touch/controller swaps and atomic bear-loot retries.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_personal_armory_test.tscn 2>&1 | tee personal-armory-tests.log
-          grep -q 'EP2_PERSONAL_ARMORY: ALL PASS' personal-armory-tests.log
+          grep -q 'EP2_PERSONAL_ARMORY: ALL PASS' personal-armory-tests.log || { echo "GATE_MISSING personal-armory-tests.log: EP2_PERSONAL_ARMORY: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' personal-armory-tests.log | head -30; tail -8 personal-armory-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' personal-armory-tests.log; then exit 1; fi
           # A dead gunman's gun + its own rounds lie where he fell, taken once into the one armory (Ep2WeaponDrop).
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_weapon_drops_test.tscn 2>&1 | tee weapon-drops-tests.log
-          grep -q 'EP2_WEAPON_DROPS: ALL PASS' weapon-drops-tests.log
+          grep -q 'EP2_WEAPON_DROPS: ALL PASS' weapon-drops-tests.log || { echo "GATE_MISSING weapon-drops-tests.log: EP2_WEAPON_DROPS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' weapon-drops-tests.log | head -30; tail -8 weapon-drops-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' weapon-drops-tests.log; then exit 1; fi
           # Rich & Utah's unlock chain and weapon tabs (founder 2026-11-03): Shipment -> Sharps -> the rest, saved; the bud in Tabs.
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_armory_chain_test.tscn 2>&1 | tee armory-chain-tests.log
-          grep -q 'EP2_ARMORY_CHAIN: ALL PASS' armory-chain-tests.log
+          grep -q 'EP2_ARMORY_CHAIN: ALL PASS' armory-chain-tests.log || { echo "GATE_MISSING armory-chain-tests.log: EP2_ARMORY_CHAIN: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' armory-chain-tests.log | head -30; tail -8 armory-chain-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-chain-tests.log; then exit 1; fi
           # Weapon tabs show only what he has (founder 2026-11-07, the mystery rule), the pickaxe tab, the counter's order (Shipment,
           # Buffalo Gun, its cartridges, then each gun over its ammo) and Rich taking the Sharps out of the case through an open lid.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_weapons_test.tscn 2>&1 | tee weapons-tests.log
-          grep -q 'EP2_WEAPONS: ALL PASS' weapons-tests.log
+          grep -q 'EP2_WEAPONS: ALL PASS' weapons-tests.log || { echo "GATE_MISSING weapons-tests.log: EP2_WEAPONS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' weapons-tests.log | head -30; tail -8 weapons-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' weapons-tests.log; then exit 1; fi
           # Bears strike and bite the way a bear would: authored swipe/bite/walk/run clips bound to the rig (a mis-bound
           # export leaves a T-pose), the brain's attack choice and the blow landing at the clip's contact time.
           timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_bear_attacks_test.tscn > bear-attacks-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc bear-attacks-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' bear-attacks-tests.log | head -40; tail -12 bear-attacks-tests.log; exit 1; }
           cat bear-attacks-tests.log
-          grep -q 'EP2_BEAR_ATTACKS: ALL PASS' bear-attacks-tests.log
+          grep -q 'EP2_BEAR_ATTACKS: ALL PASS' bear-attacks-tests.log || { echo "GATE_MISSING bear-attacks-tests.log: EP2_BEAR_ATTACKS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' bear-attacks-tests.log | head -30; tail -8 bear-attacks-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' bear-attacks-tests.log | grep -v VirtualJoystick; then exit 1; fi
           # Three sparse, warned canopy jumps share the road combat and retry contracts.
           timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_tree_jumps_test.tscn > tree-jumps-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc tree-jumps-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' tree-jumps-tests.log | head -40; tail -12 tree-jumps-tests.log; exit 1; }
-          grep -q 'EP2_TREE_JUMPS: 36 checks, 0 failures' tree-jumps-tests.log
+          grep -q 'EP2_TREE_JUMPS: 36 checks, 0 failures' tree-jumps-tests.log || { echo "GATE_MISSING tree-jumps-tests.log: EP2_TREE_JUMPS: 36 checks, 0 failures"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' tree-jumps-tests.log | head -30; tail -8 tree-jumps-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|FAIL ' tree-jumps-tests.log; then exit 1; fi
           # The town's life (founder 2026-10-18: the train, the river and the horses belong in Episode 2).
           timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_town_life_test.tscn > town-life-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc town-life-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' town-life-tests.log | head -40; tail -12 town-life-tests.log; exit 1; }
           cat town-life-tests.log
-          grep -q 'EP2_TOWN_LIFE: ALL PASS' town-life-tests.log
+          grep -q 'EP2_TOWN_LIFE: ALL PASS' town-life-tests.log || { echo "GATE_MISSING town-life-tests.log: EP2_TOWN_LIFE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-life-tests.log | head -30; tail -8 town-life-tests.log; exit 1; }
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_stable_yard_test.tscn 2>&1 | tee stable-yard-tests.log
-          grep -q 'EP2_STABLE_YARD: ALL PASS' stable-yard-tests.log
+          grep -q 'EP2_STABLE_YARD: ALL PASS' stable-yard-tests.log || { echo "GATE_MISSING stable-yard-tests.log: EP2_STABLE_YARD: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' stable-yard-tests.log | head -30; tail -8 stable-yard-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' stable-yard-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-life-tests.log | grep -v VirtualJoystick; then exit 1; fi
           # The GoldMine town (founder 2026-10-14): the sheriff's office, the saloon, the draw (foul / retry / win), Bull, the chain.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
-          grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log
+          grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log || { echo "GATE_MISSING gold-town-tests.log: EP2_GOLD_TOWN: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' gold-town-tests.log | head -30; tail -8 gold-town-tests.log; exit 1; }
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_town_audio_test.tscn > town-audio-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc town-audio-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' town-audio-tests.log | head -40; tail -12 town-audio-tests.log; exit 1; }
-          grep -q 'EP2_TOWN_AUDIO: ALL PASS' town-audio-tests.log
+          grep -q 'EP2_TOWN_AUDIO: ALL PASS' town-audio-tests.log || { echo "GATE_MISSING town-audio-tests.log: EP2_TOWN_AUDIO: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-audio-tests.log | head -30; tail -8 town-audio-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gold-town-tests.log; then exit 1; fi
           # Lil Blunt's crypto purse (founder 2026-10-24): ETH/BTC/WBTC/SOL/TitanX credited per pickup, spent per token at Rich's, drawn in the weapon tab.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_original_names_wbtc_test.tscn > original-names-wbtc-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc original-names-wbtc-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' original-names-wbtc-tests.log | head -40; tail -12 original-names-wbtc-tests.log; exit 1; }
-          grep -q 'ORIGINAL_NAMES_WBTC: ALL PASS' original-names-wbtc-tests.log
+          grep -q 'ORIGINAL_NAMES_WBTC: ALL PASS' original-names-wbtc-tests.log || { echo "GATE_MISSING original-names-wbtc-tests.log: ORIGINAL_NAMES_WBTC: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' original-names-wbtc-tests.log | head -30; tail -8 original-names-wbtc-tests.log; exit 1; }
           if grep -qE 'SCRIPT ERROR|Parse Error' original-names-wbtc-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_purse_test.tscn > purse-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc purse-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' purse-tests.log | head -40; tail -12 purse-tests.log; exit 1; }
           cat purse-tests.log
-          grep -q 'EP2_PURSE: ALL PASS' purse-tests.log
+          grep -q 'EP2_PURSE: ALL PASS' purse-tests.log || { echo "GATE_MISSING purse-tests.log: EP2_PURSE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' purse-tests.log | head -30; tail -8 purse-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' purse-tests.log; then exit 1; fi
           # The Tabs ledger (founder 2026-10-27): runner BTC reaches Rich once, Lil Blunt's own bear kills tally, Dude's Chill Buds heal one heart.
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_tabs_ledger_test.tscn > tabs-ledger-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc tabs-ledger-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' tabs-ledger-tests.log | head -40; tail -12 tabs-ledger-tests.log; exit 1; }
-          grep -q 'EP2_TABS_LEDGER: ALL PASS' tabs-ledger-tests.log
+          grep -q 'EP2_TABS_LEDGER: ALL PASS' tabs-ledger-tests.log || { echo "GATE_MISSING tabs-ledger-tests.log: EP2_TABS_LEDGER: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' tabs-ledger-tests.log | head -30; tail -8 tabs-ledger-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' tabs-ledger-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logans_lake_test.tscn > logans-lake-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc logans-lake-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' logans-lake-tests.log | head -40; tail -12 logans-lake-tests.log; exit 1; }
-          grep -q 'LOGANS_LAKE: ALL PASS' logans-lake-tests.log
+          grep -q 'LOGANS_LAKE: ALL PASS' logans-lake-tests.log || { echo "GATE_MISSING logans-lake-tests.log: LOGANS_LAKE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' logans-lake-tests.log | head -30; tail -8 logans-lake-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logans-lake-tests.log; then exit 1; fi
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_fix_pack_1115_test.tscn > fix-pack-1115-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc fix-pack-1115-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' fix-pack-1115-tests.log | head -40; tail -12 fix-pack-1115-tests.log; exit 1; }
-          grep -q 'EP2_FIX_PACK_1115: ALL PASS' fix-pack-1115-tests.log
+          grep -q 'EP2_FIX_PACK_1115: ALL PASS' fix-pack-1115-tests.log || { echo "GATE_MISSING fix-pack-1115-tests.log: EP2_FIX_PACK_1115: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' fix-pack-1115-tests.log | head -30; tail -8 fix-pack-1115-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-pack-1115-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_river_cover_test.tscn > river-cover-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc river-cover-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' river-cover-tests.log | head -40; tail -12 river-cover-tests.log; exit 1; }
-          grep -q 'RIVER_COVER: ALL PASS' river-cover-tests.log
+          grep -q 'RIVER_COVER: ALL PASS' river-cover-tests.log || { echo "GATE_MISSING river-cover-tests.log: RIVER_COVER: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' river-cover-tests.log | head -30; tail -8 river-cover-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' river-cover-tests.log; then exit 1; fi
           # Cargo check -> hill -> ridge in one motion (founder 2026-11-07): never held, no camera jump, no ridge built in view
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_cargo_hill_test.tscn > cargo-hill-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc cargo-hill-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' cargo-hill-tests.log | head -40; tail -12 cargo-hill-tests.log; exit 1; }
-          grep -q 'CARGO_HILL: ALL PASS' cargo-hill-tests.log
+          grep -q 'CARGO_HILL: ALL PASS' cargo-hill-tests.log || { echo "GATE_MISSING cargo-hill-tests.log: CARGO_HILL: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' cargo-hill-tests.log | head -30; tail -8 cargo-hill-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' cargo-hill-tests.log; then exit 1; fi
           # The world obeys common sense (founder 2026-11-05): nobody walks through the praying Minister, Inferno asks at the body then
           # goes for the whiskey, the saloon batwings swing for anyone going through, a shot raft man goes into the river, rafts take hits.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_common_sense_test.tscn > common-sense-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc common-sense-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' common-sense-tests.log | head -40; tail -12 common-sense-tests.log; exit 1; }
-          grep -q 'EP2_COMMON_SENSE: ALL PASS' common-sense-tests.log
+          grep -q 'EP2_COMMON_SENSE: ALL PASS' common-sense-tests.log || { echo "GATE_MISSING common-sense-tests.log: EP2_COMMON_SENSE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' common-sense-tests.log | head -30; tail -8 common-sense-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' common-sense-tests.log; then exit 1; fi
           # Mobile sprint 2026-11-10: no forced wait at the lava door or on the lift, the quad reveal after a late arrival, Inferno's
           # one-way walk to the bar, the quad never idling in front of Lil Blunt, the ride/lake songs blending under speech.
           # The cart-exit film (mobile sprint 2026-11-12): every resource the hideout loads behind the film is read before the cart starts.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_hideout_warm_test.tscn 2>&1 | tee hideout-warm-tests.log
-          grep -q 'EP2_HIDEOUT_WARM: ALL PASS' hideout-warm-tests.log
+          grep -q 'EP2_HIDEOUT_WARM: ALL PASS' hideout-warm-tests.log || { echo "GATE_MISSING hideout-warm-tests.log: EP2_HIDEOUT_WARM: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' hideout-warm-tests.log | head -30; tail -8 hideout-warm-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' hideout-warm-tests.log; then exit 1; fi
           timeout 420 "$GODOT_BIN" --headless res://tests/ep2_mobile_critical_path_test.tscn > mobile-critical-path-tests.log 2>&1 || true   # the pinned grep below gates it and prints why
           grep -q 'EP2_MOBILE_CRITICAL_PATH: ALL PASS' mobile-critical-path-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error|EP2_MOBILE' mobile-critical-path-tests.log | head -60; tail -20 mobile-critical-path-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' mobile-critical-path-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_interior_visible_test.tscn > interior-visible-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc interior-visible-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' interior-visible-tests.log | head -40; tail -12 interior-visible-tests.log; exit 1; }
-          grep -q 'INTERIOR_VISIBLE: ALL PASS' interior-visible-tests.log
+          grep -q 'INTERIOR_VISIBLE: ALL PASS' interior-visible-tests.log || { echo "GATE_MISSING interior-visible-tests.log: INTERIOR_VISIBLE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' interior-visible-tests.log | head -30; tail -8 interior-visible-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' interior-visible-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_grounding_test.tscn > town-grounding-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc town-grounding-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' town-grounding-tests.log | head -40; tail -12 town-grounding-tests.log; exit 1; }
-          grep -q 'TOWN_GROUNDING: ALL PASS' town-grounding-tests.log
+          grep -q 'TOWN_GROUNDING: ALL PASS' town-grounding-tests.log || { echo "GATE_MISSING town-grounding-tests.log: TOWN_GROUNDING: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-grounding-tests.log | head -30; tail -8 town-grounding-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-grounding-tests.log; then exit 1; fi
           # The back-lot miners (founder 2026-11-08): behind the fronts, clear of doors and horses, solid, tools in hand, seated on a crate.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_back_lot_miners_test.tscn > back-lot-miners-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc back-lot-miners-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' back-lot-miners-tests.log | head -40; tail -12 back-lot-miners-tests.log; exit 1; }
-          grep -q 'BACK_LOT_MINERS: ALL PASS' back-lot-miners-tests.log
+          grep -q 'BACK_LOT_MINERS: ALL PASS' back-lot-miners-tests.log || { echo "GATE_MISSING back-lot-miners-tests.log: BACK_LOT_MINERS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' back-lot-miners-tests.log | head -30; tail -8 back-lot-miners-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' back-lot-miners-tests.log; then exit 1; fi
           # The town Stockpile + Reserve (founder 2026-11-21): off Main Street, seen from the street gap, workers clear, the barrow loop
           # clear of every wall and prop, barrows roll/load/tip/stop for Lil Blunt, gunfire stops all, the Reserve reached on foot.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_stockpile_test.tscn > stockpile-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc stockpile-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' stockpile-tests.log | head -40; tail -12 stockpile-tests.log; exit 1; }
-          grep -q 'STOCKPILE: ALL PASS' stockpile-tests.log
+          grep -q 'STOCKPILE: ALL PASS' stockpile-tests.log || { echo "GATE_MISSING stockpile-tests.log: STOCKPILE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' stockpile-tests.log | head -30; tail -8 stockpile-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' stockpile-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_lake_ecotone_test.tscn > lake-ecotone-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc lake-ecotone-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' lake-ecotone-tests.log | head -40; tail -12 lake-ecotone-tests.log; exit 1; }
-          grep -q 'LAKE_ECOTONE: ALL PASS' lake-ecotone-tests.log
+          grep -q 'LAKE_ECOTONE: ALL PASS' lake-ecotone-tests.log || { echo "GATE_MISSING lake-ecotone-tests.log: LAKE_ECOTONE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-ecotone-tests.log | head -30; tail -8 lake-ecotone-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-ecotone-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_horse_and_logan_test.tscn > horse-logan-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc horse-logan-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' horse-logan-tests.log | head -40; tail -12 horse-logan-tests.log; exit 1; }
-          grep -q 'HORSE_LOGAN: ALL PASS' horse-logan-tests.log
+          grep -q 'HORSE_LOGAN: ALL PASS' horse-logan-tests.log || { echo "GATE_MISSING horse-logan-tests.log: HORSE_LOGAN: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' horse-logan-tests.log | head -30; tail -8 horse-logan-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' horse-logan-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_wildlife_combat_test.tscn > wildlife-combat-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc wildlife-combat-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' wildlife-combat-tests.log | head -40; tail -12 wildlife-combat-tests.log; exit 1; }
-          grep -q 'EP2_WILDLIFE_COMBAT: ALL PASS' wildlife-combat-tests.log
+          grep -q 'EP2_WILDLIFE_COMBAT: ALL PASS' wildlife-combat-tests.log || { echo "GATE_MISSING wildlife-combat-tests.log: EP2_WILDLIFE_COMBAT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' wildlife-combat-tests.log | head -30; tail -8 wildlife-combat-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' wildlife-combat-tests.log; then exit 1; fi
           timeout 400 "$GODOT_BIN" --headless res://tests/ep2_interlude_test.tscn > interlude-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc interlude-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' interlude-tests.log | head -40; tail -12 interlude-tests.log; exit 1; }
           grep -q 'EP2_INTERLUDE: ALL PASS' interlude-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' interlude-tests.log | head -40; tail -25 interlude-tests.log; exit 1; }
@@ -640,70 +640,70 @@ jobs:
           grep -qF 'EP2_SMELTING_FACILITY: ALL PASS' ep2-smelting-facility-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-smelting-facility-tests.log | head -40; tail -25 ep2-smelting-facility-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-smelting-facility-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_lake_life_test.tscn > lake-life-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc lake-life-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' lake-life-tests.log | head -40; tail -12 lake-life-tests.log; exit 1; }
-          grep -q 'LAKE_LIFE: 0 failed' lake-life-tests.log
+          grep -q 'LAKE_LIFE: 0 failed' lake-life-tests.log || { echo "GATE_MISSING lake-life-tests.log: LAKE_LIFE: 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-life-tests.log | head -30; tail -8 lake-life-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-life-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_lake_art_test.tscn > lake-art-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc lake-art-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' lake-art-tests.log | head -40; tail -12 lake-art-tests.log; exit 1; }
-          grep -q 'LAKE_ART: 27 checks, 0 failed' lake-art-tests.log
+          grep -q 'LAKE_ART: 27 checks, 0 failed' lake-art-tests.log || { echo "GATE_MISSING lake-art-tests.log: LAKE_ART: 27 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-art-tests.log | head -30; tail -8 lake-art-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-art-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logan_cabin_test.tscn > logan-cabin-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc logan-cabin-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' logan-cabin-tests.log | head -40; tail -12 logan-cabin-tests.log; exit 1; }
-          grep -q 'LOGAN_CABIN: 34 checks, 0 failed' logan-cabin-tests.log
+          grep -q 'LOGAN_CABIN: 34 checks, 0 failed' logan-cabin-tests.log || { echo "GATE_MISSING logan-cabin-tests.log: LOGAN_CABIN: 34 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' logan-cabin-tests.log | head -30; tail -8 logan-cabin-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logan-cabin-tests.log; then exit 1; fi
           # Rich & Utah's two-storey Armory (founder 2026-10-19): building, windows, door, no horse inside, both men working both floors.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_two_story_test.tscn 2>&1 | tee armory2-tests.log
-          grep -q 'EP2_ARMORY2: ALL PASS' armory2-tests.log
+          grep -q 'EP2_ARMORY2: ALL PASS' armory2-tests.log || { echo "GATE_MISSING armory2-tests.log: EP2_ARMORY2: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' armory2-tests.log | head -30; tail -8 armory2-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory2-tests.log; then exit 1; fi
           # The Armory stocked with the founder's real weapon GLBs on both floors (founder 2026-11-08): no placeholder sticks.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_real_weapons_test.tscn 2>&1 | tee armory-real-weapons-tests.log
-          grep -q 'EP2_ARMORY_REAL_WEAPONS: ALL PASS' armory-real-weapons-tests.log
+          grep -q 'EP2_ARMORY_REAL_WEAPONS: ALL PASS' armory-real-weapons-tests.log || { echo "GATE_MISSING armory-real-weapons-tests.log: EP2_ARMORY_REAL_WEAPONS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' armory-real-weapons-tests.log | head -30; tail -8 armory-real-weapons-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-real-weapons-tests.log; then exit 1; fi
           # Jack Hammer's thread (founder lock 2026-10-21): identity, wording rules and order are enforced, not remembered.
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_jack_hammer_test.tscn 2>&1 | tee jack-hammer-tests.log
-          grep -q 'EP2_JACK_HAMMER: ALL PASS' jack-hammer-tests.log
+          grep -q 'EP2_JACK_HAMMER: ALL PASS' jack-hammer-tests.log || { echo "GATE_MISSING jack-hammer-tests.log: EP2_JACK_HAMMER: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' jack-hammer-tests.log | head -30; tail -8 jack-hammer-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' jack-hammer-tests.log; then exit 1; fi
           # Jack Hammer himself (since 2026-10-27 the founder's own model): the streamed model loads, is rigged with the game clips and stands 1.92 m.
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_jack_hammer_character_test.tscn 2>&1 | tee jack-hammer-char-tests.log
-          grep -q 'EP2_JACK_HAMMER_CHARACTER: ALL PASS' jack-hammer-char-tests.log
+          grep -q 'EP2_JACK_HAMMER_CHARACTER: ALL PASS' jack-hammer-char-tests.log || { echo "GATE_MISSING jack-hammer-char-tests.log: EP2_JACK_HAMMER_CHARACTER: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' jack-hammer-char-tests.log | head -30; tail -8 jack-hammer-char-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' jack-hammer-char-tests.log; then exit 1; fi
           # Sheriff James replaces the Sheriff, Renegade hosts the auction (founder Drive models 2026-10-27): rigged, clips, heights, the town's Sheriff talks.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_founder_cast_test.tscn 2>&1 | tee founder-cast-tests.log
-          grep -q 'EP2_FOUNDER_CAST: ALL PASS' founder-cast-tests.log
+          grep -q 'EP2_FOUNDER_CAST: ALL PASS' founder-cast-tests.log || { echo "GATE_MISSING founder-cast-tests.log: EP2_FOUNDER_CAST: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' founder-cast-tests.log | head -30; tail -8 founder-cast-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' founder-cast-tests.log; then exit 1; fi
           # Blood on the draw body and on shot bears (fix pack 2026-10-27): restrained spurt, a stain that rides the rig, a pool after the fall.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_blood_test.tscn 2>&1 | tee blood-tests.log
-          grep -q 'EP2_BLOOD: ALL PASS' blood-tests.log
+          grep -q 'EP2_BLOOD: ALL PASS' blood-tests.log || { echo "GATE_MISSING blood-tests.log: EP2_BLOOD: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blood-tests.log | head -30; tail -8 blood-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blood-tests.log; then exit 1; fi
           # Dude's ranch (fix pack 2026-10-27): talkable from the woods and the town, the ride loop, the chores, Chill Buds, the BTC horse deal.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_ranch_test.tscn 2>&1 | tee ranch-tests.log
-          grep -q 'EP2_RANCH: ALL PASS' ranch-tests.log
+          grep -q 'EP2_RANCH: ALL PASS' ranch-tests.log || { echo "GATE_MISSING ranch-tests.log: EP2_RANCH: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' ranch-tests.log | head -30; tail -8 ranch-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ranch-tests.log; then exit 1; fi
           # The town has consequences (fix pack 2026-10-27): a civilian shot -> jail with Bam Bankman Free, guns taken; damage -> BTC fines.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_law_test.tscn 2>&1 | tee town-law-tests.log
-          grep -q 'EP2_TOWN_LAW: ALL PASS' town-law-tests.log
+          grep -q 'EP2_TOWN_LAW: ALL PASS' town-law-tests.log || { echo "GATE_MISSING town-law-tests.log: EP2_TOWN_LAW: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-law-tests.log | head -30; tail -8 town-law-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-law-tests.log; then exit 1; fi
           # Protected founder cast: registered hits, muzzle direction, debounce, and checkpoint retries.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_protected_retaliation_test.tscn 2>&1 | tee protected-npc-tests.log
-          grep -q 'EP2_PROTECTED_RETALIATION: ALL PASS' protected-npc-tests.log
+          grep -q 'EP2_PROTECTED_RETALIATION: ALL PASS' protected-npc-tests.log || { echo "GATE_MISSING protected-npc-tests.log: EP2_PROTECTED_RETALIATION: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' protected-npc-tests.log | head -30; tail -8 protected-npc-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' protected-npc-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_protected_woods_test.tscn 2>&1 | tee protected-woods-tests.log
-          grep -q 'EP2_PROTECTED_WOODS: ALL PASS' protected-woods-tests.log
+          grep -q 'EP2_PROTECTED_WOODS: ALL PASS' protected-woods-tests.log || { echo "GATE_MISSING protected-woods-tests.log: EP2_PROTECTED_WOODS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' protected-woods-tests.log | head -30; tail -8 protected-woods-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' protected-woods-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_mount_alignment_test.tscn 2>&1 | tee mount-alignment-tests.log
-          grep -q 'EP2_MOUNT_ALIGNMENT: ALL PASS' mount-alignment-tests.log
+          grep -q 'EP2_MOUNT_ALIGNMENT: ALL PASS' mount-alignment-tests.log || { echo "GATE_MISSING mount-alignment-tests.log: EP2_MOUNT_ALIGNMENT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' mount-alignment-tests.log | head -30; tail -8 mount-alignment-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' mount-alignment-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_rich_grip_test.tscn 2>&1 | tee rich-grip-tests.log
-          grep -q 'EP2_RICH_GRIP: ALL PASS' rich-grip-tests.log
+          grep -q 'EP2_RICH_GRIP: ALL PASS' rich-grip-tests.log || { echo "GATE_MISSING rich-grip-tests.log: EP2_RICH_GRIP: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' rich-grip-tests.log | head -30; tail -8 rich-grip-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' rich-grip-tests.log; then exit 1; fi
           # Town feel at 60 fps (fix pack 2026-10-27): nobody walks backwards, the bar has sitters, own drinking rhythms, bumps, the train.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_feel_test.tscn 2>&1 | tee town-feel-tests.log
-          grep -q 'EP2_TOWN_FEEL: ALL PASS' town-feel-tests.log
+          grep -q 'EP2_TOWN_FEEL: ALL PASS' town-feel-tests.log || { echo "GATE_MISSING town-feel-tests.log: EP2_TOWN_FEEL: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-feel-tests.log | head -30; tail -8 town-feel-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-feel-tests.log; then exit 1; fi
           # The ride to Logan's Lake (fix pack 2026-10-27): Dude's horse, telegraphed bandits, UNHORSE, retry, the prebuilt lake hand-off.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_lake_trail_test.tscn 2>&1 | tee lake-trail-tests.log
-          grep -q 'EP2_LAKE_TRAIL: ALL PASS' lake-trail-tests.log
+          grep -q 'EP2_LAKE_TRAIL: ALL PASS' lake-trail-tests.log || { echo "GATE_MISSING lake-trail-tests.log: EP2_LAKE_TRAIL: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-trail-tests.log | head -30; tail -8 lake-trail-tests.log; exit 1; }
           # Desert -> Logan's Lake in one motion (founder 2026-11-07): no shore pause, a one-frame hand-over, water clearing by distance to Logan.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_seamless_test.tscn > lake-seamless-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc lake-seamless-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' lake-seamless-tests.log | head -40; tail -12 lake-seamless-tests.log; exit 1; }
           if grep -E '\[FAIL\]' lake-seamless-tests.log; then exit 1; fi
-          grep -q 'EP2_LAKE_SEAMLESS: 13 checks, 0 failed' lake-seamless-tests.log
+          grep -q 'EP2_LAKE_SEAMLESS: 13 checks, 0 failed' lake-seamless-tests.log || { echo "GATE_MISSING lake-seamless-tests.log: EP2_LAKE_SEAMLESS: 13 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-seamless-tests.log | head -30; tail -8 lake-seamless-tests.log; exit 1; }
           # Lake -> road -> auction grounds -> hall as one room (founder 2026-11-08): no swap at the door, solid hall, Renegade, Jack Hammer's flee.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_lake_auction_road_test.tscn > lake-auction-road-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc lake-auction-road-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' lake-auction-road-tests.log | head -40; tail -12 lake-auction-road-tests.log; exit 1; }
           if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-auction-road-tests.log; then exit 1; fi
@@ -711,142 +711,142 @@ jobs:
           # Founder playtest preset "dude" (2026-11-09): Dude's stables, every gun, 2000 rounds, 64 BTC; Save/Continue; no change without it.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_playtest_dude_test.tscn > playtest-dude-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc playtest-dude-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' playtest-dude-tests.log | head -40; tail -12 playtest-dude-tests.log; exit 1; }
           if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' playtest-dude-tests.log; then exit 1; fi
-          grep -q 'EP2_PLAYTEST_DUDE: 68 checks, 0 failed' playtest-dude-tests.log
+          grep -q 'EP2_PLAYTEST_DUDE: 68 checks, 0 failed' playtest-dude-tests.log || { echo "GATE_MISSING playtest-dude-tests.log: EP2_PLAYTEST_DUDE: 68 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' playtest-dude-tests.log | head -30; tail -8 playtest-dude-tests.log; exit 1; }
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc world-route-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' world-route-tests.log | head -40; tail -12 world-route-tests.log; exit 1; }
-          grep -q 'EP2_WORLD_ROUTES: 40 checks, 0 failed' world-route-tests.log
+          grep -q 'EP2_WORLD_ROUTES: 40 checks, 0 failed' world-route-tests.log || { echo "GATE_MISSING world-route-tests.log: EP2_WORLD_ROUTES: 40 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' world-route-tests.log | head -30; tail -8 world-route-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_audit_1117_test.tscn > audit-revisit-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc audit-revisit-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' audit-revisit-tests.log | head -40; tail -12 audit-revisit-tests.log; exit 1; }
-          grep -q 'EP2_AUDIT_1117: ALL PASS' audit-revisit-tests.log
+          grep -q 'EP2_AUDIT_1117: ALL PASS' audit-revisit-tests.log || { echo "GATE_MISSING audit-revisit-tests.log: EP2_AUDIT_1117: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' audit-revisit-tests.log | head -30; tail -8 audit-revisit-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' audit-revisit-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-trail-tests.log; then exit 1; fi
           # Founder hard-refresh residuals 2026-11-01: no-subtitle pacing, armory showcase + new guns, Chill Bud patch, bandit roles,
           # the seated rider, the lake approach, the horse at the lake, the crowd-graph stall fix.
           timeout 400 "$GODOT_BIN" --headless res://tests/ep2_founder_residuals_1101_test.tscn 2>&1 | tee founder-residuals-tests.log
-          grep -q 'EP2_RESIDUALS_1101: ALL PASS' founder-residuals-tests.log
+          grep -q 'EP2_RESIDUALS_1101: ALL PASS' founder-residuals-tests.log || { echo "GATE_MISSING founder-residuals-tests.log: EP2_RESIDUALS_1101: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' founder-residuals-tests.log | head -30; tail -8 founder-residuals-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' founder-residuals-tests.log; then exit 1; fi
           # Every selector card shows Lil Blunt's hand with the weapon (founder 2026-10-21: the Remington and the bow cards).
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_weapon_icons_test.tscn 2>&1 | tee weapon-icons-tests.log
-          grep -q 'EP2_WEAPON_ICONS: ALL PASS' weapon-icons-tests.log
+          grep -q 'EP2_WEAPON_ICONS: ALL PASS' weapon-icons-tests.log || { echo "GATE_MISSING weapon-icons-tests.log: EP2_WEAPON_ICONS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' weapon-icons-tests.log | head -30; tail -8 weapon-icons-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' weapon-icons-tests.log; then exit 1; fi
           # The Sharps 1874 and the Colt Gatling (founder 2026-10-20): Rich and Utah introduce them; the Gatling is a post outside the shop, never stock.
           timeout 400 "$GODOT_BIN" --headless res://tests/ep2_armory_guns_test.tscn 2>&1 | tee armory-guns-tests.log
-          grep -q 'EP2_ARMORY_GUNS: ALL PASS' armory-guns-tests.log
+          grep -q 'EP2_ARMORY_GUNS: ALL PASS' armory-guns-tests.log || { echo "GATE_MISSING armory-guns-tests.log: EP2_ARMORY_GUNS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' armory-guns-tests.log | head -30; tail -8 armory-guns-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-guns-tests.log; then exit 1; fi
           # The player's Gatling hits what the crosshair is on (founder 2026-10-27: "it doesnt hit any of the targets"): real mouse path, real camera ray.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_wanted_rebalance_test.tscn 2>&1 | tee wanted-rebalance-tests.log
           grep -q "EP2_WANTED_REBALANCE: 40 checks, 0 failed" wanted-rebalance-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' wanted-rebalance-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gatling_hits_test.tscn 2>&1 | tee gatling-hits-tests.log
-          grep -q 'EP2_GATLING_HITS: ALL PASS' gatling-hits-tests.log
+          grep -q 'EP2_GATLING_HITS: ALL PASS' gatling-hits-tests.log || { echo "GATE_MISSING gatling-hits-tests.log: EP2_GATLING_HITS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' gatling-hits-tests.log | head -30; tail -8 gatling-hits-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gatling-hits-tests.log; then exit 1; fi
           # Town windows and doors are real holes and the town has people (founder 2026-10-19): kit openings + five townsmen/townswomen.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_people_test.tscn 2>&1 | tee town-people-tests.log
-          grep -q 'EP2_TOWN_PEOPLE: ALL PASS' town-people-tests.log
+          grep -q 'EP2_TOWN_PEOPLE: ALL PASS' town-people-tests.log || { echo "GATE_MISSING town-people-tests.log: EP2_TOWN_PEOPLE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-people-tests.log | head -30; tail -8 town-people-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-people-tests.log; then exit 1; fi
           # Full thirteen-person autonomy: ten minutes, avoidance, danger, social memory and malformed saves.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_autonomy_test.tscn 2>&1 | tee town-autonomy-tests.log
-          grep -q 'EP2_TOWN_AUTONOMY: ALL PASS' town-autonomy-tests.log
+          grep -q 'EP2_TOWN_AUTONOMY: ALL PASS' town-autonomy-tests.log || { echo "GATE_MISSING town-autonomy-tests.log: EP2_TOWN_AUTONOMY: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-autonomy-tests.log | head -30; tail -8 town-autonomy-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-autonomy-tests.log; then exit 1; fi
           # Reference-led street cast: UVs, image-backed PBR, four normalized skin influences and the five clips survive import.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_street_people_assets_test.tscn 2>&1 | tee street-people-assets-tests.log
-          grep -q 'EP2_STREET_PEOPLE_ASSETS: ALL PASS' street-people-assets-tests.log
+          grep -q 'EP2_STREET_PEOPLE_ASSETS: ALL PASS' street-people-assets-tests.log || { echo "GATE_MISSING street-people-assets-tests.log: EP2_STREET_PEOPLE_ASSETS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' street-people-assets-tests.log | head -30; tail -8 street-people-assets-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' street-people-assets-tests.log; then exit 1; fi
           # Bull's pacing, the cover fire and the donkey cart on the road (founder 2026-10-14).
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_road_cart_motion_test.tscn 2>&1 | tee road-cart-motion-tests.log
-          grep -q 'EP2_ROAD_CART_MOTION: 12 checks, 0 failed' road-cart-motion-tests.log
+          grep -q 'EP2_ROAD_CART_MOTION: 12 checks, 0 failed' road-cart-motion-tests.log || { echo "GATE_MISSING road-cart-motion-tests.log: EP2_ROAD_CART_MOTION: 12 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' road-cart-motion-tests.log | head -30; tail -8 road-cart-motion-tests.log; exit 1; }
           if grep -Eq 'SCRIPT ERROR|Parse Error' road-cart-motion-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_companion_cart_test.tscn 2>&1 | tee companion-cart-tests.log
-          grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log
+          grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log || { echo "GATE_MISSING companion-cart-tests.log: EP2_COMPANION_CART: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' companion-cart-tests.log | head -30; tail -8 companion-cart-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' companion-cart-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_traversal_test.gd 2>&1 | tee portal-traversal.log
-          grep -q 'PORTAL TRAVERSAL: ALL PASS' portal-traversal.log
+          grep -q 'PORTAL TRAVERSAL: ALL PASS' portal-traversal.log || { echo "GATE_MISSING portal-traversal.log: PORTAL TRAVERSAL: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' portal-traversal.log | head -30; tail -8 portal-traversal.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-traversal.log; then exit 1; fi
           # --- no-Godot checks first (cheap) ---
           python3 scripts/check-harness-hooks.py 2>&1 | tee harness-hooks-tests.log
-          grep -q 'CHECK_HARNESS_HOOKS: ALL PASS' harness-hooks-tests.log
+          grep -q 'CHECK_HARNESS_HOOKS: ALL PASS' harness-hooks-tests.log || { echo "GATE_MISSING harness-hooks-tests.log: CHECK_HARNESS_HOOKS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' harness-hooks-tests.log | head -30; tail -8 harness-hooks-tests.log; exit 1; }
           if grep -E '\[FAIL\]' harness-hooks-tests.log; then exit 1; fi
           node scripts/mobile-transition-probe.mjs --selftest 2>&1 | tee probe-selftest-tests.log
-          grep -q 'MOBILE_TRANSITION_PROBE_SELFTEST: ALL PASS' probe-selftest-tests.log
+          grep -q 'MOBILE_TRANSITION_PROBE_SELFTEST: ALL PASS' probe-selftest-tests.log || { echo "GATE_MISSING probe-selftest-tests.log: MOBILE_TRANSITION_PROBE_SELFTEST: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' probe-selftest-tests.log | head -30; tail -8 probe-selftest-tests.log; exit 1; }
           if grep -E '\[FAIL\]' probe-selftest-tests.log; then exit 1; fi
           # --- headless Godot gates (all measured passing on 2026-10-23) ---
           timeout 120 "$GODOT_BIN" --headless res://tests/touch_controls_profiles_test.tscn 2>&1 | tee touch-controls-profiles-tests.log
-          grep -q 'TOUCH_CONTROLS_PROFILES: ALL PASS' touch-controls-profiles-tests.log
+          grep -q 'TOUCH_CONTROLS_PROFILES: ALL PASS' touch-controls-profiles-tests.log || { echo "GATE_MISSING touch-controls-profiles-tests.log: TOUCH_CONTROLS_PROFILES: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' touch-controls-profiles-tests.log | head -30; tail -8 touch-controls-profiles-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' touch-controls-profiles-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/blaze_rush_touch_test.tscn 2>&1 | tee blaze-rush-touch-tests.log
-          grep -q 'BLAZE_RUSH_TOUCH: ALL PASS' blaze-rush-touch-tests.log
+          grep -q 'BLAZE_RUSH_TOUCH: ALL PASS' blaze-rush-touch-tests.log || { echo "GATE_MISSING blaze-rush-touch-tests.log: BLAZE_RUSH_TOUCH: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-rush-touch-tests.log | head -30; tail -8 blaze-rush-touch-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-rush-touch-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_rush_window_test.tscn 2>&1 | tee blaze-rush-window-tests.log
-          grep -q 'BLAZE_RUSH_WINDOW: ALL PASS' blaze-rush-window-tests.log
+          grep -q 'BLAZE_RUSH_WINDOW: ALL PASS' blaze-rush-window-tests.log || { echo "GATE_MISSING blaze-rush-window-tests.log: BLAZE_RUSH_WINDOW: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-rush-window-tests.log | head -30; tail -8 blaze-rush-window-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-rush-window-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_input_buffer_test.tscn 2>&1 | tee blaze-input-buffer-tests.log
-          grep -q 'BLAZE_INPUT_BUFFER: ALL PASS' blaze-input-buffer-tests.log
+          grep -q 'BLAZE_INPUT_BUFFER: ALL PASS' blaze-input-buffer-tests.log || { echo "GATE_MISSING blaze-input-buffer-tests.log: BLAZE_INPUT_BUFFER: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-input-buffer-tests.log | head -30; tail -8 blaze-input-buffer-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-input-buffer-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_hud_mouse_filter_test.tscn 2>&1 | tee blaze-hud-mouse-filter-tests.log
-          grep -q 'BLAZE_HUD_MOUSE_FILTER: ALL PASS' blaze-hud-mouse-filter-tests.log
+          grep -q 'BLAZE_HUD_MOUSE_FILTER: ALL PASS' blaze-hud-mouse-filter-tests.log || { echo "GATE_MISSING blaze-hud-mouse-filter-tests.log: BLAZE_HUD_MOUSE_FILTER: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-hud-mouse-filter-tests.log | head -30; tail -8 blaze-hud-mouse-filter-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-hud-mouse-filter-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_framing_test.tscn 2>&1 | tee blaze-framing-tests.log
-          grep -q 'BLAZE_FRAMING: ALL PASS' blaze-framing-tests.log
+          grep -q 'BLAZE_FRAMING: ALL PASS' blaze-framing-tests.log || { echo "GATE_MISSING blaze-framing-tests.log: BLAZE_FRAMING: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-framing-tests.log | head -30; tail -8 blaze-framing-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-framing-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/level_return_audio_test.tscn 2>&1 | tee level-return-audio-tests.log
-          grep -q 'LEVEL_RETURN_AUDIO: ALL PASS' level-return-audio-tests.log
+          grep -q 'LEVEL_RETURN_AUDIO: ALL PASS' level-return-audio-tests.log || { echo "GATE_MISSING level-return-audio-tests.log: LEVEL_RETURN_AUDIO: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' level-return-audio-tests.log | head -30; tail -8 level-return-audio-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' level-return-audio-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/scene_router_reveal_test.tscn 2>&1 | tee scene-router-reveal-tests.log
-          grep -q 'SCENE_ROUTER_REVEAL: ALL PASS' scene-router-reveal-tests.log
+          grep -q 'SCENE_ROUTER_REVEAL: ALL PASS' scene-router-reveal-tests.log || { echo "GATE_MISSING scene-router-reveal-tests.log: SCENE_ROUTER_REVEAL: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' scene-router-reveal-tests.log | head -30; tail -8 scene-router-reveal-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' scene-router-reveal-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_band_density_test.tscn 2>&1 | tee blaze-band-density-tests.log
-          grep -q 'BLAZE_BAND_DENSITY: ALL PASS' blaze-band-density-tests.log
+          grep -q 'BLAZE_BAND_DENSITY: ALL PASS' blaze-band-density-tests.log || { echo "GATE_MISSING blaze-band-density-tests.log: BLAZE_BAND_DENSITY: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-band-density-tests.log | head -30; tail -8 blaze-band-density-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-band-density-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_band_layout_test.tscn 2>&1 | tee blaze-band-layout-tests.log
-          grep -q 'BLAZE_BAND_LAYOUT: ALL PASS' blaze-band-layout-tests.log
+          grep -q 'BLAZE_BAND_LAYOUT: ALL PASS' blaze-band-layout-tests.log || { echo "GATE_MISSING blaze-band-layout-tests.log: BLAZE_BAND_LAYOUT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-band-layout-tests.log | head -30; tail -8 blaze-band-layout-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-band-layout-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_claim_reset_test.tscn 2>&1 | tee blaze-claim-reset-tests.log
-          grep -q 'BLAZE_CLAIM_RESET: ALL PASS' blaze-claim-reset-tests.log
+          grep -q 'BLAZE_CLAIM_RESET: ALL PASS' blaze-claim-reset-tests.log || { echo "GATE_MISSING blaze-claim-reset-tests.log: BLAZE_CLAIM_RESET: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-claim-reset-tests.log | head -30; tail -8 blaze-claim-reset-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-claim-reset-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/blaze_diamond_bounce_repro_test.tscn 2>&1 | tee blaze-diamond-bounce-repro-tests.log
-          grep -q 'BLAZE_DIAMOND_BOUNCE_REPRO: ALL PASS' blaze-diamond-bounce-repro-tests.log
+          grep -q 'BLAZE_DIAMOND_BOUNCE_REPRO: ALL PASS' blaze-diamond-bounce-repro-tests.log || { echo "GATE_MISSING blaze-diamond-bounce-repro-tests.log: BLAZE_DIAMOND_BOUNCE_REPRO: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-diamond-bounce-repro-tests.log | head -30; tail -8 blaze-diamond-bounce-repro-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-diamond-bounce-repro-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_hud_label_fit_test.tscn 2>&1 | tee blaze-hud-label-fit-tests.log
-          grep -q 'BLAZE_HUD_LABEL_FIT: ALL PASS' blaze-hud-label-fit-tests.log
+          grep -q 'BLAZE_HUD_LABEL_FIT: ALL PASS' blaze-hud-label-fit-tests.log || { echo "GATE_MISSING blaze-hud-label-fit-tests.log: BLAZE_HUD_LABEL_FIT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-hud-label-fit-tests.log | head -30; tail -8 blaze-hud-label-fit-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-hud-label-fit-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_lifecycle_e2e_test.tscn 2>&1 | tee blaze-lifecycle-ee-tests.log
-          grep -q 'BLAZE_LIFECYCLE_E2E: ALL PASS' blaze-lifecycle-ee-tests.log
+          grep -q 'BLAZE_LIFECYCLE_E2E: ALL PASS' blaze-lifecycle-ee-tests.log || { echo "GATE_MISSING blaze-lifecycle-ee-tests.log: BLAZE_LIFECYCLE_E2E: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-lifecycle-ee-tests.log | head -30; tail -8 blaze-lifecycle-ee-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-lifecycle-ee-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_lounge_banner_test.tscn 2>&1 | tee blaze-lounge-banner-tests.log
-          grep -q 'BLAZE_LOUNGE_BANNER: ALL PASS' blaze-lounge-banner-tests.log
+          grep -q 'BLAZE_LOUNGE_BANNER: ALL PASS' blaze-lounge-banner-tests.log || { echo "GATE_MISSING blaze-lounge-banner-tests.log: BLAZE_LOUNGE_BANNER: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-lounge-banner-tests.log | head -30; tail -8 blaze-lounge-banner-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-lounge-banner-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_rush_layout_test.tscn 2>&1 | tee blaze-rush-layout-tests.log
-          grep -q 'BLAZE_RUSH_LAYOUT: ALL PASS' blaze-rush-layout-tests.log
+          grep -q 'BLAZE_RUSH_LAYOUT: ALL PASS' blaze-rush-layout-tests.log || { echo "GATE_MISSING blaze-rush-layout-tests.log: BLAZE_RUSH_LAYOUT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-rush-layout-tests.log | head -30; tail -8 blaze-rush-layout-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-rush-layout-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_rush_no_pixelation_test.tscn 2>&1 | tee blaze-rush-no-pixelation-tests.log
-          grep -q 'BLAZE_RUSH_NO_PIXELATION: ALL PASS' blaze-rush-no-pixelation-tests.log
+          grep -q 'BLAZE_RUSH_NO_PIXELATION: ALL PASS' blaze-rush-no-pixelation-tests.log || { echo "GATE_MISSING blaze-rush-no-pixelation-tests.log: BLAZE_RUSH_NO_PIXELATION: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-rush-no-pixelation-tests.log | head -30; tail -8 blaze-rush-no-pixelation-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-rush-no-pixelation-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/blaze_transition_palette_test.tscn 2>&1 | tee blaze-transition-palette-tests.log
-          grep -q 'BLAZE_TRANSITION_PALETTE: ALL PASS' blaze-transition-palette-tests.log
+          grep -q 'BLAZE_TRANSITION_PALETTE: ALL PASS' blaze-transition-palette-tests.log || { echo "GATE_MISSING blaze-transition-palette-tests.log: BLAZE_TRANSITION_PALETTE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' blaze-transition-palette-tests.log | head -30; tail -8 blaze-transition-palette-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-transition-palette-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/transition_director_test.tscn 2>&1 | tee transition-director-tests.log
-          grep -q 'TRANSITION_DIRECTOR: ALL PASS' transition-director-tests.log
+          grep -q 'TRANSITION_DIRECTOR: ALL PASS' transition-director-tests.log || { echo "GATE_MISSING transition-director-tests.log: TRANSITION_DIRECTOR: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' transition-director-tests.log | head -30; tail -8 transition-director-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-director-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/touch_scene_swap_cleanup_test.tscn 2>&1 | tee touch-scene-swap-cleanup-tests.log
-          grep -q 'TOUCH_SCENE_SWAP_CLEANUP: ALL PASS' touch-scene-swap-cleanup-tests.log
+          grep -q 'TOUCH_SCENE_SWAP_CLEANUP: ALL PASS' touch-scene-swap-cleanup-tests.log || { echo "GATE_MISSING touch-scene-swap-cleanup-tests.log: TOUCH_SCENE_SWAP_CLEANUP: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' touch-scene-swap-cleanup-tests.log | head -30; tail -8 touch-scene-swap-cleanup-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' touch-scene-swap-cleanup-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_touch_controls_test.tscn 2>&1 | tee ep-touch-controls-tests.log
-          grep -q 'EP2_TOUCH_CONTROLS: ALL PASS' ep-touch-controls-tests.log
+          grep -q 'EP2_TOUCH_CONTROLS: ALL PASS' ep-touch-controls-tests.log || { echo "GATE_MISSING ep-touch-controls-tests.log: EP2_TOUCH_CONTROLS: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' ep-touch-controls-tests.log | head -30; tail -8 ep-touch-controls-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep-touch-controls-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_session_root_test.tscn 2>&1 | tee ep-session-root-tests.log
-          grep -q 'EP2_SESSION_ROOT: ALL PASS' ep-session-root-tests.log
+          grep -q 'EP2_SESSION_ROOT: ALL PASS' ep-session-root-tests.log || { echo "GATE_MISSING ep-session-root-tests.log: EP2_SESSION_ROOT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' ep-session-root-tests.log | head -30; tail -8 ep-session-root-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep-session-root-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_theme_handoff_test.tscn 2>&1 | tee ep-theme-handoff-tests.log
-          grep -q 'EP2_THEME_HANDOFF: ALL PASS' ep-theme-handoff-tests.log
+          grep -q 'EP2_THEME_HANDOFF: ALL PASS' ep-theme-handoff-tests.log || { echo "GATE_MISSING ep-theme-handoff-tests.log: EP2_THEME_HANDOFF: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' ep-theme-handoff-tests.log | head -30; tail -8 ep-theme-handoff-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep-theme-handoff-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_access_code_test.tscn 2>&1 | tee ep-access-code-tests.log
-          grep -q 'EP2_ACCESS_CODE: ALL PASS' ep-access-code-tests.log
+          grep -q 'EP2_ACCESS_CODE: ALL PASS' ep-access-code-tests.log || { echo "GATE_MISSING ep-access-code-tests.log: EP2_ACCESS_CODE: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' ep-access-code-tests.log | head -30; tail -8 ep-access-code-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep-access-code-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/harness_hooks_inert_test.tscn 2>&1 | tee harness-hooks-inert-tests.log
-          grep -q 'HARNESS_HOOKS_INERT: ALL PASS' harness-hooks-inert-tests.log
+          grep -q 'HARNESS_HOOKS_INERT: ALL PASS' harness-hooks-inert-tests.log || { echo "GATE_MISSING harness-hooks-inert-tests.log: HARNESS_HOOKS_INERT: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' harness-hooks-inert-tests.log | head -30; tail -8 harness-hooks-inert-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' harness-hooks-inert-tests.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless res://tests/debug_overlay_beacon_test.tscn 2>&1 | tee debug-overlay-beacon-tests.log
-          grep -q 'DEBUG_OVERLAY_BEACON: ALL PASS' debug-overlay-beacon-tests.log
+          grep -q 'DEBUG_OVERLAY_BEACON: ALL PASS' debug-overlay-beacon-tests.log || { echo "GATE_MISSING debug-overlay-beacon-tests.log: DEBUG_OVERLAY_BEACON: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' debug-overlay-beacon-tests.log | head -30; tail -8 debug-overlay-beacon-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' debug-overlay-beacon-tests.log; then exit 1; fi
           # A headless renderer cannot catch a foreground rectangle hiding the
           # background. Render the real scenes with the web-compatible driver.
@@ -876,7 +876,7 @@ jobs:
       - name: Verify elevator portal foreground on Compatibility
         run: |
           timeout 90 xvfb-run -a "$GODOT_BIN" --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy --script res://tests/ep2_portal_render_test.gd > ep2-door-pixels.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ep2-door-pixels.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ep2-door-pixels.log | head -40; tail -12 ep2-door-pixels.log; exit 1; }
-          grep -q 'EP2_PORTAL_RENDER: 2 checks, 0 failed' ep2-door-pixels.log
+          grep -q 'EP2_PORTAL_RENDER: 2 checks, 0 failed' ep2-door-pixels.log || { echo "GATE_MISSING ep2-door-pixels.log: EP2_PORTAL_RENDER: 2 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' ep2-door-pixels.log | head -30; tail -8 ep2-door-pixels.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-door-pixels.log; then exit 1; fi
           cat ep2-door-pixels.log
 
@@ -886,8 +886,8 @@ jobs:
           SHOT_OUT="$RUNNER_TEMP/town-autonomy-captures" timeout 1200 xvfb-run -a "$GODOT_BIN" \
             --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy \
             --resolution 1280x720 res://tools/ep2_shots/town_autonomy_play.tscn 2>&1 | tee town-autonomy-render.log
-          grep -q 'TOWN_AUTONOMY_PLAY: ALL THIRTEEN CAPTURED' town-autonomy-render.log
-          grep -q 'TOWN_AUTONOMY_PLAY: JAIL PRISONER CAPTURED' town-autonomy-render.log
+          grep -q 'TOWN_AUTONOMY_PLAY: ALL THIRTEEN CAPTURED' town-autonomy-render.log || { echo "GATE_MISSING town-autonomy-render.log: TOWN_AUTONOMY_PLAY: ALL THIRTEEN CAPTURED"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-autonomy-render.log | head -30; tail -8 town-autonomy-render.log; exit 1; }
+          grep -q 'TOWN_AUTONOMY_PLAY: JAIL PRISONER CAPTURED' town-autonomy-render.log || { echo "GATE_MISSING town-autonomy-render.log: TOWN_AUTONOMY_PLAY: JAIL PRISONER CAPTURED"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' town-autonomy-render.log | head -30; tail -8 town-autonomy-render.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error' town-autonomy-render.log; then exit 1; fi
 
       - name: Upload town autonomy proof
@@ -906,7 +906,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/stable-yard-captures"
           timeout 600 xvfb-run -a "$GODOT_BIN" --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy \
             --resolution 1280x720 res://tools/ep2_shots/stable_yard_shot.tscn -- out="$RUNNER_TEMP/stable-yard-captures" 2>&1 | tee stable-yard-render.log
-          grep -q 'STABLE_YARD_SHOT: TWO RIGS FIVE CLIPS AND HERD CAPTURED' stable-yard-render.log
+          grep -q 'STABLE_YARD_SHOT: TWO RIGS FIVE CLIPS AND HERD CAPTURED' stable-yard-render.log || { echo "GATE_MISSING stable-yard-render.log: STABLE_YARD_SHOT: TWO RIGS FIVE CLIPS AND HERD CAPTURED"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' stable-yard-render.log | head -30; tail -8 stable-yard-render.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error' stable-yard-render.log; then exit 1; fi
 
       - name: Upload stable yard proof
@@ -996,7 +996,7 @@ jobs:
           # index.pck above and packed here into ep2_extras.pck, deployed next to it; the game downloads and mounts it when
           # Episode 2 starts (src/episode2/ep2_extras.gd). Skill: ep2-armory-two-story.
           timeout 300 "$GODOT_BIN" --headless --path . --script tools/ep2_extras/pack_extras.gd -- web/game/ep2_extras.pck 2>&1 | tee extras-pack.log
-          grep -q 'EXTRAS_PACK:' extras-pack.log
+          grep -q 'EXTRAS_PACK:' extras-pack.log || { echo "GATE_MISSING extras-pack.log: EXTRAS_PACK:"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' extras-pack.log | head -30; tail -8 extras-pack.log; exit 1; }
           [ -f web/game/ep2_extras.pck ] || { echo "::error::ep2_extras.pck was not built"; exit 1; }
           XB=$(stat -c%s web/game/ep2_extras.pck)
           echo "ep2_extras.pck = $XB bytes"
@@ -1008,16 +1008,16 @@ jobs:
           STABLE_CHECK_DIR=$(mktemp -d)
           printf 'config_version=5\n[application]\nconfig/name="Stable pack check"\n' > "$STABLE_CHECK_DIR/project.godot"
           timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_forge/check_stable_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee stable-pack-check.log
-          grep -q 'STABLE_PACK: ALL PASS' stable-pack-check.log
+          grep -q 'STABLE_PACK: ALL PASS' stable-pack-check.log || { echo "GATE_MISSING stable-pack-check.log: STABLE_PACK: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' stable-pack-check.log | head -30; tail -8 stable-pack-check.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' stable-pack-check.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_cart/check_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee road-cart-pack-check.log
-          grep -q 'ROAD_CART_PACK: 36 checks, 0 failed' road-cart-pack-check.log
+          grep -q 'ROAD_CART_PACK: 36 checks, 0 failed' road-cart-pack-check.log || { echo "GATE_MISSING road-cart-pack-check.log: ROAD_CART_PACK: 36 checks, 0 failed"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' road-cart-pack-check.log | head -30; tail -8 road-cart-pack-check.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' road-cart-pack-check.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_lake/check_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee lake-pack-check.log
-          grep -q 'LAKE_PACK: ALL PASS' lake-pack-check.log
+          grep -q 'LAKE_PACK: ALL PASS' lake-pack-check.log || { echo "GATE_MISSING lake-pack-check.log: LAKE_PACK: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' lake-pack-check.log | head -30; tail -8 lake-pack-check.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-pack-check.log; then exit 1; fi
           timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_cabin/check_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee cabin-pack-check.log
-          grep -q 'CABIN_PACK: ALL PASS' cabin-pack-check.log
+          grep -q 'CABIN_PACK: ALL PASS' cabin-pack-check.log || { echo "GATE_MISSING cabin-pack-check.log: CABIN_PACK: ALL PASS"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' cabin-pack-check.log | head -30; tail -8 cabin-pack-check.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' cabin-pack-check.log; then exit 1; fi
 
       - name: Restore the stamped source
