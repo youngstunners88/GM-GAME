@@ -1059,7 +1059,7 @@ func _close_shop() -> void:
 		return
 	_shop_open = false
 	if _shop != null:
-		_shop.hide()
+		_shop.close_shop()                       # hidden AND stopped: a hidden counter kept laying itself out every frame (24 ms)
 	Input.mouse_mode = _mouse_before
 	if not StateMachine.is_paused():
 		get_tree().paused = false

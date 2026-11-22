@@ -97,9 +97,22 @@ func _catalogue() -> Array:
 func _tabs() -> Array:
 	var out: Array = []
 	for tab in WEAPON_TABS:
-		if tab_owned(state, tab) and Ep2Extras.has(str(tab["model"])):
+		if tab_owned(state, tab) and _model_ready(str(tab["model"])):
 			out.append(tab)
 	return out
+
+
+## Founder 2026-11-22 "everything slows after trading with Rich" (measured, tools/ep2_perf/shop_trade_probe.tscn): the layout asks for
+## the tabs ~6 times per row per frame and each asked ResourceLoader.exists() for every tab model - 24 ms a frame. A model that exists
+## stays existing (the streamed pack only ever adds files), so a "yes" is remembered; a "no" is asked again until the pack arrives.
+static var _models_seen: Dictionary = {}
+static func _model_ready(path: String) -> bool:
+	if _models_seen.has(path):
+		return true
+	if Ep2Extras.has(path):
+		_models_seen[path] = true
+		return true
+	return false
 
 
 ## Does Lil Blunt have this tab's weapon in hand now? The pickaxe always (his own tool: never bought, never kept by the Sheriff, who hands
@@ -286,7 +299,27 @@ func _ready() -> void:
 	# The shared close keeps raw-finger handling and the panel's own pause owner.
 	preload("res://src/ui/panel_close.gd").install(self, func() -> void: closed.emit())
 	_build_showcase()
-	set_process(true)
+	set_process(visible)                         # the counter only lays itself out while it is up (see close_shop)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and is_node_ready():
+		set_process(visible)
+
+
+## Put the counter away for real (founder 2026-11-22, measured): hide it, stop its per-frame layout, stop the lit case's own 3D world
+## from rendering and drop the gun in it. The next open_shop() rebuilds the case piece from the cached model.
+func close_shop() -> void:
+	hide()
+	set_process(false)
+	if _case_vp != null:
+		_case_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	if _case_box != null:
+		_case_box.visible = false
+	if _case_piece != null:
+		_case_piece.queue_free()
+		_case_piece = null
+	showcase_key = ""
 
 
 ## One button per tab he can see now. The list grows when a purchase reveals a tab (a button is never made for a tab that is not shown,
@@ -486,6 +519,7 @@ func open_shop(armory_state: Ep2ArmoryState, coin_purse: int) -> void:
 	flash = ""
 	_ensure_tab_buttons()                       # his tabs are touchable the frame the counter opens
 	show()
+	set_process(true)
 	if _case_vp != null:
 		_case_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_sync_showcase()

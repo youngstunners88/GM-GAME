@@ -56,6 +56,21 @@ func _ready() -> void:
 		and Ep2ArmoryState.NAMES[Ep2ArmoryState.MP18] == "Bergmann MP18"
 		and Ep2ArmoryState.NAMES[Ep2ArmoryState.BORCH] == "Borchardt C-93"
 		and Ep2ArmoryState.NAMES[Ep2ArmoryState.BUFF] == "Sharps 1874")
+	# founder 2026-11-22 "everything slows after trading with Rich": the counter lays itself out only while it is up
+	shop.close_shop()
+	check("a closed counter stops its per-frame layout and its lit case", not shop.visible and not shop.is_processing()
+		and shop._case_vp.render_target_update_mode == SubViewport.UPDATE_DISABLED and shop._case_piece == null and shop.showcase_key == "")
+	shop.open_shop(town.armory, 0)
+	check("reopening the counter lays it out again", shop.visible and shop.is_processing())
+	shop.hide()
+	check("any other hide also stops the counter", not shop.is_processing())
+	var town_src: String = FileAccess.get_file_as_string("res://src/episode2/chamber/gold_town.gd")
+	check("the town closes Rich's counter with close_shop()", town_src.contains("_shop.close_shop()"))
+	shop._tabs()
+	var remembered: bool = true
+	for tab in Ep2ArmoryShop.WEAPON_TABS:
+		if Ep2ArmoryShop.tab_owned(shop.state, tab) and Ep2Extras.has(str(tab["model"])) and not Ep2ArmoryShop._models_seen.has(str(tab["model"])): remembered = false
+	check("a tab model found once is remembered (the layout asks for the tabs hundreds of times a frame)", remembered)
 	shop.queue_free()
 	town.free()
 	player.queue_free()
