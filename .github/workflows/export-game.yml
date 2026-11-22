@@ -601,7 +601,7 @@ jobs:
           grep -qF 'EP2_REACHABILITY: ALL PASS' ep2-reachability-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-reachability-tests.log | head -40; tail -25 ep2-reachability-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-reachability-tests.log; then exit 1; fi
           timeout 500 "$GODOT_BIN" --headless res://tests/ep2_residuals_1028_test.tscn > ep2-residuals-1028-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ep2-residuals-1028-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ep2-residuals-1028-tests.log | head -40; tail -12 ep2-residuals-1028-tests.log; exit 1; }
-          grep -qF 'EP2_RESIDUALS_1028: 192 checks, 0 failed' ep2-residuals-1028-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-residuals-1028-tests.log | head -40; tail -25 ep2-residuals-1028-tests.log; exit 1; }
+          grep -qF 'EP2_RESIDUALS_1028: 206 checks, 0 failed' ep2-residuals-1028-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-residuals-1028-tests.log | head -40; tail -25 ep2-residuals-1028-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-residuals-1028-tests.log; then exit 1; fi
           timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_audio_test.tscn > ep2-runner-audio-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ep2-runner-audio-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ep2-runner-audio-tests.log | head -40; tail -12 ep2-runner-audio-tests.log; exit 1; }
           grep -qF 'ALL PASS' ep2-runner-audio-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-audio-tests.log | head -40; tail -25 ep2-runner-audio-tests.log; exit 1; }
