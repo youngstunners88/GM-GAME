@@ -1,5 +1,19 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-22 — Founder doc "New shit!!!" Part 1: voices, subtitles, Rich's shop, horse colour, sand, lift, Reserve, Inferno, auction road, signposts, vultures.** SHIPPING (gates run on the Runpod gate pod); "live" only after master CI + butler.
+- **Voices (P1-0/P1-1):** Logan speaks (10 takes on his own account); Lil Blunt answers Dude in the haggle again; town captions are off by default (a recorded line shows no subtitle); Mike Dean's two licence lines recorded.
+- **Rich's shop (P1-2/P1-3):** the slowdown after trading was the hidden shop laying itself out every frame (24 ms); it now stops when closed. Two always-visible pay buttons, BTC and WBTC, each with its balance; Rich says "BTC or WBTC".
+- **Townsmen heard (P1-4):** a townsman's line within 12 m ducks the music (the two men behind the shops).
+- **Horse colour (P1-5):** the horse you pick is led to the rail you mount at; the trail and the road ride that same horse.
+- **Sand on the green trail (P1-6):** the town's own desert floor rode along under the trail and showed through near the lake (images 1 and 3); it is hidden while you ride, the trail's floor covers its ground.
+- **Mine lift (P1-7):** two timber treads close the 1.5 m black gap between the bridge and the cage platform.
+- **Reserve (P1-8):** turned so its door faces the church; RESERVE is a gold-lettered header board above the door.
+- **Inferno (P1-9):** parks clear of Rich & Utah's crates; when you are at the Gatling he calls you over from his quad and walks one way: quad, body, saloon.
+- **Auction road (P1-10):** no teleport. The road leaves Logan's Lake through a cut in the lake's own ground, you land exactly where you crossed, looking where you looked, with the real lake behind you; the way back is the same.
+- **Signposts (P1-11):** the words are painted on real boards (they hung in the air past the planks); the ridge sign has a post and board.
+- **Vultures (P1-12):** a real wingbeat (the hand flexes at the wrist) and wing sound that swells on each downbeat, plus the cry.
+- **Gates:** new `ep2_lift_landing`, `ep2_signposts`; extended `ep2_ranch_road_presence` (13), `ep2_common_sense` (46), `ep2_playtest_dude` (68), `ep2_wildlife_combat` (134), `ep2_stockpile`, `ep2_fix_pack_1115`. Report: `~/Documents/SmokeRealm-mocap/newshit1122/PART1_REPORT.md`.
+
 **2026-11-22 — Road, Dude's buds, Tabs and the axe (founder residual pack).** PUSHED; not yet seen on a hard refresh.
 - **One brown dirt road (P0-A):** the quad road from the woods into town used the dark forest-floor texture and read black in the desert; it now uses the same brown dirt-road material as the road back to the stables (`Ep2LakeRoad.dirt_road_material()`).
 - **Chill Buds are a surprise until Dude (P0-B):** no Chill Bud row, no "visit Dude" hint and no H shortcut in Tabs until Dude gives or sells the first bud (gift, ranch sale or patch). Saved, and older saves holding buds keep the row.
