@@ -7,7 +7,7 @@ extends Node
 const TRAIL := preload("res://src/episode2/chamber/lake_trail.tscn")
 const LAKE := preload("res://src/episode2/chamber/logans_lake.tscn")
 const TOWN := preload("res://src/episode2/chamber/gold_town.tscn")
-const CHECKS_PINNED := 127
+const CHECKS_PINNED := 134
 
 var _fail: int = 0
 var _count: int = 0
@@ -27,6 +27,7 @@ func _ready() -> void:
 	_flock_audio()
 	_carrion_can_die()
 	_founder_vulture()
+	_vulture_wingbeat()
 	_audio_assets()
 	await get_tree().process_frame
 	await _stampede_gives_no_warning()
@@ -169,6 +170,44 @@ func _flock_audio() -> void:
 	flock.listener = flock.global_position + Vector3(400.0, 0.0, 0.0)
 	flock._process(0.1)
 	_check("...and when he has ridden away", not flock._wings.playing)
+	flock.free()
+
+
+## Founder 2026-11-22: "The vultures need sound and they actually need to flap their wings." A real wingbeat (the hand flexes at the
+## wrist, the tip travels), birds that really beat (amount >= 0.6), and wings heard on the downbeats plus the cry, while he is in range.
+func _vulture_wingbeat() -> void:
+	print("-- THE WINGBEAT (P1-11)")
+	var flock := _flock()
+	var bird: Node3D = flock.birds[0]
+	var wrist := bird.get_node_or_null("WingL/Wrist") as Node3D
+	_check("each founder wing has an arm and a hand (cut at the wrist), not one board", wrist != null and wrist.get_node_or_null("FounderHand") != null
+		and bird.get_node_or_null("WingR/Wrist/FounderHand") != null)
+	var hand_lo: float = INF
+	var hand_hi: float = -INF
+	var tip_lo: float = INF
+	var tip_hi: float = -INF
+	for k in 48:
+		Ep2VultureMesh.flap(bird, TAU * float(k) / 48.0, 1.0)
+		if wrist != null:
+			hand_lo = minf(hand_lo, wrist.rotation.z)
+			hand_hi = maxf(hand_hi, wrist.rotation.z)
+			var tip: Vector3 = wrist.global_transform * Vector3(-0.5, 0.0, 0.0)
+			tip_lo = minf(tip_lo, tip.y)
+			tip_hi = maxf(tip_hi, tip.y)
+	_check("over a full beat the hand flexes against the arm (%.2f rad)" % (hand_hi - hand_lo), hand_hi - hand_lo > 0.8)
+	_check("...and the wing tip travels up and down (%.2f m)" % (tip_hi - tip_lo), tip_hi - tip_lo > 0.9)
+	var beat_max: float = 0.0
+	flock.listener = flock.global_position + Vector3(0.0, 0.0, 25.0)
+	var db_lo: float = INF
+	for i in 25 * 30:
+		flock.listener = flock.global_position + Vector3(0.0, 0.0, 25.0)       # the room tells it where he is every frame
+		flock._process(1.0 / 30.0)
+		beat_max = maxf(beat_max, flock._flap_amount(flock._states[0]))
+		if flock._wings.playing: db_lo = minf(db_lo, flock._wings.volume_db)
+	_check("the flock really beats, not a frozen glide (strongest beat %.2f >= 0.6)" % beat_max, beat_max >= 0.6)
+	_check("its wings are heard while he is under them (%d starts)" % flock.wing_plays, flock.wing_plays >= 1 and flock._wings.playing)
+	_check("...loud on the downbeats, a whisper in the glide (%.1f .. %.1f dB)" % [db_lo, flock.wing_peak_db], flock.wing_peak_db >= -6.0 and db_lo <= -15.0)
+	_check("...and the cry is heard over 25 s (%d)" % flock.cry_plays, flock.cry_plays >= 1)
 	flock.free()
 
 

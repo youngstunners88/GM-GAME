@@ -22,6 +22,14 @@ const LYING_HEIGHT := 0.09                # root height (at scale 1) of a body f
 ## nodes (the flock, the carcass birds and their gates address them) and are the fallback before the pack mounts.
 const FOUNDER_GLB := "res://src/episode2/extras/river_assets/vulture.glb"
 static var _founder: Dictionary = {}                 # "Body"/"WingL"/"WingR" -> [Mesh, pivot Vector3]; {} = not loaded yet
+## THE WINGBEAT (founder 2026-11-22: "they actually need to flap their wings"). The bake's wing is one rigid 1.07 m piece, so a stroke
+## swung a flat board. Each founder wing is cut once at load at its wrist (WRIST_OUT from the shoulder): the inner arm turns at the
+## shoulder (measured: the mean of the wing's root vertices, not the node origin) and the hand turns again at the wrist, lagging the
+## stroke - it trails up on the downbeat and folds down on the upbeat, like a real wing. "WingL"/"WingR" -> {"inner", "outer", "shoulder", "wrist"}.
+const WRIST_OUT := 0.45
+const HAND_FLEX := 0.55                   # rad of hand lag at a full beat
+const HAND_LAG := 1.0                     # rad of phase the hand trails the arm by
+static var _founder_split: Dictionary = {}
 
 static var _feather: StandardMaterial3D = null
 static var _flight: StandardMaterial3D = null
@@ -151,11 +159,58 @@ static func _load_founder() -> bool:
 					m.roughness = 1.0
 					m.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 			_founder[key] = [mesh, (mi as Node3D).position]
+			if key != "Body":
+				_founder_split[key] = _split_wing(mesh, -1.0 if key == "WingL" else 1.0)
 	scene.free()
 	if _founder.size() != 3:
 		_founder = {}
+		_founder_split = {}
 		return false
 	return true
+
+
+## Cut a wing mesh at its wrist: {"inner": ArrayMesh, "outer": ArrayMesh, "shoulder": Vector3, "wrist": Vector3} in the mesh's own frame.
+## `out` is the tip's side (-1 = the left wing's tip at -X). Triangles go to the hand when their centre is past the wrist.
+static func _split_wing(mesh: Mesh, out: float) -> Dictionary:
+	var shoulder := Vector3.ZERO
+	var wrist := Vector3.ZERO
+	var ns: int = 0
+	var nw: int = 0
+	for si in mesh.get_surface_count():
+		for v in (mesh.surface_get_arrays(si)[Mesh.ARRAY_VERTEX] as PackedVector3Array):
+			var o: float = v.x * out
+			if o < 0.1:
+				shoulder += v
+				ns += 1
+			elif absf(o - WRIST_OUT) < 0.05:
+				wrist += v
+				nw += 1
+	shoulder = shoulder / float(maxi(ns, 1))
+	wrist = wrist / float(maxi(nw, 1))
+	var inner := ArrayMesh.new()
+	var outer := ArrayMesh.new()
+	for si in mesh.get_surface_count():
+		var arr: Array = mesh.surface_get_arrays(si)
+		var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX] if arr[Mesh.ARRAY_INDEX] != null else PackedInt32Array(range(verts.size()))
+		var arm_idx := PackedInt32Array()                # (a packed array read out of an Array is a copy: two locals, not a list)
+		var hand_idx := PackedInt32Array()
+		for t in range(0, idx.size() - 2, 3):
+			var c: Vector3 = (verts[idx[t]] + verts[idx[t + 1]] + verts[idx[t + 2]]) / 3.0
+			if (c.x - shoulder.x) * out > WRIST_OUT:
+				hand_idx.append_array([idx[t], idx[t + 1], idx[t + 2]])
+			else:
+				arm_idx.append_array([idx[t], idx[t + 1], idx[t + 2]])
+		for k in 2:
+			var part: PackedInt32Array = arm_idx if k == 0 else hand_idx
+			if part.is_empty():
+				continue
+			var a2: Array = arr.duplicate()
+			a2[Mesh.ARRAY_INDEX] = part
+			var target: ArrayMesh = inner if k == 0 else outer
+			target.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, a2)
+			target.surface_set_material(target.get_surface_count() - 1, mesh.surface_get_material(si))
+	return {"inner": inner, "outer": outer, "shoulder": shoulder, "wrist": wrist}
 
 
 static func _dress_founder(root: Node3D) -> void:
@@ -173,11 +228,31 @@ static func _dress_founder(root: Node3D) -> void:
 	body.position = _founder["Body"][1]
 	for side in ["WingL", "WingR"]:
 		var pivot := root.get_node(side) as Node3D
-		pivot.position = _founder[side][1]
-		var wing := MeshInstance3D.new()
-		wing.name = "FounderWing"
-		wing.mesh = _founder[side][0]
-		pivot.add_child(wing)
+		var cut: Dictionary = _founder_split.get(side, {})
+		if cut.is_empty() or (cut["outer"] as ArrayMesh).get_surface_count() == 0:
+			pivot.position = _founder[side][1]
+			var wing := MeshInstance3D.new()
+			wing.name = "FounderWing"
+			wing.mesh = _founder[side][0]
+			pivot.add_child(wing)
+			continue
+		# the pivot on the measured shoulder; the arm hangs from it, the hand from a wrist pivot further out
+		var shoulder: Vector3 = cut["shoulder"]
+		pivot.position = (_founder[side][1] as Vector3) + shoulder
+		var arm := MeshInstance3D.new()
+		arm.name = "FounderWing"
+		arm.mesh = cut["inner"]
+		arm.position = -shoulder
+		pivot.add_child(arm)
+		var wrist := Node3D.new()
+		wrist.name = "Wrist"
+		wrist.position = (cut["wrist"] as Vector3) - shoulder
+		pivot.add_child(wrist)
+		var hand := MeshInstance3D.new()
+		hand.name = "FounderHand"
+		hand.mesh = cut["outer"]
+		hand.position = -(cut["wrist"] as Vector3)
+		wrist.add_child(hand)
 
 
 ## A slow soaring flap. `amount` 0 = wings locked in the glide's shallow V, 1 = a full downbeat.
@@ -190,6 +265,12 @@ static func flap(node: Node3D, phase: float, amount: float) -> void:
 	var lift: float = GLIDE_DIHEDRAL * (1.0 - amount * 0.6) + sin(phase) * 0.78 * amount     # a full stroke reads at 40 m
 	left.rotation = Vector3(0.0, 0.0, -lift)
 	right.rotation = Vector3(0.0, 0.0, lift)
+	# the hand trails the arm: up on the downbeat, folding down on the upbeat (a flat board has no wrist)
+	var hand: float = sin(phase - HAND_LAG) * HAND_FLEX * amount
+	var lw := left.get_node_or_null("Wrist") as Node3D
+	var rw := right.get_node_or_null("Wrist") as Node3D
+	if lw != null: lw.rotation = Vector3(0.0, 0.0, -hand)
+	if rw != null: rw.rotation = Vector3(0.0, 0.0, hand)
 
 
 ## Open wings again after `fold()` or `slump()`.
@@ -219,6 +300,8 @@ static func _pose_wings(node: Node3D, sweep_back: float, droop_z: float, wing_sc
 	right.rotation = Vector3(0.0, -sweep_back, -droop_z)
 	left.scale = wing_scale
 	right.scale = wing_scale
+	for w in [left.get_node_or_null("Wrist"), right.get_node_or_null("Wrist")]:
+		if w != null: (w as Node3D).rotation = Vector3.ZERO           # a folded or slack wing has a straight hand
 
 
 ## A burst of dark loose feathers where a round struck. It frees itself.

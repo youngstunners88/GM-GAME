@@ -84,7 +84,7 @@ func _scatter(st: Dictionary, index: int) -> void:
 
 
 func _build_audio() -> void:
-	_wings = _voice("VultureWings", 30.0, 190.0, -11.0, _stream(WINGS, WINGS_FALLBACK))
+	_wings = _voice("VultureWings", 40.0, 190.0, WINGS_GLIDE_DB, _stream(WINGS, WINGS_FALLBACK))
 	if _wings.stream is AudioStreamOggVorbis:
 		(_wings.stream as AudioStreamOggVorbis).loop = true
 	_cry = _voice("VultureCry", 30.0, 190.0, -5.0, _stream(CRY, CRY_FALLBACK))
@@ -188,14 +188,30 @@ func _fall(st: Dictionary, delta: float) -> void:
 		node.visible = false                # the body stops drawing so a long ride costs nothing
 
 
+## THE WINGBEATS ARE HEARD (founder 2026-11-22: "The vultures need sound"): the wing loop used to hum at a flat -11 dB whatever the birds
+## did. It now swells on each downbeat of the bird nearest him (louder the harder it beats) and drops to a whisper in a glide, from that bird.
+const WINGS_GLIDE_DB := -24.0
+const WINGS_BEAT_DB := -1.0
+var wing_plays: int = 0                   # how many times the wing sound started (gates read these)
+var cry_plays: int = 0
+var wing_peak_db: float = -80.0           # the loudest the wings got while he was in range
+
+
 func _tick_audio(alive: int, delta: float) -> void:
 	var near: bool = _heard_t > 0.0 and alive > 0 and listener.distance_to(global_position) < HEAR_RANGE
 	if _wings != null:
 		if near and not _wings.playing and _wings.stream != null:
 			_wings.play()
+			wing_plays += 1
 		elif not near and _wings.playing:
 			_wings.stop()
-		_wings.position = _nearest_bird_local()       # the wingbeats come from the bird closest to him, not from empty sky
+		var st: Dictionary = _nearest_state()
+		_wings.position = (st["node"] as Node3D).position if not st.is_empty() else Vector3(0.0, 23.0, 0.0)   # from the bird closest to him
+		if not st.is_empty():
+			var down: float = maxf(0.0, -cos(float(st["flap_t"])))       # the downbeat half of the stroke
+			var beat: float = _flap_amount(st) * (0.3 + 0.7 * down)
+			_wings.volume_db = lerpf(WINGS_GLIDE_DB, WINGS_BEAT_DB, clampf(beat, 0.0, 1.0))
+			if near: wing_peak_db = maxf(wing_peak_db, _wings.volume_db)
 	_cry_t -= delta
 	if _cry_t <= 0.0:
 		_cry_t = _rng.randf_range(4.5, 9.5)
@@ -203,6 +219,20 @@ func _tick_audio(alive: int, delta: float) -> void:
 			var pick: int = _rng.randi_range(0, birds.size() - 1)
 			if not bool(_states[pick]["dead"]):
 				_call_from(birds[pick])
+
+
+func _nearest_state() -> Dictionary:
+	var best: Dictionary = {}
+	var best_d: float = INF
+	var here: Vector3 = to_local(listener) if is_inside_tree() else listener
+	for st in _states:
+		if bool(st["dead"]):
+			continue
+		var d: float = (st["node"] as Node3D).position.distance_to(here)
+		if d < best_d:
+			best_d = d
+			best = st
+	return best
 
 
 func _nearest_bird_local() -> Vector3:
@@ -223,6 +253,7 @@ func _call_from(bird: Node3D) -> void:
 	if _cry != null and _cry.stream != null and is_inside_tree():
 		_cry.global_position = bird.global_position
 		_cry.play()
+		cry_plays += 1
 
 
 ## Distance along the ray to the nearest living bird, or -1. Hits nothing.
