@@ -142,10 +142,30 @@ func _test_auction_preset() -> void:
 	lake._player_pos = LogansLakeChamber.AUCTION_SIGN + Vector3(0.6, 0, 0.6)
 	s._drive_prebuild(1.0e9)
 	check("the road to the auction is built behind the lake", s.is_prebuilt("auction_road"))
+	for i in 40: lake.preview_road(s._pb_node)     # the session copies the road in, a root per frame, while he is at the lake
+	var ahead: Node3D = lake._visuals.get_node_or_null("RoadAhead") as Node3D
+	# founder 2026-11-22 ("why are we teleporting to the auction road"): the road is THERE before he rides onto it
+	check("from the lake the road ahead is already in view (its strip and the ground past the lake)", ahead != null and ahead.visible
+		and ahead.find_child("AuctionRoad", true, false) != null and ahead.find_child("DesertBeyond", true, false) != null)
+	lake._look_yaw = Ep2LakeLandform.ROAD_YAW + 0.3
+	lake.step(1.0 / 30.0)
+	var cross_at: Vector3 = lake.get_player_position()
+	var cross_yaw: float = lake._look_yaw
+	var eye_before: Vector3 = lake.get_camera().global_position if lake.get_camera() != null else Vector3.INF
 	lake.step(1.0 / 30.0)                         # founder 2026-11-15: riding past the signpost IS leaving - no [E]
 	check("at the signpost the lake lets him leave for the auction, by riding, not by a key", lake._near_auction_sign() and lake._can_leave_for_auction() and s.get_active() is AuctionRoadChamber)
 	var road: AuctionRoadChamber = s.get_active() as AuctionRoadChamber
 	check("...and he is on the auction road, still in the saddle", road != null and road.is_mounted(), str(s.get_active()))
+	if road != null:
+		var landed: Vector3 = AuctionRoadChamber.to_lake(road.get_player_position())
+		check("he lands exactly where he crossed the line, not at the road's own start (%.2f m)" % landed.distance_to(cross_at), landed.distance_to(cross_at) < 0.05)
+		check("...looking exactly where he looked (no gaze reset or clamp)", absf(angle_difference(road._look_yaw - AuctionRoadChamber.LAKE_YAW_DELTA, cross_yaw)) < 0.01)
+		road._update_camera(0.0)
+		var eye_after: Vector3 = AuctionRoadChamber.lake_xform().affine_inverse() * road.get_camera().global_position
+		check("the camera does not jump across the hand-over (%.2f m in the lake's frame)" % eye_after.distance_to(eye_before), eye_after.distance_to(eye_before) < 0.6)
+		check("the real lake stands behind him on the road (its shore, not a flat stand-in)", road._lake_root != null
+			and road._lake_root.find_child("ShoreAndMountain", true, false) != null and not (road._visuals.get_node("LakeBehind") as Node3D).visible
+			and not (road._visuals.get_node("Desert") as Node3D).visible)
 	# a save at the warped lake is an ordinary after-day-88 lake checkpoint: Continue opens there again, signpost and all
 	s.queue_free()
 	await get_tree().process_frame

@@ -341,6 +341,8 @@ func _enter_chamber_chained(segment: int) -> void:
 		c.setup(0, [], 0)
 	if c is RiverCoverChamber and old is LogansLakeChamber:
 		c.adopt_lake(old)                                  # the lake he just walked out of stays behind him
+	if c is AuctionRoadChamber and old is LogansLakeChamber:
+		c.adopt_lake(old)                                  # ...and behind him on the road to the auction (founder 2026-11-22: no teleport)
 	if adopt_town:
 		var woods: Node3D = world_routes.rooms.get("woods_quad",{}).get("node",null)
 		c.adopt_departure(old,woods)
@@ -901,6 +903,8 @@ func _process(_delta: float) -> void:
 	_hold_trigger()
 	if _active is LakeTrailChamber and _pb_id=="logans_lake" and is_prebuilt("logans_lake"):
 		_active.preview_lake(_pb_node)
+	elif _active is LogansLakeChamber and _pb_id=="auction_road" and is_prebuilt("auction_road"):
+		_active.preview_road(_pb_node)                    # the road ahead, seen from the lake before he rides onto it
 
 ## FULL AUTO (the Bergmann MP18 and the golden Thompson, founder 2026-11-01): while the trigger is HELD - the left mouse button with
 ## the pointer captured, or the touch FIRE button (`attack`) - the room is asked for a shot every frame and the gun's own cycle time

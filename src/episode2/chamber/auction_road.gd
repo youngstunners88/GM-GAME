@@ -59,6 +59,35 @@ const CLAIM_LINES := [
 const SPOOK_LINE := "LIL BLUNT: Whoa - easy, easy! It's just birds... and a whole lot of dust."
 const ARRIVE_LINE := "The auction grounds. Numbers are being taken."
 
+## ONE WORLD WITH THE LAKE (founder 2026-11-22: "I dont understand why we are teleporting to the fucking auction road when we already had a
+## job that fixed this!!!!"). Before, riding past the signpost swapped Logan's green shore for a 900 m desert plane with a flat dark "lake"
+## behind him, dropped him at this room's own start point and clamped his gaze. Now the road leaves the lake through a flat cut in the lake's
+## own terrain (Ep2LakeLandform.ROAD_FROM / ROAD_YAW), the lake's real visuals stand behind him here (adopt_lake, as the ridge does),
+## the lake shows this road ahead (LogansLakeChamber.preview_road), and his position and gaze map exactly across the line, both ways.
+const LAKE_YAW_DELTA := ROAD_YAW - Ep2LakeLandform.ROAD_YAW
+const LAKE_BACK_S := START_S - 1.5                 # walking back past here hands him to the lake (world_routes); the lake hands over at START_S
+const NEAR_LAKE_HALF := ROAD_HALF + 1.0            # at the lake end he keeps to the road's width (the lake's ground around it is the lake's)
+
+## Lake-room coordinates -> this room's.
+static func lake_xform() -> Transform3D:
+	var b := Basis(Vector3.UP, LAKE_YAW_DELTA)
+	return Transform3D(b, Vector3(sin(ROAD_YAW), 0.0, cos(ROAD_YAW)) * START_S - b * Ep2LakeLandform.ROAD_FROM)
+
+
+static func from_lake(p: Vector3) -> Vector3:
+	var q: Vector3 = lake_xform() * Vector3(p.x, 0.0, p.z)
+	return Vector3(q.x, 0.0, q.z)
+
+
+static func to_lake(p: Vector3) -> Vector3:
+	var q: Vector3 = lake_xform().affine_inverse() * Vector3(p.x, 0.0, p.z)
+	return Vector3(q.x, 0.0, q.z)
+
+
+var _lake_root: Node3D = null
+var _lake_visuals: Node3D = null
+var _lake_horse: Node3D = null
+var _lent_from: Node3D = null                      # the lake room the visuals belong to
 var _forward := Vector3(sin(ROAD_YAW), 0.0, cos(ROAD_YAW))
 var _right := Vector3(cos(ROAD_YAW), 0.0, -sin(ROAD_YAW))
 var _mounted: bool = true
@@ -208,6 +237,78 @@ func _ground() -> void:
 	water.position = at(-70.0) + Vector3(0, 0.03, 0)
 	water.rotation.y = ROAD_YAW
 	_visuals.add_child(water)
+	# the ground past the lake's own terrain, built in the lake's frame: shown when the real lake stands behind him (adopt_lake) and copied
+	# into the lake's look ahead; "Desert" and the flat "LakeBehind" are the stand-alone room's (warps, tests)
+	var beyond := Node3D.new()
+	beyond.name = "DesertBeyond"
+	beyond.transform = lake_xform()
+	beyond.visible = false
+	_visuals.add_child(beyond)
+	var ground := ShaderMaterial.new()
+	ground.shader = load("res://src/episode2/art/auction_ground.gdshader")
+	if ResourceLoader.exists(Ep2LakeLandscape.FLOOR):
+		ground.set_shader_parameter("forest", load(Ep2LakeLandscape.FLOOR))
+	var dry_set: Texture2D = Ep2Pbr._load("bank_dry", "albedo") if pbr else null
+	ground.set_shader_parameter("has_dry", dry_set != null)
+	if dry_set != null:
+		ground.set_shader_parameter("dry", dry_set)
+		ground.set_shader_parameter("dry_tint", (plane.material_override as StandardMaterial3D).albedo_color)
+	# the lake's terrain grid is x -130..170, z -100..210 (Ep2LakeLandscape.build_ground): the road leaves it across the south edge
+	for part in [["South", Vector2(1600.0, 1200.0), Vector3(50.0, -0.012, -700.0)], ["East", Vector2(700.0, 620.0), Vector3(520.0, -0.012, 210.0)]]:
+		var flat := MeshInstance3D.new()
+		flat.name = "Ground" + str(part[0])
+		var pm := PlaneMesh.new()
+		pm.size = part[1]
+		pm.center_offset = part[2]                    # vertices in the lake's frame: the shader reads them as such
+		flat.mesh = pm
+		flat.material_override = ground
+		beyond.add_child(flat)
+
+
+## The lake he just left stands behind him: its own visuals, in its own place (lake_xform), as the ridge does it. The stand-alone ground goes.
+func adopt_lake(lake: Node3D) -> void:
+	var visuals: Node3D = lake.get("_visuals")
+	if visuals == null or _lake_root != null:
+		return
+	_lent_from = lake
+	_lake_root = Node3D.new()
+	_lake_root.name = "LakeBehindReal"
+	_lake_root.transform = lake_xform()
+	_visuals.add_child(_lake_root)
+	visuals.reparent(_lake_root, false)
+	visuals.transform = Transform3D.IDENTITY
+	_lake_visuals = visuals
+	var ahead: Node = visuals.get_node_or_null("RoadAhead")
+	if ahead != null: (ahead as Node3D).visible = false         # the lake's copy of this road: here the road is the real one
+	if not bool(lake.get("_riding")):
+		_lake_horse = lake.get("_horse")
+		if _lake_horse != null: _lake_horse.reparent(visuals, false)  # a horse he left at the water stays at the water
+	for n in ["Desert", "LakeBehind"]:
+		var node: Node3D = _visuals.get_node_or_null(n) as Node3D
+		if node != null: node.visible = false
+	(_visuals.get_node("DesertBeyond") as Node3D).visible = true
+
+
+## Back to the lake: its visuals go home before the lake is shown again (world_routes.travel).
+func return_lake() -> void:
+	if _lake_root == null:
+		return
+	if is_instance_valid(_lent_from) and is_instance_valid(_lake_visuals):
+		_lake_visuals.reparent(_lent_from, false)
+		_lake_visuals.transform = Transform3D.IDENTITY
+		var ahead: Node = _lake_visuals.get_node_or_null("RoadAhead")
+		if ahead != null: (ahead as Node3D).visible = true
+		if _lake_horse != null and is_instance_valid(_lake_horse):
+			_lake_horse.reparent(_lent_from, false)
+	_lake_horse = null
+	_lent_from = null
+	_lake_root.queue_free()
+	_lake_root = null
+	_lake_visuals = null
+	for n in ["Desert", "LakeBehind"]:
+		var node: Node3D = _visuals.get_node_or_null(n) as Node3D
+		if node != null: node.visible = true
+	(_visuals.get_node("DesertBeyond") as Node3D).visible = false
 
 
 ## Scrub, rocks and a few marker posts: enough to read speed on the open ground.
@@ -381,6 +482,11 @@ func _on_setup() -> void:
 	_mounted = bool(handoff.get("road_mounted", true))
 	_player_pos = at(START_S)
 	_apply_handoff_gaze(ROAD_YAW, 0.0, PI * 0.5)          # the lake's gaze carries through the hand-over: no camera reset
+	if handoff.has("ridge_from") and handoff.has("road_mounted"):
+		# from Logan's Lake: exactly where he crossed the line and exactly where he was looking (one world, no reset, no clamp)
+		_player_pos = _collide(from_lake(handoff["ridge_from"]))
+		_look_yaw = float(handoff.get("yaw", Ep2LakeLandform.ROAD_YAW)) + LAKE_YAW_DELTA
+		_look_pitch = clampf(float(handoff.get("pitch", 0.0)), -0.5, 0.35)
 	_set_ground(0)
 	_hitched = false
 	_dismount_t = -1.0
@@ -600,7 +706,8 @@ func _tick_horse(delta: float) -> void:
 ## Open ground either side of the road; the claim wagon holds the road until the talk is done.
 func _collide(p: Vector3) -> Vector3:
 	var s: float = clampf(p.dot(_forward), START_S - 2.0, PORCH_S + 38.0)
-	var d: float = clampf(p.dot(_right), -CORRIDOR, CORRIDOR)
+	var half: float = lerpf(NEAR_LAKE_HALF, CORRIDOR, smoothstep(START_S + 6.0, START_S + 40.0, s))   # the road's width at the lake end
+	var d: float = clampf(p.dot(_right), -half, half)
 	if not _claim_done and s > CLAIM_S - 4.0 and road_s(_player_pos) <= CLAIM_S - 4.0:
 		s = CLAIM_S - 4.0                         # the wagon, the clerk and the claimant across the way: he has to stop and talk
 	if _house != null and _house.built and s > PORCH_S - 45.0:

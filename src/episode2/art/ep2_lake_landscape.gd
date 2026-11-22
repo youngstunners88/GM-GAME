@@ -156,8 +156,10 @@ func build_vegetation(parent: Node3D) -> void:
 		var y: float = Ep2LakeLandform.terrain_height(x, z)
 		var authored_h: float = [12.0, 14.0, 7.0][kind]
 		var xf := Transform3D(Basis(Vector3.UP, rng.randf_range(-PI, PI)).scaled(Vector3.ONE * h / authored_h), Vector3(x, y - 0.04, z))
-		layouts[kind].append(xf)
 		var shade: float = rng.randf_range(0.82, 1.08)
+		# the auction road's open cut (founder 2026-11-22: one world); tested after this tree's draws so every other tree stays as it was
+		if Ep2LakeLandform.road_cut(x, z) > 0.05: continue
+		layouts[kind].append(xf)
 		tones[kind].append(Color(shade, shade, shade * 0.96))
 		if radius < 1.50 and trees.size() < 16: trees.append(Vector4(x, z, y + h, h * 0.23))
 	# Deliberate fir backdrop: outside both the building and crown-clearance envelope.
@@ -257,11 +259,19 @@ func _understory(kit: Node3D, rng: RandomNumberGenerator) -> void:
 		elif Ep2LakeLandform.lake_radius(x, z) < 1.11 or (x > -14 and x < -2.5): continue
 		if Ep2LakeLandform.cabin_clearance(x, z): continue
 		var s: float = rng.randf_range(.55, 1.25) * (.58 if i >= 280 else 1.0)
-		transforms.append(Transform3D(Basis(Vector3.UP, rng.randf_range(-PI, PI)).scaled(Vector3.ONE * s), Vector3(x, Ep2LakeLandform.terrain_height(x, z), z)))
+		var fern_xf := Transform3D(Basis(Vector3.UP, rng.randf_range(-PI, PI)).scaled(Vector3.ONE * s), Vector3(x, Ep2LakeLandform.terrain_height(x, z), z))
+		if _on_auction_road(x, z): continue                          # after its draws: the other ferns keep their places
+		transforms.append(fern_xf)
 	var fern_material := _foliage("res://src/episode2/assets/woods/tex_woods_fern.png", 1.0, .045)
 	fern_material.set_shader_parameter("tint", Color(.58,.70,.51))
 	_instances(flora, fern.mesh, transforms, fern_material, "ShoreFerns")
 	fern_kit.free()
+
+## The auction road's strip and its shoulders, from the signpost on: nothing stands or lies across it.
+static func _on_auction_road(x: float, z: float) -> bool:
+	var f: Vector2 = Ep2LakeLandform.road_frame(x, z)
+	return f.x > -4.0 and absf(f.y) < AuctionRoadChamber.ROAD_HALF + 3.0
+
 
 func _shore_rocks_and_logs(rng: RandomNumberGenerator) -> void:
 	var packed := load("res://src/episode2/assets/woods/woods_rock.glb") as PackedScene
@@ -277,6 +287,9 @@ func _shore_rocks_and_logs(rng: RandomNumberGenerator) -> void:
 		rock.rotation.y = rng.randf_range(-PI, PI)
 		var s: float = rng.randf_range(.22, 1.25)
 		rock.scale = Vector3(s, s * rng.randf_range(.6, 1.0), s)
+		if _on_auction_road(x, z):                                   # after its draws: the other rocks keep their places
+			rock.free()
+			continue
 		root.add_child(rock)
 		for node in rock.find_children("*", "MeshInstance3D", true, false):
 			var stone := StandardMaterial3D.new()
@@ -294,5 +307,8 @@ func _shore_rocks_and_logs(rng: RandomNumberGenerator) -> void:
 			log_piece.material_override = _bark()
 			log_piece.position = Vector3(pos.x, Ep2LakeLandform.terrain_height(pos.x, pos.y), pos.y)
 			log_piece.rotation.y = rng.randf_range(-PI, PI)
+			if _on_auction_road(pos.x, pos.y):                     # (7, -11) lay across the road's first metres
+				log_piece.free()
+				continue
 			root.add_child(log_piece)
 		kit.free()

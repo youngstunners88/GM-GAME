@@ -45,6 +45,7 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  if not rooms.has(id): return false
  var previous: Node = session._active
  if previous is RiverCoverChamber: previous.return_lake()
+ if previous is AuctionRoadChamber: previous.return_lake()
  if previous is LogansLakeChamber: Ep2DrawMusic.finish_lake(previous)
  if previous is LakeTrailChamber: previous.restore_departure()
  var yaw: float = previous._look_yaw
@@ -187,13 +188,19 @@ func tick(session: Node, delta: float) -> void:
   travel(session,"lake_trail",Vector3.ZERO)
   return
  # One world (founder 2026-11-17): the auction road is walked back to the lake, and ridden out again onto the same road.
- if id=="auction_road" and c.road_s(p)<AuctionRoadChamber.START_S-1.0 and rooms.has("logans_lake"):
-  travel(session,"logans_lake",lake_from_road())
+ # Founder 2026-11-22 ("why are we teleporting to the auction road"): the same place on both sides of the line, the same gaze, and the
+ # real lake behind him on the road (AuctionRoadChamber.lake_xform / adopt_lake). The lake hands over at START_S, the road back at LAKE_BACK_S.
+ if id=="auction_road" and c.road_s(p)<AuctionRoadChamber.LAKE_BACK_S and rooms.has("logans_lake"):
+  var lake: Node=rooms.logans_lake.node
+  travel(session,"logans_lake",AuctionRoadChamber.to_lake(p))
+  lake._look_yaw-=AuctionRoadChamber.LAKE_YAW_DELTA
   return
- if id=="logans_lake" and rooms.has("auction_road") and c._near_auction_sign():
+ if id=="logans_lake" and rooms.has("auction_road") and c._on_road_start():
   var road: Node=rooms.auction_road.node
   var riding: bool=c.is_riding_horse()
-  travel(session,"auction_road",road.at(AuctionRoadChamber.START_S))
+  travel(session,"auction_road",AuctionRoadChamber.from_lake(p))
+  road._look_yaw+=AuctionRoadChamber.LAKE_YAW_DELTA
+  road.adopt_lake(c)
   road._mounted=riding
   if riding:
    road._hitched=false;road.eye_height=AuctionRoadChamber.MOUNTED_EYE;road.walk_speed=AuctionRoadChamber.MOUNTED_SPEED

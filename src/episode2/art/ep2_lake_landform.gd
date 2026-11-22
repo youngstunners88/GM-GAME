@@ -21,6 +21,26 @@ static func flow_center(z: float) -> float:
 static func flow_width(z: float) -> float:
 	return 4.1 + 0.5 * sin(z * 0.09)
 
+## THE AUCTION ROAD'S CUT (founder 2026-11-22: "I dont understand why we are teleporting to the fucking auction road"). The road to the
+## auction leaves the lake at its signpost and runs south-east, away from the water, through a flat open cut in the lake's own terrain:
+## the same ground the road room stands on (AuctionRoadChamber.lake_xform() maps this frame onto the road's), so riding out is one world.
+const ROAD_FROM := Vector3(-3.0, 0.0, -9.0)        # = LogansLakeChamber.AUCTION_SIGN: the road starts at the signpost
+const ROAD_YAW := PI * 0.75                       # south-east (yaw 0 = +Z): away from the water, the trail mouth and Logan's cabin
+const ROAD_FLAT := 26.0                           # flat either side of the road (the road room lets him roam 24 m off it)
+const ROAD_BANK := 12.0                           # the cut's banks back up to the lake's own hills
+
+## (along, across) the auction road from its signpost, in metres.
+static func road_frame(x: float, z: float) -> Vector2:
+	var rel := Vector2(x - ROAD_FROM.x, z - ROAD_FROM.z)
+	return Vector2(rel.dot(Vector2(sin(ROAD_YAW), cos(ROAD_YAW))), rel.dot(Vector2(cos(ROAD_YAW), -sin(ROAD_YAW))))
+
+## 1 on the cut's flat ground, 0 off it: never behind the signpost, never the water or its bank.
+static func road_cut(x: float, z: float) -> float:
+	var f: Vector2 = road_frame(x, z)
+	if f.x < -8.0:
+		return 0.0
+	return (1.0 - smoothstep(ROAD_FLAT, ROAD_FLAT + ROAD_BANK, absf(f.y))) * smoothstep(-8.0, 0.0, f.x) * smoothstep(1.0, 1.12, lake_radius(x, z))
+
 static func cabin_clearance(x: float, z: float) -> bool:
 	return x > -31.0 and x < -12.0 and z > 3.0 and z < 23.0
 
@@ -49,6 +69,12 @@ static func _natural_height(x: float, z: float) -> float:
 	# Keep the existing walkable corridor and all its story marks intact.
 	if x > -14.0 and x < -0.5 and z > -150.0 and z < 68.0:
 		return path_height(z)
+	var cut: float = road_cut(x, z)
+	if cut > 0.0:
+		return lerpf(_hills(x, z), 0.0, cut)
+	return _hills(x, z)
+
+static func _hills(x: float, z: float) -> float:
 	var r: float = lake_radius(x, z)
 	var shore: float = -2.25 + smoothstep(0.77, 1.11, r) * 2.72
 	var outside: float = maxf(0.0, r - 1.1)

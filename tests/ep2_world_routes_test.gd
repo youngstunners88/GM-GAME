@@ -105,7 +105,7 @@ func _ready() -> void:
  road.set_move_input(Vector2(0,1))
  routes.cooldown=0
  routes.tick(session,.1)
- check("walking back down the road arrives at Logan's Lake by the auction sign (no dead end)",session._active==lake and lake._player_pos.distance_to(Ep2WorldRoutes.lake_from_road())<0.01)
+ check("walking back down the road arrives at Logan's Lake by the auction sign (no dead end)",session._active==lake and lake._player_pos.distance_to(AuctionRoadChamber.to_lake(road.at(AuctionRoadChamber.START_S-1.6)))<0.01 and lake._player_pos.distance_to(LogansLakeChamber.AUCTION_SIGN)<2.0)
  check("the lake never rebuilds the road it already has",not lake._can_leave_for_auction())
  lake._player_pos=LogansLakeChamber.AUCTION_SIGN
  lake._show_blocks_control=false

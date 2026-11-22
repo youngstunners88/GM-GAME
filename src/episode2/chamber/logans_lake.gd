@@ -512,12 +512,14 @@ func _tick(delta: float) -> void:
 	elif _sharps_told and _player_pos.z < WALK_ON_Z - 4.0:
 		_sharps_told = false                           # said again each time he climbs back up without it
 	# the road to the auction is the same: riding (or walking, when the horse is gone) past the signpost IS leaving - no key
-	if _beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok():
+	if _beat == Beat.ROAD and _on_road_start() and _can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok():
 		_leave_for_auction()
 
 func _collide(p: Vector3) -> Vector3:
 	if Ep2LoganCabin.YARD.has_point(Vector2(p.x, p.z)) or (_player_pos.x < -11.5 and p.x < -11.5):
 		return Ep2LoganCabin.collide(p)
+	if _on_road_band(p):
+		return p                                       # off the path at the signpost onto the auction road (its cut, one world)
 	var q := p
 	q.z = clampf(q.z, -16, 64)
 	# up the overlook path the bank narrows to the ridge trail's own width (RiverCoverChamber.RIDGE_HALF about its first point), so the
@@ -930,6 +932,46 @@ func _road_objective() -> void:
 		_hud.objective = "Ride to the auction grounds · the signpost by the arrival path."
 	else:
 		_hud.objective = "Your horse is shot · Logan's salve (0.5 BTC) here, or Dude's swap (1 BTC) back up the trail."
+
+
+## The auction road leaves the path at its signpost (Ep2LakeLandform.ROAD_FROM, south-east through the lake's own cut). Once the signpost
+## is up he may ride off the path onto the road's width; crossing its start line hands him to the road room, exactly where he is.
+func _on_road_band(p: Vector3) -> bool:
+	if _auction_sign == null or not _auction_sign.visible:
+		return false
+	var f: Vector2 = Ep2LakeLandform.road_frame(p.x, p.z)
+	return f.x >= -3.0 and f.x <= 12.0 and absf(f.y) <= AuctionRoadChamber.NEAR_LAKE_HALF
+
+
+func _on_road_start() -> bool:
+	var f: Vector2 = Ep2LakeLandform.road_frame(_player_pos.x, _player_pos.z)
+	# the line is half a metre before the signpost (road s START_S - 0.5); the road hands him back only a metre further behind it
+	return f.x >= -0.5 and f.x <= 12.0 and absf(f.y) <= AuctionRoadChamber.NEAR_LAKE_HALF + 0.5
+
+
+## THE ROAD AHEAD: once the road room is built behind the lake, its visuals are copied here in their place (the road strip, the open
+## ground past the lake's terrain, the claim wagon, the auction grounds far off), one root child per frame, as the trail shows the lake.
+var _road_ahead: Node3D = null
+var _road_copied: Dictionary = {}
+func preview_road(room: Node) -> void:
+	var visuals: Node3D = room.get("_visuals")
+	if visuals == null:
+		return
+	if _road_ahead == null:
+		_road_ahead = Node3D.new()
+		_road_ahead.name = "RoadAhead"
+		_road_ahead.transform = AuctionRoadChamber.lake_xform().affine_inverse()
+		_visuals.add_child(_road_ahead)
+	for child in visuals.get_children():
+		if child.name in ["Desert", "LakeBehind", "Player"] or _road_copied.has(child.get_instance_id()):
+			continue
+		var copy: Node = child.duplicate(0)            # visual hierarchy only; never run duplicated constructors
+		copy.process_mode = Node.PROCESS_MODE_DISABLED
+		if child.name == "DesertBeyond":
+			(copy as Node3D).visible = true
+		_road_ahead.add_child(copy)
+		_road_copied[child.get_instance_id()] = copy
+		break
 
 
 func _near_auction_sign() -> bool:
