@@ -547,7 +547,8 @@ func _on_player_shot() -> void:
 		_wound_lake_horse()
 		return
 	if _player_pos.distance_to(LOGAN_MARK) < 35:
-		_hud.toast("LOGAN: Easy. Keep the staging bank secure.", 2.5)
+		if _talk_t <= 0.0:   # heard, not toasted (founder 2026-11-22 "no subtitles"); never cut a lesson line short
+			_say("LOGAN: Easy. Keep the staging bank secure.", 2.5)
 
 
 func _bullet_hits_horse() -> bool:
@@ -617,7 +618,7 @@ func _logan_draws() -> void:
 	if not _logan.attach_prop(gun, "RightHand", Vector3(0.0, 0.08, 0.03), Vector3(0.0, 90.0, 0.0)):
 		_logan.add_child(gun)
 		gun.position = Vector3(-0.22, 1.42, 0.5)
-	_hud.speech("LOGAN: Wrong water to start a fight.", 1.6, false)
+	_say("LOGAN: Wrong water to start a fight.", 1.6)   # recorded take (logan_wrong_water); the box only shows if the take is missing
 
 
 func _tick_logan_draw(delta: float) -> void:

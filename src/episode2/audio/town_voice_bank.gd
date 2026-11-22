@@ -1096,7 +1096,87 @@ const LINES: Dictionary = {
 		"seconds": 6.905,
 		"start_seconds": 0,
 		"ready": true,
-		"path": "res://src/episode2/extras/audio/town/logan_handoff.ogg"
+		"path": "res://src/episode2/audio/logan/logan_handoff.ogg"
+	},
+	"logan_lp_1": {
+		"speaker": "logan",
+		"text": "This lake is a liquidity pool: providers like me pour our coins in so everyone else can trade against them.",
+		"seconds": 6.505,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_lp_1.ogg"
+	},
+	"logan_lp_2": {
+		"speaker": "logan",
+		"text": "Deep, still water means even a big trade barely ripples the price, so the deeper the lake, the safer it is to trade in.",
+		"seconds": 7.405042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_lp_2.ogg"
+	},
+	"logan_lp_3": {
+		"speaker": "logan",
+		"text": "Providers earn a small fee on every trade, so keep the bank secure, check the cargo at that staging marker, and never empty the lake.",
+		"seconds": 8.405,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_lp_3.ogg"
+	},
+	"logan_horse_shot": {
+		"speaker": "logan",
+		"text": "That horse is shot. It won't drink like that. I've farrier salve for half a Bitcoin - or Dude swaps it for a whole one.",
+		"seconds": 7.705042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_horse_shot.ogg"
+	},
+	"logan_salve": {
+		"speaker": "logan",
+		"text": "Hold him steady. Farrier salve on the cuts, legs are sound... There. He'll carry you to the auction.",
+		"seconds": 6.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_salve.ogg"
+	},
+	"logan_salve_short": {
+		"speaker": "logan",
+		"text": "Salve's half a Bitcoin and you're short. Come back with a coin, or walk him up to Dude's.",
+		"seconds": 5.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_salve_short.ogg"
+	},
+	"logan_horse_gone": {
+		"speaker": "logan",
+		"text": "You walked in. They shot your horse out from under you, then. Dude can find you another.",
+		"seconds": 5.205,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_horse_gone.ogg"
+	},
+	"logan_day88_in": {
+		"speaker": "logan",
+		"text": "Day-eighty-eight's in, then. Your horse found the water before you did. The auction's a short ride east - go see who's taking numbers.",
+		"seconds": 7.805,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_day88_in.ogg"
+	},
+	"logan_easy": {
+		"speaker": "logan",
+		"text": "Easy. Keep the staging bank secure.",
+		"seconds": 2.819167,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_easy.ogg"
+	},
+	"logan_wrong_water": {
+		"speaker": "logan",
+		"text": "Wrong water to start a fight.",
+		"seconds": 2.002708,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/logan/logan_wrong_water.ogg"
 	},
 	"town_cert1_0": {
 		"speaker": "minister",

@@ -33,8 +33,16 @@ func _ready() -> void:
  check("the saloon piano and street chatter ride out with the streets (no dead stop on mounting)",town._town_audio!=null and trail._visuals.is_ancestor_of(town._town_audio))
  session._active=trail;session._mode=session.Mode.CHAMBER
  check("correct minister voice",Ep2TownVoiceBank.LINES.town_cert1_0.ready and JSON.parse_string(FileAccess.get_file_as_string("res://assets/town-audio-generated.json"))["town_cert1_0"]["voice_id"]=="CfxYdK3WmF3bmrvyLAiU")
- check("correct Dude voice",Ep2StableYard.DUDE_VOICE=="3N5PpVsIKXqmtLAhF2Lj")
+ check("correct Dude voice",Ep2StableYard.DUDE_VOICE=="Pe1gOSDKAuczOZqgCiEm")
  check("Logan's dialogue has actual recordings",Ep2TownVoiceBank.stream("logan_handoff")!=null and Ep2TownVoiceBank.LINES.logan_handoff.ready)
+ # Founder 2026-11-22: every LOGAN line in the lake is heard (his own key), never a silent box or a subtitle.
+ var logan_src: String=FileAccess.get_file_as_string("res://src/episode2/chamber/logans_lake.gd")
+ var logan_rx:=RegEx.new();logan_rx.compile('"LOGAN: ([^"]+)"')
+ var logan_missing: Array=[]
+ for m in logan_rx.search_all(logan_src):
+  var lid: String=Ep2TownVoiceBank.id_for("logan",m.get_string(1))
+  if lid=="" or not Ep2TownVoiceBank.LINES[lid].ready or Ep2TownVoiceBank.stream(lid)==null: logan_missing.append(m.get_string(1).left(40))
+ check("every LOGAN line in logans_lake.gd has a ready take (%d lines, missing %s)"%[logan_rx.search_all(logan_src).size(),str(logan_missing)],logan_rx.search_all(logan_src).size()>=11 and logan_missing.is_empty() and not logan_src.contains('toast("LOGAN:') and not logan_src.contains('speech("LOGAN:'))
  check("road speech resolves streamed takes",absf(trail._vo_len("trail_lb_start")-Ep2TownVoiceBank.stream("trail_lb_start").get_length())<0.001)
  trail.set_move_input(Vector2(0,-1))
  var original_woods: int=woods.get_instance_id()

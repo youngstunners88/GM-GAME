@@ -709,7 +709,7 @@ jobs:
           if grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error' playtest-dude-tests.log; then exit 1; fi
           grep -q 'EP2_PLAYTEST_DUDE: 63 checks, 0 failed' playtest-dude-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
-          grep -q 'EP2_WORLD_ROUTES: 39 checks, 0 failed' world-route-tests.log
+          grep -q 'EP2_WORLD_ROUTES: 40 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_audit_1117_test.tscn > audit-revisit-tests.log 2>&1
           grep -q 'EP2_AUDIT_1117: ALL PASS' audit-revisit-tests.log
