@@ -384,6 +384,25 @@ func _test_bandits() -> void:
 	var moved: float = c._bandit_world_position(r).distance_to(start)
 	_check("a rusher leaves his rock and runs at Lil Blunt", rushed and moved > 3.0, "moved %.1f m" % moved)
 	_check("...standing in the open, never crouched", is_equal_approx((r["root"] as Node3D).position.y, (r["home"] as Vector3).y) or str(r["state"]) == "dead")
+	# founder 2026-11-22: two landed pick swings put a man down (a round still drops him at once)
+	var man: Dictionary = {}
+	for b in rushers:
+		if str(b["state"]) != "dead" and (b["root"] as Node3D).visible:
+			man = b
+			break
+	if man.is_empty():
+		_check("a living rusher to swing at", false)
+	else:
+		var chest: Vector3 = c._bandit_world_position(man) + Vector3(0.0, 1.1, 0.0)
+		var eye: Vector3 = chest + Vector3(1.5, 0.15, 0.0)
+		var aim: Vector3 = (chest - eye).normalized()
+		c._melee = true
+		c._hit_along(eye, aim)
+		var after_one: String = str(man["state"])
+		c._hit_along(eye, aim)
+		c._melee = false
+		_check("a man takes two pick swings: the first wounds him, the second puts him down", after_one != "dead" and str(man["state"]) == "dead"
+			and int(man.get("pick_hits", 0)) == Ep2ArmoryState.PICK_HITS_PERSON, "%s -> %s (%d)" % [after_one, man["state"], int(man.get("pick_hits", 0))])
 	var seated: bool = bool(rider.get("seated", false))
 	_check("the chasing rider is a rigged man in the ranch ride pose", seated and (rider["folk"] as Ep2TownFolk).current_clip() == Ep2RanchPose.RIDE.to_lower(),
 		(rider["folk"] as Ep2TownFolk).current_clip() if not rider.is_empty() else "no rider")

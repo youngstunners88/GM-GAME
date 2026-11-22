@@ -2388,7 +2388,14 @@ func _on_pickaxe_hit() -> void:
 	var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
 	var cp: float = cos(_look_pitch)
 	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
-	var hit_info: Dictionary = _bear_hit_on_ray(eye, dir, shot_reach(170.0), true)
+	# an arm's-length chop forgives aim a little: the crosshair first, then a small fan round it (founder 2026-11-22: "not effective")
+	var hit_info: Dictionary = {}
+	for off in Ep2Viewmodel.melee_fan():
+		var probe: Vector3 = Vector3(sin(_look_yaw + off.x) * cos(_look_pitch + off.y), sin(_look_pitch + off.y), cos(_look_yaw + off.x) * cos(_look_pitch + off.y))
+		hit_info = _bear_hit_on_ray(eye, probe, shot_reach(170.0), true)
+		if hit_info.get("bear", null) != null:
+			dir = probe
+			break
 	var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 	if hit == null:
 		return
@@ -2396,7 +2403,7 @@ func _on_pickaxe_hit() -> void:
 	if was_alive:
 		hit.set_meta("killed_by", "player")
 	_bear_blood(hit, hit_info["point"], dir, hit_info["normal"])
-	var killed: bool = hit.take_hit(eye)
+	var killed: bool = hit.take_pick_hit(eye)      # founder 2026-11-22: four landed swings for a bear
 	if was_alive:
 		_bear_money_hit(killed)
 	if _hud:

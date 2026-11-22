@@ -38,6 +38,10 @@ var actor: Ep2Actor = null
 var p: Dictionary = {}
 var aware: int = Aware.UNAWARE
 var hp: int = 2
+## Full health (hp at spawn) and the pick swings landed so far: a bear takes Ep2ArmoryState.PICK_HITS_BEAR landed swings from full health
+## (fewer once a round has already wounded it, in proportion).
+var hp_max: int = 2
+var pick_hits: int = 0
 var arrows: int = 6
 var suspicion: float = 0.0           # 0..1 sight meter: 1 = he has seen Lil Blunt
 var target: Vector3 = Vector3.ZERO   # the place he goes to look at / the last position he SAW Lil Blunt
@@ -68,6 +72,7 @@ func _init(a: Ep2Actor, personality: Dictionary, seed_value: int) -> void:
 	actor = a
 	p = personality
 	hp = int(p.get("hp", 2))
+	hp_max = maxi(1, hp)
 	arrows = int(p.get("arrows", 6 if role() == "archer" else 0))
 	home = a.position
 	_rng.seed = seed_value
@@ -278,6 +283,27 @@ func alarm(pos: Vector3) -> void:
 # --- damage ----------------------------------------------------------------------------------------------------------
 
 ## A bullet hit him. Returns true if it killed him.
+## One landed pickaxe swing. Founder 2026-11-22: four from full health to kill a bear; each earlier one wounds (hit pose, blood, alert).
+## A bear a round has already wounded needs proportionally fewer (never less than one). True when this swing killed it.
+func take_pick_hit(from: Vector3) -> bool:
+	if aware == Aware.DEAD:
+		return false
+	pick_hits += 1
+	if pick_hits >= pick_hits_needed():
+		hp = 1
+		return take_hit(from)
+	_hit_t = 0.5
+	Ep2BearKit.pose(actor, "hit")
+	if aware != Aware.ALERT:
+		_go_alert(from)
+	return false
+
+
+## Landed swings that kill this bear from its present health (full health = Ep2ArmoryState.PICK_HITS_BEAR).
+func pick_hits_needed() -> int:
+	return maxi(1, ceili(float(Ep2ArmoryState.PICK_HITS_BEAR) * float(hp) / float(hp_max)))
+
+
 func take_hit(from: Vector3) -> bool:
 	if aware == Aware.DEAD:
 		return false

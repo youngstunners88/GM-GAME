@@ -1250,8 +1250,29 @@ func _on_player_shot() -> void:
 
 ## A landed pickaxe swing: the same line as a round, but only as far as the pick reaches, and no carrion scare from a shot that was never fired.
 func _on_pickaxe_hit() -> void:
-	if _camera != null:
-		_hit_along(_camera.global_position, -_camera.global_transform.basis.z)
+	if _camera == null:
+		return
+	var eye: Vector3 = _camera.global_position
+	var basis: Basis = _camera.global_transform.basis
+	# an arm's-length chop forgives aim a little: the crosshair first, then a small fan round it (founder 2026-11-22: "not effective")
+	for off in Ep2Viewmodel.melee_fan():
+		var dir: Vector3 = (basis * Basis(Vector3.UP, off.x) * Basis(Vector3.RIGHT, off.y) * Vector3.FORWARD).normalized()
+		if _melee_target_on(eye, dir):
+			_hit_along(eye, dir)
+			return
+	_hit_along(eye, -basis.z)
+
+
+## True when a living bandit or an animal stands on this line within the pick's reach.
+func _melee_target_on(eye: Vector3, dir: Vector3) -> bool:
+	var reach: float = shot_reach(181.0)
+	for b in _bandits:
+		if (b["root"] as Node3D).visible and str(b["state"]) != "dead":
+			var t: float = _bandit_ray_hit(b, eye, dir)
+			if t >= 0.0 and t <= reach:
+				return true
+	var creature: Dictionary = _creature_on_ray(eye, dir, false)
+	return not creature.is_empty() and float(creature["t"]) <= reach
 
 
 ## Whatever stands first on the line within reach takes it (a round's 181 m, or the pick's length during a swing).
@@ -1275,10 +1296,20 @@ func _hit_along(eye: Vector3, direction: Vector3) -> void:
 		_hit_creature(creature, eye, direction)
 		return
 	if best >= 0:
+		var hit_folk: Ep2TownFolk = (_bandits[best] as Dictionary)["folk"]
+		if _melee:
+			# founder 2026-11-22: two landed pick swings put a man down; the first wounds him and spoils the shot he was lining up
+			var bb: Dictionary = _bandits[best]
+			bb["pick_hits"] = int(bb.get("pick_hits", 0)) + 1
+			if int(bb["pick_hits"]) < Ep2ArmoryState.PICK_HITS_PERSON:
+				_cancel_telegraph(bb)
+				if _hud != null:
+					_hud.hit_marker(false)
+				_blood(eye + direction * best_t, direction, hit_folk.model if hit_folk.model != null else hit_folk)
+				return
 		_drop_bandit(best)
 		if _hud != null:
 			_hud.hit_marker(true)
-		var hit_folk: Ep2TownFolk = (_bandits[best] as Dictionary)["folk"]
 		_blood(eye + direction * best_t, direction, hit_folk.model if hit_folk.model != null else hit_folk)
 
 

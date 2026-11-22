@@ -66,6 +66,12 @@ const PICK_HANDLE := Vector3(-0.93, 0.33, 0.02)
 const PICK_ARM := Vector3(0.76, -0.63, -0.17)
 const PICK_ARM_CUT := Vector3(0.445, 0.02, -0.047)
 const PICK_ARM_R := 0.07
+## The handle's true centre line in the model (a least-squares fit of the bare handle's vertices, radius 0.02) and the cut below which
+## the mesh is the glove and forearm (the handle inside the fist is round about this line, so it turns invisibly with the glove).
+const PICK_AXIS_AT := Vector3(-0.0836, 0.4294, 0.0449)
+const PICK_AXIS_DIR := Vector3(-0.7287, 0.6839, 0.0341)
+const PICK_GLOVE_BELOW := -0.2
+const PICK_GRIP_ROLL := 5.0 * PI / 4.0
 ## Carry, camera space: the fist low right, the handle up and a little forward (PICK_HELD_UP), the head's points fore and aft, the arm running
 ## back out of the bottom of the frame.
 const PICK_HELD_POS := Vector3(0.26, -0.24, -0.50)
@@ -76,6 +82,9 @@ const PICK_HELD_SCALE := 1.0
 ## The swing turns about his elbow, this far from the fist (camera space, behind and below it), so the forearm always stays behind the hand.
 const PICK_ELBOW := Vector3(0.10, -0.26, 0.34)
 const PICK_CHOP := 0.6
+## The overhand chop (radians about the elbow; + cocks the head back, - drives it down): cocked to PICK_CHOP_HIGH, cut through to PICK_CHOP_LOW.
+const PICK_CHOP_HIGH := 0.55
+const PICK_CHOP_LOW := 0.22
 
 ## The rifle logic: ammo, tube magazine, lever cycle, ADS blend, spread. Starts loaded and unlocked (Lil Blunt was taught
 ## in the hideout; nobody locks his trigger in the story rooms).
@@ -95,6 +104,10 @@ var hip_pos: Vector3 = VM_HIP_POS
 var shots_played: int = 0
 var levers_played: int = 0
 var pickaxe_swings: int = 0
+## Roll of the held war pick's GLOVE (fist + forearm) about the handle, radians. Founder 2026-11-22: "we should see his thumb over the axe
+## and his finger under the handle"; the supplied model's glove sat rolled over (back of the hand up, fingers over the top). Chosen from
+## tools/ep2_shots/pick_roll_probe frames; the head and handle are not turned, so the cutting edge still faces the target.
+var pick_grip_roll: float = PICK_GRIP_ROLL
 var _pick_swing: float = 0.0
 var _pick_land_due: bool = false
 var _pick_audio: AudioStreamPlayer = null
@@ -783,7 +796,8 @@ func _make_pickaxe_view() -> Node3D:
 		sleeve.name = "ArmSleeve"
 		sleeve.mesh = Ep2BowView.sleeve_mesh(PICK_ARM_CUT - arm * 0.10, arm, PICK_ARM_R * 1.25, [[0.0, 0.88, 0.0], [0.01, 1.0, 0.0], [0.04, 1.02, 0.0], [0.05, 0.98, 0.0]],
 			[[0.046, 0.97, 0.0], [0.14, 1.0, 0.06], [0.30, 1.0, 0.05], [0.60, 0.98, 0.04], [1.8, 0.97, 0.03]], Ep2BowView.FOREARM_CLOTH)
-		hand.add_child(sleeve)
+		var glove: Node3D = _regrip_pick(hand, pick_grip_roll)
+		(glove if glove != null else hand).add_child(sleeve)
 		root.set_meta("held", true)
 	elif ResourceLoader.exists(PICKAXE_MODEL):
 		var packed: PackedScene = load(PICKAXE_MODEL) as PackedScene
@@ -844,6 +858,50 @@ func _ensure_held_pick() -> void:
 	_apply_world_shadows_to(fresh)
 
 
+## Split the held model's single mesh into glove (+ forearm) and pick, and roll only the glove about the handle's centre line by `roll`.
+## Returns the glove node (the sleeve hangs on it), or null when the model is not the expected single-surface mesh (then nothing changes).
+func _regrip_pick(hand: Node3D, roll: float) -> Node3D:
+	var found: Array = hand.find_children("*", "MeshInstance3D", true, false)
+	if found.size() != 1:
+		return null
+	var mi: MeshInstance3D = found[0]
+	if mi.mesh == null or mi.mesh.get_surface_count() != 1:
+		return null
+	var arrays: Array = mi.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var index: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	if index.is_empty():
+		return null
+	var axis: Vector3 = PICK_AXIS_DIR.normalized()
+	var glove_idx := PackedInt32Array()
+	var pick_idx := PackedInt32Array()
+	for t in range(0, index.size() - 2, 3):
+		var centre: Vector3 = (verts[index[t]] + verts[index[t + 1]] + verts[index[t + 2]]) / 3.0
+		if (centre - PICK_AXIS_AT).dot(axis) < PICK_GLOVE_BELOW:
+			glove_idx.append_array([index[t], index[t + 1], index[t + 2]])
+		else:
+			pick_idx.append_array([index[t], index[t + 1], index[t + 2]])
+	if glove_idx.is_empty() or pick_idx.is_empty():
+		return null
+	var mat: Material = mi.get_active_material(0)
+	var parts: Array[ArrayMesh] = []
+	for idx in [pick_idx, glove_idx]:
+		var part_arrays: Array = arrays.duplicate()
+		part_arrays[Mesh.ARRAY_INDEX] = idx
+		var part := ArrayMesh.new()
+		part.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, part_arrays)
+		part.surface_set_material(0, mat)
+		parts.append(part)
+	mi.mesh = parts[0]
+	var glove := MeshInstance3D.new()
+	glove.name = "PickGlove"
+	glove.mesh = parts[1]
+	var spin := Basis(axis, roll)
+	glove.transform = mi.transform * Transform3D(spin, PICK_AXIS_AT - spin * PICK_AXIS_AT)
+	mi.get_parent().add_child(glove)
+	return glove
+
+
 func _pick_cylinder(parent: Node3D, top: float, bottom: float, height: float, at: Vector3, mat: Material) -> void:
 	var mesh := CylinderMesh.new()
 	mesh.top_radius = top
@@ -890,6 +948,31 @@ func _pick_triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void
 	st.add_vertex(c)
 
 
+## The pick's forgiving aim: (yaw, pitch) offsets in radians, crosshair first, then a ring of Ep2ArmoryState.PICK_AIM_SLACK_DEG round it.
+static func melee_fan() -> Array[Vector2]:
+	var r: float = deg_to_rad(Ep2ArmoryState.PICK_AIM_SLACK_DEG)
+	var out: Array[Vector2] = [Vector2.ZERO]
+	for k in 8:
+		var a: float = TAU * float(k) / 8.0
+		out.append(Vector2(cos(a), sin(a)) * r)
+	return out
+
+
+## The chop angle over the swing's 0..1: a quick cock up and back (0 .. 0.24), an ACCELERATING cut high to low that crosses the
+## crosshair exactly as the hit is tested (PICK_LAND_AT), a short follow-through, then a calmer recovery to the carry. Continuous at every seam.
+static func pick_chop_angle(u: float) -> float:
+	u = clampf(u, 0.0, 1.0)
+	if u < 0.24:
+		return PICK_CHOP_HIGH * sin(u / 0.24 * PI * 0.5)
+	if u < PICK_LAND_AT:
+		var k: float = (u - 0.24) / (PICK_LAND_AT - 0.24)
+		return lerpf(PICK_CHOP_HIGH, -PICK_CHOP_LOW, k * k)
+	# a short follow-through past the hit, then back to the carry
+	if u < PICK_LAND_AT + 0.10:
+		return -PICK_CHOP_LOW - 0.35 * sin((u - PICK_LAND_AT) / 0.10 * PI * 0.5)
+	return lerpf(-PICK_CHOP_LOW - 0.35, 0.0, smoothstep(0.0, 1.0, (u - PICK_LAND_AT - 0.10) / (0.90 - PICK_LAND_AT)))
+
+
 func _step_pickaxe(delta: float, moving: bool, walk_phase: float) -> void:
 	_pick_swing = maxf(0.0, _pick_swing - delta)
 	if _pick_land_due and _pick_swing <= PICK_SWING_TIME * (1.0 - PICK_LAND_AT):
@@ -901,18 +984,24 @@ func _step_pickaxe(delta: float, moving: bool, walk_phase: float) -> void:
 	if rifle == null or not is_instance_valid(rifle):
 		return
 	var swing: float = 0.0
+	var chop_angle: float = 0.0
 	if _pick_swing > 0.0:
 		swing = sin((1.0 - _pick_swing / PICK_SWING_TIME) * PI)
+		chop_angle = pick_chop_angle(1.0 - _pick_swing / PICK_SWING_TIME)
 	var held: bool = rifle.has_meta("held")
 	var pos: Vector3 = (PICK_HELD_POS if held else PICK_HOME_POS) + Vector3(0.0, sin(_anim_t * 1.8) * 0.004, 0.0)
 	if moving:
 		pos += Vector3(sin(walk_phase) * 0.009, -absf(sin(walk_phase)) * 0.011, 0.0)
 	var rot: Vector3 = Vector3.ZERO if held else PICK_HOME_ROT
 	if held:
-		# the forearm chops forward and down about the elbow (below the frame): the head comes over into the middle of the view and back
-		var chop := Basis(Vector3.RIGHT, -PICK_CHOP * swing) * Basis(Vector3.UP, 0.25 * swing)
+		# Founder 2026-11-22 "not effective to actually harm an enemy": a real overhand chop about the elbow (below the frame). The pick
+		# is cocked up and back, then driven HIGH TO LOW, a little right-to-left, so the head cuts down through the crosshair as the hit is
+		# tested (PICK_LAND_AT), then recovers. The hand rises with the wind-up and drives forward and down with the cut.
+		var down: float = clampf(-chop_angle / PICK_CHOP_LOW, 0.0, 1.0)
+		var up: float = clampf(chop_angle / PICK_CHOP_HIGH, 0.0, 1.0)
+		var chop := Basis(Vector3.RIGHT, chop_angle) * Basis(Vector3.UP, 0.22 * down - 0.10 * up)
 		var elbow: Vector3 = pos + PICK_ELBOW
-		pos = elbow + chop * (pos - elbow) + Vector3(-0.07, 0.16, -0.05) * swing
+		pos = elbow + chop * (pos - elbow) + Vector3(0.02, 0.06, 0.02) * up + Vector3(-0.07, 0.03, -0.10) * down
 		rot = chop.get_euler()
 		rifle.scale = Vector3.ONE * VM_SCALE * PICK_HELD_SCALE
 	else:

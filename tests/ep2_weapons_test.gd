@@ -266,6 +266,31 @@ func _test_pickaxe_always() -> void:
 		vm.step(1.0 / 60.0, false, false, 0.0)
 	check("the swing lands exactly once", landed[0] == 1, str(landed[0]))
 	check("and it swings again when the first is done", vm.fire() and vm.pickaxe_swings == 2)
+	# founder 2026-11-22: thumb over the handle, fingers under (the glove is turned on its own, the head is not), and a real high-to-low cut
+	var glove: Node3D = view.find_child("PickGlove", true, false) as Node3D
+	check("the glove is regripped about the handle, separate from the pick head", glove != null and not glove.transform.basis.is_equal_approx(Basis.IDENTITY)
+		and view.find_child("ArmSleeve", true, false).get_parent() == glove)
+	var cocked: float = Ep2Viewmodel.pick_chop_angle(0.20)
+	var landing: float = Ep2Viewmodel.pick_chop_angle(Ep2Viewmodel.PICK_LAND_AT)
+	var follow: float = Ep2Viewmodel.pick_chop_angle(Ep2Viewmodel.PICK_LAND_AT + 0.08)
+	check("the swing cocks the pick up and back first (%.2f)" % cocked, cocked > 0.4)
+	check("then cuts DOWN through the crosshair as the hit lands (%.2f) and follows through below (%.2f)" % [landing, follow], landing < 0.0 and follow < landing)
+	check("and settles back to the carry", absf(Ep2Viewmodel.pick_chop_angle(1.0)) < 0.001)
+	check("a swing forgives aim a little (crosshair first, then a ring)", Ep2Viewmodel.melee_fan()[0] == Vector2.ZERO and Ep2Viewmodel.melee_fan().size() > 4)
+	# founder 2026-11-22: four landed swings for a bear, two for a man
+	var bear_world := Node3D.new()
+	add_child(bear_world)
+	for hp in [2, 3]:
+		var brain := Ep2BearBrain.new(Ep2BearKit.make_bear(bear_world, Vector3.ZERO), {"hp": hp, "routine": "watch"}, 3)
+		var deaths: Array[bool] = []
+		for k in 4:
+			deaths.append(brain.take_pick_hit(Vector3(0, 0, 5)))
+		check("a %d-hp bear takes four pick swings: the first three wound it, the fourth kills it" % hp, deaths == [false, false, false, true] and brain.is_dead(), str(deaths))
+	var shot_bear := Ep2BearBrain.new(Ep2BearKit.make_bear(bear_world, Vector3.ZERO), {"hp": 2, "routine": "watch"}, 4)
+	shot_bear.take_hit(Vector3(0, 0, 5))
+	check("a bear already wounded by a round needs proportionally fewer swings (2 of 4)", shot_bear.pick_hits_needed() == 2)
+	bear_world.queue_free()
+	check("two pick swings for a person", Ep2ArmoryState.PICK_HITS_PERSON == 2 and Ep2ArmoryState.PICK_HITS_BEAR == 4)
 	for i in 40:
 		vm.step(1.0 / 60.0, false, false, 0.0)
 	st2.select(Ep2ArmoryState.WIN)
@@ -319,13 +344,21 @@ func _test_pickaxe_melee() -> void:
 			w._look_pitch = atan2(t.y, Vector2(t.x, t.z).length())
 			if i == 12:
 				swung = w.shoot()
+			w._bull_fire_cd = 99.0      # Bull covers a wounded-and-alert bear in the game; this check is the pick alone
+			w._bull_ride_cd = 99.0
 			w.step(1.0 / 60.0)
 			br.actor.position = Vector3(0.0, 0.0, distance)      # hold him there: this is about reach, not his charge
 		return swung
 	var far: bool = swing.call(9.0)
 	check("a swing at a bear 9 m away swings and does not touch him", far and not br.is_dead() and br.hp == 1, "swung %s hp %d" % [far, br.hp])
-	var near: bool = swing.call(1.9)
-	check("a swing at a bear within reach lands: he is down, the kill is Lil Blunt's", near and br.is_dead() and str(br.get_meta("killed_by", "")) == "player",
+	# founder 2026-11-22: a bear takes four landed swings from full health (this one is set to full health 1 so it is a pure pick test)
+	br.hp_max = 1
+	var near: bool = true
+	for k in Ep2ArmoryState.PICK_HITS_BEAR - 1:
+		near = swing.call(1.9) and near
+	check("within reach, three swings wound him but he is still up", near and not br.is_dead() and br.pick_hits == Ep2ArmoryState.PICK_HITS_BEAR - 1, "pick_hits %d" % br.pick_hits)
+	near = swing.call(1.9)
+	check("a swing at a bear within reach lands: the fourth puts him down, the kill is Lil Blunt's", near and br.is_dead() and str(br.get_meta("killed_by", "")) == "player",
 		"swung %s dead %s" % [near, br.is_dead()])
 	check("no round was spent and the rifle is still his", w.armory.firearm(Ep2ArmoryState.WIN).rounds == rounds and w.armory.owns(Ep2ArmoryState.WIN)
 		and w.select_weapon(Ep2ArmoryState.WIN))

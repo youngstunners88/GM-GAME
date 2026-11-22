@@ -1,5 +1,12 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-22 (b) — The pickaxe in the shooter: a real grip, a real chop, fair kills.** IN CODE; captured in the real town chamber (`docs/founder-feedback/2026-11-22_pick_grip_before_after.jpg`), not yet seen on a hard refresh.
+- **Grip:** his glove sat rolled over on the handle (back of the hand up, fingers over the top). The glove and forearm are now turned about the handle's own centre line so his thumb wraps over the handle and his fingers curl under it; the pick head is not turned, so its point still faces what he swings at.
+- **Swing:** it used to tip the whole pick forward and back, a poke. Now he cocks it up and back, then cuts high to low so the head comes down through the crosshair exactly when the hit is tested, follows through below, and returns to the carry.
+- **Hits that land:** a swing now forgives aim a little (about 7° round the crosshair), since it's a chop at arm's length, not a rifle shot.
+- **Kills:** a bear takes **4** landed pick swings from full health (fewer if a round already wounded it); a person takes **2** (the first draws blood and spoils the shot he was lining up). Bullets are unchanged.
+- Gates: `ep2_weapons_test` (grip, swing order, 4-swing bear in the real woods), `ep2_founder_residuals_1101_test` (2-swing bandit on the lake trail). New capture tools: `tools/ep2_shots/pick_grip_shot`, `pick_roll_probe`.
+
 **2026-11-22 — Road, Dude's buds, Tabs and the axe (founder residual pack).** PUSHED; not yet seen on a hard refresh.
 - **One brown dirt road (P0-A):** the quad road from the woods into town used the dark forest-floor texture and read black in the desert; it now uses the same brown dirt-road material as the road back to the stables (`Ep2LakeRoad.dirt_road_material()`).
 - **Chill Buds are a surprise until Dude (P0-B):** no Chill Bud row, no "visit Dude" hint and no H shortcut in Tabs until Dude gives or sells the first bud (gift, ranch sale or patch). Saved, and older saves holding buds keep the row.

@@ -15,6 +15,11 @@ const PICK_NAME := "Pickaxe"
 const PICK_ACTION := "ep2_weapon_pick"
 ## How far a swing reaches from his eye, metres.
 const PICK_REACH := 2.8
+## Founder 2026-11-22: the pick is a real weapon but not a one-swing kill. Landed swings to put down a full-health bear / a person.
+const PICK_HITS_BEAR := 4
+const PICK_HITS_PERSON := 2
+## A swing forgives aim a little (degrees off the crosshair) - it is an arm's-length chop, not a rifle shot.
+const PICK_AIM_SLACK_DEG := 7.0
 ## Rich & Utah's new stock (founder 2026-11-01: "more weapons like a shotgun ... a bergmann mp18 submachine gun and a golden thompson
 ## submachine gun"). Bought at the counter with Episode 1 crypto like the rest; once owned they join the quick-switch armory.
 const SHOT := "coach_shotgun"
