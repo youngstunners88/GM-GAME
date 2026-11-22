@@ -141,7 +141,15 @@ const OPP_HOLSTER_ROT := Vector3(PI * 0.5 - 0.12, 0.0, 0.0)
 ## shop door, clear of the Gatling yard to the west (Ep2GoldTown.GATLING_POST) and of the lane walk.
 const QUAD_RETURN: Array = [Vector3(70.0, 0.0, 1500.0), Vector3(16.0, 0.0, 1478.0), Vector3(2.0, 0.0, 1466.0), Vector3(0.0, 0.0, 1452.0),
 	Vector3(-12.0, 0.0, 1452.0)]
-const QUAD_PARK_LOCAL := Vector3(-5.2, 0.0, 4.2)           # in the Armory's frame (x along the front, +z out of the door)
+## Founder 2026-11-22: "He also parks straight onto the box of Rich and Utah." (-5.2, 4.2) put the quad 1.2 m from the River_Crate on the
+## porch's east end (world (-14.9, 1465), prop r 0.7). Now the quad's whole model (a 2.3 x 3.75 m box) stays 0.5 m clear of every crate's
+## box, 6 m off the lane walk, the Gatling yard far west.
+const QUAD_PARK_LOCAL := Vector3(-7.8, 0.0, 6.2)           # in the Armory's frame (x along the front, +z out of the door) = world (-12.2, 1461.8)
+## One path (founder 2026-11-22: "he speaks to Lil Blunt then walks elsewhere and then walks towards the saloon"): if walking over to Lil
+## Blunt would turn him back the way he came to reach the body and the bar (more than MEET_DETOUR x the straight way), he stays by his quad
+## and calls across the yard; the talk starts when Lil Blunt is outdoors within CALL_RANGE, then he walks quad -> body -> saloon once.
+const MEET_DETOUR := 1.3
+const CALL_RANGE := 20.0                                   # the Gatling stand is ~19 m from where he swings off: he calls across the yard
 const MINISTER_RUN := 3.1                                  # m/s: his panic run (the CMU run's own stride, 2.44 m/s, plays a little quick)
 const MINISTER_RUN_STRIDE := 2.44
 const MINISTER_WALK := 1.15
@@ -1892,9 +1900,8 @@ func _tick_bull_back(delta: float) -> void:
 				_bull.position = _quad.dismount_spot()
 				_bull.play(BULL_IDLE, 1.0, 0.25)
 				var meet: Vector3
-				if _in_room("Bldg_Armory", -0.5):
-					meet = Ep2GoldTown.door_world("Bldg_Armory", 1.2)
-				elif _lb_at_body():
+				_bull_calls = false
+				if _lb_at_body():
 					meet = _bull_body_spot()
 				else:
 					meet = _stand_off(_bull.position, _player_pos, 2.3)
@@ -1904,18 +1911,35 @@ func _tick_bull_back(delta: float) -> void:
 						# BACK up the street to the body, then down again to the bar (founder: "walks to player, then backwards,
 						# then rewalks to bar"). The talk happens once, where it belongs, and the bar is straight on from it.
 						meet = _body_stand()
+					elif _in_room("Bldg_Armory", -0.5) or _meet_turns_back(_bull.position, meet):
+						# Lil Blunt is in the shop or back up the yard: walking over and then back past the quad is the walk the founder
+						# saw (2026-11-22). He waits by his quad facing him and calls across; the talk starts once Lil Blunt is out of doors
+						# within CALL_RANGE, then he walks quad -> body -> saloon once.
+						_bull_calls = true
+						_bull.face_point(_player_pos)
+						return
 				_bull_route(_bull_way_to(meet), 1.5)
 		"to_lb":
 			if not _bull.is_walking() and _bull_path.is_empty() and not _show_active:
 				var by_body: bool = _opp != null and _bull.position.distance_to(_opp.position) < 4.5
 				# stopped by the fallen stranger, he waits for Lil Blunt to come to the body; anywhere else, to come to him
 				var met: bool = _lb_at_body() if by_body else _player_pos.distance_to(_bull.position) <= 6.5
+				var indoors: bool = _in_room("Bldg_Armory", -0.5) or _in_room("Bldg_Saloon", -0.5)
+				if _bull_calls and not by_body:
+					met = not indoors and _player_pos.distance_to(_bull.position) <= CALL_RANGE
+				if not met and _bull_calls and indoors and _player_pos.distance_to(_bull.position) <= CALL_RANGE:
+					# he is outside Rich's and Lil Blunt is inside: no walk to the door and back, he waits by the quad
+					_meet_wait_t = 0.0
+					_bull.face_point(_player_pos)
+					if _hud != null: _hud.objective = "Inferno's back - he's outside Rich's."
+					return
 				if not met:
 					# FOUNDER 2026-11-10: "if the player takes a long time ... Inferno just stares". He waits, but not for ever: after
 					# MEET_PATIENCE he walks the rest of the way to Lil Blunt wherever he is, so the beat can always start.
 					_meet_wait_t += delta
 					if _meet_wait_t >= MEET_PATIENCE:
 						_meet_wait_t = 0.0
+						_bull_calls = false
 						_bull_route(_bull_way_to(_stand_off(_bull.position, _player_pos, 2.3)), 1.6)
 						return
 					_bull.face_point(_player_pos)
@@ -1943,6 +1967,19 @@ func _tick_bull_back(delta: float) -> void:
 		"greeted":
 			if not _show_active:
 				_advance_to(Beat.BODY)
+
+
+var _bull_calls: bool = false                        # Inferno waits by his quad and calls Lil Blunt over instead of walking there and back
+
+
+## Would walking from `from` to `meet` and then on to where he goes next (the body, else the saloon) turn him back on himself?
+func _meet_turns_back(from: Vector3, meet: Vector3) -> bool:
+	var next: Vector3 = _body_stand() if _opp != null else Ep2GoldTown.door_world("Bldg_Saloon", 3.0)
+	var straight: float = Vector2(next.x - from.x, next.z - from.z).length()
+	if straight < 1.0:
+		return false
+	var via: float = Vector2(meet.x - from.x, meet.z - from.z).length() + Vector2(next.x - meet.x, next.z - meet.z).length()
+	return via > straight * MEET_DETOUR
 
 
 ## Lil Blunt is standing with the fallen stranger (and Mike Dean praying by him): where Inferno's "what happened" belongs.

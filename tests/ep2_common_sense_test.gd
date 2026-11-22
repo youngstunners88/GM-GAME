@@ -10,7 +10,7 @@ extends Node
 
 const TOWN := preload("res://src/episode2/chamber/gold_town.tscn")
 const RIVER := preload("res://src/episode2/chamber/river_cover.tscn")
-const EXPECTED_PASS := 40
+const EXPECTED_PASS := 46
 const BODY_WIDTH := 0.62                    # two Ep2TownPeople.BODY_R: shoulder to shoulder
 
 var _pass: int = 0
@@ -30,6 +30,7 @@ func _ready() -> void:
 	print("-- EP2 COMMON SENSE")
 	await test_town_minister_praying_walkers_keep_clear()
 	await test_town_inferno_meets_at_body_no_return_trip()
+	await test_town_inferno_one_path_from_the_gatling()
 	await test_town_saloon_doors_swing_and_settle()
 	await test_town_inferno_rides_to_flux_and_minds_people()
 	await test_river_shot_rider_falls_into_water()
@@ -182,6 +183,70 @@ func test_town_inferno_meets_at_body_no_return_trip() -> void:
 	_check("he stops a talking distance from Lil Blunt, not on top of him (closest %.2f m)" % lb_gap, lb_gap >= 1.6)
 	_check("...and never walks through Mike Dean kneeling there (closest %.2f m)" % mike_gap, mike_gap >= BODY_WIDTH * 2.0)
 	_check("then he walks on to the bar", reached_bar, "%s %s" % [c.get_beat_name(), c._bull_task])
+	c.queue_free()
+	await get_tree().process_frame
+
+
+func test_town_inferno_one_path_from_the_gatling() -> void:
+	print("-- 2b. Inferno back while Lil Blunt is at Rich's Gatling: one path quad -> body -> saloon, and the quad off Rich & Utah's crates")
+	# Arrange: the founder's case (2026-11-22): Lil Blunt has just tested the Gatling in Rich's yard when Inferno rides back in
+	var c: GoldTownChamber = await _town()
+	_stage_body(c)
+	var lb: Vector3 = Ep2GoldTown.local_to_world("Bldg_Armory", Ep2GoldTown.GATLING_POST + Vector3(-Ep2GoldTown.GATLING_STAND_BACK, 0.0, 0.0))
+	c._player_pos = lb
+	c._advance_to(GoldTownChamber.Beat.BULL_BACK)
+	var bull: Ep2Actor = c.get_bull()
+	var path: Array = []
+	var start: Vector3 = Vector3.INF
+	var bar: Vector3 = Ep2GoldTown.local_to_world("Bldg_Saloon", GoldTownChamber.BAR_SPOT)
+	var reached_bar: bool = false
+	for f in 200 * 60:
+		var beat: String = c.get_beat_name()
+		if beat == "BODY" or (beat == "BULL_BACK" and c._bull_task == "greeted"):
+			var to: Vector3 = bull.position - c._player_pos                      # Lil Blunt walks with him, a step behind
+			if to.length() > 2.6: c._player_pos += to.normalized() * minf(to.length() - 2.6, 1.6 / 60.0)
+		elif beat == "DRINKS":
+			c._player_pos = bar
+		c.step(1.0 / 60.0)
+		if c._bull_task != "riding" and start == Vector3.INF:
+			start = bull.position
+		if start != Vector3.INF and (path.is_empty() or (path[-1] as Vector3).distance_to(bull.position) >= 1.0):
+			path.append(bull.position)
+		if c._bull_task == "at_bar":
+			reached_bar = true
+			break
+	# Assert: the walk
+	var walked: float = 0.0
+	var worst_turn: float = 0.0
+	for i in range(1, path.size()):
+		walked += (path[i] as Vector3).distance_to(path[i - 1])
+		if i >= 2:
+			var a: Vector3 = (path[i - 1] as Vector3) - (path[i - 2] as Vector3)
+			var b: Vector3 = (path[i] as Vector3) - (path[i - 1] as Vector3)
+			worst_turn = maxf(worst_turn, absf(rad_to_deg(Vector2(a.x, a.z).angle_to(Vector2(b.x, b.z)))))
+	var straight: float = Vector2(bar.x - start.x, bar.z - start.z).length() if start != Vector3.INF else 1.0
+	print("  inferno path %d pts, %.1f m walked, straight %.1f m, worst turn %.0f deg" % [path.size(), walked, straight, worst_turn])
+	_check("he reaches the bar", reached_bar, "%s %s" % [c.get_beat_name(), c._bull_task])
+	_check("no direction reversal on his way (worst turn %.0f deg <= 120)" % worst_turn, worst_turn <= 120.0)
+	_check("one path, not a walk there and back (%.1f m <= 1.3 x %.1f m straight)" % [walked, straight], walked <= straight * 1.3)
+	# Assert: the parked quad stands clear of Rich & Utah's crates and the Gatling
+	var q: Ep2TownQuad = c.get_quad()
+	var qbox := AABB()
+	var first := true
+	for mi in q.find_children("*", "MeshInstance3D", true, false):
+		var b: AABB = (mi as MeshInstance3D).global_transform * (mi as MeshInstance3D).get_aabb()
+		qbox = b if first else qbox.merge(b)
+		first = false
+	var hit: Array = []
+	for n in c._visuals.find_children("River_Crate*", "Node3D", true, false):
+		for mi in n.find_children("*", "MeshInstance3D", true, false) + ([n] if n is MeshInstance3D else []):
+			var cb: AABB = (mi as MeshInstance3D).global_transform * (mi as MeshInstance3D).get_aabb()
+			if cb.grow(0.3).intersects(qbox): hit.append(str(n.name))
+	_check("the parked quad touches none of Rich & Utah's crates (AABB + 0.3 m)", not first and hit.is_empty(), str(hit))
+	var post: Vector3 = Ep2GoldTown.local_to_world("Bldg_Armory", Ep2GoldTown.GATLING_POST)
+	_check("...and stands clear of the Gatling (%.1f m)" % Vector2(q.position.x - post.x, q.position.z - post.z).length(),
+		Vector2(q.position.x - post.x, q.position.z - post.z).length() > 5.0)
+	_check("...and he talked to Lil Blunt from beside it, not after a walk over to the yard", c._bull_calls or start.distance_to(q.position) < 3.0)
 	c.queue_free()
 	await get_tree().process_frame
 
