@@ -60,13 +60,14 @@ static func install(folk: Ep2TownFolk) -> bool:
 	return true
 
 
-const SHARPS := "res://src/episode2/extras/armory/showcase/sharps.glb"
-## Measured on the current scoped showcase mesh after its 45-degree heading correction.
-## Its normalization is 0.8511 of the canonical 1.21 m founder rifle.
-const GUN_GRIP := Vector3(0.0035, 0.1416, -0.2140)
-const GUN_SUPPORT := Vector3(0.0035, 0.1671, -0.0012)
-const GUN_MUZZLE := Vector3(0.0035, 0.2054, 0.5181)
-const GUN_SCALE := 1.175
+## 2026-11-23: THE one Sharps file (the founder's Sharps Improved, tools/ep2_forge/bake_sharps_master.py): the lit case, Rich's hand and Lil Blunt's
+## first-person rifle load the same GLB, so they cannot drift apart. Real size (1.21 m), muzzle +Z, bore on y = 0, origin at the trigger.
+const SHARPS := Ep2Extras.SHARPS_SCOPED
+## Measured on that mesh (the bake's ANCHOR lines): the trigger hand's palm round the wrist, the support palm under the fore-end, the muzzle.
+const GUN_GRIP := Vector3(0.0, -0.062, -0.11)
+const GUN_SUPPORT := Vector3(0.0, -0.040, 0.15)
+const GUN_MUZZLE := Vector3(0.0, 0.0, 0.7502)
+const GUN_SCALE := 1.0
 const RIFLE_YAW := 0.70
 
 static func rifle_frame(folk: Ep2TownFolk) -> Transform3D:
@@ -159,7 +160,7 @@ static func make_rifle() -> Node3D:
 	holder.name = "Sharps"
 	var model: Node3D = (load(SHARPS) as PackedScene).instantiate()
 	holder.add_child(model)
-	model.transform = Transform3D(Basis(Vector3.UP, PI * 0.25).scaled(Vector3.ONE * GUN_SCALE), -GUN_GRIP * GUN_SCALE)
+	model.transform = Transform3D(Basis().scaled(Vector3.ONE * GUN_SCALE), -GUN_GRIP * GUN_SCALE)
 	var muzzle := Marker3D.new()
 	muzzle.name = "Muzzle"
 	muzzle.position = (GUN_MUZZLE - GUN_GRIP) * GUN_SCALE

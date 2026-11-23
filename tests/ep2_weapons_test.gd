@@ -417,6 +417,9 @@ func _test_case_takeout() -> void:
 	var lid_peak: float = 0.0
 	var at_chest: float = INF
 	var ik: Ep2ArmIK = case._ik.get("Right")
+	var held_checks: int = 0
+	var body_hits: int = 0
+	var worst: float = INF
 	for i in 60 * 120:                                     # the reach, every line he says, the put-back
 		if intro.stage == Ep2ArmoryIntro.Stage.GATLING_WALK:
 			break
@@ -433,13 +436,54 @@ func _test_case_takeout() -> void:
 				hand_off += 1
 		if was_free and not case.rifle.visible and intro.stage == Ep2ArmoryIntro.Stage.SHARPS_REACH:
 			at_chest = before.origin.distance_to(case._chest().origin)
+		if i % 30 == 0 and c.get_rich().held_prop("Sharps") != null:
+			held_checks += 1
+			var inside: Array = _rifle_in_body(c.get_rich(), c.get_rich().held_prop("Sharps"))
+			body_hits = maxi(body_hits, int(inside[0]))
+			worst = minf(worst, float(inside[1]))
 	check("the lid opens (about 75 degrees) before the rifle comes out", lid_peak >= Ep2SharpsCase.LID_OPEN * 0.99, "%.2f" % lid_peak)
 	check("the rifle travels (it is never swapped between frames)", moved > 60, str(moved))
 	check("it never moves while the lid is shut: nothing passes through the glass", through_glass == 0, str(through_glass))
 	check("whenever it moves his right hand is solved onto its grip", hand_off == 0, str(hand_off))
 	check("it goes onto his hand bone only once it is at his chest, where the held clips grip it", at_chest < 0.001, str(at_chest))
+	# founder 2026-11-22 "Rich holds the rifle inside his body": while it is in his hand no rifle vertex is inside his torso capsule or his head
+	check("held in his hand, the Sharps never enters his body or head (%d checks, closest %.3f m)" % [held_checks, worst], held_checks > 3 and body_hits == 0, "worst vertex %.3f m clear, %d inside" % [worst, body_hits])
 	check("put back: home on the felt, the lid shut, his arms his own again", intro.stage == Ep2ArmoryIntro.Stage.GATLING_WALK and case.rifle.visible
 		and case.rifle.global_position.distance_to(rest) < 0.001 and case.lid_angle == 0.0 and ik != null and ik.influence == 0.0 and c.get_rich().held_prop("Sharps") == null,
 		"stage %d visible %s off %.3f lid %.2f ik %.2f" % [intro.stage, case.rifle.visible, case.rifle.global_position.distance_to(rest), case.lid_angle, ik.influence if ik != null else -1.0])
 	c.queue_free()
 	await get_tree().process_frame
+
+
+## Rifle vertices inside the folk's torso capsule (Hips -> Neck, r 0.13 m) or head sphere (r 0.11 m): [count, closest clearance in m].
+func _rifle_in_body(folk: Ep2TownFolk, rifle: Node3D) -> Array:
+	var sk: Skeleton3D = folk.model.find_children("*", "Skeleton3D", true, false)[0]
+	var find := func(part: String) -> Vector3:
+		for b in sk.get_bone_count():
+			if sk.get_bone_name(b).ends_with(part):
+				return sk.global_transform * sk.get_bone_global_pose(b).origin
+		return Vector3.INF
+	var hips: Vector3 = find.call("Hips")
+	var neck: Vector3 = find.call("Neck")
+	var head: Vector3 = find.call("Head")
+	var hits: int = 0
+	var worst: float = INF
+	# the held pose as the IK sees it (headless does not refresh the BoneAttachment3D): skeleton * hand bone * holder
+	var held: Transform3D = rifle.global_transform
+	var att: BoneAttachment3D = rifle.get_parent() as BoneAttachment3D
+	if att != null and sk.find_bone(att.bone_name) >= 0:
+		held = sk.global_transform * sk.get_bone_global_pose(sk.find_bone(att.bone_name)) * rifle.transform
+	var to_world: Transform3D = held * rifle.global_transform.affine_inverse()
+	for mi in rifle.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		var v: PackedVector3Array = m.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		for i in range(0, v.size(), 7):
+			var p: Vector3 = to_world * (m.global_transform * v[i])
+			var q: Vector3 = Geometry3D.get_closest_point_to_segment(p, hips, neck)
+			var torso: float = p.distance_to(q) - 0.13
+			var skull: float = p.distance_to(head + (head - neck) * 0.6) - 0.11
+			var clear: float = minf(torso, skull)
+			worst = minf(worst, clear)
+			if clear < 0.0:
+				hits += 1
+	return [hits, worst]

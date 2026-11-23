@@ -33,7 +33,7 @@ func _ready() -> void:
 	check("both guns are streamed extras (Sharps, Gatling post)", Ep2Extras.has(Ep2Extras.SHARPS) and Ep2Extras.has(Ep2Extras.GATLING))
 	var sharps: Node3D = (load(Ep2Extras.SHARPS) as PackedScene).instantiate() as Node3D
 	var bb: AABB = Ep2TownFolk._aabb(sharps)
-	check("the Sharps is a real rifle: 1.1 - 1.3 m long, under 0.3 m tall (a 1874 sporting rifle is ~1.2 m)", bb.size.x > 1.1 and bb.size.x < 1.3 and bb.size.y < 0.3,
+	check("the Sharps is a real rifle: 1.1 - 1.3 m long, under 0.36 m tall with its scope (a 1874 sporting rifle is ~1.2 m; founder's Sharps Improved 2026-11-23)", bb.size.x > 1.1 and bb.size.x < 1.3 and bb.size.y < 0.36,
 		str(bb.size))
 	check("the Sharps muzzle points +x with the butt behind the origin (it sits in a hand and a case the same way)", bb.position.x < -0.25 and bb.position.x + bb.size.x > 0.7)
 	sharps.free()

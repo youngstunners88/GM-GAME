@@ -64,7 +64,7 @@ var _case_min_z: float = 0.72                # the nearest the camera may come a
 ## a row with their gun-only tab. `yaw` lays the model along the barrel axis the case expects.
 const TAB_DIR := Ep2Extras.SHOWCASE_DIR
 const WEAPON_TABS: Array = [
-	{"key": Ep2ArmoryState.BUFF, "label": "SHARPS", "row": Ep2ArmoryState.SHARPS_ITEM, "model": TAB_DIR + "sharps.glb", "yaw": PI * 0.25},
+	{"key": Ep2ArmoryState.BUFF, "label": "SHARPS", "row": Ep2ArmoryState.SHARPS_ITEM, "model": Ep2Extras.SHARPS_SCOPED, "yaw": 0.0},
 	{"key": Ep2ArmoryState.WIN, "label": "WINCHESTER", "row": Ep2ArmoryState.WIN, "model": TAB_DIR + "winchester_1886.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.REM, "label": "REMINGTON", "row": Ep2ArmoryState.REM, "model": TAB_DIR + "gold_remington.glb", "yaw": PI * 0.5},
 	{"key": Ep2ArmoryState.BORCH, "label": "BORCHARDT", "row": Ep2ArmoryState.BORCH, "model": TAB_DIR + "borchardt.glb", "yaw": PI * 0.5},
