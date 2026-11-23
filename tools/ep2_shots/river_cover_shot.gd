@@ -26,6 +26,18 @@ func _ready() -> void:
 	c.bind_armory(st)
 	c.setup(0, [], 0)
 	run(0.3)
+	if OS.get_cmdline_user_args().has("barracks"):     # 2026-11-23 P2-5: the ridge barracks from the player's eye
+		var o: Vector3 = RiverCoverChamber.OVERLOOKS[0]
+		var far_bank: Vector3 = (c._barracks[0][0] as Vector3) + (c._barracks[0][2] as Vector3) * 30.0 + Vector3(0, -12.0, 0)
+		await shot("09_barrack_approach", c.ridge_nearest(o + Vector3(0, 0, -9.0))[0], o + Vector3(0, 0.8, 0))
+		await shot("10_barrack_standing_view_down", o, c.river_point(c.river_s_of(RiverCoverChamber.LAUNCH_POINT)))
+		c._player_pos = o
+		c.take_cover()
+		run(0.7)
+		await shot("11_barrack_in_cover", o, far_bank)
+		print("RIVER_COVER_SHOT: barracks done ", out, " in cover ", c.in_cover())
+		get_tree().quit(0)
+		return
 	await shot("01_marker", c.ridge_nearest(RiverCoverChamber.MARKER + Vector3(0, 0, -9))[0], RiverCoverChamber.MARKER + Vector3(-2.2, 1.8, 0))
 	var pool: Vector3 = c.river_point(c.river_s_of(RiverCoverChamber.LAUNCH_POINT))
 	await shot("02_overlook_launch_pool", RiverCoverChamber.OVERLOOKS[0], pool)

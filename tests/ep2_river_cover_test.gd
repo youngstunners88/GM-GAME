@@ -90,6 +90,7 @@ func _ready() -> void:
 	_test_tipped_and_downed()
 	_test_ridge_reload()
 	_test_ridge_cover()
+	_test_barracks()
 	_test_lake_is_logans_alone()
 	_test_continues_the_walk()
 	_test_ranged_threat()
@@ -314,6 +315,60 @@ func _test_ridge_cover() -> void:
 	_advance(c, 0.1)
 	check("walking off the overlook stands him up", not c.in_cover())
 	check("away from a barrack C does nothing", not c.toggle_cover() and not c.in_cover())
+	c.free()
+
+
+## Founder 2026-11-22: "The barracks at the river are totally trash and do not work. It needs to be clear how to use them and they need to be
+## large enough to make sense." Real breastworks, solid wings, a marked place to stand, a prompt, and a wall that stops what it is between.
+func _test_barracks() -> void:
+	print("-- THE RIDGE BARRACKS")
+	var st := _armory(true, true)
+	var c := _room(st)
+	var built: int = 0
+	var tall: bool = true
+	for i in RiverCoverChamber.OVERLOOKS.size():
+		var b: Node3D = c.find_child("Barrack%d" % i, true, false) as Node3D
+		if b == null:
+			continue
+		built += 1
+		var top: float = -INF
+		for mi in b.find_children("Bag*", "MeshInstance3D", true, false):
+			top = maxf(top, ((mi as MeshInstance3D).global_transform * (mi as MeshInstance3D).get_aabb()).end.y)
+		var path_y: float = (c.ridge_nearest(RiverCoverChamber.OVERLOOKS[i])[0] as Vector3).y
+		tall = tall and top - path_y >= 0.92 and b.find_child("Roof", true, false) != null and b.find_children("Wing*", "", true, false).size() == 2 \
+			and b.find_children("CoverMark*", "", true, false).size() >= 4
+	check("every overlook has a built barrack: a chest-high sandbag wall (>= 0.92 m) on a sill, two wings, posts and a roof, a marked place to stand", built == 3 and tall, "%d built" % built)
+	_arm_and_launch(c)
+	check("standing on the gate overlook he is inside the barrack", c.in_barrack() and c.at_barrack())
+	c.step(1.0 / 30.0)
+	if c._hud != null and TouchUi.keys_shown():
+		check("the HUD says TAKE COVER [C] in it", c._hud._search.visible and c._hud._search.text == "TAKE COVER [C]", c._hud._search.text)
+	var b0: Array = c._barracks[0]
+	var at_wing: Vector3 = (b0[0] as Vector3) + (b0[1] as Vector3) * (RiverCoverChamber.BARRACK_X + 0.15) + (b0[2] as Vector3) * 2.6
+	var pushed: Vector3 = c._collide(at_wing)
+	var lp: Vector3 = c._barrack_local(b0, pushed)
+	check("the wings are solid: walking into one leaves him outside it", absf(lp.x) < RiverCoverChamber.BARRACK_X - 0.2 or absf(lp.x) > RiverCoverChamber.BARRACK_X + RiverCoverChamber.BARRACK_WING_T + 0.2 \
+		or lp.z < RiverCoverChamber.BARRACK_WING.x - 0.2, str(lp))
+	var on_path: Vector3 = (b0[0] as Vector3) + (b0[1] as Vector3) * (RiverCoverChamber.BARRACK_X + 0.15)
+	check("the ridge path behind it stays open", c._collide(on_path).distance_to(on_path) < 0.01)
+	# a rifleman on the far bank, below: through the wall when he is down, over it at his head when he stands
+	var me: Vector3 = c._player_pos
+	var shooter: Vector3 = (b0[0] as Vector3) + (b0[2] as Vector3) * 30.0 + Vector3(0, -14.0, 0)
+	check("down behind the bags the wall is between him and the far bank", c._wall_blocks(shooter, me + Vector3(0, RiverCoverChamber.COVER_EYE, 0)))
+	check("standing his head is over the wall: he sees the far bank and the water (and can be hit)", not c._wall_blocks(shooter, me + Vector3(0, RiverCoverChamber.FPS_EYE_HEIGHT, 0)))
+	var pool: Vector3 = c.river_point(c.river_s_of(RiverCoverChamber.LAUNCH_POINT))      # the launch pool, at the water
+	check("standing, the wall never hides the launch pool below (the view down stays open)", not c._wall_blocks(me + Vector3(0, RiverCoverChamber.FPS_EYE_HEIGHT, 0), pool), str(pool))
+	c._in_cover = false
+	c.eye_height = RiverCoverChamber.COVER_EYE
+	c._invuln = 0.0
+	var before: int = c.get_health()
+	var stopped: int = c.blocked_shots
+	c._hurt_player(shooter)
+	check("a shot that meets the wall does no harm (the bags took it)", c.get_health() == before and c.blocked_shots == stopped + 1)
+	c.eye_height = RiverCoverChamber.FPS_EYE_HEIGHT
+	c._invuln = 0.0
+	c._hurt_player(shooter)
+	check("...the same shot at his head when he stands does", c.get_health() == before - 1)
 	c.free()
 
 

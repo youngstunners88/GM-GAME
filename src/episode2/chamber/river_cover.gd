@@ -644,6 +644,7 @@ func _build_overlooks() -> void:
 		var back: Vector3 = near[2]                         # away from the river
 		var fwd := Vector3(back.z, 0, -back.x)              # downstream along the path
 		var yaw: float = atan2(fwd.x, fwd.z)
+		_build_barrack(i, c, fwd, -back, root)               # always: cover must not wait for the PBR textures or the stream
 		if not Ep2Pbr.available():
 			_box(Vector3(2.6, 0.22, 2.6), o + Vector3(-0.2, 0.07, 0), _mat(Color(0.27, 0.26, 0.24)), root)          # the flat rock he stands on
 			_box(Vector3(0.12, 1.3, 0.12), o + Vector3(-1.0, 0.65, -1.5), _mat(Color(0.42, 0.28, 0.16)), root)    # behind him, out of the view
@@ -655,13 +656,137 @@ func _build_overlooks() -> void:
 			var bearer := _box(Vector3(0.2, 0.2, 2.9), o + back * 0.2 + fwd * side * 1.15 + Vector3(0, -0.06, 0), _pbr("wood_dark", Color(0.30, 0.22, 0.15), 0.9), root)
 			bearer.rotation.y = yaw + PI * 0.5
 		_box(Vector3(0.12, 1.3, 0.12), o + back * 1.4 - fwd * 1.5 + Vector3(0, 0.65, 0), _pbr("wood_dark", Color(0.42, 0.28, 0.16), 0.9), root)
-		if Ep2Extras.has(Ep2Extras.RIVER_SANDBAGS):
-			var bags: Node3D = (load(Ep2Extras.RIVER_SANDBAGS) as PackedScene).instantiate()
-			bags.name = "SandbagCover%d" % i
-			bags.position = o - fwd * 2.6 + back * 0.6 + Vector3(0, -0.05, 0)     # inside the lip, its berm sunk into the path: never on air
-			bags.rotation.y = yaw + PI
-			root.add_child(bags)
 		_rock(root, c + back * (RIDGE_HALF + 2.2) - fwd * 0.6 + Vector3(0, -0.55, 0), Vector3(2.4, 1.7, 2.1), yaw + 0.7 * float(i), "OverlookRock%d" % i)
+
+
+## THE RIDGE BARRACKS (founder 2026-11-22: "totally trash and do not work. It needs to be clear how to use them and they need to be large
+## enough to make sense"). Each overlook gets a real breastwork built here (no stream needed): a man-height wall of sandbag rows on a timber
+## sill along the cliff lip, two short wings, four posts and a plank roof, the back open to the path. The wings stop him and the bears
+## (_collide), the wall stops arrows and bullets whose line to his eye passes through it (_wall_blocks), a yellow chalk frame on the boards
+## marks where to stand, and the HUD says TAKE COVER [C] while he is inside. Local frame per barrack: x along the path, z from the path's
+## centre toward the river (the lip is at RIDGE_HALF), y up from the path.
+const BARRACK_X := 1.9                       # half the wall's length along the path
+const BARRACK_FRONT := Vector2(3.05, 3.35)   # the front wall's z span (just past the path's edge: he stands right against it)
+const BARRACK_WING := Vector2(1.55, 3.45)    # the wings' z span (the path keeps 4.5 m clear behind them)
+const BARRACK_WING_T := 0.32                 # wing thickness (x)
+const BARRACK_H := 0.95                      # front wall top: chest high, so standing he fires over it and still sees the river below; ducked
+											 # (eye 0.82) the bags are over his head. A taller front would hide the water from him too.
+const BARRACK_WING_H := 1.4                  # the wings shoulder high: they do not face the river
+const BARRACK_ROOF := 2.45
+var _barracks: Array = []                    # [centre, fwd, river] per overlook
+var blocked_shots: int = 0                   # evidence: hits the wall took for him
+
+
+func _build_barrack(i: int, c: Vector3, fwd: Vector3, river: Vector3, root: Node3D) -> void:
+	_barracks.append([c, fwd, river])
+	var bag := _mat(Color(0.60, 0.51, 0.36), 0.98)                    # burlap: plain, matte (no plank or rope grain on a sack)
+	var bag_dark := _mat(Color(0.49, 0.41, 0.29), 0.98)
+	var timber := _pbr("wood_dark", Color(0.36, 0.25, 0.15), 0.9)
+	var plank := _pbr("planks_weathered", Color(0.42, 0.31, 0.20), 1.2)
+	var yaw: float = atan2(fwd.x, fwd.z)
+	var holder := Node3D.new()
+	holder.name = "Barrack%d" % i
+	root.add_child(holder)
+	var L := func(x: float, y: float, z: float) -> Vector3: return c + fwd * x + river * z + Vector3(0, y, 0)
+	var put := func(size: Vector3, at: Vector3, mat: Material, name: String) -> MeshInstance3D:
+		var m := _box(size, at, mat, holder)
+		m.rotation.y = yaw
+		m.name = name
+		return m
+	var zf: float = (BARRACK_FRONT.x + BARRACK_FRONT.y) * 0.5
+	var tf: float = BARRACK_FRONT.y - BARRACK_FRONT.x
+	put.call(Vector3(BARRACK_X * 2.0 + 0.3, 0.26, tf), L.call(0.0, 0.13, zf), timber, "Sill")
+	# three courses of filled sacks (rounded, lying along the wall), each offset half a sack (bond), squashed under the next, alternating shade
+	var bag_len := 0.62
+	var sack := CapsuleMesh.new()
+	sack.radius = 0.15
+	sack.height = bag_len
+	sack.radial_segments = 12
+	sack.rings = 3
+	for row in 3:
+		var y: float = 0.26 + 0.125 + float(row) * 0.23
+		var n: int = int((BARRACK_X * 2.0) / bag_len) + 1
+		for k in n:
+			var x: float = -BARRACK_X + bag_len * (float(k) + (0.5 if row % 2 == 0 else 0.0))
+			if x > BARRACK_X:
+				continue
+			var b := MeshInstance3D.new()
+			b.name = "Bag%d_%d" % [row, k]
+			b.mesh = sack
+			b.material_override = bag if (k + row) % 2 == 0 else bag_dark
+			holder.add_child(b)
+			b.position = L.call(x, y, zf)
+			# capsule axis (its y) laid along the path, flattened to a filled sack's 0.22 m
+			b.basis = Basis(Vector3.UP, yaw) * Basis(Vector3(1, 0, 0), PI * 0.5) * Basis().scaled(Vector3(1.0, 1.0, 0.74))   # its z ends up vertical
+			b.rotate_object_local(Vector3.UP, 0.05 * float((k * 7 + row * 3) % 3 - 1))
+	for side in [-1.0, 1.0]:
+		var zw: float = (BARRACK_WING.x + BARRACK_WING.y) * 0.5
+		var lw: float = BARRACK_WING.y - BARRACK_WING.x
+		put.call(Vector3(BARRACK_WING_T, BARRACK_WING_H, lw), L.call(side * (BARRACK_X + BARRACK_WING_T * 0.5), BARRACK_WING_H * 0.5, zw), bag_dark, "Wing%d" % int(side))
+		for zp in [BARRACK_WING.x + 0.1, BARRACK_FRONT.y - 0.1]:
+			put.call(Vector3(0.16, BARRACK_ROOF + 0.1, 0.16), L.call(side * (BARRACK_X + 0.1), (BARRACK_ROOF + 0.1) * 0.5, zp), timber, "Post")
+	var roof: MeshInstance3D = put.call(Vector3(BARRACK_X * 2.0 + 0.7, 0.08, BARRACK_WING.y - BARRACK_WING.x + 0.6), L.call(0.0, BARRACK_ROOF + 0.12, (BARRACK_WING.x + BARRACK_WING.y) * 0.5), plank, "Roof")
+	roof.rotation = Vector3(0.0, yaw, 0.0)
+	# where to stand: a yellow chalk frame on the boards inside
+	var chalk := StandardMaterial3D.new()
+	chalk.albedo_color = Color(1.0, 0.84, 0.2)
+	chalk.emission_enabled = true
+	chalk.emission = Color(1.0, 0.78, 0.15)
+	chalk.emission_energy_multiplier = 0.35
+	var zi: Vector2 = Vector2(BARRACK_WING.x + 0.25, BARRACK_FRONT.x - 0.12)
+	for e in [[0.0, zi.x, BARRACK_X * 1.6, 0.06], [0.0, zi.y, BARRACK_X * 1.6, 0.06]]:
+		put.call(Vector3(e[2], 0.02, e[3]), L.call(e[0], 0.13, e[1]), chalk, "CoverMark")
+	for side in [-1.0, 1.0]:
+		put.call(Vector3(0.06, 0.02, zi.y - zi.x), L.call(side * BARRACK_X * 0.8, 0.13, (zi.x + zi.y) * 0.5), chalk, "CoverMark")
+
+
+## A point in barrack `b`'s local frame (x along the path, y up, z toward the river from the path's centre).
+func _barrack_local(b: Array, p: Vector3) -> Vector3:
+	var d: Vector3 = p - (b[0] as Vector3)
+	return Vector3(d.dot(b[1]), d.y, d.dot(b[2]))
+
+
+## Inside the stand area of a barrack (behind its wall, between its wings): the only place cover works.
+func in_barrack() -> bool:
+	for b in _barracks:
+		var l: Vector3 = _barrack_local(b, _player_pos)
+		if absf(l.x) < BARRACK_X and l.z > BARRACK_WING.x and absf(l.y) < 1.6:
+			return true
+	return false
+
+
+## True when the straight line from `from` to `to` passes through a barrack's front wall or a wing (below its top).
+func _wall_blocks(from: Vector3, to: Vector3) -> bool:
+	for b in _barracks:
+		var a: Vector3 = _barrack_local(b, from)
+		var e: Vector3 = _barrack_local(b, to)
+		var boxes: Array = [AABB(Vector3(-BARRACK_X - BARRACK_WING_T, -0.2, BARRACK_FRONT.x), Vector3(BARRACK_X * 2.0 + BARRACK_WING_T * 2.0, BARRACK_H + 0.2, BARRACK_FRONT.y - BARRACK_FRONT.x)),
+			AABB(Vector3(-BARRACK_X - BARRACK_WING_T, -0.2, BARRACK_WING.x), Vector3(BARRACK_WING_T, BARRACK_WING_H + 0.2, BARRACK_WING.y - BARRACK_WING.x)),
+			AABB(Vector3(BARRACK_X, -0.2, BARRACK_WING.x), Vector3(BARRACK_WING_T, BARRACK_WING_H + 0.2, BARRACK_WING.y - BARRACK_WING.x))]
+		for box in boxes:
+			if (box as AABB).intersects_segment(a, e):
+				return true
+	return false
+
+
+## His wings are solid: a body inside one is pushed out the short way (along the path, or back toward its centre).
+func _barrack_push(p: Vector3) -> Vector3:
+	for b in _barracks:
+		var l: Vector3 = _barrack_local(b, p)
+		if absf(l.y) > 2.0 or l.z < BARRACK_WING.x - 0.25:
+			continue
+		for side in [-1.0, 1.0]:
+			var x0: float = side * (BARRACK_X + BARRACK_WING_T * 0.5)
+			var half: float = BARRACK_WING_T * 0.5 + 0.25          # his body's radius
+			if absf(l.x - x0) < half:
+				var out_x: float = x0 + signf(l.x - x0 if absf(l.x - x0) > 0.001 else -side) * half
+				var out_z: float = BARRACK_WING.x - 0.25
+				if absf(out_x - l.x) <= absf(l.z - out_z):
+					l.x = out_x
+				else:
+					l.z = out_z
+				return (b[0] as Vector3) + (b[1] as Vector3) * l.x + (b[2] as Vector3) * l.z + Vector3(0, l.y, 0)
+	return p
 
 
 ## The ridge reads as a built way, not scaffolding: a post-and-rope rail along the drop, trail stakes on the back of the path, a plank
@@ -1250,7 +1375,7 @@ func _collide(p: Vector3) -> Vector3:
 	var off: float = clampf((p - c).dot(right), -RIDGE_HALF, RIDGE_HALF)
 	var out: Vector3 = c + right * off
 	out.y = p.y
-	return out
+	return _barrack_push(out) if not _barracks.is_empty() else out
 
 
 # --- setup ---------------------------------------------------------------------------------------------------------------------
@@ -1774,7 +1899,7 @@ func _step_arrows(delta: float) -> void:
 		node.position = at
 		if k >= 1.0:
 			if bool(ar["true"]) and _flat(_player_pos).distance_to(_flat(ar["to"])) <= ARROW_HIT_RADIUS:
-				_hurt_player()
+				_hurt_player(ar["from"])
 			node.queue_free()
 			_arrows.remove_at(i)
 
@@ -1845,7 +1970,7 @@ func _step_raider(m: Dictionary, delta: float) -> void:
 				(m["glint"] as Node3D).visible = false
 				_sfx("ep2_revolver_blast_1")
 				if _flat(_player_pos).distance_to(_flat(m["aim"])) <= 1.1 and _rng.randf() < MAN_HIT_CHANCE:
-					_hurt_player()
+					_hurt_player(folk.global_position + Vector3(0, 1.4, 0))
 
 
 func _flat3(v: Vector3) -> Vector3:
@@ -2218,8 +2343,11 @@ func _river_sound(name: String, at: Vector3) -> void:
 		a.queue_free()
 
 
-func _hurt_player() -> void:
+func _hurt_player(from: Vector3 = Vector3.INF) -> void:
 	if _invuln > 0.0 or _resolved or _in_cover:
+		return
+	if from.is_finite() and _wall_blocks(from, _player_pos + Vector3(0, eye_height, 0)):
+		blocked_shots += 1                      # the bags took it: he is behind the wall
 		return
 	_health = maxi(0, _health - 1)
 	_invuln = 1.0
@@ -2459,6 +2587,8 @@ func in_cover() -> bool:
 
 ## True when he stands on one of the overlooks (the only places with a barrack to get behind).
 func at_barrack() -> bool:
+	if not _barracks.is_empty():
+		return in_barrack()
 	for o in OVERLOOKS:
 		if _flat(_player_pos).distance_to(_flat(o)) <= OVERLOOK_R and absf(_player_pos.y - o.y) < 1.5:
 			return true
@@ -2500,6 +2630,7 @@ func shoot() -> bool:
 
 func _tick_cover(delta: float) -> void:
 	_sync_cover_touch()
+	_sync_cover_prompt()
 	if _in_cover and not at_barrack():
 		_set_cover(false)
 	if _in_cover:
@@ -2508,6 +2639,21 @@ func _tick_cover(delta: float) -> void:
 	elif _cover_rising:                          # pop up briskly; any other eye change keeps the room's own slow return
 		eye_height = move_toward(eye_height, FPS_EYE_HEIGHT, COVER_EYE_RATE * delta)
 		_cover_rising = eye_height < FPS_EYE_HEIGHT
+
+
+var _cover_prompt_on: bool = false
+
+
+## TAKE COVER [C] while he stands inside a barrack (the phone lights its COVER button instead); UP [C] while ducked.
+func _sync_cover_prompt() -> void:
+	if _hud == null:
+		return
+	var text: String = ""
+	if has_player_control() and at_barrack() and TouchUi.keys_shown():
+		text = "UP OVER THE BAGS [C]" if _in_cover else "TAKE COVER [C]"
+	if text != "" or _cover_prompt_on:
+		_hud.set_search_prompt(text)
+	_cover_prompt_on = text != ""
 
 
 ## After Utah's dock the lake comes back (founder brief 2026-11-08): it reads this flag and puts the horse at the water.
