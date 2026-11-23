@@ -31,7 +31,7 @@ AW = "src/episode2/assets/weapons/armory/"
 # from ortho renders 2026-11-08), real overall length (m), triangle targets (rack, near)
 FAMILIES = {
     "winchester": (SC + "winchester_1886.glb", 180.0, 1.05, 1400, 4000),
-    "sharps":     (SC + "sharps.glb", 135.0, 1.22, 1400, 4000),
+    "sharps":     ("src/episode2/extras/armory/sharps_scoped.glb", 90.0, 1.21, 1400, 4000),   # 2026-11-23: THE Sharps (Sharps Improved), held frame
     "coach":      (SC + "coach_shotgun.glb", 180.0, 0.95, 1400, 4000),
     "tommy":      (SC + "golden_tommy.glb", 180.0, 0.85, 1400, 4000),
     "mp18":       (SC + "machine_gun.glb", 180.0, 0.82, 1400, 4000),

@@ -20,7 +20,8 @@ func contacts(f: Ep2TownFolk, label: String) -> void:
  var attachment: BoneAttachment3D = gun.get_parent()
  var frame: Transform3D = sk.global_transform * sk.get_bone_global_pose(sk.find_bone(attachment.bone_name)) * gun.transform
  for side in ["Left", "Right"]:
-  var local_target: Vector3 = (FORE-GRIP)*MODEL_SCALE + Vector3(0,-0.065,-0.03) if side=="Left" else Vector3(0,-0.015,-0.055)
+  # the rifle's own measured contacts (Ep2ArmoryPose: the one Sharps file since 2026-11-23), not a copy of old numbers
+  var local_target: Vector3 = POSE.wrist_on_rifle(side)
   var target: Vector3 = frame * local_target
   var wrist: Vector3 = sk.global_transform * sk.get_bone_global_pose(SOLVE._find(sk, side+"Hand")).origin
   var error: float = wrist.distance_to(target)

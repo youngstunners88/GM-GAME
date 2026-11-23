@@ -10,7 +10,7 @@ extends RefCounted
 ## Each family's founder GLB (the one rack_guns.glb was cut from): its materials go on the cut piece.
 const SOURCES := {
 	"winchester": Ep2Extras.SHOWCASE_DIR + "winchester_1886.glb",
-	"sharps": Ep2Extras.SHOWCASE_DIR + "sharps.glb",
+	"sharps": Ep2Extras.SHARPS_SCOPED,                  # 2026-11-23: the one Sharps file (case, hands, racks)
 	"coach": Ep2Extras.SHOWCASE_DIR + "coach_shotgun.glb",
 	"tommy": Ep2Extras.SHOWCASE_DIR + "golden_tommy.glb",
 	"mp18": Ep2Extras.SHOWCASE_DIR + "machine_gun.glb",
