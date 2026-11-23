@@ -60,10 +60,14 @@ const HELD := {
 	# Remington, so it floated under the barrel pointing forward with its forearm running back along the gun into the trigger hand, and both arms
 	# ended in a cut 0.25 m behind the wrist. It is now turned to HOLD the fore-end (`grip`: where the fist closes; `forearm`: the way the arm leaves,
 	# down and to his left like the Winchester's; `around`: the axis the fingers wrap), and both arms run out of the frame in a sleeve.
-	Ep2ArmoryState.BUFF: {"gun_scale": 1.0, "gun_at": Vector3.ZERO, "muzzle": Vector3(0, 0.0, 0.75), "eye": Vector3(0, 0.0915, -0.25), "scoped": true,
+	# 2026-11-23 (founder: "Sharps Improved" is the master; "the scope would take a person's eye out"; "his left hand and arm are not in sync with his
+	# right"): the rifle is his Sharps Improved (tools/ep2_forge/bake_sharps_master.py), its brass tube cut to 0.24 m with the eyepiece at z -0.14, the aimed
+	# eye 10 cm behind it on the tube's axis. The support hand is the SAME glove built as a real left hand (left_hand(): mirrored vertices, normals and
+	# tangents, reversed winding, the same material resources), never the right hand under a negative scale.
+	Ep2ArmoryState.BUFF: {"gun_scale": 1.0, "gun_at": Vector3.ZERO, "muzzle": Vector3(0, 0.0, 0.75), "eye": Vector3(0, 0.0794, -0.24), "scoped": true,
 		"hands": [{"at": Vector3(0.0, -0.277, -0.128), "size": 0.6, "mirror": false, "sleeve": true},
 			{"at": Vector3(0.0, -0.29, 0.229), "size": 0.6, "mirror": true, "sleeve": true,
-				"grip": Vector3(0.0, -0.068, 0.24), "forearm": Vector3(0.38, -0.55, -0.74), "around": Vector3(0.0, 0.0, 1.0)}],
+				"grip": Vector3(0.0, -0.062, 0.23), "forearm": Vector3(0.38, -0.55, -0.74), "around": Vector3(0.0, 0.0, 1.0)}],
 		"hip_rotation": Vector3(0.03, PI + 0.26, -0.04), "hip_offset": Vector3(0.02, -0.03, -0.02), "arm_pivot": Vector3(0.0, -0.075, -0.11)},
 }
 ## Measured in the model frame (the build script prints its Blender anchors; game = (x, z, -y)): muzzle, the eye when aimed (on the
@@ -72,8 +76,8 @@ const ANCHORS := {
 	Ep2ArmoryState.SHOT: {"muzzle": Vector3(0, 0.036, 0.585), "eye": Vector3(0, 0.066, -0.06), "grip": Vector3(0, 0.0, -0.07), "fore": Vector3(0, 0.0, 0.2)},
 	Ep2ArmoryState.MP18: {"muzzle": Vector3(0, 0.0, 0.352), "eye": Vector3(0, 0.035, -0.21), "grip": Vector3(0, -0.055, -0.18), "fore": Vector3(0, -0.045, 0.04)},
 	Ep2ArmoryState.TOMMY: {"muzzle": Vector3(0, 0.022, 0.48), "eye": Vector3(0, 0.075, -0.2), "grip": Vector3(0, -0.07, -0.085), "fore": Vector3(0, -0.06, 0.22)},
-	# no streamed model yet: the arms hold their places (HELD has the real views)
-	Ep2ArmoryState.BUFF: {"muzzle": Vector3(0, 0.0, 0.75), "eye": Vector3(0, 0.0915, -0.25), "grip": Vector3(0, -0.075, -0.11), "fore": Vector3(0, -0.045, 0.22)},
+	# measured on the baked Sharps Improved (bake_sharps_master.py ANCHOR lines): wrist centre, fore-end under the support fist, eye 10 cm behind the eyepiece
+	Ep2ArmoryState.BUFF: {"muzzle": Vector3(0, 0.0, 0.75), "eye": Vector3(0, 0.0794, -0.24), "grip": Vector3(0, -0.0645, -0.11), "fore": Vector3(0, -0.052, 0.22)},
 	Ep2ArmoryState.BORCH: {"muzzle": Vector3(0, 0.0, 0.347), "eye": Vector3(0, 0.055, -0.60), "grip": Vector3(0, -0.15, -0.02), "fore": Vector3(0, -0.16, 0.0)},
 }
 const SOUNDS := {
@@ -181,17 +185,18 @@ static func _make_held(id: String) -> Node3D:
 	root.add_child(hands)
 	var packed: PackedScene = load(Ep2Extras.GUN_HAND) as PackedScene
 	for spec in a["hands"]:
-		var hand: Node3D = packed.instantiate() as Node3D
-		hand.name = "GunHand"
+		var left: bool = spec["mirror"]
+		# turned a quarter, the model's z is the view's x: the left hand is the glove mirrored in z, built as real geometry (no negative scale)
+		var hand: Node3D = left_hand(packed) if left else packed.instantiate() as Node3D
+		hand.name = "GunHandLeft" if left else "GunHand"
 		hand.rotation.y = Ep2RemingtonView.FOUNDER_TURN
 		hand.position = spec["at"]
 		var size: float = float(spec["size"])
-		# turned a quarter, the model's z is the view's x: flipping it makes the left hand
-		hand.scale = Vector3(size, size, -size if spec["mirror"] else size)
+		hand.scale = Vector3.ONE * size
 		if spec.has("grip"):
-			_regrip(hand, spec["grip"], spec["forearm"], spec["around"])
+			_regrip(hand, spec["grip"], spec["forearm"], spec["around"], left)
 		if spec.get("sleeve", false):
-			_add_sleeve(hand)
+			_add_sleeve(hand, left)
 		hands.add_child(hand, true)
 	root.set_meta("meshy", true)
 	root.set_meta("hip_offset", a["hip_offset"])
@@ -218,27 +223,94 @@ const HAND_SLEEVE_LEN := 1.5
 
 ## Turn a placed gun hand about its fist so the fist closes at `grip`, the fingers wrap `around` and the forearm leaves along `forearm` (all in the
 ## view's frame). The hand keeps its size and its mirror.
-static func _regrip(hand: Node3D, grip: Vector3, forearm: Vector3, around: Vector3) -> void:
+static func _regrip(hand: Node3D, grip: Vector3, forearm: Vector3, around: Vector3, left: bool = false) -> void:
 	var placed: Basis = hand.transform.basis
-	var f0: Vector3 = (placed * HAND_FOREARM).normalized()
-	var a0: Vector3 = placed * HAND_AROUND
+	var f0: Vector3 = (placed * _side(HAND_FOREARM, left)).normalized()
+	var a0: Vector3 = placed * _side(HAND_AROUND, left)
 	a0 = (a0 - f0 * a0.dot(f0)).normalized()
 	var f1: Vector3 = forearm.normalized()
 	var a1: Vector3 = (around - f1 * around.dot(f1)).normalized()
 	var turn: Basis = Basis(f1, a1, f1.cross(a1)) * Basis(f0, a0, f0.cross(a0)).inverse()
 	hand.transform.basis = turn * placed
-	hand.position = grip - hand.transform.basis * HAND_FIST
+	hand.position = grip - hand.transform.basis * _side(HAND_FIST, left)
 
 
 ## The arm model ends in a cut a hand's length behind the bracer; a sleeve in his own leafy green (the bow arms' sleeve) carries it out of the frame.
-static func _add_sleeve(hand: Node3D) -> void:
-	var axis: Vector3 = HAND_FOREARM.normalized()
+static func _add_sleeve(hand: Node3D, left: bool = false) -> void:
+	var axis: Vector3 = _side(HAND_FOREARM, left).normalized()
 	var hem: Array = [[0.0, 0.88, 0.0], [0.01, 1.0, 0.0], [0.04, 1.02, 0.0], [0.05, 0.98, 0.0]]
 	var cloth: Array = [[0.046, 0.97, 0.0], [0.14, 1.0, 0.06], [0.30, 1.0, 0.05], [0.60, 0.98, 0.04], [HAND_SLEEVE_LEN, 0.97, 0.03]]
 	var sleeve := MeshInstance3D.new()
 	sleeve.name = "ArmSleeve"
-	sleeve.mesh = Ep2BowView.sleeve_mesh(HAND_CUT - axis * 0.05, axis, HAND_CUT_R * 1.14, hem, cloth, Ep2BowView.FOREARM_CLOTH)
+	sleeve.mesh = Ep2BowView.sleeve_mesh(_side(HAND_CUT, left) - axis * 0.05, axis, HAND_CUT_R * 1.14, hem, cloth, Ep2BowView.FOREARM_CLOTH)
 	hand.add_child(sleeve)
+
+
+## A model-frame point or axis of the gun hand, for the right hand or its mirror image (the left hand is the glove mirrored in z).
+static func _side(v: Vector3, left: bool) -> Vector3:
+	return Vector3(v.x, v.y, -v.z) if left else v
+
+
+static var _left_meshes: Dictionary = {}
+
+
+## THE LEFT HAND (founder 2026-11-23: "his left hand and arm are not in sync with his right"). The right glove mirrored in its z as real geometry:
+## positions and normals mirrored, tangent handedness flipped (so the normal map's leather and stitching light the same way), every triangle's winding
+## reversed, and the SAME material resources as the right hand, so the two gloves match in colour, sleeve, bracer and scale. Built once per mesh, no pack bytes.
+static func left_hand(packed: PackedScene) -> Node3D:
+	var hand: Node3D = packed.instantiate() as Node3D
+	for mi in hand.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null:
+			continue
+		m.mesh = mirrored_mesh(m.mesh)
+	return hand
+
+
+static func mirrored_mesh(src: Mesh) -> ArrayMesh:
+	var key: int = src.get_instance_id()
+	if _left_meshes.has(key):
+		return _left_meshes[key]
+	var out := ArrayMesh.new()
+	for si in src.get_surface_count():
+		var arr: Array = src.surface_get_arrays(si)
+		var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		for i in v.size():
+			v[i] = Vector3(v[i].x, v[i].y, -v[i].z)
+		arr[Mesh.ARRAY_VERTEX] = v
+		if arr[Mesh.ARRAY_NORMAL] != null:
+			var n: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+			for i in n.size():
+				n[i] = Vector3(n[i].x, n[i].y, -n[i].z)
+			arr[Mesh.ARRAY_NORMAL] = n
+		if arr[Mesh.ARRAY_TANGENT] != null:
+			var t: PackedFloat32Array = arr[Mesh.ARRAY_TANGENT]
+			for i in range(0, t.size(), 4):
+				t[i + 2] = -t[i + 2]
+				t[i + 3] = -t[i + 3]
+			arr[Mesh.ARRAY_TANGENT] = t
+		if arr[Mesh.ARRAY_INDEX] != null:
+			var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX]
+			for i in range(0, idx.size() - 2, 3):
+				var b: int = idx[i + 1]
+				idx[i + 1] = idx[i + 2]
+				idx[i + 2] = b
+			arr[Mesh.ARRAY_INDEX] = idx
+		else:
+			# unindexed: swap the 2nd and 3rd vertex of every triangle in every per-vertex array
+			for c in [Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL, Mesh.ARRAY_TEX_UV, Mesh.ARRAY_TEX_UV2, Mesh.ARRAY_COLOR]:
+				if arr[c] == null:
+					continue
+				var a = arr[c]
+				for i in range(0, a.size() - 2, 3):
+					var b = a[i + 1]
+					a[i + 1] = a[i + 2]
+					a[i + 2] = b
+				arr[c] = a
+		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+		out.surface_set_material(si, src.surface_get_material(si))
+	_left_meshes[key] = out
+	return out
 
 
 ## The founder's Meshy view: his gun with Lil Blunt's gloved hands already on it (no procedural arms), and the same metas.

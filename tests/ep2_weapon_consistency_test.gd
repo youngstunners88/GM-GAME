@@ -70,23 +70,45 @@ func _test_sharps_model() -> void:
 	var gun: Node3D = view.get_node("Gun")
 	var bb: AABB = _bounds(gun)
 	check("the rifle is 1.21 m long, gun only, muzzle +Z", absf(bb.size.z - 1.21) < 0.01 and bb.end.z > 0.7, str(bb))
-	check("it carries the telescopic sight", gun.find_child("ScopeTube*", true, false) != null and gun.find_child("ScopeLensEye*", true, false) != null)
+	# 2026-11-23: the founder's Sharps Improved is the one master; its own brass tube cut to 0.24 m, the eyepiece 10 cm ahead of the aimed eye
+	check("it carries the founder's telescopic sight on its mount", gun.find_child("ScopeTube*", true, false) != null and gun.find_child("ScopeMount*", true, false) != null)
 	var tube: MeshInstance3D = gun.find_child("ScopeTube*", true, false) as MeshInstance3D
 	if tube != null:
-		var tb: AABB = _bounds(gun).intersection(_bounds(gun))
-		var length: float = tube.get_aabb().size.z
-		check("the tube is a short period sight, 0.30 - 0.40 m (founder 2026-11-07: the 0.56 m one was too long)", length > 0.30 and length < 0.40, str(length))
+		var tb: AABB = (gun.global_transform.affine_inverse() * tube.global_transform) * tube.get_aabb()
+		var length: float = tb.size.z
+		check("the tube is a short period sight, 0.20 - 0.25 m (founder: the long one was too long)", length > 0.20 and length <= 0.25, str(length))
 		var eye: Vector3 = view.get_meta("ads_cam")
-		var axis_y: float = tube.global_position.y + tube.get_aabb().get_center().y
-		check("the aimed eye is on the tube's axis and behind the eyepiece", absf(eye.y - axis_y) < 0.003 and eye.z < tube.get_aabb().position.z + tube.position.z, "%s axis %.4f" % [str(eye), axis_y])
-		check("the tube clears the rifle (its underside over the hammer)", axis_y - 0.0185 > 0.061, str(tb))
+		var axis_y: float = tb.get_center().y
+		var clear: float = tb.position.z - eye.z
+		check("the aimed eye is on the tube's axis, 8 - 12 cm behind the eyepiece (3 cm 'would take a person's eye out')", absf(eye.y - axis_y) < 0.006 and clear >= 0.08 and clear <= 0.12, "%s axis %.4f clear %.3f" % [str(eye), axis_y, clear])
+		check("the tube clears the rifle (its underside over the receiver)", tb.position.y > 0.035, str(tb))
 	check("no pitched-up aim: the view looks level down the tube", not view.has_meta("ads_rotation") or is_equal_approx(Vector3(view.get_meta("ads_rotation")).x, 0.0))
 	check("the view says it is scoped", view.get_meta("scoped", false))
+	# the left hand: the same glove as real left-hand geometry, not the right one under a negative scale
+	var right: Node3D = view.get_node_or_null("Hands/GunHand")
+	var left: Node3D = view.get_node_or_null("Hands/GunHandLeft")
+	check("both hands are there, the support one a real left hand", right != null and left != null)
+	if right != null and left != null:
+		check("no negative scale on either hand", right.transform.basis.determinant() > 0.0 and left.transform.basis.determinant() > 0.0, "%.3f %.3f" % [right.transform.basis.determinant(), left.transform.basis.determinant()])
+		var rm: MeshInstance3D = right.find_children("*", "MeshInstance3D", true, false)[0]
+		var lm: MeshInstance3D = left.find_children("*", "MeshInstance3D", true, false)[0]
+		check("both gloves share the same material resources (no per-hand tint)", rm.mesh.get_surface_count() == lm.mesh.get_surface_count() and rm.mesh.surface_get_material(0) == lm.mesh.surface_get_material(0) and rm.material_override == lm.material_override)
+		check("the same size", right.scale.is_equal_approx(left.scale), "%s %s" % [right.scale, left.scale])
+		var ra: AABB = rm.mesh.get_aabb()
+		var la: AABB = lm.mesh.get_aabb()
+		check("the left mesh is the right one mirrored in z", la.size.is_equal_approx(ra.size) and absf(la.position.z + ra.end.z) < 0.001, "%s %s" % [ra, la])
+		var palm: Vector3 = left.transform * Vector3(Ep2ArmoryGunView.HAND_FIST.x, Ep2ArmoryGunView.HAND_FIST.y, -Ep2ArmoryGunView.HAND_FIST.z)
+		var fore: Vector3 = Ep2ArmoryGunView.ANCHORS[Ep2ArmoryState.BUFF]["fore"]
+		check("the left palm closes on the fore-end (< 3 cm)", palm.distance_to(fore) < 0.03, "palm %s fore %s %.3f" % [palm, fore, palm.distance_to(fore)])
+		var fore_dir: Vector3 = (left.transform.basis * Vector3(Ep2ArmoryGunView.HAND_FOREARM.x, Ep2ArmoryGunView.HAND_FOREARM.y, -Ep2ArmoryGunView.HAND_FOREARM.z)).normalized()
+		check("the support forearm leaves down and to his left, not back along the gun", fore_dir.y < -0.2 and fore_dir.z < 0.0 and fore_dir.x > 0.2, str(fore_dir))
 	view.free()
+	# one file: the case and Rich's hand load the held rifle itself
+	check("the lit case and Rich's hand load the same Sharps file as Lil Blunt's hands", preload("res://src/episode2/actors/ep2_armory_pose.gd").SHARPS == Ep2Extras.SHARPS_SCOPED and str(Ep2ArmoryShop.WEAPON_TABS[0]["model"]) == Ep2Extras.SHARPS_SCOPED)
 	var rich: Node3D = (load(Ep2Extras.SHARPS) as PackedScene).instantiate() as Node3D
 	add_child(rich)
 	var rb: AABB = _bounds(rich)
-	check("Rich's own rifle (the case and his hand) wears the sight too, and is still a real rifle", rb.end.y > 0.11 and rb.size.x > 1.1 and rb.size.x < 1.3, str(rb))
+	check("the low-LOD Sharps is the same gun: scoped, real length, laid muzzle +x like the case's other long guns", rb.end.y > 0.10 and absf(rb.size.x - 1.21) < 0.02, str(rb))
 	rich.free()
 
 
@@ -177,6 +199,6 @@ func _test_shop() -> void:
 	var piece: Node3D = (load(str(tab["model"])) as PackedScene).instantiate() as Node3D
 	add_child(piece)
 	var bb: AABB = _bounds(piece)
-	check("the case model is the existing case height", absf(bb.size.y - 0.30) < 0.01, str(bb))
+	check("the case model is the held rifle, real length", absf(bb.size.z - 1.21) < 0.02, str(bb))
 	piece.free()
 	check("the Gatling is still never stock", Ep2ArmoryState.shop_item("gatling").is_empty())
