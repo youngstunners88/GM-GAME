@@ -8,6 +8,8 @@ const REACH := 2.4          # m: prompt + interact
 
 var drop_id: String = ""
 var gun_id: String = ""
+## The armory it is claimed into: a gun he already owns is only ammo to him (founder 2026-11-23), and the prompt says so.
+var armory_ref: WeakRef = null
 
 
 ## Lays the man's own `gun_node` and a box of rounds at `at` (parent frame). Returns the drop already lying there, or null once taken.
@@ -23,6 +25,7 @@ static func place(parent: Node3D, armory: Ep2ArmoryState, id: String, gun: Strin
 	drop.name = node_name
 	drop.drop_id = id
 	drop.gun_id = gun
+	drop.armory_ref = weakref(armory)
 	parent.add_child(drop)
 	drop.position = at
 	drop.rotation.y = yaw
@@ -87,7 +90,11 @@ func take(armory: Ep2ArmoryState) -> Dictionary:
 
 ## No key name here: the room adds one only where keys are shown.
 func prompt() -> String:
-	return "Take %s" % str(Ep2ArmoryState.NAMES.get(gun_id, "gun"))
+	var gun_name: String = str(Ep2ArmoryState.NAMES.get(gun_id, "gun"))
+	var armory: Ep2ArmoryState = armory_ref.get_ref() as Ep2ArmoryState if armory_ref != null else null
+	if armory != null and armory.owns(gun_id):
+		return "Take %s rounds" % gun_name           # he has this gun already: the dead man's gun is ammo to him
+	return "Take %s" % gun_name
 
 
 static func taken_text(got: Dictionary) -> String:

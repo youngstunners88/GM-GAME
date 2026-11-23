@@ -18,6 +18,8 @@ func _ready() -> void:
 	vp.add_child(session)
 	session.set_process(false)
 	session.armory = Ep2ArmoryState.post_hideout()
+	if OS.get_cmdline_user_args().has("owned"):      # founder 2026-11-23: he has the gun already, so the drop is ammo to him
+		session.armory.acquire(Ep2ArmoryState.BORCH)
 	var trail: LakeTrailChamber = load("res://src/episode2/chamber/lake_trail.tscn").instantiate()
 	session.add_child(trail)
 	session._active = trail

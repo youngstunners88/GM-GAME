@@ -133,7 +133,12 @@ func _test_trail() -> void:
 		var at := Vector2(float(second.get_meta("s")), float(second.get_meta("lat")))
 		_stand(c, at.x, at.y - signf(at.y) * 1.5)
 		var reserve: int = c.armory.firearm(bor).reserve
+		c._tick_drops()
+		_check("a gun he already owns is offered as ammo, not as a gun (founder 2026-11-23)",
+			second.prompt() == "Take %s rounds" % Ep2ArmoryState.NAMES[bor] and (c._hud == null or c._hud._search.text.begins_with("Take %s rounds" % Ep2ArmoryState.NAMES[bor])),
+			second.prompt())
 		_check("the interact control takes it in reach", c.start_rig())
+		_check("taking it reports rounds, never a second gun", Ep2WeaponDrop.taken_text({"gun": bor, "new": false, "rounds": 8}).begins_with("+8") and c.armory.owns(bor))
 		_check("an owned gun still gives its rounds", c.armory.firearm(bor).reserve == reserve + LakeTrailChamber.BANDIT_ROUNDS)
 		_check("interact with nothing in reach does nothing", not c.start_rig())
 	c.queue_free()
