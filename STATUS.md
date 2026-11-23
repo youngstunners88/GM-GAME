@@ -1,5 +1,14 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-23 — Founder doc "New shit!!!" Part 2: the two Sharps jobs, new Inferno, Rich's rifle and joint, river barracks, Rich + Utah fetch the shipment, the certificate officer.** PUSHED on `feat/newshit-1122-p2`; shipping to master (not yet live).
+- **One Sharps everywhere (P2-1/P2-2, your ruling: Sharps Improved):** your Sharps Improved is baked once and the held rifle, the lit SHARPS case and Rich's hand all load that same file. Its brass scope is cut to 0.24 m and sits 10 cm in front of the eye (it was 3 cm). Lil Blunt's left hand is a real left hand built from the same glove (same leather, sleeve, bracer and size), not the right hand flipped inside out. Sharps files 1153 KB -> 752 KB.
+- **Rich (P2-2/P2-4):** his rifle grip is re-measured on the new gun; held in his hand it stays out of his body and head (checked every half second of the case beat). His joint is lit: an ember on its tip and a slow curl of smoke, brighter on his smoke break.
+- **New Inferno (P2-3):** your Inferno New model on his existing skeleton (every walk, run, sit and gesture clip still works), painted from your T-pose sheet; his Winchester is now a real rifle in his own left hand. Main pack -5.5 MB.
+- **River barracks (P2-5):** a real sandbag breastwork at each overlook with side wings, posts and a plank roof, a yellow mark where to stand and TAKE COVER [C] on screen; the bags stop arrows and bullets that hit them, and standing you still see the river over them.
+- **Shipment (P2-6):** the crane's hook comes down and takes hold of the crate before it moves, lifts it in and sets it on the pad; Rich and Utah walk over, each takes an end, and they carry it into the warehouse together.
+- **Certificate officer (P2-7, your ruling: Certificate man 2):** he now stands at the claim wagon where the bald worker was.
+- **Asked, no answer yet:** what is wrong with the chariots (left as they are). **Pending:** Hammer's men's ammo drops, breakable town glass, Earshot sound effects.
+
 **2026-11-22 — Founder doc "New shit!!!" Part 1: voices, subtitles, Rich's shop, horse colour, sand, lift, Reserve, Inferno, auction road, signposts, vultures.** LIVE on itch, BUILD `2026-11-22-4bdf3e9` (master CI 45037684612, butler "Pushed to"; the itch page's game prints that tag, extras ready). NOT founder-verified.
 - **Voices (P1-0/P1-1):** Logan speaks (10 takes on his own account); Lil Blunt answers Dude in the haggle again; town captions are off by default (a recorded line shows no subtitle); Mike Dean's two licence lines recorded.
 - **Rich's shop (P1-2/P1-3):** the slowdown after trading was the hidden shop laying itself out every frame (24 ms); it now stops when closed. Two always-visible pay buttons, BTC and WBTC, each with its balance; Rich says "BTC or WBTC".
