@@ -2080,8 +2080,8 @@ func _sync_bull_hand_props() -> void:
 	var sk: Skeleton3D = _bull.skeleton
 	var carrying_trade: bool = _rifle_node != null and _rifle_node.get_parent() == _bull.holder("RightHand")
 	if _bull_guard_rifle:
-		# The painted Bull already holds his rifle; keep the prop (the aim code reads its muzzle) but never draw it.
-		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade and not Ep2BullHero.PAINTED_GLB
+		# A sculpted-rifle Bull already holds his rifle (prop kept for the aim code, never drawn); the new Inferno's hands are his own.
+		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade and not Ep2BullHero.RIFLE_IN_MESH
 	var gun: Node3D = _rifle_node if carrying_trade else _bull_guard_rifle
 	var hand: int = sk.find_bone("RightHand" if carrying_trade else "LeftHand")
 	if gun == null or not gun.visible or hand < 0:

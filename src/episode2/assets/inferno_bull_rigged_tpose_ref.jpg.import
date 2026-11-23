@@ -2,23 +2,23 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b0ix61umw0hgj"
-path="res://.godot/imported/inferno_bull_rigged_0.jpg-3cd9485f334834f35cd43e447b5b530f.ctex"
+uid="uid://dsugp753na0xt"
+path="res://.godot/imported/inferno_bull_rigged_tpose_ref.jpg-031339a988a077ddad5fee3449a24c53.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "1b26a75ae8fa46d7d72a1902cb1fc91b"
+"md5": "3fb4e2441e956ed0ca966c177c1e9c56"
 }
 
 [deps]
 
-source_file="res://src/episode2/assets/inferno_bull_rigged_0.jpg"
-dest_files=["res://.godot/imported/inferno_bull_rigged_0.jpg-3cd9485f334834f35cd43e447b5b530f.ctex"]
+source_file="res://src/episode2/assets/inferno_bull_rigged_tpose_ref.jpg"
+dest_files=["res://.godot/imported/inferno_bull_rigged_tpose_ref.jpg-031339a988a077ddad5fee3449a24c53.ctex"]
 
 [params]
 
-compress/mode=1
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/hdr_compression=1

@@ -114,7 +114,7 @@ func _ready() -> void:
 		bull.step(1.0 / 60.0)
 		await get_tree().process_frame
 	check("Bull aim, recoil and recovery preserve primary rifle grip %.4f m" % gun_error[0], gun_error[0] < 0.015)
-	check("painted Bull never draws a second rifle (the grip reference prop stays hidden)", not Ep2BullHero.PAINTED_GLB or not hero.rifle.visible)
+	check("one rifle: the prop is drawn exactly when no rifle is sculpted into the model", hero.rifle.visible == (not Ep2BullHero.RIFLE_IN_MESH))
 	# Motion fix T1 (2026-11-21): the rifle is sculpted into his left fist. Its barrel must be skinned to LeftHand ONLY
 	# (it was on Head/neck/Spine02 and the stock on LeftUpLeg, so it stretched like taffy whenever he moved).
 	var barrel_total: int = 0
@@ -144,7 +144,11 @@ func _ready() -> void:
 						if wts[vi * per + k] > 0.001 and bidx[vi * per + k] != lh:
 							barrel_bad += 1
 							break
-	check("Bull's sculpted barrel is skinned to LeftHand only (%d of %d vertices off)" % [barrel_bad, barrel_total], barrel_total > 100 and barrel_bad == 0)
+	if Ep2BullHero.RIFLE_IN_MESH:
+		check("Bull's sculpted barrel is skinned to LeftHand only (%d of %d vertices off)" % [barrel_bad, barrel_total], barrel_total > 100 and barrel_bad == 0)
+	else:
+		# the new Inferno (2026-11-23): no sculpted rifle, so nothing of the body may sit where the old barrel was
+		check("new Inferno: no sculpted barrel in the model (%d vertices there), the rifle is the prop in his hand" % barrel_total, barrel_total < 20)
 	# Hip fire: the visible (sculpted) barrel comes level on the target and the rifle never changes length.
 	var target := bull.global_position + Basis(Vector3.UP, bull.facing) * Vector3(0.6, 1.2, 9.0)
 	var hip_err: Array[float] = [999.0]

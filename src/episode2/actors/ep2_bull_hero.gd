@@ -37,12 +37,15 @@ var shot_time: float = -99.0
 ## the GLB: barrel PCA axis at fist height). The old value (vertex 61101 of the pre-2026-10-16 Tripo body) sat 0.196 m
 ## off the painted fist, so every grip number measured a point beside his hand. Right: vertex 28464 (old body, unused
 ## by the painted rifle).
-const LEFT_PALM_M := Vector3(0.1346, -0.2094, 0.1168)
+## 2026-11-23 NEW INFERNO (the founder's "Inferno New.glb" on this same skeleton, tools/ep2_blender/rig_inferno_new.py): no rifle is
+## sculpted in; his Winchester is the visible prop through his real left palm, measured with tools/ep2_shots/bull_palm_probe.gd.
+const LEFT_PALM_M := Vector3(-0.0281, -0.1396, -0.0229)
 ## Muzzle tip of the sculpted rifle, and the barrel's direction, in the same LeftHand frame (rigid to the fist since
 ## tools/ep2_forge/bull_rifle_rigid.py). Shots, flashes and the invisible aim prop all come from these.
-const RIFLE_MUZZLE_M := Vector3(0.998, -0.2025, 0.174)
+## The prop's muzzle: the palm + the axis x (GRIP_ALONG + half the 1.2 m prop) x RIFLE_SCALE_PER_M x 2.4 (0.954 m).
+const RIFLE_MUZZLE_M := Vector3(0.9249, -0.1544, 0.0190)
 const RIFLE_AXIS := Vector3(0.9989, -0.0155, 0.0439)
-const RIGHT_PALM_M := Vector3(0.020910, 0.045520, -0.045412)
+const RIGHT_PALM_M := Vector3(-0.0049, 0.1093, 0.0185)
 var _palm_m := Vector3.ZERO
 
 
@@ -65,6 +68,9 @@ static func dress(b: Ep2Actor, with_rifle: bool = true) -> Ep2BullHero:
 ## rifle modelled in; v3 head grafted on the v2 body). The old Bull's grade, lamp prop and rifle prop do not apply:
 ## the painted albedo is already dark, and the props would sit mid-face or double the rifle in his fist.
 const PAINTED_GLB := true
+## True when the rifle is sculpted into the model's left fist (the 2026-11 painted Hunyuan Bull). The founder's new Inferno (2026-11-23) has
+## empty hands: the Winchester prop is drawn, through his own palm, and every "never draw it twice" rule keys off this, not PAINTED_GLB.
+const RIFLE_IN_MESH := false
 const GRADE_ALBEDO := Color(1.0, 1.0, 1.0) if PAINTED_GLB else Color(0.60, 0.66, 1.04)
 const GRADE_EMISSION := Color(0.85, 0.85, 0.9)
 const GRADE_EMISSION_ENERGY := 0.0
@@ -118,9 +124,8 @@ func _setup(with_rifle: bool) -> void:
 		return
 	hold.add_child(rifle)
 	rifle.top_level = true
-	# Painted model: its own rifle is already in his left fist. This prop stays as the invisible grip/aim reference
-	# (recoil, muzzle point and the CI grip test measure it), so the rifle is never drawn twice.
-	rifle.visible = not PAINTED_GLB
+	# A sculpted-rifle model keeps this prop as the invisible grip/aim reference (never drawn twice); the new Inferno draws it.
+	rifle.visible = not RIFLE_IN_MESH
 	place_on_rifle(rifle, bull, _scale)
 
 
@@ -166,8 +171,8 @@ func _step(dt: float) -> void:
 	rest_arm.resting = (not seated or clip.contains("Chair")) and not reaching
 	rest_arm.hold_left = PAINTED_GLB and bull.reach_weight("Left") < 0.01
 	if rifle:
-		# Painted Bull: his own rifle is baked into the mesh; this prop is only the invisible grip/aim reference.
-		rifle.visible = not PAINTED_GLB and not seated and bull.is_visible_in_tree()
+		# Drawn unless the model carries a sculpted rifle (then it is only the invisible grip/aim reference).
+		rifle.visible = not RIFLE_IN_MESH and not seated and bull.is_visible_in_tree()
 	var aiming: bool = bull.motion_time < aim_until and not seated
 	motion.aim_weight = move_toward(motion.aim_weight, 1.0 if aiming else 0.0, dt * 4.0)
 	motion.recoil = exp(-maxf(0.0, bull.motion_time - shot_time) * 14.0) if bull.motion_time - shot_time < 0.5 else 0.0
