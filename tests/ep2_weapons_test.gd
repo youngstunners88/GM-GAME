@@ -398,6 +398,22 @@ func _test_case_takeout() -> void:
 	if case == null:
 		c.queue_free()
 		return
+	# founder 2026-11-22 "why isn't his joint lit with smoke twirling": an ember on the modelled joint's tip, riding his head, and a curl of smoke
+	var joint: Ep2RichJoint = c._rich_joint
+	check("Rich's joint is lit: an emissive ember and a smoke curl on it", joint != null and joint.ember != null and joint.smoke != null and joint.smoke.emitting
+		and (joint.ember.material_override as StandardMaterial3D).emission_enabled)
+	if joint != null:
+		var rsk: Skeleton3D = c.get_rich().model.find_children("*", "Skeleton3D", true, false)[0]
+		var hb: int = -1
+		for b in rsk.get_bone_count():
+			if rsk.get_bone_name(b).ends_with("Head"):
+				hb = b
+		var head_w: Vector3 = rsk.global_transform * rsk.get_bone_global_pose(hb).origin
+		var tip_w: Vector3 = joint.global_position
+		check("the ember sits on the joint's tip: at mouth height, a hand's width in front of his face (%.2f m from the head bone, %.2f m below it)" % [tip_w.distance_to(head_w), head_w.y - tip_w.y],
+			tip_w.distance_to(head_w) > 0.12 and tip_w.distance_to(head_w) < 0.32 and absf(head_w.y - tip_w.y) < 0.12, "tip %s head %s" % [tip_w, head_w])
+		check("the ember is a few millimetres across, in metres whatever the rig's units", absf(joint.ember.global_transform.basis.get_scale().x * Ep2RichJoint.EMBER_R - Ep2RichJoint.EMBER_R) < 0.002,
+			str(joint.ember.global_transform.basis.get_scale()))
 	var held_scene: String = (POSE.make_rifle().get_child(0) as Node).scene_file_path
 	check("the rifle in the case is the model he holds", (case.rifle.get_child(0) as Node).scene_file_path == held_scene and held_scene != "")
 	var intro: Ep2ArmoryIntro = c.get_intro()

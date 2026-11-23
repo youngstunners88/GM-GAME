@@ -253,6 +253,7 @@ var _minister: Ep2TownFolk = null
 var _sheriff_delay: float = 0.0
 var _sheriff_goes: Array = []                            # where the Sheriff walks once his delay has run out
 var _sheriff_smoke: CPUParticles3D = null
+var _rich_joint: Ep2RichJoint = null
 var _bartender: Ep2TownFolk = null
 var _opp: Ep2TownFolk = null
 var _revolver: Node3D = null
@@ -642,6 +643,7 @@ func _build_armory_folk_v2() -> void:
 	Ep2GroundedWalk.install(_rich)
 	Ep2GroundedWalk.install(_utah)
 	preload("res://src/episode2/actors/ep2_armory_pose.gd").install_rifle(_rich)
+	_rich_joint = Ep2RichJoint.light(_rich)                 # founder 2026-11-22: his joint lit, smoke twirling
 	_rich_brain = Ep2ArmoryBrain.new()
 	_rich_brain.walk_speed = RICH2_WALK
 	_rich_brain.setup("rich", _rich, xf, _brain_spots(), "counter_rich", 7101)
