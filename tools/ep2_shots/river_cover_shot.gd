@@ -26,6 +26,25 @@ func _ready() -> void:
 	c.bind_armory(st)
 	c.setup(0, [], 0)
 	run(0.3)
+	if OS.get_cmdline_user_args().has("dock"):     # 2026-11-23 P2-6: the crane's hook takes hold, then Rich and Utah carry it in together
+		c._crate_s = c.river_s_of(RiverCoverChamber.DOCK_POINT)
+		c._gate = 2
+		c._rich_to_dock()
+		c._advance_to(RiverCoverChamber.Beat.DOCK)
+		c._utah_arrives()
+		var eye: Vector3 = RiverCoverChamber.DOCK_DECK + Vector3(10.0, 2.6, 9.0)
+		var look: Vector3 = RiverCoverChamber.DOCK_DECK + Vector3(1.5, 1.0, 0.0)
+		var marks: Array = [[1.2, "12_hook_lowering"], [2.6, "13_hook_on_the_ring"], [4.2, "14_lifted_out"], [6.4, "15_set_on_the_pad"],
+			[12.5, "16_both_at_their_ends"], [15.5, "17_carrying_together"], [21.0, "18_into_the_warehouse"]]
+		var t: float = 0.0
+		for m in marks:
+			while t < float(m[0]):
+				c.step(1.0 / 30.0)
+				t += 1.0 / 30.0
+			await shot(m[1], eye - Vector3(0, c.eye_height, 0), look)
+			print("RIVER_COVER_SHOT dock %s hoist=%s rich=%s utah=%s" % [m[1], c.hoist_state(), c.rich_state(), c._utah_state])
+		get_tree().quit(0)
+		return
 	if OS.get_cmdline_user_args().has("barracks"):     # 2026-11-23 P2-5: the ridge barracks from the player's eye
 		var o: Vector3 = RiverCoverChamber.OVERLOOKS[0]
 		var far_bank: Vector3 = (c._barracks[0][0] as Vector3) + (c._barracks[0][2] as Vector3) * 30.0 + Vector3(0, -12.0, 0)

@@ -120,7 +120,23 @@ const RICH_LIFT_S := 0.9
 ## its near face a hand's width in front of his body (the offset is measured from the crate's own depth when he lifts it).
 const RICH_CARRY_UP := 0.55
 const RICH_CARRY_CLEAR := 0.12
-const RICH_COLLECT_MAX := 18.0               # the dock beat never waits longer than this for him
+const RICH_COLLECT_MAX := 34.0               # the dock beat never waits longer than this for the two of them
+## RICH AND UTAH FETCH THE SHIPMENT TOGETHER (founder 2026-11-22: "We need both Rich and Utah to fetch the shipment"). Utah works the crane:
+## the hook runs out to the boom's end and down until it TOUCHES the crate's ring (nothing moves before), lifts it out of the water, trolleys
+## in along the boom and sets it on the landing pad; the crate rides the hook's grip frame the whole way. Then both men walk to its two ends,
+## close a hand on each end's handle (arm IK) and only when both hands are measured on it do they lift it and carry it between them,
+## walking, through the warehouse door. Deck-local offsets (from DOCK_DECK).
+const HOOK_TIP := Vector3(8.4, 5.78, 0.0)     # the boom's end (the sheave): where the hook comes down over the water
+const HOOK_REST_Y := 1.88                    # the hook's height over the deck at rest
+const HOOK_PAD := Vector3(4.8, 0.05, 0.0)    # the landing pad under the boom
+const HOOK_SPEED := 1.4                      # m/s down, up and along the boom
+const HOOK_LIFT := 1.6                       # how high over the deck the crate is lifted before it comes in
+const HOOK_CONTACT := 0.04                   # the hook is ON the ring within this
+const CARRY_SPEED := 1.05                    # m/s, two men with a crate between them
+const CARRY_SIDE := 0.34                     # from a man's centre to the handle he holds
+const HAND_CONTACT := 0.07                   # a hand is ON its handle within this
+const LEAN_REACH := 0.3                      # a man bends at the waist this much further to a handle (the IK's spine lean)
+const UTAH_CRANE := Vector3(0.5, 0.0, 1.8)   # where he stands to work the crane
 
 var _river_pts := PackedVector3Array()
 var _river_arc := PackedFloat32Array()
@@ -154,6 +170,28 @@ var _rich: Ep2TownFolk
 var _rich_state: String = ""        # "" -> arrive -> watch -> to_crate -> lift -> carry -> gone
 var _rich_t: float = 0.0
 var _crate_carried: bool = false
+var _crane_rope: Node3D = null
+var _crane_hook: Node3D = null
+var _hoist: String = ""                       # "" -> lower -> lift -> traverse -> set -> done
+var _hook_at: Vector3 = Vector3.ZERO           # the hook's ring, world
+var _ring_off: Vector3 = Vector3.ZERO          # the crate's lifting ring from its origin (its top)
+var _crate_half: Vector3 = Vector3(0.5, 0.4, 0.4)
+var _set_at: float = -1.0                      # dock time the crate was set on the pad
+var _utah_state: String = ""                   # "" -> arrive -> crane -> to_crate -> grip -> carry -> gone
+var _carry_c: Vector3 = Vector3.ZERO           # the two-man carry: the crate's centre on the deck (world)
+var _carry_dir: Vector3 = Vector3.FORWARD
+var _carry_side: Vector3 = Vector3.RIGHT
+var _carry_lift: float = 0.0
+var _ik_carry: Dictionary = {}                 # "rich"/"utah" -> Ep2ArmIK (Rich's right hand, Utah's left)
+## Evidence (tests): the hook's distance from the ring when it took hold, any crate move before a contact, the worst hand shortfall carried
+var hook_contact_d: float = INF
+var crate_moved_early: bool = false
+var carry_worst_hand: float = 0.0
+var hands_on_at_lift: float = INF
+var carry_frames: int = 0
+var carry_walk_frames: int = 0               # frames both men were in their walk clip while the crate moved
+var both_on_dock: bool = false               # Rich and Utah were both on the deck when the crate was set
+var _carry_yaw_hoist: float = 0.0
 var _carry_reach: float = 0.5               # metres from his centre to the crate's centre while he holds it
 var _carry_yaw: float = 0.0                  # the crate's turn against his facing: its narrow side against his chest
 var _dock_t: float = -1.0
@@ -990,6 +1028,7 @@ func _build_dock() -> void:
 	_box(Vector3(0.06, 0.4, 0.24), DOCK_DECK + Vector3(8.4, 5.95, 0), iron, root)
 	var rope := _box(Vector3(0.05, 4.0, 0.05), DOCK_DECK + Vector3(8.4, 4.0, 0), rope_mat, root)
 	rope.name = "CraneRope"
+	_crane_rope = rope
 	var hook := MeshInstance3D.new()
 	var hm := TorusMesh.new()
 	hm.inner_radius = 0.07
@@ -998,7 +1037,9 @@ func _build_dock() -> void:
 	hook.material_override = iron
 	hook.rotation.x = PI * 0.5
 	hook.position = DOCK_DECK + Vector3(8.4, 1.88, 0)
+	hook.name = "CraneHook"
 	root.add_child(hook)
+	_crane_hook = hook
 	# the receiving warehouse on its stone footing, its doors to the deck; the dock's sign on its gable over the doors
 	var sign_at: Vector3 = DOCK_DECK + Vector3(-6.4, 2.6, 0)
 	var sign_board: Material = timber
@@ -1046,6 +1087,18 @@ func _build_dock_plain() -> void:
 	_box(Vector3(5.5, 0.28, 0.28), DOCK_DECK + Vector3(6.0, 6.0, 0), dark, root)
 	var rope := _box(Vector3(0.05, 4.0, 0.05), DOCK_DECK + Vector3(8.4, 4.0, 0), _mat(Color(0.72, 0.62, 0.42)), root)
 	rope.name = "CraneRope"
+	_crane_rope = rope
+	var plain_hook := MeshInstance3D.new()
+	var phm := TorusMesh.new()
+	phm.inner_radius = 0.07
+	phm.outer_radius = 0.15
+	plain_hook.mesh = phm
+	plain_hook.material_override = dark
+	plain_hook.rotation.x = PI * 0.5
+	plain_hook.position = DOCK_DECK + Vector3(8.4, HOOK_REST_Y, 0)
+	plain_hook.name = "CraneHook"
+	root.add_child(plain_hook)
+	_crane_hook = plain_hook
 	_wall_sign(root, "DAY-88 DOCK", DOCK_DECK + Vector3(-6.46, 2.6, 0), Vector2(2.6, 0.6), wood)
 
 
@@ -1073,7 +1126,8 @@ func _build_utah() -> void:
 	_visuals.add_child(_utah)
 	var path: String = Ep2Extras.UTAH if Ep2Extras.has(Ep2Extras.UTAH) else GoldTownChamber.UTAH_MODEL
 	_utah.setup(path, UTAH_HEIGHT, Color(0.28, 0.33, 0.34))
-	_utah.position = DOCK_DECK + Vector3(-9, 0, 3.2)
+	_utah.use_height = true                           # on the deck's boards, like Rich (never settled 1.2 m under them)
+	_utah.place(DOCK_DECK + Vector3(-9, 0, 3.2))
 	_utah.visible = false
 
 
@@ -1102,13 +1156,7 @@ func _rich_to_dock() -> void:
 
 
 func _rich_move(target: Vector3, delta: float) -> bool:
-	var flat: Vector3 = Vector3(target.x - _rich.position.x, 0.0, target.z - _rich.position.z)
-	if flat.length() < 0.08:
-		return true
-	_rich.face_point(target)
-	_rich.position += flat.normalized() * minf(RICH_SPEED * delta, flat.length())
-	_rich.play_clip("Walk")
-	return false
+	return _folk_walk(_rich, target, delta)
 
 
 func _tick_rich(delta: float) -> void:
@@ -1123,36 +1171,23 @@ func _tick_rich(delta: float) -> void:
 				_rich.play_clip("Idle")
 		"watch":
 			_rich.face_point(OVERLOOKS[2])                       # his eyes on the ridge: he sees the shoot out
-			# the crane has set the crate on the deck (the crate's own landing, _place_crate): now it is his
-			if _beat == Beat.DOCK and _dock_t >= 2.4:
+			# the crane has set the crate on the pad (_tick_hoist): now it is theirs
+			if _beat == Beat.DOCK and _hoist == "done":
 				_rich_state = "to_crate"
 		"to_crate":
-			if _rich_move(DOCK_DECK + RICH_CRATE_SIDE, delta):
+			if _rich_move(_carry_spot(-1.0), delta):
 				_rich_state = "lift"
 				_rich_t = 0.0
 				_carry_reach = _crate_carry_reach()
-				_rich.face_point(_crate.position if _crate != null else DOCK_DECK)
-				_rich.play_clip("Talk")
+				_rich.face_point(_rich.position + _carry_dir)
+				_rich.play_clip("Idle")
 				_rich_says()
-		"lift":
-			var k: float = smoothstep(0.0, 1.0, clampf(_rich_t / RICH_LIFT_S, 0.0, 1.0))
-			if _crate != null:
-				_crate_carried = true
-				var carry_at: Vector3 = _rich.position + fwd * _carry_reach + Vector3(0.0, RICH_CARRY_UP, 0.0)
-				_crate.position = _crate.position.lerp(carry_at, k)
-				_crate.rotation.y = lerp_angle(_crate.rotation.y, _rich.rotation.y + _carry_yaw, k)
-			if _rich_t >= RICH_LIFT_S:
-				_rich_state = "carry"
-		"carry":
-			var arrived: bool = _rich_move(DOCK_DECK + RICH_DOOR, delta)
-			if _crate != null:
-				_crate.position = _rich.position + Vector3(sin(_rich.rotation.y), 0.0, cos(_rich.rotation.y)) * _carry_reach + Vector3(0.0, RICH_CARRY_UP, 0.0)
-				_crate.rotation = Vector3(0.0, _rich.rotation.y + _carry_yaw, 0.0)
-			if arrived:
-				_rich_state = "gone"
-				_rich.visible = false
-				if _crate != null:
-					_crate.visible = false                           # in through the warehouse door with him
+		"lift", "carry":
+			# both ends held before it moves (Utah too: he waits at his end until Rich is at his)
+			if _utah == null or _utah_state in ["grip", "carry"]:
+				_tick_carry(delta)
+	if _rich_state == "gone":
+		return
 	_rich.step(delta)
 
 
@@ -1742,14 +1777,11 @@ func _bears_aboard() -> int:
 
 ## The crate on the water: bobbing, turning with the current, heeling over as bears haul on it.
 func _place_crate(_delta: float) -> void:
-	if _crate_carried:
-		return                                           # Rich has it: _tick_rich places it
+	if _crate_carried or _hoist != "":
+		return                                           # the crane has it, then Rich and Utah (_tick_hoist / _tick_carry)
 	var p: Vector3 = river_point(_crate_s)
 	var d: Vector3 = river_dir(_crate_s)
 	_crate.position = p + Vector3(0, 0.18 + 0.06 * sin(_anim_t * 2.1), 0)
-	if _beat == Beat.DOCK and _dock_t >= 0.0:
-		var k: float = clampf(_dock_t / 2.4, 0.0, 1.0)
-		_crate.position = _crate.position.lerp(DOCK_DECK + Vector3(1.0, 0.05, 0), smoothstep(0.0, 1.0, k))
 	var heel: float = deg_to_rad(28.0) * clampf(_crate_board / BOARD_TIME, 0.0, 1.0)
 	_crate.rotation = Vector3(0.03 * sin(_anim_t * 1.7), atan2(d.x, d.z), 0.04 * sin(_anim_t * 1.3) + heel)
 
@@ -2458,27 +2490,22 @@ func _utah_arrives() -> void:
 
 
 func _tick_dock(delta: float) -> void:
-	if _utah_t >= 0.0 and _utah != null:
-		_utah_t += delta
-		var from: Vector3 = DOCK_DECK + Vector3(-9, 0, 3.2)
-		var to: Vector3 = DOCK_DECK + Vector3(0.5, 0, 1.8)
-		var k: float = clampf(_utah_t / 3.0, 0.0, 1.0)
-		_utah.position = from.lerp(to, k)
-		if k >= 1.0 and _utah_t < 3.1:
-			_utah.play_clip("Idle")
-			_utah.face_point(_crate.position if _crate != null else to)
-	# the crate rides the last stretch to the crane, then swings up onto the deck
+	_tick_utah(delta)
+	# the crate rides the last stretch to the crane, under the boom's end, and waits there for the hook
 	if _crate_s < river_s_of(DOCK_POINT) - 0.05:
 		_crate_s = minf(_crate_s + 2.0 * delta, river_s_of(DOCK_POINT))
 		return
 	if _dock_t < 0.0:
 		_dock_t = 0.0
-	var before: float = _dock_t
+	if _crate != null and _hoist == "":
+		_begin_hoist()
 	_dock_t += delta
-	if before < 2.4 and _dock_t >= 2.4:
+	_tick_hoist(delta)
+	if _set_at >= 0.0 and _dock_t - delta < _set_at + 0.2 and _dock_t >= _set_at + 0.2:
 		_hand_off_line()
-	var rich_done: bool = _rich == null or _rich_state in ["", "gone"] or _dock_t > 2.4 + _line_len() + 0.6 + RICH_COLLECT_MAX
-	if _dock_t >= 2.4 + _line_len() + 0.6 and rich_done:
+	var since: float = (_dock_t - _set_at) if _set_at >= 0.0 else -1.0
+	var rich_done: bool = _rich == null or _rich_state in ["", "gone"] or since > _line_len() + 0.8 + RICH_COLLECT_MAX
+	if since >= _line_len() + 0.8 and rich_done:
 		_set_tabs_live(false)
 		_advance_to(Beat.DONE)
 		# founder brief 2026-11-08: Utah has it - back to Logan's Lake, where his horse is already drinking, then the road to the auction.
@@ -2487,6 +2514,255 @@ func _tick_dock(delta: float) -> void:
 		prebuild_requested.emit("logans_lake")          # built off screen during the walk: the lake's first frame never waits on a build
 		if _hud != null:
 			_hud.objective = "Utah has the Shipment. Walk back up the ridge to Logan's Lake: your horse is at the water."
+
+
+# --- the crane: the hook takes hold before anything moves ------------------------------------------------------------------------
+
+func _begin_hoist() -> void:
+	_place_crate(0.0)                                  # where the river has it now (under the boom), before the crane owns it
+	# the crate's own size (the shipment model, not its pennant pole) and its lifting ring on its top
+	var piece: Node3D = _crate.get_child(0) as Node3D if _crate.get_child_count() > 0 and _crate.get_child(0) is Node3D else null
+	if piece != null:
+		var box: AABB = piece.transform * Ep2ArmoryShop._bounds(piece)
+		var sc: Vector3 = _crate.scale
+		_crate_half = Vector3(box.size.x * sc.x, box.size.y * sc.y, box.size.z * sc.z) * 0.5
+		var c: Vector3 = box.get_center() * sc
+		_ring_off = Vector3(c.x, box.end.y * sc.y, c.z + 0.22)
+	else:
+		_ring_off = Vector3(0, _crate_half.y * 2.0, 0.22)
+	_crate.rotation = Vector3(0.0, _crate.rotation.y, 0.0)
+	# the heading it will be carried on (its long side across the way, a handle at each end for the two men)
+	var pad: Vector3 = DOCK_DECK + HOOK_PAD
+	var to_door := Vector3(DOCK_DECK.x + RICH_DOOR.x - pad.x, 0.0, DOCK_DECK.z + RICH_DOOR.z - pad.z).normalized()
+	_carry_yaw_hoist = atan2(to_door.x, to_door.z) + (0.0 if _crate_half.x >= _crate_half.z else PI * 0.5)
+	_hoist = "lower"
+	_hook_at = DOCK_DECK + Vector3(HOOK_TIP.x, HOOK_REST_Y, HOOK_TIP.z)
+
+
+func _tick_hoist(delta: float) -> void:
+	if _hoist == "" or _hoist == "done" or _crate == null:
+		return
+	var ring: Vector3 = _crate.position + _crate.basis * _ring_off          # the room's own frame, like the hook
+	match _hoist:
+		"lower":
+			# the crate waits under the boom (it does not move); the hook comes down onto its ring
+			var before: Vector3 = _crate.position
+			# along the boom to over the ring first, then straight down onto it
+			var over := Vector3(ring.x, _hook_at.y, ring.z)
+			_hook_at = _hook_at.move_toward(over if Vector2(_hook_at.x - ring.x, _hook_at.z - ring.z).length() > 0.005 else ring, HOOK_SPEED * delta)
+			if _hook_at.distance_to(ring) <= HOOK_CONTACT:
+				hook_contact_d = _hook_at.distance_to(ring)
+				_hoist = "lift"
+			if _crate.position != before:
+				crate_moved_early = true
+		"lift":
+			_hook_at.y = minf(_hook_at.y + HOOK_SPEED * delta, DOCK_DECK.y + HOOK_LIFT + _ring_off.y)
+			if _hook_at.y >= DOCK_DECK.y + HOOK_LIFT + _ring_off.y - 0.001:
+				_hoist = "traverse"
+		"traverse":
+			var pad_over := Vector3(DOCK_DECK.x + HOOK_PAD.x, _hook_at.y, DOCK_DECK.z + HOOK_PAD.z)
+			_hook_at = _hook_at.move_toward(pad_over, HOOK_SPEED * delta)
+			if _hook_at.distance_to(pad_over) < 0.001:
+				_hoist = "set"
+		"set":
+			var down_y: float = DOCK_DECK.y + HOOK_PAD.y + _ring_off.y
+			_hook_at.y = maxf(_hook_at.y - HOOK_SPEED * 0.6 * delta, down_y)
+			if _hook_at.y <= down_y + 0.001:
+				_hoist = "done"
+				_set_at = _dock_t
+				both_on_dock = _rich != null and _rich.visible and _utah != null and _utah.visible
+				_carry_c = DOCK_DECK + HOOK_PAD
+	if _hoist in ["traverse", "set"]:
+		# the rope turns it as it comes in, to the heading the men will carry it on
+		_crate.rotation.y = lerp_angle(_crate.rotation.y, _carry_yaw_hoist, minf(1.0, delta * 1.5))
+	if _hoist == "done":
+		_crate.rotation.y = _carry_yaw_hoist
+	if _hoist in ["lift", "traverse", "set", "done"]:
+		# held: the crate hangs in the hook's grip frame (its ring on the hook), level
+		_crate.position = _hook_at - _crate.basis * _ring_off
+	if _hoist == "done":
+		_hook_at.y += 0.3                               # the hook lets go and lifts clear
+	_sync_crane()
+
+
+## The rope from the boom straight down to the hook, the hook at its point.
+func _sync_crane() -> void:
+	if _crane_hook != null:
+		_crane_hook.position = _hook_at + Vector3(0, 0.08, 0)
+	if _crane_rope != null:
+		var top_y: float = DOCK_DECK.y + HOOK_TIP.y
+		var len: float = maxf(0.05, top_y - _hook_at.y)
+		_crane_rope.position = Vector3(_hook_at.x, _hook_at.y + len * 0.5, _hook_at.z)
+		_crane_rope.scale = Vector3(1.0, len / 4.0, 1.0)
+
+
+func hoist_state() -> String: return _hoist
+
+
+# --- Utah: out of the warehouse, to the crane, then to his end of the crate ------------------------------------------------------
+
+func _tick_utah(delta: float) -> void:
+	if _utah == null or not _utah.visible or _utah_state in ["gone", "door"]:
+		if _utah != null and _utah_state == "door":
+			_utah.step(delta)
+		return
+	if _utah_state == "":
+		_utah_state = "arrive"
+	match _utah_state:
+		"arrive":
+			if _folk_walk(_utah, DOCK_DECK + UTAH_CRANE, delta):
+				_utah_state = "crane"
+				_utah.play_clip("Idle")
+		"crane":
+			_utah.face_point(_hook_at if _hoist != "" else DOCK_DECK + HOOK_TIP)
+			if _hoist == "done":
+				_utah_state = "to_crate"
+		"to_crate":
+			if _folk_walk(_utah, _carry_spot(1.0), delta):
+				_utah_state = "grip"
+				_utah.face_point(_utah.position + _carry_dir)
+				_utah.play_clip("Idle")
+		"grip", "carry":
+			pass                                        # _tick_carry moves him with Rich
+	_utah.step(delta)
+
+
+## Walk `folk` toward `target` on the deck (his own walk clip, at walking pace): true when he is there.
+func _folk_walk(folk: Ep2TownFolk, target: Vector3, _delta: float) -> bool:
+	var flat := Vector3(target.x - folk.position.x, 0.0, target.z - folk.position.z)
+	if flat.length() < 0.12:
+		if folk.is_walking():
+			folk.stop()
+		return true
+	# his own locomotion (Ep2TownFolk.step: the feet go where the body faces, the walk clip at the matching speed), never a slide
+	folk.walk_to(Vector3(target.x, DOCK_DECK.y, target.z), RICH_SPEED)
+	return false
+
+
+## Where each man stands to carry: either end of the crate across the way to the door (-1 Rich, +1 Utah).
+func _carry_spot(side: float) -> Vector3:
+	_carry_dir = Vector3(DOCK_DECK.x + RICH_DOOR.x - _carry_c.x, 0.0, DOCK_DECK.z + RICH_DOOR.z - _carry_c.z).normalized()
+	_carry_side = _carry_dir.cross(Vector3.UP).normalized()       # his right as he faces the door
+	var reach: float = maxf(_crate_half.x, _crate_half.z) + CARRY_SIDE
+	var at: Vector3 = _carry_c + _carry_side * side * reach
+	at.y = DOCK_DECK.y
+	return at
+
+
+## The handle at one end of the crate (-1 Rich's end, +1 Utah's), world.
+func _handle(side: float) -> Vector3:
+	# the end handles ride near the crate's top edge (a rope grip), where a man bending over it takes hold
+	var local: Vector3 = _crate.position + _carry_side * side * (maxf(_crate_half.x, _crate_half.z) + 0.03) + Vector3(0, _crate_half.y * 1.7, 0)
+	return _visuals.global_transform * local if _visuals != null and _visuals.is_inside_tree() else local
+
+
+func _carry_ik(folk: Ep2TownFolk, key: String, hand_side: String) -> Ep2ArmIK:
+	if _ik_carry.has(key):
+		return _ik_carry[key]
+	if folk == null or folk.model == null:
+		return null
+	var found: Array = folk.model.find_children("*", "Skeleton3D", true, false)
+	if found.is_empty():
+		return null
+	var sk: Skeleton3D = found[0]
+	var SOLVE = preload("res://src/episode2/actors/ep2_ranch_pose.gd")
+	var ik := Ep2ArmIK.new()
+	ik.name = "CrateReach" + hand_side
+	ik.side = hand_side
+	var names := PackedStringArray()
+	for part in [hand_side + "Arm", hand_side + "ForeArm", hand_side + "Hand", "Hips"]:
+		var b: int = SOLVE._find(sk, part)
+		if b < 0:
+			ik.free()
+			return null
+		names.append(sk.get_bone_name(b))
+	ik.bone_names = names
+	ik.influence = 0.0
+	sk.add_child(ik)
+	_ik_carry[key] = ik
+	return ik
+
+
+## How far `folk`'s `side` hand falls short of `target` (world): the distance from his shoulder less his arm's length (upper arm + forearm,
+## from the rig's rest), 0 when the handle is in his hand's reach. Measured on the body the clip has put there - the IK closes the rest.
+func _reach_short(folk: Ep2TownFolk, side: String, target: Vector3) -> float:
+	if folk == null or folk.model == null:
+		return 0.0
+	var found: Array = folk.model.find_children("*", "Skeleton3D", true, false)
+	if found.is_empty():
+		return 0.0
+	var sk: Skeleton3D = found[0]
+	var SOLVE = preload("res://src/episode2/actors/ep2_ranch_pose.gd")
+	var a: int = SOLVE._find(sk, side + "Arm")
+	var f: int = SOLVE._find(sk, side + "ForeArm")
+	var h: int = SOLVE._find(sk, side + "Hand")
+	if a < 0 or f < 0 or h < 0:
+		return 0.0
+	var g: Transform3D = sk.global_transform
+	var arm_len: float = (g * sk.get_bone_global_rest(f).origin).distance_to(g * sk.get_bone_global_rest(a).origin) \
+		+ (g * sk.get_bone_global_rest(h).origin).distance_to(g * sk.get_bone_global_rest(f).origin)
+	var shoulder: Vector3 = g * sk.get_bone_global_pose(a).origin
+	return maxf(0.0, shoulder.distance_to(target) - arm_len - LEAN_REACH)
+
+
+## Both men at their ends: hands to the handles; the crate rises only once BOTH hands are measured on them; then they carry it, walking
+## side by side with it between them, to the warehouse door.
+func _tick_carry(delta: float) -> void:
+	if _crate == null or _rich == null or _utah == null:
+		return
+	var rik: Ep2ArmIK = _carry_ik(_rich, "rich", "Right")
+	var uik: Ep2ArmIK = _carry_ik(_utah, "utah", "Left")
+	for pair in [[rik, -1.0], [uik, 1.0]]:
+		var ik: Ep2ArmIK = pair[0]
+		if ik == null:
+			continue
+		ik.reaching = true
+		ik.influence = move_toward(ik.influence, 1.0, delta * 2.2)
+		ik.target_world = _handle(float(pair[1]))
+		ik.lean_toward = ik.target_world
+		ik.spine_lean = 0.35 * ik.influence * (1.0 - _carry_lift * 0.7)       # bent over it to take hold, straighter once it is up
+	var r_short: float = _reach_short(_rich, "Right", _handle(-1.0))
+	var u_short: float = _reach_short(_utah, "Left", _handle(1.0))
+	var on: bool = (rik == null or (rik.influence >= 0.99 and r_short <= HAND_CONTACT)) and (uik == null or (uik.influence >= 0.99 and u_short <= HAND_CONTACT))
+	if _rich_state == "lift":
+		if on and _carry_lift == 0.0:
+			hands_on_at_lift = maxf(r_short, u_short)
+		if on or _carry_lift > 0.0:
+			_carry_lift = minf(1.0, _carry_lift + delta / RICH_LIFT_S)
+			_crate_carried = true
+		_crate.position = _carry_c + Vector3(0, RICH_CARRY_UP * smoothstep(0.0, 1.0, _carry_lift), 0)
+		if _carry_lift >= 1.0:
+			_rich_state = "carry"
+			_utah_state = "carry"
+	elif _rich_state == "carry":
+		carry_worst_hand = maxf(carry_worst_hand, maxf(r_short, u_short))
+		carry_frames += 1
+		if _rich.is_walking() and _utah.is_walking():
+			carry_walk_frames += 1
+		var door: Vector3 = DOCK_DECK + RICH_DOOR
+		var flat := Vector3(door.x - _carry_c.x, 0.0, door.z - _carry_c.z)
+		var stepv: Vector3 = flat.normalized() * minf(CARRY_SPEED * delta, flat.length())
+		_carry_c += stepv
+		_crate.position = _carry_c + Vector3(0, RICH_CARRY_UP, 0)
+		_crate.rotation = Vector3(0.0, _carry_yaw_hoist, 0.0)
+		for pair in [[_rich, -1.0], [_utah, 1.0]]:
+			var man: Ep2TownFolk = pair[0]
+			# each walks his own end along: his goal is a step ahead of where his end of the crate is going
+			man.walk_to(_carry_spot(float(pair[1])) + _carry_dir * 0.35, CARRY_SPEED)
+		if flat.length() < 0.1:
+			_rich_state = "gone"
+			_utah_state = "door"
+			_rich.stop()
+			_utah.stop()
+			_rich.visible = false                        # Rich stays in with it (he keeps the book)
+			_crate.visible = false                       # in through the warehouse door with them
+			# Utah steps back out onto the deck and looks up at the ridge: the dock's man, the shipment safe behind him
+			_utah.position = DOCK_DECK + RICH_DOOR + Vector3(1.4, 0.0, -0.4)
+			_utah.face_point(OVERLOOKS[2])
+			_utah.play_clip("Idle")
+			for ik in _ik_carry.values():
+				(ik as Ep2ArmIK).influence = 0.0
+				(ik as Ep2ArmIK).reaching = false
 
 
 func _hand_off_line() -> void:

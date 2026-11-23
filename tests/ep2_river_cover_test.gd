@@ -206,6 +206,15 @@ func _test_full_run() -> void:
 	check("the lake goes on from where he stands on its path (same point, same heading)", hand.has("lake_player")
 		and ((hand["lake_player"] as Vector3) + RiverCoverChamber.LAKE_OFFSET).distance_to(c._player_pos) < 0.01 and is_equal_approx(float(hand.get("lake_yaw", 99.0)), c._look_yaw), str(hand))
 	check("Rich collected the shipment: he lifted the crate and carried it off the dock (a visible beat, not a line)", c.crate_collected() and c.get_crate() != null and not c.get_crate().visible)
+	# founder 2026-11-22 "We need both Rich and Utah to fetch the shipment": the hook takes hold before anything moves, then both carry it
+	check("the crane's hook was ON the crate's ring before the crate moved (%.3f m), and nothing moved it earlier" % c.hook_contact_d,
+		c.hook_contact_d <= RiverCoverChamber.HOOK_CONTACT and not c.crate_moved_early and c.hoist_state() == "done")
+	check("Rich and Utah were both on the dock when it was set down", c.both_on_dock)
+	check("it rose off the pad only with both men's hands on its handles (worst %.3f m)" % c.hands_on_at_lift, c.hands_on_at_lift <= RiverCoverChamber.HAND_CONTACT)
+	check("they carried it together, walking (no glide: %d of %d frames in their walk), hands on it all the way (worst %.3f m)" % [c.carry_walk_frames, c.carry_frames, c.carry_worst_hand],
+		c.carry_frames > 60 and c.carry_walk_frames >= c.carry_frames - 2 and c.carry_worst_hand <= RiverCoverChamber.HAND_CONTACT)
+	check("the crate went in through the warehouse door, and Utah is back out on the deck", c.get_crate().position.distance_to(RiverCoverChamber.DOCK_DECK + RiverCoverChamber.RICH_DOOR) < 1.2
+		and c.utah_visible())
 	check("Logan stays at his lake", c.find_child("Logan", true, false) == null)
 	check("the Shipment is still his (logistics gear, never confiscated or spent)", st.river_gear)
 	c.free()
