@@ -228,6 +228,9 @@ func _ready() -> void:
 	check("checker A is the claim clerk when his model is in the pack (the old clerk until then)", clerk != null
 		and ResourceLoader.exists(AuctionRoadChamber.clerk_model_path())
 		and (AuctionRoadChamber.clerk_model_path() == Ep2Extras.CHECKER_A) == ResourceLoader.exists(Ep2Extras.CHECKER_A), AuctionRoadChamber.clerk_model_path())
+	# founder ruling 2026-11-23: the certificate officer on the wagon's left is his "Certificate man 2", standing; the bald worker is only the stand-in
+	check("the certificate officer at the claim wagon is the founder's Certificate man 2, not the bald worker", AuctionRoadChamber.officer_model_path() == Ep2Extras.CHECKER_B
+		and AuctionRoadChamber.CLAIM_LINES.any(func(r): return r[0] == "CERTIFICATE OFFICER") and not AuctionRoadChamber.CLAIM_LINES.any(func(r): return r[0] == "CLAIMANT"), AuctionRoadChamber.officer_model_path())
 	check("checker B is the hall doorman when his model is in the pack (the rancher until then)", house._doorman != null and house._doorman.has_clips()
 		and (Ep2AuctionHouse.doorman_model() == Ep2Extras.CHECKER_B) == ResourceLoader.exists(Ep2Extras.CHECKER_B), Ep2AuctionHouse.doorman_model())
 	check("the band is five, or not there at all (never a part-band or stand-in faces)",

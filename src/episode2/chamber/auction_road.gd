@@ -48,12 +48,12 @@ const BOLT_SECONDS := 3.6
 const HORSE_CLIP_SPEED := 1.9
 const PERSON_HEIGHT := 1.78
 const CLERK_MODEL := "res://src/episode2/extras/people/townsman_clerk.glb"
-const CLAIMANT_MODEL := "res://src/episode2/extras/people/townsman_bald_worker.glb"
+const CLAIMANT_MODEL := "res://src/episode2/extras/people/townsman_bald_worker.glb"   # stand-in until the officer's GLB is in the pack
 const WAGON_MODEL := "res://src/episode2/assets/town/donkey_cart.glb"
 const CLAIM_LINES := [
 	["CLAIM CLERK", "Hold up, rider. Claim office business - licenses before the auction. Let's see the paper."],
 	["LIL BLUNT", "Mike Dean's four. Signed and hanging on his wall. And this horse is paid for."],
-	["CLAIMANT", "Papers don't hurry a dead axle. The big ones are already taking numbers at the auction - day-eighty-eight's got everybody moving."],
+	["CERTIFICATE OFFICER", "Papers don't hurry a dead axle. The big ones are already taking numbers at the auction - day-eighty-eight's got everybody moving."],
 	["CLAIM CLERK", "You're in order. Ride on, and mind the birds past the bend. Something died out there."],
 ]
 const SPOOK_LINE := "LIL BLUNT: Whoa - easy, easy! It's just birds... and a whole lot of dust."
@@ -362,9 +362,15 @@ func _build_people() -> void:
 	var clerk_model: String = clerk_model_path()
 	if _clerk == null and Ep2Extras.has(clerk_model):
 		_clerk = _person("ClaimClerk", clerk_model, at(CLAIM_S - 2.6, -2.2))
-	if _claimant == null and Ep2Extras.has(CLAIMANT_MODEL):
-		_claimant = _person("Claimant", CLAIMANT_MODEL, at(CLAIM_S + 0.5, 3.4))
-		_claimant.hold_clip("Rest")
+	if _claimant == null and Ep2Extras.has(officer_model_path()):
+		# founder 2026-11-23: the certificate officer on the left of the wagon is his "Certificate man 2", not the bald worker; he stands
+		_claimant = _person("CertificateOfficer", officer_model_path(), at(CLAIM_S + 0.5, 3.4))
+		_claimant.hold_clip("Idle")
+
+
+## The certificate officer beside the wagon (founder ruling 2026-11-23): his second certificate man once his GLB is in the pack.
+static func officer_model_path() -> String:
+	return Ep2Extras.CHECKER_B if ResourceLoader.exists(Ep2Extras.CHECKER_B) else CLAIMANT_MODEL
 
 
 ## The claim clerk: the founder's new checker (2026-11-16) once his GLB is in the pack, the old clerk until then.
@@ -560,7 +566,7 @@ func _next_claim_line() -> void:
 	var row: Array = CLAIM_LINES[_claim_line]
 	_caption("%s: %s" % [row[0], row[1]], 4.2)
 	_claim_t = 4.2
-	var speaker: Ep2TownFolk = _clerk if row[0] == "CLAIM CLERK" else (_claimant if row[0] == "CLAIMANT" else null)
+	var speaker: Ep2TownFolk = _clerk if row[0] == "CLAIM CLERK" else (_claimant if row[0] == "CERTIFICATE OFFICER" else null)
 	if speaker != null and not _down.has(speaker.name):
 		speaker.play_clip("Talk")
 
