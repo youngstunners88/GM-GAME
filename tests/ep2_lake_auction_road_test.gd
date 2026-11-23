@@ -179,9 +179,48 @@ func _ready() -> void:
 	check("five visitor rigs stand outside, all four reference styles", house.visitors.size() == 5 and kinds.size() == 4, str(kinds.keys()))
 	check("every visitor rig's wheels and hooves are on the ground", grounded and not house.visitors.is_empty(), str(floors))
 	check("the visitor rigs sit clear of the lamp-lit road into the hall", off_road and not house.visitors.is_empty())
-	check("the working teams stand at horse height and the palace carriage towers over them",
-		heights.size() == 4 and absf(float(heights["visitor_common_pair"]) - 2.25) < 0.2 and absf(float(heights["visitor_common_single"]) - 2.25) < 0.2
+	check("the working rigs stand at horse-and-wagon height and the palace carriage towers over them",
+		heights.size() == 4 and float(heights["visitor_common_pair"]) > 1.9 and float(heights["visitor_common_pair"]) < 3.2
+		and float(heights["visitor_common_single"]) > 1.9 and float(heights["visitor_common_single"]) < 3.2
 		and float(heights["visitor_royal_palace"]) > 7.0, str(heights))
+	# 8c. option-5 rebuild (founder 2026-11-23): real horses hitched in harness, gilt is reflecting metal, nothing glows
+	var teams := {}
+	var harnessed := true
+	var idling := true
+	var plumes := {}
+	var glow := false
+	var gilt_metal := false
+	for rig in house.visitors:
+		var k2: String = str(rig.name).trim_prefix("Visitor_").rsplit("_", true, 1)[0]
+		var horses: Array = (rig as Node).find_children("TeamHorse*", "Node3D", false, false)
+		teams[k2] = horses.size()
+		for h in horses:
+			var hm: Array = (h as Node).find_children("Harness", "MeshInstance3D", true, false)
+			harnessed = harnessed and hm.size() == 1 and (hm[0] as MeshInstance3D).skin != null and (hm[0] as MeshInstance3D).get_node_or_null((hm[0] as MeshInstance3D).skeleton) is Skeleton3D
+			if hm.size() == 1:
+				var hmesh: Mesh = (hm[0] as MeshInstance3D).mesh
+				for si in hmesh.get_surface_count():
+					if (hmesh as ArrayMesh).surface_get_name(si).begins_with("Plume"):
+						plumes[k2] = true
+			var aps: Array = (h as Node).find_children("*", "AnimationPlayer", true, false)
+			idling = idling and not aps.is_empty() and (aps[0] as AnimationPlayer).is_playing()
+		for mi in (rig as Node).find_children("*", "MeshInstance3D", true, false):
+			var node: MeshInstance3D = mi
+			if node.mesh == null:
+				continue
+			for si in node.mesh.get_surface_count():
+				var m: Material = node.get_active_material(si)
+				if m is BaseMaterial3D and (m as BaseMaterial3D).emission_enabled:
+					glow = true
+				if m == Ep2CarriageLook.material("Gilt") and m is ShaderMaterial and float((m as ShaderMaterial).get_shader_parameter("base_refl")) >= 1.0:
+					gilt_metal = true
+	check("each carriage has its own team of real, separate horses (palace 4, coach 4, pair 2, single 1)",
+		teams.get("visitor_royal_palace", 0) == 4 and teams.get("visitor_royal_coach", 0) == 4 and teams.get("visitor_common_pair", 0) == 2
+		and teams.get("visitor_common_single", 0) == 1, str(teams))
+	check("every team horse wears harness skinned to its own skeleton and idles on its own", harnessed and idling and not teams.is_empty())
+	check("the royal teams wear plumes, the working teams do not",
+		plumes.has("visitor_royal_palace") and plumes.has("visitor_royal_coach") and not plumes.has("visitor_common_pair") and not plumes.has("visitor_common_single"), str(plumes.keys()))
+	check("the palace gilt is reflecting metal and no carriage surface glows", gilt_metal and not glow)
 	var road_clear := true
 	for zi in range(-44, 0, 2):
 		var on_road: Vector3 = house.collide(Vector3(0.0, 0, float(zi)))

@@ -94,6 +94,21 @@ func _ready() -> void:
 			var eye_v: Vector3 = road.from_house(row[1])
 			var tgt_v: Vector3 = road.from_house(row[2])
 			shots.append([row[0], eye_v, atan2(tgt_v.x - eye_v.x, tgt_v.z - eye_v.z), row[3], 0.4])
+	if OS.get_cmdline_user_args().has("chariots"):  # 2026-11-23 option-5 rebuild: the sheet's three angles + palace wheel/door, the coach, the buckboard, the teams
+		shots = []
+		for row in [["50_from_porch", Vector3(3.0, 0, -4.0), Vector3(10.0, 0, -24.0), 0.05],
+				["51_from_gate", Vector3(0.0, 0, -46.0), Vector3(6.0, 0, -14.0), 0.06],
+				["52_right_side", Vector3(2.5, 0, -21.0), Vector3(14.0, 0, -17.0), 0.1],
+				["53_palace_wide", Vector3(6.0, 0, -21.0), Vector3(17.0, 0, -9.0), 0.28],
+				["54_palace_wheel", Vector3(13.4, 0, -15.2), Vector3(15.4, 0, -12.9), -0.38],
+				["55_palace_door", Vector3(11.6, 0, -9.0), Vector3(16.0, 0, -11.0), 0.08],
+				["56_coach", Vector3(5.0, 0, -28.0), Vector3(9.0, 0, -24.0), 0.0],
+				["57_buckboard", Vector3(-7.0, 0, -11.2), Vector3(-10.5, 0, -8.0), -0.22],
+				["58_pair", Vector3(5.4, 0, -38.5), Vector3(9.2, 0, -34.0), -0.05],
+				["59_palace_team", Vector3(9.0, 0, -1.5), Vector3(17.0, 0, -6.0), -0.08]]:
+			var eye_h: Vector3 = road.from_house(row[1])
+			var tgt_h: Vector3 = road.from_house(row[2])
+			shots.append([row[0], eye_h, atan2(tgt_h.x - eye_h.x, tgt_h.z - eye_h.z), row[3], 0.4])
 	if OS.get_cmdline_user_args().has("crowd"):     # 2026-11-21 five MPFB2 extras (crowd_extras.gd): where they stand, clapping on a swell
 		shots = []
 		for row in [["38_extras_from_door", Vector3(0.0, 0, 3.6), Vector3(0.0, 0, 20.0), 0.02],

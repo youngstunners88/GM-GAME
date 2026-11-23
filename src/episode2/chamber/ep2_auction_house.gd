@@ -43,9 +43,13 @@ const VISITORS := [
 	["visitor_common_single", Vector3(-10.5, 0, -8.0), 0.1],
 	["visitor_common_single", Vector3(-10.4, 0, -35.5), -0.14],
 ]
-## Footprint half-extents (x, z) of each rig as built (tools: .farm/chariots prep, 2026-11-20), less a little so the push is not early.
-const VISITOR_HALF := {"visitor_royal_palace": Vector2(2.6, 4.6), "visitor_royal_coach": Vector2(1.0, 3.1),
-	"visitor_common_pair": Vector2(0.9, 2.7), "visitor_common_single": Vector2(1.05, 2.25)}
+## Footprint half-extents (x, z) of each carriage body as built (tools/ep2_blender/build_visitor_carriages.py, 2026-11-23); each horse is its own solid.
+const VISITOR_HALF := {"visitor_royal_palace": Vector2(1.9, 3.2), "visitor_royal_coach": Vector2(1.15, 2.4),
+	"visitor_common_pair": Vector2(1.05, 2.0), "visitor_common_single": Vector2(0.95, 2.0)}
+## Each rig's team (founder brief 2026-11-23 option 5): coats in hitch order, and whether it wears the royal harness (black + gilt, plumes).
+const VISITOR_TEAM := {"visitor_royal_palace": [["white", "white", "white", "white"], true],
+	"visitor_royal_coach": [["black", "black", "black", "black"], true],
+	"visitor_common_pair": [["brown", "palomino"], false], "visitor_common_single": [["brown", "palomino"], false]}
 const HALL_POOL := 2.6                             # chandelier pool energy; the stage keeps 2.4 over a 9 m pool plus the 6.0 key, so the block stays brightest
 const HALL_WARM := Color(1.0, 0.76, 0.5)            # lamplight, a little less orange than the porch so faces read
 const MURMUR_OFF := -40.0                           # before he is in the hall
@@ -388,12 +392,13 @@ func _furnish() -> void:
 	_visitors()
 
 
-## The claim-night visitors' rigs parked on the grounds (founder brief 2026-11-20, four reference images): the gold palace carriage
-## in the rich spot beside the hall, the black-and-gold coach, and the working carriages near the gate. Each GLB is one fused
-## team + carriage, horses toward local +Z, scaled so the horses stand at the stable horses' height, hooves and wheels on y = 0.
-## All of them sit clear of the lamp-lit road (|x| < 4.6) and the hitching rail; each is a solid so nobody walks through a wheel.
+## The claim-night visitors' rigs parked on the grounds (founder brief 2026-11-20; rebuilt by hand 2026-11-23, "option 5": same slots and the
+## same exuberant size, but real carriages - spoked wheels, springs, mouldings, gilt METAL, glass, velvet - and real horses). Each GLB is the
+## carriage alone with Hitch_<i> empties; the rigged town horse is hitched on each in harness (Ep2CarriageLook) with its own idle.
+## All of them sit clear of the lamp-lit road (|x| < 4.6) and the hitching rail; every body and every horse is a solid.
 func _visitors() -> void:
 	var lit := false
+	var horse_scene: PackedScene = load(LogansLakeChamber.HORSE_MODEL) if ResourceLoader.exists(LogansLakeChamber.HORSE_MODEL) else null
 	for v in VISITORS:
 		var path: String = VISITOR_DIR + str(v[0]) + ".glb"
 		if not ResourceLoader.exists(path):
@@ -405,6 +410,14 @@ func _visitors() -> void:
 		rig.transform = Transform3D(Basis(Vector3.UP, float(v[2])), pos)
 		add_child(rig)
 		visitors.append(rig)
+		Ep2CarriageLook.dress(rig)
+		var team: Array = VISITOR_TEAM[str(v[0])]
+		var coats: Array = (team[0] as Array).duplicate()
+		if visitors.size() % 2 == 0:
+			coats.reverse()
+		for h in Ep2CarriageLook.hitch_team(rig, horse_scene, coats, bool(team[1])):
+			var at: Vector3 = rig.transform * (h as Node3D).position
+			_solid(at.x, at.z, 0.45, 1.15)
 		var half: Vector2 = VISITOR_HALF[str(v[0])]
 		_solid(pos.x, pos.z, half.x, half.y)
 		if str(v[0]) == "visitor_royal_palace" and not lit:
