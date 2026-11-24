@@ -631,6 +631,7 @@ static func _apply_mats(kit: Node) -> void:
 		"Planks": _tex_mat("", Color(0.80, 0.72, 0.62), 0.7, PLANK_TEX),
 	}
 	(mats["Roof"] as StandardMaterial3D).metallic = 0.35
+	Ep2TownGlass.dress_materials(mats)          # P3-B: transparent window glass + a lit room behind panes with no interior
 	for mi in kit.find_children("*", "MeshInstance3D", true, false):
 		var m := mi as MeshInstance3D
 		for si in m.mesh.get_surface_count():

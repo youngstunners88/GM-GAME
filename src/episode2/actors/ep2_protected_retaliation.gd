@@ -283,6 +283,9 @@ func step(delta: float) -> void:
 		flash.visible = true
 		folk.kick()
 		host.call("_sfx", "ep2_revolver_blast_1" if weapon.name == "GoldenRemington" else "ep2_winchester_shot_1")
+		var law: Object = host.get("_law")
+		if law != null:
+			law.call("stray_round", shot_origin, shot_direction, shot_origin.distance_to(eye))   # P3-B: glass in the way breaks
 		var hud: Node = host.get("_hud")
 		if hud != null:
 			hud.call("hurt")

@@ -3179,6 +3179,9 @@ func _opp_fires() -> void:
 	_sfx("ep2_revolver_blast_1")
 	_sfx("damage")
 	_flash.position = _opp_muzzle()
+	if _law != null:                     # P3-B: the stranger's round breaks any glass between him and Lil Blunt
+		var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
+		_law.stray_round(_opp_muzzle(), eye - _opp_muzzle(), _opp_muzzle().distance_to(eye))
 	_flash_t = 0.08
 	if _hud:
 		_hud.objective = ""

@@ -75,6 +75,8 @@ var retaliation := preload("res://src/episode2/actors/ep2_protected_retaliation.
 
 var _host: Node = null
 var _visuals: Node3D = null
+## The look of the town's glass (P3-B): transparent panes, jagged breaks, shards. The law keeps the rules (fines, counts).
+var glass: Ep2TownGlass = null
 var _people: Ep2TownPeople = null
 var _sheriff: Ep2TownFolk = null
 var _minister: Ep2TownFolk = null
@@ -363,7 +365,7 @@ func _kill_person(hit: Dictionary, direction: Vector3) -> void:
 	_blood_pool(folk.global_position, 0.62, 5.0)
 	_play_sound("body_thud.ogg", folk.global_position, -8.0)
 	if _people != null:
-		_people.notify_danger(folk.global_position, 32.0)
+		_people.notify_danger(folk.global_position, 32.0, "kill")
 	GameManager.set_town_standing("cold")
 	_begin_arrest()
 
@@ -379,7 +381,7 @@ func _wound_story(hit: Dictionary, direction: Vector3) -> void:
 	folk.kick()
 	_blood_spurt(hit["point"], direction, 0.48)
 	if _people != null:
-		_people.notify_danger(folk.global_position, 32.0)
+		_people.notify_danger(folk.global_position, 32.0, "kill")
 	GameManager.set_town_standing("cold")
 	_begin_arrest()
 
@@ -409,22 +411,43 @@ func _hit_facade(hit: Dictionary, _direction: Vector3) -> void:
 	_note_offence()
 
 
-func _hit_window(hit: Dictionary, _direction: Vector3) -> void:
+## A round someone ELSE fired (the draw's stranger, a lawman's retaliation): glass in its path breaks, Lil Blunt is not billed.
+func stray_round(origin: Vector3, direction: Vector3, reach: float = 160.0) -> bool:
+	if direction.length_squared() < 1e-8:
+		return false
+	var hit: Dictionary = _trace_buildings(origin, direction.normalized(), reach)
+	if hit.is_empty() or str(hit.get("kind", "")) != "window" or bool((hit["window"] as Dictionary).get("broken", false)):
+		return false
+	_hit_window(hit, direction.normalized(), false)
+	return true
+
+
+func _hit_window(hit: Dictionary, _direction: Vector3, by_player: bool = true) -> void:
 	var window: Dictionary = hit["window"]
 	if bool(window.get("broken", false)):
 		return
 	window["broken"] = true
 	broken_windows += 1
-	_bill_windows += 1
-	var pane: Node3D = _pane_for(window)
-	if pane != null:
-		pane.set_meta("law_broken", true)
-		pane.visible = false
+	if by_player:
+		_bill_windows += 1
+	if window.has("pane") and glass != null:
+		# P3-B: the kit's pane breaks for real (hole + cracked rim + shards); Ep2TownGlass owns the look
+		glass.break_pane(str(window["glass_key"]), int(window["pane"]), hit["point"], hit["normal"])
 	else:
-		window["overlay"] = _add_cracks(window, hit["normal"])
+		var pane: Node3D = _pane_for(window)
+		if pane != null:
+			pane.set_meta("law_broken", true)
+			pane.visible = false
+		else:
+			window["overlay"] = _add_cracks(window, hit["normal"])
 	_spawn_chips(hit["point"], hit["normal"], true)
-	_play_sound("window_shatter.ogg", hit["point"], -2.0)
-	_note_offence()
+	var takes: Array[StringName] = [&"glass_break_a", &"glass_break_b", &"glass_break_c"]
+	if AudioManager.sfx_at(takes[broken_windows % takes.size()], hit["point"], self, -1.0) == null:
+		_play_sound("window_shatter.ogg", hit["point"], -2.0)
+	if _people != null:
+		_people.notify_danger(hit["point"], 14.0, "glass")     # P3-E: breaking glass alarms the street (it was silent before)
+	if by_player:
+		_note_offence()
 
 
 func _note_offence() -> void:
@@ -434,6 +457,8 @@ func _note_offence() -> void:
 
 ## Advance fines, effects, the arrest and the two-minute cell conversation.
 func step(delta: float) -> void:
+	if glass != null:
+		glass.step(delta)
 	if retaliation.active:
 		retaliation.step(delta)
 		return
@@ -767,8 +792,23 @@ func _gate_box(parent: Node3D, size: Vector3, at: Vector3, mat: Material) -> voi
 
 # --- buildings, windows and their lightweight damage ---------------------------------------------------------
 
+## The drawn copy of a LAYOUT piece: matched by its transform, so the second Bldg_A is not mistaken for the first.
+func _building_node(piece: String, xf: Transform3D) -> Node3D:
+	if _visuals == null:
+		return null
+	for node in _visuals.find_children("*", "Node3D", true, false):
+		var n := node as Node3D
+		if String(n.name).contains(piece) and n.transform.origin.distance_to(xf.origin) < 0.05 \
+				and absf(n.transform.basis.z.dot(xf.basis.z) - 1.0) < 0.01:
+			return n
+	return _visuals.find_child(piece, true, false) as Node3D
+
+
 func _build_building_tests() -> void:
 	_buildings.clear()
+	if glass == null:
+		glass = Ep2TownGlass.new()
+		add_child(glass)
 	for entry in Ep2GoldTown.LAYOUT:
 		var piece: String = str(entry[0])
 		if piece == "Bldg_Jail" and not Ep2GoldTown.jail_v1:
@@ -783,13 +823,22 @@ func _build_building_tests() -> void:
 		elif piece == "Church":
 			height = 8.5
 		var xf: Transform3D = Ep2GoldTown.building_xform(entry)
-		var record: Dictionary = {"piece": piece, "xf": xf, "w": width, "d": depth, "h": height, "windows": [],
-			"node": _visuals.find_child(piece, true, false) if _visuals != null else null}
-		for side in [-1.0, 1.0]:
-			var centre := Vector3(side * width * 0.29, 1.65, 0.0)
-			var normal: Vector3 = (xf.basis * Vector3.BACK).normalized()
-			record["windows"].append({"piece": piece, "centre": centre, "size": Vector2(0.95, 1.25), "broken": false,
-				"xf": xf, "normal": normal, "overlay": null})
+		var node: Node3D = _building_node(fp_key, xf)
+		var record: Dictionary = {"piece": piece, "xf": xf, "w": width, "d": depth, "h": height, "windows": [], "node": node}
+		var normal: Vector3 = (xf.basis * Vector3.BACK).normalized()
+		# P3-B: the kit's real street-front panes are the windows (each its own pane, broken once); without the kit's glass
+		# (streamed extras missing) the two authored openings stand in, as before.
+		var gkey: String = Ep2TownGlass.key_for(piece, xf)
+		var panes: Array = glass.register(gkey, node, xf) if glass != null and node != null else []
+		for pane in panes:
+			record["windows"].append({"piece": piece, "centre": Vector3((pane["centre"] as Vector3).x, (pane["centre"] as Vector3).y, 0.0),
+				"size": pane["size"], "broken": glass.is_broken(gkey, int(pane["pane"])), "xf": xf, "normal": normal, "overlay": null,
+				"glass_key": gkey, "pane": int(pane["pane"])})
+		if panes.is_empty():
+			for side in [-1.0, 1.0]:
+				var centre := Vector3(side * width * 0.29, 1.65, 0.0)
+				record["windows"].append({"piece": piece, "centre": centre, "size": Vector2(0.95, 1.25), "broken": false,
+					"xf": xf, "normal": normal, "overlay": null})
 		_buildings.append(record)
 
 
@@ -844,7 +893,20 @@ func _trace_buildings(eye: Vector3, direction: Vector3, limit: float) -> Diction
 func facade_target(piece: String) -> Vector3:
 	for building in _buildings:
 		if str(building["piece"]) == piece:
-			return (building["xf"] as Transform3D) * Vector3(-float(building["w"]) * 0.44, 1.30, 0.0)
+			# away from every window (the kit's real panes sit anywhere on the front since P3-B)
+			var w: float = float(building["w"])
+			for c in [Vector2(-0.44, 1.30), Vector2(0.44, 1.30), Vector2(-0.44, 0.55), Vector2(0.0, 0.40), Vector2(0.44, 0.55)]:
+				var local := Vector3(c.x * w, c.y, 0.0)
+				var clear := true
+				for window in building["windows"]:
+					var wc: Vector3 = window["centre"]
+					var ws: Vector2 = window["size"]
+					if absf(local.x - wc.x) <= ws.x * 0.5 + 0.12 and absf(local.y - wc.y) <= ws.y * 0.5 + 0.12:
+						clear = false
+						break
+				if clear:
+					return (building["xf"] as Transform3D) * local
+			return (building["xf"] as Transform3D) * Vector3(-w * 0.44, 1.30, 0.0)
 	return Vector3.ZERO
 
 
