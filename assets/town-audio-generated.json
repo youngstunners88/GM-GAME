@@ -2674,5 +2674,82 @@
     "model_id": "eleven_v4",
     "seconds": 12.705,
     "start_seconds": 0
+  },
+  "scream_f_1": {
+    "source_hash": "4b3b363f5c36a46cff35a9785f440ea9fdcec75292fadc5e243cf345aa9b3359",
+    "processing_version": 2,
+    "sha256": "e0ee30b888af52c13dfc8c41b7d04cf2d0bf46addb962231ed14b59236f737ec",
+    "bytes": 12596,
+    "prompt": "A young woman in a frontier street hears a gunshot close by and screams in fright, one short high scream, no words. Close realistic foley, no music.",
+    "seconds": 1.165193,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "scream_f_2": {
+    "source_hash": "43a0361e525a5c547341115f49b3c590063c0a5269d556e6f405e95421eb77fe",
+    "processing_version": 2,
+    "sha256": "948e7c5308bb81510100b3e0a309a213e208da7ba838a8eb5ebec7e885422ff0",
+    "bytes": 11934,
+    "prompt": "A middle-aged woman in a frontier street hears a gunshot close by and screams in fright, one short scream, no words. Close realistic foley, no music.",
+    "seconds": 1.198957,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "scream_f_3": {
+    "source_hash": "9de069c0d9bf8699edc9566f42387f28ed7066d510debb6eb1dc9e1e8ef1fc7a",
+    "processing_version": 2,
+    "sha256": "e880a843a325a702d1019d4bc5d373fb8df8670fe2d0cd07ec2aca4f1e7b33ed",
+    "bytes": 12421,
+    "prompt": "An older woman in a frontier street hears a gunshot close by and cries out in fright, one short shrill scream, no words. Close realistic foley, no music.",
+    "seconds": 1.199002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "shout_m_1": {
+    "source_hash": "fb59cf7e8c1ec46447409b5204e1ad9b8472c42359abad8926719582977cad6a",
+    "processing_version": 2,
+    "sha256": "7b025c0d1120dc22350329a29a7b1b8806b39e8219e15d03559636563ddd2bb3",
+    "bytes": 11977,
+    "prompt": "A man in a frontier street hears a gunshot close by and gives one short alarmed shout, no clear words. Close realistic foley, no music.",
+    "seconds": 1.169751,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "shout_m_2": {
+    "source_hash": "58eb5c6283e8fc27abc4ad095325ab8942886b8383628bab8dd40eeb236c8be3",
+    "processing_version": 2,
+    "sha256": "5ead53aa1bd723c1434170d8d5fbcbb3ec1605790e219aae083b10f03d324af3",
+    "bytes": 12944,
+    "prompt": "A rough man in a frontier street hears glass shatter and a gunshot close by and yells once in alarm, one short shout, no clear words. Close realistic foley, no music.",
+    "seconds": 1.199002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "gasp_m": {
+    "source_hash": "1c4790413d81a803593cb9af2ba0aec6e3f5df7eeab929e4ecbc24ebd4557eb7",
+    "processing_version": 2,
+    "sha256": "e175043ec43b2b8f531400cdbe81739a7e63c018df8deba4b7907d1e9e3677cb",
+    "bytes": 13073,
+    "prompt": "A man hears a gunshot right beside him and gives one sharp frightened gasp, no words. Close realistic foley, no music.",
+    "seconds": 1.199002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "cry_elder": {
+    "source_hash": "db9d56da562c5d100ebd4f93965814cf502c831139d0531b368c11719c4d35f2",
+    "processing_version": 2,
+    "sha256": "ae15e2308fdea2374ad53e1a6efde62b884d3a1defa87a135ac84bf57218b3a1",
+    "bytes": 13093,
+    "prompt": "An elderly man in a frontier street hears a gunshot close by and gives one short frightened cry, a frail old voice, no words. Close realistic foley, no music.",
+    "seconds": 1.199002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
   }
 }

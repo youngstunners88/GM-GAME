@@ -272,13 +272,120 @@ func set_context(mode: String) -> void:
 			p.fear = maxf(p.fear, 3.0)
 			p.timer = p.rng.randf_range(2, 5)
 
-func notify_danger(where: Vector3, radius: float = 24.0) -> void:
+func notify_danger(where: Vector3, radius: float = 24.0, kind: String = "shot") -> void:
+	var w2 := Vector2(where.x, where.z)
+	var heard: Array = []                                  # [distance, person] within this kind's earshot, for the startle and voices
 	for p in people:
-		if _pos(p).distance_to(Vector2(where.x, where.z)) > radius: continue
-		p.threat = Vector2(where.x, where.z)
+		var d: float = _pos(p).distance_to(w2)
+		if d > maxf(radius, float(REACT_R.get(kind, 18.0))) or p.folk.dead: continue
+		if d <= float(REACT_R.get(kind, 18.0)): heard.append([d, p])
+		if d > radius: continue
+		p.threat = w2
 		p.fear = p.rng.randf_range(12, 20)
 		p.memories["last_danger"] = elapsed
 		if p.state != "shelter" and _mode != "duel": _seek_safety(p, p.threat, false)
+	if _mode != "duel":
+		_react(where, kind, heard)
+
+
+# --- STARTLE + VOICES (New Shit 1122 P3-E, founder 2026-11-24: "the people near the window breaking react, especially the women should
+# scream, even when a gun is fired"). notify_danger is the ONE place a townsperson's scream starts. ----------------------------------
+## How far each kind of bang makes people jump and cry out (m).
+const REACT_R: Dictionary = {"shot": 18.0, "glass": 14.0, "kill": 30.0}
+const MAX_VOICES := 3
+const VOICE_COOLDOWN := 6.0
+## Who cries out how: young women and girls, women, old women; men shout or gasp; old men a frightened cry. The boy stays a gasp-free
+## startle (no child voice was recorded).
+const ELDERS: Array[String] = ["oldtimer", "grandfather", "grandma", "grandmother"]
+const GIRLS: Array[String] = ["braided_girl", "bob_girl"]
+## The second voice of a kind in one bang takes its neighbour, so a pair never sounds like one recording played twice.
+const VOICE_ALT: Dictionary = {"cry_elder": "gasp_m", "scream_f_2": "scream_f_1", "scream_f_1": "scream_f_3", "scream_f_3": "scream_f_2",
+	"shout_m_1": "shout_m_2", "shout_m_2": "shout_m_1", "gasp_m": "shout_m_1"}
+var _startle_left: Dictionary = {}                     # person id -> seconds still held in place by a startle
+var _last_voice: Dictionary = {}                       # person id -> elapsed when they last cried out
+## Every voice the crowd raised, newest last: {"id", "who", "kind", "delay", "at"} (tests and the P3-E audio log read it; capped).
+var voice_log: Array = []
+var _event_at: float = -1.0                            # bangs in the same tick (the shot AND the glass it broke) are one event
+var _event_voices: int = 0
+
+
+## The back-lot miners and the depot workers (all men) cry out by the same rules: the nearest man in earshot shouts once, nobody
+## twice inside six seconds. `last` is the caller's own instance-id -> seconds map. Returns the voice id, or "" when nobody shouts.
+static func shout_from(folks: Array, where: Vector3, kind: String, last: Dictionary) -> String:
+	var now: float = Time.get_ticks_msec() / 1000.0
+	var best: Node3D = null
+	var best_d: float = float(REACT_R.get(kind, 18.0))
+	for f in folks:
+		if f == null or not is_instance_valid(f): continue
+		var d: float = Vector2((f as Node3D).position.x - where.x, (f as Node3D).position.z - where.z).length()
+		if d < best_d and now - float(last.get((f as Node3D).get_instance_id(), -INF)) >= VOICE_COOLDOWN:
+			best = f
+			best_d = d
+	if best == null: return ""
+	last[best.get_instance_id()] = now
+	var id: String = "shout_m_1" if best.get_instance_id() % 2 == 0 else "shout_m_2"
+	var am: Node = (Engine.get_main_loop() as SceneTree).root.get_node_or_null("AudioManager") if Engine.get_main_loop() is SceneTree else null
+	if am != null:
+		am.call("sfx_at", StringName(id), best.global_position + Vector3(0, 1.55, 0) if best.is_inside_tree() else best.position, best, 0.0,
+			lerpf(0.2, 0.4, best_d / float(REACT_R.get(kind, 18.0))))
+	return id
+
+
+func voice_for(p: Person, kind: String, rank: int) -> String:
+	if p.id == "boy": return ""
+	if sex_of(p.id) == "f":
+		if p.id in GIRLS: return "scream_f_1"
+		return "scream_f_3" if p.id in ELDERS else "scream_f_2"
+	if p.id in ELDERS: return "cry_elder"
+	if kind == "shot" and rank > 0: return "gasp_m"
+	return "shout_m_1" if (p.id.hash() + rank) % 2 == 0 else "shout_m_2"
+
+
+func _react(where: Vector3, kind: String, heard: Array) -> void:
+	if heard.is_empty(): return
+	heard.sort_custom(func(a: Array, b: Array) -> bool: return float(a[0]) < float(b[0]))
+	var reach: float = float(REACT_R.get(kind, 18.0))
+	for h in heard:
+		var p: Person = h[1]
+		if p.state in SHOP_STATES and p.state != "shop_queue": continue      # behind a shop's walls: no flinch in the street
+		var delay: float = lerpf(0.2, 0.4, clampf(float(h[0]) / reach, 0.0, 1.0))
+		p.folk.startle(where, delay)
+		_startle_left[p.id] = [delay + 0.45, Vector3(where.x, 0.0, where.z)]
+	# voices: nearest first, at most three, at least one woman when a woman heard it, nobody twice inside six seconds
+	var callers: Array = []
+	for h in heard:
+		var p: Person = h[1]
+		if elapsed - float(_last_voice.get(p.id, -INF)) < VOICE_COOLDOWN or voice_for(p, kind, 0) == "": continue
+		callers.append(p)
+	if _event_at != elapsed:
+		_event_at = elapsed
+		_event_voices = 0
+	var budget: int = MAX_VOICES - _event_voices
+	if budget <= 0: return
+	var picked: Array = callers.slice(0, budget)
+	var has_woman: bool = picked.any(func(p: Person) -> bool: return sex_of(p.id) == "f")
+	if not has_woman:
+		for p in callers.slice(budget):
+			if sex_of(p.id) == "f":
+				if picked.size() >= budget: picked[budget - 1] = p
+				else: picked.append(p)
+				break
+	var am: Node = (Engine.get_main_loop() as SceneTree).root.get_node_or_null("AudioManager") if Engine.get_main_loop() is SceneTree else null
+	var used: Array[String] = []
+	for rank in picked.size():
+		var p: Person = picked[rank]
+		var id: String = voice_for(p, kind, rank)
+		if id in used:                                  # two people never cry out with the very same take in one bang
+			id = str(VOICE_ALT.get(id, id))
+		used.append(id)
+		var delay: float = (float(_startle_left[p.id][0]) - 0.45 if _startle_left.has(p.id) else 0.2) + p.rng.randf_range(0.0, 0.35)
+		_last_voice[p.id] = elapsed
+		_event_voices += 1
+		voice_log.append({"id": id, "who": p.id, "kind": kind, "delay": delay, "at": elapsed})
+		if voice_log.size() > 48: voice_log.pop_front()
+		if am != null:
+			am.call("sfx_at", StringName(id), p.folk.global_position + Vector3(0, 1.55, 0) if p.folk.is_inside_tree() else p.folk.position,
+				p.folk, 0.0, delay)
 
 func step(delta: float, player_world: Vector3) -> void:
 	if delta <= 0.0 or not is_finite(delta): return
@@ -436,6 +543,15 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 	p.fear = maxf(0, p.fear - dt)
 	p.timer = maxf(-1, p.timer - dt)
 	p.activity_time += dt
+	if _startle_left.has(p.id):
+		# startled: rooted to the spot, facing the bang, flinching (Ep2TownFolk.startle) - then the flee already chosen takes over
+		var left: float = float(_startle_left[p.id][0]) - dt
+		if left > 0.0:
+			_startle_left[p.id][0] = left
+			p.folk.face_point(_startle_left[p.id][1])
+			p.folk.step(dt)
+			return
+		_startle_left.erase(p.id)
 	if p.parcel_t > 0.0:
 		p.parcel_t = maxf(0.0, p.parcel_t - dt)          # never below zero: a saved 0 must restore (restore() bounds it 0..PARCEL_SECONDS)
 		if p.parcel_t <= 0.0: p.folk.drop_prop("Parcel")

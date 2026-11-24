@@ -1410,6 +1410,55 @@
       "prompt": "A woman is bumped by someone passing and gives one short startled gasp, not angry, no words. Close realistic foley, no music."
     },
     {
+      "id": "scream_f_1",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "A young woman in a frontier street hears a gunshot close by and screams in fright, one short high scream, no words. Close realistic foley, no music.",
+      "out_dir": "src/assets/sounds/sfx_p3"
+    },
+    {
+      "id": "scream_f_2",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "A middle-aged woman in a frontier street hears a gunshot close by and screams in fright, one short scream, no words. Close realistic foley, no music.",
+      "out_dir": "src/assets/sounds/sfx_p3"
+    },
+    {
+      "id": "scream_f_3",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "An older woman in a frontier street hears a gunshot close by and cries out in fright, one short shrill scream, no words. Close realistic foley, no music.",
+      "out_dir": "src/assets/sounds/sfx_p3"
+    },
+    {
+      "id": "shout_m_1",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "A man in a frontier street hears a gunshot close by and gives one short alarmed shout, no clear words. Close realistic foley, no music.",
+      "out_dir": "src/assets/sounds/sfx_p3"
+    },
+    {
+      "id": "shout_m_2",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "A rough man in a frontier street hears glass shatter and a gunshot close by and yells once in alarm, one short shout, no clear words. Close realistic foley, no music.",
+      "out_dir": "src/assets/sounds/sfx_p3"
+    },
+    {
+      "id": "gasp_m",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "A man hears a gunshot right beside him and gives one sharp frightened gasp, no words. Close realistic foley, no music.",
+      "out_dir": "src/assets/sounds/sfx_p3"
+    },
+    {
+      "id": "cry_elder",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "An elderly man in a frontier street hears a gunshot close by and gives one short frightened cry, a frail old voice, no words. Close realistic foley, no music.",
+      "out_dir": "src/assets/sounds/sfx_p3"
+    },
+    {
       "id": "horse_blow",
       "seconds": 1.5,
       "loop": false,

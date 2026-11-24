@@ -177,6 +177,8 @@ func _make(id: String, h: float, at: Vector3, props: Array, rng: RandomNumberGen
 	return w
 
 
+var _shouted: Dictionary = {}
+var last_shout: String = ""
 ## A shot or a fight near the depot: everyone stops, sets down what he carries and looks toward it, then goes back to work.
 func notify_danger(where: Vector3, radius: float = 40.0) -> void:
 	for w in workers:
@@ -184,6 +186,7 @@ func notify_danger(where: Vector3, radius: float = 40.0) -> void:
 			continue
 		w.alert_t = DANGER_HOLD
 		w.danger = where
+	last_shout = Ep2TownPeople.shout_from(workers.map(func(w) -> Node3D: return w.folk), where, "shot", _shouted)   # P3-E
 
 
 func _process(delta: float) -> void:

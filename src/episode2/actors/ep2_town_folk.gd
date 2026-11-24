@@ -20,6 +20,8 @@ var _phase: float = 0.0
 var _t: float = 0.0
 var _fall: float = 0.0
 var _kick: float = 0.0
+var _startle_wait: float = -1.0                    # seconds until a startle's flinch begins (-1 = none pending)
+var _startle: float = 0.0                          # 0..1 through the flinch (P3-E: gunfire / breaking glass close by)
 var _path: Array = []
 var _anim: AnimationPlayer = null
 var _rigged: bool = false
@@ -326,10 +328,22 @@ func kick() -> void:
 	_kick = 1.0
 
 
+## Startled by a bang at `source` (New Shit 1122 P3-E): after `delay` s he turns to it and flinches - a quick recoil back and a dip
+## at the knees over ~0.45 s. Ep2TownPeople holds him in place through it, then lets him run.
+func startle(source: Vector3, delay: float) -> void:
+	face_point(source)
+	_startle_wait = maxf(0.0, delay)
+	_startle = 0.0
+
+
+func startle_amount() -> float:
+	return sin(clampf(_startle, 0.0, 1.0) * PI)
+
+
 func step(delta: float) -> void:
 	_t += delta
 	var moving: bool = false
-	if _walking and not dead:
+	if _walking and not dead and _startle_wait < 0.0 and _startle <= 0.0:      # a startled man is rooted for the flinch, then runs
 		var d: Vector3 = _goal - Vector3(position.x, _floor_y, position.z)
 		if not use_height:
 			d.y = 0.0
@@ -361,6 +375,15 @@ func step(delta: float) -> void:
 		position.y = _floor_y
 		return
 	_kick = maxf(0.0, _kick - delta * 6.0)
+	if _startle_wait >= 0.0:
+		_startle_wait -= delta
+		if _startle_wait < 0.0:
+			_startle = 0.0001
+	elif _startle > 0.0:
+		_startle = _startle + delta / 0.45
+		if _startle >= 1.0:
+			_startle = 0.0
+	var flinch: float = startle_amount() if _startle > 0.0 else 0.0
 	if dead:
 		_fall = minf(1.0, _fall + delta * 2.6)
 		var k: float = _fall * _fall * (3.0 - 2.0 * _fall)
@@ -375,11 +398,11 @@ func step(delta: float) -> void:
 			play_clip(want)
 		if walk_clip_speed > 0.0:
 			_anim.speed_scale = clampf(_speed / walk_clip_speed, 0.45, 1.8) if moving else 1.0
-		model.rotation = Vector3(-0.08 * _kick, 0.0, 0.0)
+		model.rotation = Vector3(-0.08 * _kick - 0.13 * flinch, 0.0, 0.04 * flinch)
 		# mocap clips carry their own bob; the procedural stride lift is only for the old authored figures
-		position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving and not use_height and procedural_bob else 0.0)
+		position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving and not use_height and procedural_bob else 0.0) - 0.05 * flinch
 		return
-	model.rotation = Vector3(-0.08 * _kick, 0.0, (0.035 * sin(_phase) if moving else 0.0))
-	position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving else 0.0)
+	model.rotation = Vector3(-0.08 * _kick - 0.13 * flinch, 0.0, (0.035 * sin(_phase) if moving else 0.0) + 0.04 * flinch)
+	position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving else 0.0) - 0.05 * flinch
 	var breath: float = 1.0 + 0.004 * sin(_t * 2.0)
 	model.scale = Vector3(model.scale.x, absf(model.scale.x) * breath, model.scale.z)

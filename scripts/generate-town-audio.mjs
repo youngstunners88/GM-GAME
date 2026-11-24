@@ -15,7 +15,7 @@ const out = 'src/episode2/extras/audio/town';
 // A voice may name its own folder: `out_dir` outside src/episode2/extras/ ships in the main web pack instead of the streamed
 // extras pack (Logan, 2026-11-22: the extras pack had ~107 KB left under its 190 MiB gate, the main pack ~4 MB).
 // A line may name its own `out_dir` too (Mike Dean's two licence lines, recorded late, ship in the main pack).
-const lineOut = Object.fromEntries([...config.lines, ...(config.lines_pending_rerecord || [])].filter(r => r.out_dir).map(r => [r.id, r.out_dir]));
+const lineOut = Object.fromEntries([...config.lines, ...(config.lines_pending_rerecord || []), ...config.sfx].filter(r => r.out_dir).map(r => [r.id, r.out_dir]));
 const outFor = (speaker, id) => lineOut[id] || config.voices[speaker]?.out_dir || out;
 await mkdir(work, { recursive: true });
 // Raw production takes stay local and must never enter the playable pack.
@@ -77,7 +77,7 @@ if (args.includes('--generate')) {
   }
   if (args.includes('--sfx')) for (const row of config.sfx.filter(r => !option('--sfx-ids') || option('--sfx-ids').split(',').includes(r.id))) {
     const source = { prompt: row.prompt, seconds: row.seconds, loop: row.loop, model_id: 'eleven_text_to_sound_v2' };
-    if (receipts[row.id]?.source_hash === hash(source) && receipts[row.id]?.processing_version === processingVersion && existsSync(`${out}/${row.id}.ogg`)) continue;
+    if (receipts[row.id]?.source_hash === hash(source) && receipts[row.id]?.processing_version === processingVersion && existsSync(`${outFor(null, row.id)}/${row.id}.ogg`)) continue;
     const raw = `${work}/${row.id}.mp3`;
     if (existsSync(`${raw}.source.json`) && hash(JSON.parse(await readFile(`${raw}.source.json`, 'utf8'))) === hash(source)) {
       await save(row.id, null, source, true);

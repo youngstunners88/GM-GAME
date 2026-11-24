@@ -188,6 +188,8 @@ func _add_clip(folk: Ep2TownFolk, slot: String, path: String) -> bool:
 	return true
 
 
+var _shouted: Dictionary = {}
+var last_shout: String = ""
 ## A shot or a fight in town: everyone within reach stops work (and talk) and looks toward it, then goes back to it.
 func notify_danger(where: Vector3, radius: float = 40.0) -> void:
 	for m in miners:
@@ -199,6 +201,7 @@ func notify_danger(where: Vector3, radius: float = 40.0) -> void:
 	for lot in _lot:
 		_lot[lot]["line"] = -1
 		_lot[lot]["t"] = DANGER_HOLD + 4.0
+	last_shout = Ep2TownPeople.shout_from(miners.map(func(m: Miner) -> Node3D: return m.folk), where, "shot", _shouted)   # P3-E
 
 
 func miner(id: String) -> Miner:
