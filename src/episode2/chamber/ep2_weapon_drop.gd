@@ -35,7 +35,9 @@ static func place(parent: Node3D, armory: Ep2ArmoryState, id: String, gun: Strin
 		else:
 			drop.add_child(gun_node)
 		# on its side in the dirt
+		var size: Vector3 = gun_node.scale            # a rifle lifted out of a dead man keeps his size (P3-C)
 		gun_node.transform = Transform3D(Basis.from_euler(Vector3(0.0, 0.9, PI * 0.5)), Vector3(-0.22, 0.045, 0.12))
+		gun_node.scale = size
 		gun_node.visible = true
 	# a card cartridge box with a brass label
 	var box := MeshInstance3D.new()
@@ -82,6 +84,8 @@ static func nearest(parent: Node, at: Vector3, reach: float = REACH) -> Ep2Weapo
 ## Into the armory; {} when nothing was taken. Gone from the world once nothing is left.
 func take(armory: Ep2ArmoryState) -> Dictionary:
 	var got: Dictionary = armory.claim_drop(drop_id) if armory != null else {}
+	if not got.is_empty():               # P3-D: a new gun is lifted, rounds clink into the pouch
+		AudioManager.sfx_at(&"gun_pickup" if bool(got.get("new", false)) else &"ammo_pickup", (global_position if is_inside_tree() else position) + Vector3(0, 0.4, 0), self)
 	if not got.is_empty() and bool(armory.corpses[drop_id]["searched"]):
 		visible = false
 		queue_free()

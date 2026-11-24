@@ -491,18 +491,24 @@ func _spawn_bandits() -> void:
 		var role: String = "rush" if RUSHER_SLOTS.has(i % 5) else "hold"
 		root.position = home + Vector3(0.0, -HOLDOUT_HIDE, 0.0)
 		var height: float = 1.74 + float(i % 3) * 0.055
-		var parts: Dictionary = _make_bandit(root, height, BANDIT_TINTS[i % BANDIT_TINTS.size()])
+		# P3-C: the zone's loadout table says which men carry the 1886 (two-handed Hammer riflemen) and which the Borchardt
+		var gun_id: String = Ep2HammerLoadout.gun_for(Ep2HammerLoadout.LAKE_TRAIL, i)
+		if gun_id == Ep2ArmoryState.WIN and not Ep2HammerLoadout.rifle_available():
+			gun_id = BANDIT_GUN
+		var parts: Dictionary = _make_bandit(root, height, BANDIT_TINTS[i % BANDIT_TINTS.size()], gun_id)
 		var folk: Ep2TownFolk = parts["folk"]
 		folk.face_yaw(atan2((sample[0] as Vector3).x - home.x, (sample[0] as Vector3).z - home.z))
 		_bandits.append({"root": root, "home": home, "s": float(spec["s"]), "ambush": int(spec["ambush"]),
 			"state": "cover", "cool": 0.25 + float(i % 3) * 0.42, "tell": 0.0, "tell_need": 1.0,
 			"last_tell": 0.0, "shots": 0, "rider": false, "released": true, "chase_s": 0.0,
 			"horse_anim": null, "height": height, "folk": folk, "gun": parts["gun"], "glint": parts["glint"],
-			"accents": parts["accents"], "role": role, "exposed": false, "rush_t": 0.0})
+			"accents": parts["accents"], "role": role, "exposed": false, "rush_t": 0.0, "gun_id": gun_id})
 	_spawn_rider()
 
 
-func _make_bandit(root: Node3D, height: float, tint: Color) -> Dictionary:
+func _make_bandit(root: Node3D, height: float, tint: Color, gun_id: String = BANDIT_GUN) -> Dictionary:
+	if gun_id == Ep2ArmoryState.WIN:
+		return _make_rifleman(root, height, tint)
 	var folk := Ep2TownFolk.new()
 	root.add_child(folk)
 	folk.setup(COWBOY_MODEL, height, Color(0.22, 0.16, 0.11), false)
@@ -522,6 +528,34 @@ func _make_bandit(root: Node3D, height: float, tint: Color) -> Dictionary:
 	glint.visible = false
 	glint.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return {"folk": folk, "gun": gun, "glint": glint, "accents": accents}
+
+
+## A Hammer rifleman (P3-C): the founder's two-handed rifleman, Idle = low ready behind his rock, Draw = aimed; his own red hatband is
+## the Hammer mark. "gun" is an empty marker (the rifle is in his hands); the glint sits on his rifle's muzzle.
+func _make_rifleman(root: Node3D, height: float, tint: Color) -> Dictionary:
+	var folk := Ep2TownFolk.new()
+	root.add_child(folk)
+	folk.setup(Ep2HammerLoadout.RIFLEMAN_MODEL, height, Color(0.22, 0.16, 0.11), false)
+	folk.set_pose("idle")
+	if folk.model != null:
+		var shade: Color = Color(1, 1, 1).lerp(tint, 0.18)
+		for mi in folk.model.find_children("*", "MeshInstance3D", true, false):
+			var mesh: Mesh = (mi as MeshInstance3D).mesh
+			for k in (mesh.get_surface_count() if mesh != null else 0):
+				var m := mesh.surface_get_material(k) as StandardMaterial3D
+				if m != null:
+					var own := m.duplicate() as StandardMaterial3D
+					own.albedo_color = own.albedo_color * shade
+					(mi as MeshInstance3D).set_surface_override_material(k, own)
+	var gun := Node3D.new()
+	gun.name = "BanditRifle"
+	folk.add_child(gun)
+	gun.visible = false
+	var glint := _sphere(0.055, Ep2HammerLoadout.muzzle_local(height), _glow(Color(1.0, 0.91, 0.60), 5.0), folk)
+	glint.name = "TelegraphGlint"
+	glint.visible = false
+	glint.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return {"folk": folk, "gun": gun, "glint": glint, "accents": []}
 
 
 ## Hammer's men carry the town-draw stranger's gun, the Borchardt C93 since 2026-11-02 (Colt kit stand-in without the extras); it drops when he dies.
@@ -824,8 +858,15 @@ func _fire_bandit(index: int) -> void:
 	_bandit_rest(b)
 	folk.kick()
 	var muzzle: Vector3 = _bandit_world_position(b) + Vector3(0.0, 1.25 + (SADDLE_HEIGHT if bool(b["rider"]) else 0.0), 0.0)
+	var rifle: bool = str(b.get("gun_id", BANDIT_GUN)) == Ep2ArmoryState.WIN
+	if rifle:
+		# the flash leaves the rifle's muzzle in his aimed pose, not his chest (he is still in Draw at the moment of the shot)
+		folk.set_pose("draw")
+		muzzle = (folk.global_transform if folk.is_inside_tree() else folk.transform) * Ep2HammerLoadout.muzzle_local(float(b["height"]))
+		b["muzzle"] = muzzle
+		_bandit_rest(b)
 	_flash(muzzle)
-	_sfx("ep2_revolver_blast_1")
+	_sfx("ep2_winchester_shot_1" if rifle else "ep2_revolver_blast_1")
 	if not bool(b["rider"]) and not bool(b["exposed"]):
 		# a holdout ducks straight back behind his rock after the shot
 		var root: Node3D = b["root"]
@@ -1463,7 +1504,12 @@ func _drop_gun(index: int, b: Dictionary, body_at: Vector3) -> void:
 	if _drops_root.is_inside_tree():
 		at = _drops_root.to_local(at)
 	at.y = ground
-	var drop := Ep2WeaponDrop.place(_drops_root, armory, "trail:%d" % index, BANDIT_GUN, BANDIT_ROUNDS, at, folk.facing, b["gun"])
+	var gun_id: String = str(b.get("gun_id", BANDIT_GUN))
+	var held: Node3D = b["gun"]
+	if gun_id == Ep2ArmoryState.WIN:
+		held = Ep2HammerLoadout.split_rifle(folk)        # his own rifle leaves his hands (the body keeps the empty grip)
+	var drop := Ep2WeaponDrop.place(_drops_root, armory, "trail:%d" % index, gun_id, Ep2HammerLoadout.rounds_for(gun_id) if gun_id != BANDIT_GUN else BANDIT_ROUNDS,
+		at, folk.facing, held)
 	if drop != null:
 		var where: Vector2 = _route_s_lat(at)
 		drop.set_meta("s", where.x)

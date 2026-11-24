@@ -1438,6 +1438,7 @@ func _on_setup() -> void:
 	elif not armory.sniper_owned:
 		_blocked_reason = "sniper"
 	_build_cover_touch()
+	_spawn_watchers()
 	_advance_to(Beat.APPROACH)
 	if Ep2Extras.has("res://src/episode2/extras/audio/lake/water.ogg"):
 		_water_loop = _loop_player("res://src/episode2/extras/audio/lake/water.ogg", -14.0)
@@ -1506,6 +1507,7 @@ func _tick(delta: float) -> void:
 	_tick_cover(delta)
 	_step_bears(delta)
 	_step_rafts(delta)
+	_step_watchers(delta)
 	_step_arrows(delta)
 
 
@@ -1699,6 +1701,159 @@ func _next_hammer_look(solo: bool) -> Dictionary:
 		return HAMMER_LOOKS[i]
 	_hammer_used.clear()
 	return HAMMER_LOOKS[0]
+
+
+# --- HAMMER'S RIDGE WATCHERS (New Shit 1122 P3-C, 2026-11-24) ---------------------------------------------------------------------
+## Three of Hammer's riflemen stand at lookouts on the ridge path's river side, watching the Shipment go down (low ready, facing the
+## water, no wandering). When Lil Blunt comes within WATCH_RANGE they turn, raise the 1886 to the shoulder (Draw + a glint on the
+## muzzle: the same tell as the raft men) and fire; killed, his own rifle drops on the path (Ep2WeaponDrop: an owned Winchester is ammo).
+## Their guns: Ep2HammerLoadout.RIDGE. They are not part of a gate's count: the river's waves decide the run, as before.
+const WATCH_POSTS: Array = [Vector3(-36.0, 21.7, 60.0), Vector3(-31.0, 15.0, 168.0), Vector3(-29.0, 14.0, 203.0)]
+const WATCH_RANGE := 34.0
+const WATCH_TELL := 1.0
+const WATCH_RELOAD := 3.8
+const WATCH_HIT_CHANCE := 0.3
+var _watchers: Array = []
+var _drops_root: Node3D = null
+
+
+func _spawn_watchers() -> void:
+	if not Ep2HammerLoadout.rifle_available() or _visuals == null:
+		return
+	var root := Node3D.new()
+	root.name = "RidgeWatchers"
+	_visuals.add_child(root)
+	_drops_root = Node3D.new()
+	_drops_root.name = "RidgeDrops"
+	_visuals.add_child(_drops_root)
+	for i in WATCH_POSTS.size():
+		var id: String = "ridge:%d" % i
+		if armory.corpses.has(id):
+			continue                                      # killed on an earlier visit
+		var near: Array = ridge_nearest(WATCH_POSTS[i])
+		var river: Vector3 = -(near[2] as Vector3)
+		var look: Dictionary = HAMMER_LOOKS[[0, 2, 4][i % 3]]
+		var height: float = float(look["height"])
+		var folk := Ep2TownFolk.new()
+		folk.name = "Watcher%d" % i
+		root.add_child(folk)
+		folk.setup(Ep2HammerLoadout.RIFLEMAN_MODEL, height, Color(0.22, 0.16, 0.11), false)
+		folk.use_height = true
+		folk.place((near[0] as Vector3) + river * 1.9)
+		folk.set_pose("idle")
+		_dress_hammer_man(folk, look)
+		folk.face_yaw(atan2(river.x, river.z))
+		folk.rotation.y = folk.facing
+		var glint := MeshInstance3D.new()
+		var ball := SphereMesh.new()
+		ball.radius = 0.06
+		ball.height = 0.12
+		glint.mesh = ball
+		var glow := _mat(Color(1.0, 0.91, 0.60))
+		glow.emission_enabled = true
+		glow.emission = Color(1.0, 0.91, 0.60)
+		glow.emission_energy_multiplier = 5.0
+		glint.material_override = glow
+		glint.position = Ep2HammerLoadout.muzzle_local(height)
+		glint.visible = false
+		glint.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		folk.add_child(glint)
+		_watchers.append({"folk": folk, "id": id, "gun": Ep2HammerLoadout.gun_for(Ep2HammerLoadout.RIDGE, i), "state": "watch",
+			"tell": 0.0, "cool": 0.8 + 0.6 * float(i), "glint": glint, "aim": Vector3.ZERO, "height": height, "river": river, "muzzle": Vector3.ZERO})
+
+
+func _step_watchers(delta: float) -> void:
+	for w in _watchers:
+		var folk: Ep2TownFolk = w["folk"]
+		if not is_instance_valid(folk):
+			continue
+		folk.step(delta)
+		if str(w["state"]) == "dead":
+			continue
+		var at: Vector3 = folk.global_position if folk.is_inside_tree() else folk.position
+		var near: bool = at.distance_to(_player_pos) <= WATCH_RANGE and _beat in [Beat.OVERLOOK, Beat.RUN, Beat.DOCK] and not debug_no_ranged
+		if not near:
+			if str(w["state"]) == "tell":
+				folk.set_pose("idle")
+				(w["glint"] as Node3D).visible = false
+			w["state"] = "watch"
+			var river: Vector3 = w["river"]
+			var look_at: Vector3 = (_crate.global_position if _crate != null and _crate.is_inside_tree() else at + river) - at
+			folk.face_yaw(atan2(look_at.x, look_at.z))           # watching the Shipment on the water
+			continue
+		folk.face_yaw(atan2(_player_pos.x - at.x, _player_pos.z - at.z))
+		match str(w["state"]):
+			"watch", "cool":
+				w["cool"] = float(w["cool"]) - delta
+				if float(w["cool"]) <= 0.0:
+					w["state"] = "tell"
+					w["tell"] = 0.0
+					w["aim"] = _player_pos
+					folk.set_pose("draw")
+					(w["glint"] as Node3D).visible = true
+			"tell":
+				w["tell"] = float(w["tell"]) + delta
+				if float(w["tell"]) >= WATCH_TELL:
+					w["muzzle"] = (folk.global_transform if folk.is_inside_tree() else folk.transform) * Ep2HammerLoadout.muzzle_local(float(w["height"]))
+					w["state"] = "cool"
+					w["cool"] = WATCH_RELOAD
+					folk.set_pose("idle")
+					folk.kick()
+					(w["glint"] as Node3D).visible = false
+					w["shots"] = int(w.get("shots", 0)) + 1
+					_sfx("ep2_winchester_shot_1")
+					if _flat(_player_pos).distance_to(_flat(w["aim"])) <= 1.1 and _rng.randf() < WATCH_HIT_CHANCE:
+						_hurt_player(w["muzzle"])
+	_tick_ridge_drops()
+
+
+func _watcher_on_ray(eye: Vector3, dir: Vector3) -> Dictionary:
+	var best: Dictionary = {}
+	var best_t: float = 260.0
+	for w in _watchers:
+		if str(w["state"]) == "dead" or not is_instance_valid(w["folk"]):
+			continue
+		var at: Vector3 = (w["folk"] as Node3D).global_position
+		var t: float = WoodsQuadChamber._ray_capsule(eye, dir, at + Vector3(0, 0.3, 0), at + Vector3(0, float(w["height"]) - 0.15, 0), 0.42)
+		if t >= 0.0 and t < best_t:
+			best_t = t
+			best = w
+	_ray_t = best_t if not best.is_empty() else INF
+	return best
+
+
+## One round drops a watcher: he falls back from the lip, his rifle leaves his hands and lies on the path with his rounds.
+func damage_watcher(w: Dictionary) -> void:
+	if str(w["state"]) == "dead":
+		return
+	w["state"] = "dead"
+	var folk: Ep2TownFolk = w["folk"]
+	(w["glint"] as Node3D).visible = false
+	folk.set_pose("idle")
+	folk.fall_dead()
+	var rifle: Node3D = Ep2HammerLoadout.split_rifle(folk)
+	var river: Vector3 = w["river"]
+	var at: Vector3 = (folk.global_position if folk.is_inside_tree() else folk.position) - river * 1.0
+	at.y = (ridge_nearest(at)[0] as Vector3).y
+	if _drops_root != null:
+		var local: Vector3 = _drops_root.to_local(at) if _drops_root.is_inside_tree() else at
+		Ep2WeaponDrop.place(_drops_root, armory, str(w["id"]), str(w["gun"]), Ep2HammerLoadout.rounds_for(str(w["gun"])), local, folk.facing, rifle)
+
+
+func get_watchers() -> Array: return _watchers
+
+
+## Walking over a dead watcher's rifle takes it (the trail's rule): HUD "+6 Winchester 1886 rounds" or the gun itself.
+func _tick_ridge_drops() -> void:
+	if _drops_root == null or not has_player_control():
+		return
+	var drop: Ep2WeaponDrop = Ep2WeaponDrop.nearest(_drops_root, _player_pos - _drops_root.global_position if _drops_root.is_inside_tree() else _player_pos,
+		Ep2WeaponDrop.WALK_OVER)
+	if drop == null:
+		return
+	var got: Dictionary = drop.take(armory)
+	if not got.is_empty() and _hud != null:
+		_hud.toast(Ep2WeaponDrop.taken_text(got), 1.8)
 
 
 ## Build and cloth tint on his own copies of the materials (the shared GLB is never recoloured for the town).
@@ -2117,6 +2272,12 @@ func _on_player_shot() -> void:
 	var raft_t: float = _ray_t
 	var hit: Dictionary = _bear_on_ray(eye, dir)
 	var bear_t: float = _ray_t
+	var watcher: Dictionary = _watcher_on_ray(eye, dir)
+	if not watcher.is_empty() and _ray_t <= minf(man_t, minf(raft_t, bear_t)):
+		damage_watcher(watcher)
+		if _hud != null:
+			_hud.hit_marker(true)
+		return
 	# the Sharps drops a bear in one; the lighter guns take two (and a raft's logs count the Sharps double the same way)
 	var dmg: int = 2 if armory.equipped == Ep2ArmoryState.BUFF else 1
 	if not man.is_empty() and man_t <= raft_t and man_t <= bear_t:
@@ -2892,8 +3053,17 @@ func _set_cover(on: bool) -> void:
 	if on == _in_cover:
 		return
 	_in_cover = on
+	AudioManager.sfx_at(&"cover_enter" if on else &"cover_exit", _player_pos + Vector3(0, 0.6, 0), self)   # P3-D
 	if _hud != null:
 		_hud.toast(("IN COVER · R TO RELOAD · C TO AIM OVER THE BAGS" if TouchUi.keys_shown() else "IN COVER") if on else "UP OVER THE BAGS", 1.4)
+
+
+## R in cover: the reload is heard close, under the sandbags (P3-D).
+func reload() -> bool:
+	var ok: bool = super.reload()
+	if ok and _in_cover:
+		AudioManager.sfx_at(&"rifle_reload_close", _player_pos + Vector3(0, 0.5, 0), self)
+	return ok
 
 
 ## A click while ducked stands him up instead of firing into the sandbags.
