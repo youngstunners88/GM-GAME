@@ -573,6 +573,10 @@ jobs:
           timeout 500 "$GODOT_BIN" --headless res://tests/ep2_audio_mix_test.tscn > ep2-audio-mix-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ep2-audio-mix-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ep2-audio-mix-tests.log | head -40; tail -12 ep2-audio-mix-tests.log; exit 1; }
           grep -qF 'EP2_AUDIO_MIX: ALL PASS' ep2-audio-mix-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-audio-mix-tests.log | head -40; tail -25 ep2-audio-mix-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-audio-mix-tests.log; then exit 1; fi
+          # New Shit 1122 Part 3 (2026-11-24): SFX bank + sfx_at, breakable glass, crowd screams, pickup/cover sounds, Winchester bandits
+          timeout 500 "$GODOT_BIN" --headless res://tests/ep2_newshit_p3_test.tscn > ep2-newshit-p3-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ep2-newshit-p3-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ep2-newshit-p3-tests.log | head -40; tail -12 ep2-newshit-p3-tests.log; exit 1; }
+          grep -qF 'EP2_NEWSHIT_P3: 80 checks, 0 failed' ep2-newshit-p3-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error|checks,' ep2-newshit-p3-tests.log | head -40; tail -25 ep2-newshit-p3-tests.log; exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-newshit-p3-tests.log; then exit 1; fi
           timeout 500 "$GODOT_BIN" --headless res://tests/ep2_camera_framing_test.tscn > ep2-camera-framing-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ep2-camera-framing-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ep2-camera-framing-tests.log | head -40; tail -12 ep2-camera-framing-tests.log; exit 1; }
           grep -qF 'CAMERA FRAMING: PASS' ep2-camera-framing-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-camera-framing-tests.log | head -40; tail -25 ep2-camera-framing-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-camera-framing-tests.log; then exit 1; fi
