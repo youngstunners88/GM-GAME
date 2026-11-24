@@ -347,10 +347,11 @@ func _react(where: Vector3, kind: String, heard: Array) -> void:
 	var reach: float = float(REACT_R.get(kind, 18.0))
 	for h in heard:
 		var p: Person = h[1]
-		if p.state in SHOP_STATES and p.state != "shop_queue": continue      # behind a shop's walls: no flinch in the street
+		# indoors (a shop, the saloon) they still jump; someone seated flinches in the chair without swivelling round
+		var seated: bool = p.seat >= 0 or p.folk.use_height
 		var delay: float = lerpf(0.2, 0.4, clampf(float(h[0]) / reach, 0.0, 1.0))
-		p.folk.startle(where, delay)
-		_startle_left[p.id] = [delay + 0.45, Vector3(where.x, 0.0, where.z)]
+		p.folk.startle(where, delay, not seated)
+		_startle_left[p.id] = [delay + 0.45, Vector3(where.x, 0.0, where.z), seated]
 	# voices: nearest first, at most three, at least one woman when a woman heard it, nobody twice inside six seconds
 	var callers: Array = []
 	for h in heard:
@@ -548,7 +549,7 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 		var left: float = float(_startle_left[p.id][0]) - dt
 		if left > 0.0:
 			_startle_left[p.id][0] = left
-			p.folk.face_point(_startle_left[p.id][1])
+			if not bool(_startle_left[p.id][2]): p.folk.face_point(_startle_left[p.id][1])
 			p.folk.step(dt)
 			return
 		_startle_left.erase(p.id)

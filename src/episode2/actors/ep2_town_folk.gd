@@ -330,8 +330,9 @@ func kick() -> void:
 
 ## Startled by a bang at `source` (New Shit 1122 P3-E): after `delay` s he turns to it and flinches - a quick recoil back and a dip
 ## at the knees over ~0.45 s. Ep2TownPeople holds him in place through it, then lets him run.
-func startle(source: Vector3, delay: float) -> void:
-	face_point(source)
+func startle(source: Vector3, delay: float, turn: bool = true) -> void:
+	if turn:
+		face_point(source)
 	_startle_wait = maxf(0.0, delay)
 	_startle = 0.0
 
