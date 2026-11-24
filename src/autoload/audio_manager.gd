@@ -966,3 +966,80 @@ func set_music_volume(vol_db: float) -> void:
 
 func set_sfx_volume(vol_db: float) -> void:
     AudioServer.set_bus_volume_db(sfx_bus, vol_db)
+
+# ---- Episode 2 spatial one-shots (P3-A, 2026-11-24) -----------------------
+# The ONE place Part 3's world sounds are played: breaking town glass, ammo/gun pickups, cover in/out, a reload in cover and the
+# townsfolk's screams. Short Earshot takes (MIT tool, renders ours) live in SFX_BANK_DIR; any other id is looked up in the streamed
+# town audio (screams, shouts). Players are a small ring per viewport so a prebuilt chamber's SubViewport hears its own sounds,
+# the stream is decoded once, and nothing here ever touches the Music bus or the voice duck.
+const SFX_BANK_DIR := "res://src/assets/sounds/sfx_p3/"
+const SFX_TOWN_DIR := "res://src/episode2/extras/audio/town/"
+const SFX_BANK: Array[StringName] = [&"glass_break_a", &"glass_break_b", &"glass_break_c", &"glass_crack", &"ammo_pickup",
+        &"gun_pickup", &"cover_enter", &"cover_exit", &"rifle_reload_close"]
+const SFX_POOL_VOICES := 10
+var _sfx_streams: Dictionary = {}
+var _sfx_pools: Dictionary = {}
+## Every id sfx_at played, newest last (tests and the P3-E audio log read it; capped).
+var sfx_log: Array = []
+
+## The file an id plays from, or "" when it has none (the streamed town audio may not be mounted yet).
+func sfx_path(id: StringName) -> String:
+    var path: String = _resolve_audio(SFX_BANK_DIR + String(id))     # main pack first: the Earshot bank + the crowd's voices
+    return path if path != "" else _resolve_audio(SFX_TOWN_DIR + String(id))
+
+func sfx_stream(id: StringName) -> AudioStream:
+    if _sfx_streams.has(id):
+        return _sfx_streams[id] as AudioStream
+    var path: String = sfx_path(id)
+    var stream: AudioStream = load(path) as AudioStream if path != "" else null
+    if stream != null:
+        _sfx_streams[id] = stream
+    return stream
+
+## Play `id` once at `pos` (world space of `near`'s viewport; the root viewport when null). Returns the voice, or null when the id
+## has no file. `delay` > 0 starts it later (the crowd's staggered screams) without a timer node per call.
+func sfx_at(id: StringName, pos: Vector3, near: Node = null, volume_db: float = 0.0, delay: float = 0.0) -> AudioStreamPlayer3D:
+    var stream: AudioStream = sfx_stream(id)
+    if stream == null:
+        return null
+    var vp: Viewport = near.get_viewport() if near != null and near.is_inside_tree() else get_tree().root
+    var holder: Node3D = _sfx_pools.get(vp.get_instance_id()) as Node3D
+    if holder == null or not is_instance_valid(holder):
+        holder = Node3D.new()
+        holder.name = "Ep2SfxPool"
+        vp.add_child(holder)
+        _sfx_pools[vp.get_instance_id()] = holder
+    var voice: AudioStreamPlayer3D = null
+    for v in holder.get_children():
+        if not (v as AudioStreamPlayer3D).playing and not v.has_meta("pending"):
+            voice = v
+            break
+    if voice == null:
+        if holder.get_child_count() < SFX_POOL_VOICES:
+            voice = AudioStreamPlayer3D.new()
+            voice.bus = "SFX"
+            voice.unit_size = 8.0
+            voice.max_distance = 90.0
+            voice.attenuation_filter_cutoff_hz = 9000.0
+            holder.add_child(voice)
+        else:
+            voice = holder.get_child(0) as AudioStreamPlayer3D
+            holder.move_child(voice, -1)
+    voice.stop()
+    voice.stream = stream
+    voice.volume_db = volume_db
+    voice.position = pos
+    sfx_log.append(id)
+    if sfx_log.size() > 64:
+        sfx_log.pop_front()
+    if delay > 0.0 and voice.is_inside_tree():
+        voice.set_meta("pending", true)
+        get_tree().create_timer(delay, false).timeout.connect(func() -> void:
+            if is_instance_valid(voice):
+                voice.remove_meta("pending")
+                voice.play())
+    elif voice.is_inside_tree():
+        voice.play()
+    else:
+        voice.autoplay = true
+    return voice
