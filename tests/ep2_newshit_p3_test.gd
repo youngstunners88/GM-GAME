@@ -350,11 +350,12 @@ func _rifle_bandits(am: Node) -> void:
 		var btc_before: float = GameManager.purse_btc_balance()
 		r.damage_watcher(w, true)
 		r.damage_watcher(w, true)
-		_check("a player-killed ridge watcher pays a quarter BTC once", GameManager.purse_btc_balance() == btc_before + 0.25)
+		var paid_once: bool = GameManager.purse_btc_balance() == btc_before + 0.25
 		if watchers.size() > 1:
 			r.damage_watcher(watchers[1])
-			_check("an unattributed ridge death pays nothing", GameManager.purse_btc_balance() == btc_before + 0.25)
+		var unattributed_death_was_unpaid: bool = watchers.size() > 1 and GameManager.purse_btc_balance() == btc_before + 0.25
 		var wd: Ep2WeaponDrop = r._drops_root.get_node_or_null("Drop_ridge_0") as Ep2WeaponDrop
-		_check("a dead watcher drops his rifle on the path", wd != null and wd.get_node_or_null("HammerWinchester") != null)
+		_check("the watcher drops his rifle, only the player kill pays, and it pays once",
+			wd != null and wd.get_node_or_null("HammerWinchester") != null and paid_once and unattributed_death_was_unpaid)
 	r.queue_free()
 	await get_tree().process_frame
