@@ -181,8 +181,22 @@ static func dress(n: Node) -> void:
 				mat = ink
 			elif nm in ["SP_Gold", "Stockpile_Gold"]:
 				mat = gold()
+			elif nm == "SP_Dirt":
+				mat = heap_dirt()
 			if mat != null:
 				m.set_surface_override_material(i, mat)
+
+
+static var _dirt: StandardMaterial3D = null
+
+
+## The earth under the nugget heap (polish 2026-11-25): the town's own desert ground, a shade darker where it was dug - it read as a pale
+## flat plate under the gold (the kit's untextured SP_Dirt), so the gold looked served on a dish instead of heaped on the lot.
+static func heap_dirt() -> StandardMaterial3D:
+	if _dirt == null:
+		_dirt = Ep2GoldTown.desert_ground_mat().duplicate() as StandardMaterial3D
+		_dirt.albedo_color = _dirt.albedo_color * Color(0.80, 0.76, 0.72)
+	return _dirt
 
 
 static var _gold: StandardMaterial3D = null

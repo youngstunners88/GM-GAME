@@ -51,6 +51,10 @@ func _ready() -> void:
 	if sp == null or sp.workers.is_empty():
 		_done(town)
 		return
+	# polish 2026-11-25: the earth under the nugget heap is the town's own ground (not the kit's flat pale SP_Dirt that read as a dish)
+	var dirt: MeshInstance3D = sp.find_child("Heap_Dirt", true, false) as MeshInstance3D
+	check("the nugget heap sits on the town's own dug earth, not a pale plate", dirt != null and dirt.get_surface_override_material(0) == SITE.heap_dirt()
+		and SITE.heap_dirt().albedo_texture != null)
 	sp.set_process(false)                                   # the test steps it, at a fixed 30 fps
 	_test_placement(town)
 	_test_clearances(town, sp)
