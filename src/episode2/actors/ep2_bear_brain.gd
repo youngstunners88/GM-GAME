@@ -278,7 +278,7 @@ func alarm(pos: Vector3) -> void:
 # --- damage ----------------------------------------------------------------------------------------------------------
 
 ## A bullet hit him. Returns true if it killed him.
-func take_hit(from: Vector3) -> bool:
+func take_hit(from: Vector3, source: String = "") -> bool:
 	if aware == Aware.DEAD:
 		return false
 	hp -= 1
@@ -287,6 +287,7 @@ func take_hit(from: Vector3) -> bool:
 		actor.stop()
 		Ep2BearKit.pose(actor, "dead")
 		Ep2BearKit.set_mark(actor, "", Color.WHITE)
+		set_meta("killed_by", source)
 		died.emit(self)
 		return true
 	_hit_t = 0.5

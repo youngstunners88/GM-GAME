@@ -238,6 +238,7 @@ var _lights: Array[OmniLight3D] = []
 var _lantern_pos: PackedVector3Array = PackedVector3Array()
 var _archer_nodes: Dictionary = {}
 var _archer_fall: Dictionary = {}
+var _bear_reward_btc: float = 0.0
 var _arrow_nodes: Array = []
 var _boulder_nodes: Array = []
 var _boarders: Array = []
@@ -283,6 +284,7 @@ var _cue_touch: bool = false
 
 # HUD (persists across rebuilds; child of this node, not the world).
 var _hud: CanvasLayer = null
+var _btc_flight: Ep2BtcFlight
 var _reticle: Control = null
 var _reticle_hot: bool = false
 var _pips: Array[ColorRect] = []
@@ -360,6 +362,7 @@ func rebuild(sim: Node) -> void:
 	_cart_wheels.clear()
 	_archer_nodes.clear()
 	_archer_fall.clear()
+	_bear_reward_btc = 0.0
 	_arrow_nodes.clear()
 	_boulder_nodes.clear()
 	_boarders.clear()
@@ -2634,6 +2637,10 @@ func _ensure_hud() -> void:
 	_reload_label = _hud_label("RELOADING", C_PIP)
 	_hint_label = _hud_label("R — reload", Color(1.0, 0.95, 0.85))
 	_gold_label = _hud_label("BTC 0", C_GOLD_HUD)
+	_btc_flight = Ep2BtcFlight.new()
+	_btc_flight.destination = _gold_label
+	_btc_flight.destination_anchor = Vector2(0.18, 0.5)
+	_hud.add_child(_btc_flight)
 	_gold_label.add_theme_font_size_override("font_size", 26)
 	_cart_strip = Control.new()
 	_cart_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2713,7 +2720,7 @@ func _update_hud() -> void:
 		_gold_label.visible = true
 		var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 		var g: int = int(_sim.get_gold()) if _sim.has_method("get_gold") else 0
-		_gold_label.text = "BTC  %d      %d m/s" % [g, int(round(spd))]
+		_gold_label.text = "BTC  %s      %d m/s" % [str(g + _bear_reward_btc), int(round(spd))]
 		# Episode entry owns progress/health at y=44..98. Keep these stats in
 		# their own row, above the temporary K controls hint at y=150.
 		_gold_label.position = Vector2(24.0, 110.0)
@@ -3403,6 +3410,7 @@ func _on_shot_resolved(_hit_id: String, point: Vector3) -> void:
 
 func _on_archer_down(id: String) -> void:
 	_archer_fall[id] = 0.0
+	_show_bear_reward(_archer_nodes.get(id) as Node3D)
 	_play("bear_hit")
 	_t_cheer = 0.0
 
@@ -3411,8 +3419,16 @@ func _on_shovel_bear_down(oi: int) -> void:
 	for b in _shovel_bears:
 		if int(b["obs"]) == oi:
 			b["dead_t"] = 0.0
+			_show_bear_reward(b["node"] as Node3D)
+			break
 	_play("bear_hit")
 	_t_cheer = 0.0
+
+func _show_bear_reward(bear: Node3D) -> void:
+	_bear_reward_btc += 0.5
+	if is_instance_valid(bear) and _btc_flight != null:
+		_btc_flight.launch(_camera, bear.global_position + Vector3.UP, 0.5)
+
 
 func _on_dry_fire() -> void:
 	_play("empty")

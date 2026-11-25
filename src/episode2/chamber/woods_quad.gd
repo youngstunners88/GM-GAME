@@ -2068,7 +2068,6 @@ func _bull_fire_at(br: Ep2BearBrain, hit_chance: float = 0.55) -> void:
 	_flash(muzzle)
 	_sfx3d("ep2_winchester_shot_%d" % (1 + _bull_shots % 3), muzzle, -1.0, 0.92, 90.0)
 	if _rng.randf() < hit_chance:
-		br.set_meta("killed_by", "bull")   # Bull's kill is Bull's: Lil Blunt must not take the credit
 		var outward: Vector3 = _bull.position - target
 		outward.y = 0.0
 		if outward.length_squared() < 0.0001:
@@ -2076,7 +2075,7 @@ func _bull_fire_at(br: Ep2BearBrain, hit_chance: float = 0.55) -> void:
 		outward = outward.normalized()
 		var wound: Vector3 = target + outward * (0.52 * br.actor.height_m / 2.2)
 		_bear_blood(br, wound, (wound - muzzle).normalized(), outward)
-		br.take_hit(_bull.position)
+		br.take_hit(_bull.position, "bull")
 	_noise(_bull.position, SHOT_HEARING, "bull_shot")
 
 
@@ -2369,13 +2368,12 @@ func _on_player_shot() -> void:
 	var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 	if hit != null:
 		var was_alive: bool = not hit.is_dead()
-		if was_alive: hit.set_meta("killed_by", "player")   # Corpse shots never re-award a kill.
 		var wound: Vector3 = hit_info["point"]
 		var wound_normal: Vector3 = hit_info["normal"]
 		_bear_blood(hit, wound, dir, wound_normal)
-		var killed: bool = hit.take_hit(eye)
+		var killed: bool = hit.take_hit(eye, "player")
 		if was_alive:
-			_bear_money_hit(killed)
+			_bear_hit_tally(killed)
 		if _hud:
 			_hud.hit_marker(killed)
 		_sfx3d("ep2_bear_hit", hit.actor.global_position + Vector3(0.0, 1.4, 0.0), 0.0, float(hit.p.get("pitch", 1.0)), 60.0)
@@ -2393,12 +2391,10 @@ func _on_pickaxe_hit() -> void:
 	if hit == null:
 		return
 	var was_alive: bool = not hit.is_dead()
-	if was_alive:
-		hit.set_meta("killed_by", "player")
 	_bear_blood(hit, hit_info["point"], dir, hit_info["normal"])
-	var killed: bool = hit.take_hit(eye)
+	var killed: bool = hit.take_hit(eye, "player")
 	if was_alive:
-		_bear_money_hit(killed)
+		_bear_hit_tally(killed)
 	if _hud:
 		_hud.hit_marker(killed)
 	_sfx3d("ep2_bear_hit", hit.actor.global_position + Vector3(0.0, 1.4, 0.0), 0.0, float(hit.p.get("pitch", 1.0)), 60.0)
@@ -2585,10 +2581,7 @@ func _on_bear_died(br: Ep2BearBrain) -> void:
 		if kind == "":
 			kind = "bear"
 		GameManager.tally_bear(kind)
-	# Lil Blunt only brags about a bear HE shot. A bear Bull dropped (or anything else) gets no line from him.
-	if player_kill and _hold <= 0.0 and _bark_cd <= 4.0:
-		_bark_cd = 6.0
-		_begin_carry_line("ep2_vo_bear_down_%d" % (1 + (_kills * 5) % 12))
+		_pay_combat_kill(true, br.actor.global_position + Vector3.UP * body_scale)
 
 
 ## An archer let fly: a real arrow, aimed where Lil Blunt will be when it arrives (the quad moves), that hits or whistles past.
@@ -2630,13 +2623,12 @@ func _tick_player_arrows(delta: float) -> void:
 		var stopped: bool = hit != null or _ray_tree_blocked(before, travel.normalized(), travel.length(), 0.0, 0.0)
 		if hit != null:
 			var was_alive: bool = not hit.is_dead()
-			hit.set_meta("killed_by", "player")
 			var wound: Vector3 = hit_info["point"]
 			var wound_normal: Vector3 = hit_info["normal"]
 			_bear_blood(hit, wound, travel.normalized(), wound_normal)
-			var killed: bool = hit.take_hit(before)
+			var killed: bool = hit.take_hit(before, "player")
 			if was_alive:
-				_bear_money_hit(killed)
+				_bear_hit_tally(killed)
 			if _hud != null:
 				_hud.hit_marker(killed)
 		item["t"] = float(item["t"]) + delta

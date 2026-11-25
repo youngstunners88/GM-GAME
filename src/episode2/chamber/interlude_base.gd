@@ -534,17 +534,28 @@ func _bull_play(clip: String, speed: float = 1.0) -> void:
 		_bull.play(clip, speed)
 
 
-## Lil Blunt's round landed on a LIVING bear (founder 2026-11-08): one short coin clink, throttled so a fast gun never turns it
-## into a scream, plus the Tabs ledger - a non-lethal hit is a wound, the killing hit is tallied by the room's death path.
-var _money_sfx_at: int = -100000
-const MONEY_SFX_GAP_MS := 140
-func _bear_money_hit(killed: bool) -> void:
+## The Tabs count wounds separately from confirmed deaths.
+func _bear_hit_tally(killed: bool) -> void:
 	if not killed:
 		GameManager.tally_bear_wound()
+
+
+var _kill_react_at: int = -100000
+
+func _pay_combat_kill(bear: bool, at: Vector3) -> void:
+	var amount: float = 0.5 if bear else 0.25
+	GameManager.purse_add_btc(amount)
+	if _hud != null:
+		_hud.show_btc_reward(_camera, at, amount)
+	_sfx("coin")
 	var now: int = Time.get_ticks_msec()
-	if now - _money_sfx_at >= MONEY_SFX_GAP_MS:
-		_money_sfx_at = now
-		_sfx("coin")
+	if now - _kill_react_at < 1500:
+		return
+	if bear and _hold <= 0.0:
+		_begin_carry_line("ep2_vo_bear_down_1")
+	elif _hud != null:
+		_hud.toast("LIL BLUNT — BEAR DOWN!" if bear else "LIL BLUNT — GOT HIM!", 1.5, Ep2FpsHud.Token.NONE, true)
+	_kill_react_at = now
 
 
 func _sfx(name: String) -> void:

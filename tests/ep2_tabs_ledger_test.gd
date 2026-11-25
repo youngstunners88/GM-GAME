@@ -29,8 +29,18 @@ func _reset_manager() -> void:
 	GameManager.reset_session()
 
 
-func _make_woods() -> WoodsQuadChamber:
-	var woods := WoodsQuadChamber.new()
+class RewardWoods:
+	extends WoodsQuadChamber
+	var chings: int = 0
+
+	func _sfx(id: String) -> void:
+		if id == "coin":
+			chings += 1
+		super._sfx(id)
+
+
+func _make_woods() -> RewardWoods:
+	var woods := RewardWoods.new()
 	# Only the combat/health piece is under test; do not build a kilometre of set.
 	woods._room_built = true
 	add_child(woods)
@@ -86,15 +96,28 @@ func _ready() -> void:
 	_reset_manager()
 	var woods := _make_woods()
 	var player_bear := _bear(woods, "LedgerTarget", 0)
-	player_bear.set_meta("killed_by", "player")
-	woods._on_bear_died(player_bear)
-	check("a bear Lil Blunt shot tallies under its role", int(GameManager.bear_tally.get("brawler", 0)) == 1
-		and GameManager.bear_total() == 1, str(GameManager.bear_tally))
+	var reactions: Array[String] = []
+	woods.line_spoken.connect(func(id: String) -> void:
+		if id.begins_with("ep2_vo_bear_down_"):
+			reactions.append(id))
+	player_bear.hp = 2
+	woods._bear_hit_tally(player_bear.take_hit(Vector3.ZERO, "player"))
+	check("a living bear wound tallies without a payout, ching, or kill react",
+		GameManager.bears_wounded == 1 and GameManager.purse_btc_balance() == 0.0 and woods.chings == 0 and reactions.is_empty())
+	woods._hold = 0.0 # Bull finished his spotting line.
+	player_bear.take_hit(Vector3.ZERO, "player")
+	player_bear.take_hit(Vector3.ZERO, "player")
+	check("a bear Lil Blunt kills pays half a BTC, chings and reacts exactly once",
+		GameManager.purse_btc_balance() == 0.5 and woods.chings == 1 and reactions == ["ep2_vo_bear_down_1"]
+		and int(GameManager.bear_tally.get("brawler", 0)) == 1 and GameManager.bear_total() == 1)
 	var bull_bear := _bear(woods, "BullTarget", 1)
-	bull_bear.set_meta("killed_by", "bull")
-	woods._on_bear_died(bull_bear)
-	check("Inferno Bull's kill does not increment Lil Blunt's tally", GameManager.bear_total() == 1
-		and int(GameManager.bear_tally.get("brawler", 0)) == 1, str(GameManager.bear_tally))
+	bull_bear.hp = 2
+	bull_bear.take_hit(Vector3.ZERO, "player")
+	bull_bear.take_hit(Vector3.ZERO, "bull")
+	var npc_bear := _bear(woods, "OtherTarget", 2)
+	npc_bear.take_hit(Vector3.ZERO)
+	check("Bull and unattributed kills pay nothing even after a player wound",
+		GameManager.purse_btc_balance() == 0.5 and GameManager.bear_total() == 1 and woods.chings == 1 and reactions.size() == 1)
 	woods.queue_free()
 
 	_reset_manager()
@@ -110,16 +133,16 @@ func _ready() -> void:
 		tally_runner.shovel_bear_down.emit(7)
 	check("runner archer and shovel signals each tally their own kind",
 		int(GameManager.bear_tally.get("archer", 0)) == 1 and int(GameManager.bear_tally.get("shovel", 0)) == 1
-		and GameManager.bear_total() == 2, str(GameManager.bear_tally))
+		and GameManager.bear_total() == 2 and GameManager.purse_btc_balance() == 1.0, str(GameManager.bear_tally))
 	runner_session.queue_free()
 
 	print("-- WOUNDED vs DOWN (founder 2026-11-08)")
 	_reset_manager()
 	var wound_room := Ep2Interlude.new()
 	add_child(wound_room)
-	wound_room._bear_money_hit(false)
-	wound_room._bear_money_hit(false)
-	wound_room._bear_money_hit(true)                 # the killing hit: the room's death path tallies it, not a wound
+	wound_room._bear_hit_tally(false)
+	wound_room._bear_hit_tally(false)
+	wound_room._bear_hit_tally(true)                 # the killing hit: the room's death path tallies it, not a wound
 	check("two non-lethal hits are two wounds; the killing hit is not a wound", GameManager.bears_wounded == 2, str(GameManager.bears_wounded))
 	wound_room.free()
 
@@ -154,11 +177,16 @@ func _ready() -> void:
 	GameManager.add_chill_buds(5)
 	GameManager.tally_bear_wound()
 	GameManager.tally_bear_wound()
+	GameManager.purse_add_btc(0.5)
+	GameManager.purse_add_btc(0.25)
+	GameManager.purse_add("btc")
+	check("a whole-face purchase leaves the fraction available",
+		GameManager.purse_spend("btc", 1) and GameManager.purse_btc_balance() == 0.75)
 	check("the ledger saves with the purse", GameManager.save_session())
 	_reset_manager()
 	check("reset_session clears the transient and persistent ledger state",
 		GameManager.bear_total() == 0 and GameManager.chill_buds == 0 and GameManager.runner_btc_credited == 0 and GameManager.bears_wounded == 0)
-	check("the save loads", GameManager.load_session())
+	check("the save loads with fractional BTC", GameManager.load_session() and GameManager.purse_btc_balance() == 0.75)
 	check("save/load round-trips tally and buds",
 		int(GameManager.bear_tally.get("brawler", 0)) == 2 and int(GameManager.bear_tally.get("shovel", 0)) == 1
 		and GameManager.bear_total() == 3 and GameManager.chill_buds == 5 and GameManager.bears_wounded == 2,
@@ -169,6 +197,7 @@ func _ready() -> void:
 	GameManager.tally_bear("archer")
 	GameManager.add_chill_buds(2)
 	GameManager.runner_btc_credited = 3
+	GameManager.purse_add_btc(0.75)
 	var selector := Ep2WeaponSelector.new()
 	selector.state = Ep2ArmoryState.post_hideout()
 	add_child(selector)
@@ -192,6 +221,7 @@ func _ready() -> void:
 			fits and hint_y <= screen.y, "ledger %s, card1 %s" % [str(ledger), str(selector.card_rect(1))])
 	check("the selector draws headless with a populated ledger",
 		is_instance_valid(selector) and selector.cards.size() == Ep2ArmoryState.IDS.size())
+	check("Tabs display the fractional balance", " ".join(selector.drawn_text).contains("0.75"))
 	check("desktop still writes the selector's key / hold labels", " ".join(selector.drawn_text).contains("Hold"))
 	# audit 2026-10-29 P1-3: the armory's labels named keys on a phone too. Force the touch answer
 	# the way the manager reports it, redraw, and require none of them.

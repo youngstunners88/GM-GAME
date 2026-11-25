@@ -404,11 +404,35 @@ func purse_balance(token: String) -> int:
             return titanx_collected
     return int(token_purse.get(token, 0))
 
+## Exact BTC in the existing purse, including fractional Episode 2 rewards.
+func purse_btc_balance() -> float:
+    return float(token_purse.get("btc", 0))
+
+## Keep whole BTC balances in the legacy integer save format.
+func _set_purse_btc(amount: float) -> void:
+    token_purse["btc"] = int(amount) if amount == floorf(amount) else amount
+
+func purse_add_btc(amount: float) -> void:
+    if amount <= 0.0:
+        return
+    _set_purse_btc(purse_btc_balance() + amount)
+    purse_changed.emit("btc", purse_balance("btc"))
+
+func purse_spend_btc(amount: float) -> bool:
+    if amount <= 0.0 or purse_btc_balance() < amount:
+        return false
+    _set_purse_btc(purse_btc_balance() - amount)
+    purse_changed.emit("btc", purse_balance("btc"))
+    return true
+
 ## Credit `amount` faces of an Episode 1 coin token (eth / btc / sol). WBTC and
 ## TitanX keep their own award paths (GoldMineSystem.award_wbtc, add_titanx);
 ## for those this is the refund path of a refused sale.
 func purse_add(token: String, amount: int = 1) -> void:
     if amount <= 0 or not PURSE_TOKENS.has(token):
+        return
+    if token == "btc":
+        purse_add_btc(amount)
         return
     match token:
         "wbtc":
@@ -426,6 +450,8 @@ func purse_add(token: String, amount: int = 1) -> void:
 func purse_spend(token: String, amount: int) -> bool:
     if amount <= 0 or not PURSE_TOKENS.has(token) or purse_balance(token) < amount:
         return false
+    if token == "btc":
+        return purse_spend_btc(amount)
     match token:
         "wbtc":
             GoldMineSystem.wbtc_balance -= amount
@@ -550,8 +576,9 @@ func _load_purse(data: Dictionary) -> void:
     token_purse = {"eth": 0, "btc": 0, "sol": 0}
     if data.has("token_purse"):
         var raw: Dictionary = SaveSafe.to_dict(data.get("token_purse", {}))
-        for t in ["eth", "btc", "sol"]:
+        for t in ["eth", "sol"]:
             token_purse[t] = maxi(0, SaveSafe.to_int(raw.get(t, 0), 0))
+        _set_purse_btc(maxf(0.0, SaveSafe.to_float(raw.get("btc", 0))))
         return
     var legacy: int = coins_collected
     var share: int = legacy / 3

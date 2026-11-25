@@ -126,6 +126,7 @@ func _ready() -> void:
 	_sim.obstacle_hit.connect(func(_h: int) -> void: say("hit"))
 	_sim.zip_caught.connect(func(_i: int) -> void: say("zip_catch"))
 	_sim.archer_down.connect(_on_archer_down)
+	_sim.shovel_bear_down.connect(_on_shovel_bear_down)
 	_sim.dry_fire.connect(func() -> void: say("dry"))
 	_sim.reload_started.connect(func() -> void: say("reload"))
 	_sim.hop_blocked.connect(func(_l: int) -> void: say("hop_blocked"))
@@ -179,6 +180,9 @@ func say(cat: String) -> String:
 		_voice.stream = s
 		_voice.play()
 	return id
+
+func _on_shovel_bear_down(_index: int) -> void:
+	say("bear_down")
 
 func _on_archer_down(id: String) -> void:
 	say("bear_down")

@@ -486,15 +486,16 @@ func _draw_purse(band: Rect2, compact: bool) -> void:
 		var tex: Texture2D = PURSE_ICONS.get(t)
 		if tex != null:
 			draw_texture_rect(tex, Rect2(Vector2(x0 + 4.0, band.position.y + 7.0), Vector2(icon_px, icon_px)), false)
-		var amount: int = GameManager.purse_balance(t)
+		var amount: float = GameManager.purse_btc_balance() if t == "btc" else float(GameManager.purse_balance(t))
+		var count := str(amount)
 		var token_name: String = str(GameManager.PURSE_NAMES.get(t, t.to_upper()))
 		var ink: Color = PAPER if amount > 0 else Color(0.6, 0.52, 0.42)
 		var tx: float = x0 + icon_px + (6.0 if compact else 9.0)
 		if compact:                                  # phone: the count over the token's name, so five fit in 358 px
-			_text("%d" % amount, Vector2(tx, band.position.y + band.size.y * 0.5 - 1.0), 13, ink)
+			_text(count, Vector2(tx, band.position.y + band.size.y * 0.5 - 1.0), 13, ink)
 			_text(token_name, Vector2(tx, band.position.y + band.size.y * 0.5 + 11.0), 8, BRASS)
 		else:
-			_text("%s %d" % [token_name, amount], Vector2(tx, band.position.y + band.size.y * 0.5 + fs * 0.36), fs, ink)
+			_text("%s %s" % [token_name, count], Vector2(tx, band.position.y + band.size.y * 0.5 + fs * 0.36), fs, ink)
 
 
 ## Lil Blunt's ledger: his own bear kills (never Bull's), the Dude's Chill Buds

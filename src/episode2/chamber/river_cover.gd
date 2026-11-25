@@ -1823,11 +1823,13 @@ func _watcher_on_ray(eye: Vector3, dir: Vector3) -> Dictionary:
 
 
 ## One round drops a watcher: he falls back from the lip, his rifle leaves his hands and lies on the path with his rounds.
-func damage_watcher(w: Dictionary) -> void:
+func damage_watcher(w: Dictionary, player_caused: bool = false) -> void:
 	if str(w["state"]) == "dead":
 		return
 	w["state"] = "dead"
 	var folk: Ep2TownFolk = w["folk"]
+	if player_caused:
+		_pay_combat_kill(false, folk.global_position + Vector3.UP)
 	(w["glint"] as Node3D).visible = false
 	folk.set_pose("idle")
 	folk.fall_dead()
@@ -2274,19 +2276,19 @@ func _on_player_shot() -> void:
 	var bear_t: float = _ray_t
 	var watcher: Dictionary = _watcher_on_ray(eye, dir)
 	if not watcher.is_empty() and _ray_t <= minf(man_t, minf(raft_t, bear_t)):
-		damage_watcher(watcher)
+		damage_watcher(watcher, true)
 		if _hud != null:
 			_hud.hit_marker(true)
 		return
 	# the Sharps drops a bear in one; the lighter guns take two (and a raft's logs count the Sharps double the same way)
 	var dmg: int = 2 if armory.equipped == Ep2ArmoryState.BUFF else 1
 	if not man.is_empty() and man_t <= raft_t and man_t <= bear_t:
-		damage_raider(man)
+		damage_raider(man, true)
 		if _hud != null:
 			_hud.hit_marker(true)
 		return
 	if not raft.is_empty() and raft_t <= bear_t:
-		var broke: bool = damage_raft(raft, dmg, eye + dir * raft_t)
+		var broke: bool = damage_raft(raft, dmg, eye + dir * raft_t, true)
 		if _hud != null:
 			_hud.hit_marker(broke)
 		return
@@ -2296,9 +2298,10 @@ func _on_player_shot() -> void:
 	var bear_kind: String = "archer" if str(hit["state"]) == "archer" else ("ridge" if bool(hit["ridge"]) else "river")
 	var killed: bool = damage_bear(hit, dmg)
 	if was_alive:
-		_bear_money_hit(killed)                      # the coin clink + a wound on the Tabs (founder 2026-11-08)
+		_bear_hit_tally(killed)
 		if killed:
-			GameManager.tally_bear(bear_kind)        # his own shot only: this is the player's shot path, never Utah's or a test's
+			GameManager.tally_bear(bear_kind)
+			_pay_combat_kill(true, eye + dir * bear_t)
 	if _hud != null:
 		_hud.hit_marker(killed)
 
@@ -2319,12 +2322,16 @@ func damage_bear(b: Dictionary, dmg: int) -> bool:
 
 ## One of Hammer's men goes down (any gun): he goes over the side into the river and the raft carries on without him - no more shots,
 ## no more hold on the crate. Public so the headless gate can drive the rafts without aiming.
-func damage_raider(m: Dictionary) -> void:
+func damage_raider(m: Dictionary, player_caused: bool = false, kick: float = 1.0) -> void:
 	if str(m["state"]) == "dead":
 		return
 	m["state"] = "dead"
 	(m["glint"] as Node3D).visible = false
-	_overboard(m, 1.0)
+	_overboard(m, kick)
+	if player_caused:
+		var folk: Ep2TownFolk = m["folk"]
+		var at: Vector3 = folk.global_position + Vector3.UP if is_instance_valid(folk) else _player_pos
+		_pay_combat_kill(false, at)
 
 
 ## A man off his raft: out of the raft's frame and into the world where he stood, then over the nearer side edge (pitched by `kick`:
@@ -2387,7 +2394,7 @@ func raider_overboard(m: Dictionary) -> bool:
 
 ## A bullet into a raft's logs: splinters and a pale scar where it struck, the raft jolts; at half it lists and rides low with an end
 ## log working loose; at none it breaks up (_break_raft). True when that hit broke it. Public so the gate can drive it without aiming.
-func damage_raft(r: Dictionary, dmg: int, at: Vector3) -> bool:
+func damage_raft(r: Dictionary, dmg: int, at: Vector3, player_caused: bool = false) -> bool:
 	var health: Ep2CreatureHealth = r["health"]
 	if bool(r["broken"]) or health == null or not health.is_alive():
 		return false
@@ -2413,13 +2420,13 @@ func damage_raft(r: Dictionary, dmg: int, at: Vector3) -> bool:
 		loose.position += Vector3(0.14, -0.06, 0.25)
 		loose.rotation.y = 0.09
 	if broke:
-		_break_raft(r)
+		_break_raft(r, player_caused)
 	return broke
 
 
 ## The lashings give: the hook comes off the crate, whoever is still aboard goes into the river, and the logs drift apart with the
 ## current and settle low in the water.
-func _break_raft(r: Dictionary) -> void:
+func _break_raft(r: Dictionary, player_caused: bool = false) -> void:
 	r["broken"] = true
 	r["hooked"] = false
 	r["break_t"] = 0.0
@@ -2428,13 +2435,10 @@ func _break_raft(r: Dictionary) -> void:
 	_splinters(at + Vector3(0, 0.3, 0), 2.2)
 	_splash(at, 1.6)
 	_river_sound("raft_break", at)
-	for m in r["men"]:
-		if str(m["state"]) != "dead":
-			m["state"] = "dead"
-			(m["glint"] as Node3D).visible = false
-			_overboard(m, 0.6)
 	if _hud != null:
 		_hud.toast("HAMMER'S RAFT BREAKS UP", 2.0)
+	for m in r["men"]:
+		damage_raider(m, player_caused, 0.6)
 
 
 func _drift_wreck(r: Dictionary, delta: float) -> void:

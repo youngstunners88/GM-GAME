@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+- **2026-11-25 — Episode 2 kill rewards.** Lil Blunt earns 0.5 BTC for a confirmed bear kill and 0.25 BTC for a confirmed Hammer kill. One cash ching per death, recorded bear reactions and a Hammer kill caption. Wounds and Bull/NPC kills grant no reward. BTC flies from the target to Tabs with the amount shown, or to the BTC counter during the runner. Tabs and saves carry fractional BTC. Focused Godot 4.3 gates passed.
+
 **2026-11-25 — Episode 2 mobile access.** LIVE on itch in BUILD `2026-11-25-cb19807` (master CI 45526592659, butler upload and public build verified). The password screen now sizes its field and buttons to the phone and offers Zoom in / Zoom out while retaining typed text. After a correct code, the gate confirms access, displays loading progress, and tells upright players to turn their phone sideways. The runner starts once the phone is sideways and the game is ready. Browser storage preserves a successful unlock across immediate reloads. Public Chromium touch passed zoom and wrong-code feedback. The local web build with a temporary code passed acceptance, immediate reload, and portrait-to-landscape entry into the runner. Physical-phone testing remains open.
 
 **2026-11-24 — Founder doc "New shit!!!" Part 3: chariots live, town glass, screams, Earshot sounds, Winchester bandits.** LIVE on itch, BUILD `2026-11-24-72f490f` (master CI 45347083144 success, butler pushed, live probe passed from the gate pod: build tag, extras ready, HTTP 200). Not founder-verified.

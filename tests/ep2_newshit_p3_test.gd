@@ -347,7 +347,13 @@ func _rifle_bandits(am: Node) -> void:
 		_check("a watcher stands at his lookout on the path's river side", on_path)
 		var river: Vector3 = w["river"]
 		_check("...facing the river (watching the shipment)", Vector3(sin(wf.facing), 0, cos(wf.facing)).dot(river) > 0.7)
-		r.damage_watcher(w)
+		var btc_before: float = GameManager.purse_btc_balance()
+		r.damage_watcher(w, true)
+		r.damage_watcher(w, true)
+		_check("a player-killed ridge watcher pays a quarter BTC once", GameManager.purse_btc_balance() == btc_before + 0.25)
+		if watchers.size() > 1:
+			r.damage_watcher(watchers[1])
+			_check("an unattributed ridge death pays nothing", GameManager.purse_btc_balance() == btc_before + 0.25)
 		var wd: Ep2WeaponDrop = r._drops_root.get_node_or_null("Drop_ridge_0") as Ep2WeaponDrop
 		_check("a dead watcher drops his rifle on the path", wd != null and wd.get_node_or_null("HammerWinchester") != null)
 	r.queue_free()
