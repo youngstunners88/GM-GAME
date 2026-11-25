@@ -68,7 +68,9 @@ func _test_speech() -> void:
 	_check("the dev caption switch brings a missing take's caption back (and never a voiced one)", not Ep2Speech.hide_caption("no_such_line") and Ep2Speech.hide_caption(voiced_id))
 	Ep2Speech.captions_for_missing_takes = false
 	var town_src: String = FileAccess.get_file_as_string("res://src/episode2/chamber/gold_town.gd")
-	_check("every town speech call uses hide_caption (Mike Dean, Dude, jail, captions)", town_src.count("Ep2Speech.hide_caption(") == 4 and not town_src.contains("Ep2Speech.voiced(id))"))
+	# every _hud.speech call in the town passes hide_caption (Mike Dean, Dude, jail, captions, the storekeeper 2026-11-25)
+	_check("every town speech call uses hide_caption (Mike Dean, Dude, jail, captions, storekeeper)", town_src.count("Ep2Speech.hide_caption(") == 5
+		and town_src.count("_hud.speech(") == 5 and not town_src.contains("Ep2Speech.voiced(id))"))
 	hud.queue_free()
 
 
