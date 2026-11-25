@@ -111,18 +111,28 @@ static func code_ok(code: String) -> bool:
 	return Marshalls.raw_to_base64(code.strip_edges().sha256_buffer()) == ACCESS_SHA256
 
 func _is_unlocked() -> bool:
-	var cf := ConfigFile.new()
 	HarnessHooks.apply_ep2_gate_skip()   # harness-only access-gate skip: a web build tagged gm_harness, never the shipped one
 	if GameManager.EP2_STORY_BYPASSES_CODE and GameManager.ep2_story_unlocked:
 		return true         # earned: boss 3 was just beaten (founder 2026-10-03: the hand-off must be seamless)
+	if OS.has_feature("web"):
+		var saved: Variant = JavaScriptBridge.eval(
+			"(function(){try{return window.localStorage.getItem('smokerealm_ep2_unlock_v1');}catch(e){return null;}})();", true)
+		if saved == ACCESS_SHA256:
+			return true
+	var cf := ConfigFile.new()
 	return cf.load(UNLOCK_FILE) == OK and str(cf.get_value("ep2", "key", "")) == ACCESS_SHA256
 
-## The same device-local record a correct code writes. Kept in one place so the gate and the
-## test-only URL shortcut can never disagree on what "unlocked" means.
+## Keep the existing device record. On web, mirror the verified hash to localStorage, which writes
+## synchronously even when the engine's user:// filesystem has not synced before a reload.
 func _write_unlock() -> void:
 	var cf := ConfigFile.new()
 	cf.set_value("ep2", "key", ACCESS_SHA256)
 	cf.save(UNLOCK_FILE)
+	if OS.has_feature("web"):
+		var window: JavaScriptObject = JavaScriptBridge.get_interface("window")
+		window.__gmEp2Unlock = ACCESS_SHA256
+		JavaScriptBridge.eval(
+			"(function(){try{window.localStorage.setItem('smokerealm_ep2_unlock_v1',window.__gmEp2Unlock);}catch(e){}finally{delete window.__gmEp2Unlock;}})();", true)
 
 ## Founder 2026-11-08: the code could not be entered on a phone (no keyboard came up - the field was focused
 ## without a tap, and the 440 px box ran off a narrow screen). On any touch device the gate now brings its OWN
