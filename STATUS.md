@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-11-25 — Episode 2 mobile access.** The password screen now sizes its field and buttons to the phone and offers Zoom in / Zoom out while retaining typed text. After a correct code, the gate confirms access, displays loading progress, and tells upright players to turn their phone sideways. The runner starts once the phone is sideways and the game is ready. The Godot access-code and portrait touch checks passed. Physical-phone and public-build verification are pending.
+
 **2026-11-24 — Founder doc "New shit!!!" Part 3: chariots live, town glass, screams, Earshot sounds, Winchester bandits.** LIVE on itch, BUILD `2026-11-24-72f490f` (master CI 45347083144 success, butler pushed, live probe passed from the gate pod: build tag, extras ready, HTTP 200). Not founder-verified.
 - **Chariots (P2-7) + ammo wording (P2-8):** LIVE since BUILD `2026-11-24-296a662` (master CI 45337601469, butler pushed, live probe passed from the gate pod).
 - **Town glass (P3-B):** the windows are real glass now: transparent, a lit room behind panes with no interior. Shoot one and it breaks once: a jagged hole in a cracked rim, shards on the boards, a glass-break sound; the next round goes through. The stranger's and the lawmen's rounds break glass too (you are not fined for theirs).

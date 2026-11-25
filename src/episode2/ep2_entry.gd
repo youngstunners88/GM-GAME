@@ -80,6 +80,14 @@ const HarnessHooks := preload("res://src/debug/harness_hooks.gd")   # test-harne
 var _gate: Control = null
 var _gate_input: LineEdit = null
 var _gate_msg: Label = null
+var _gate_scroll: ScrollContainer
+var _gate_box: VBoxContainer
+var _gate_title: Label
+var _gate_zoom: Button
+var _gate_submit: Button
+var _gate_back: Button
+var _gate_accepted := false
+var _gate_zoomed := false
 
 func _ready() -> void:
 	_build_hud()
@@ -92,7 +100,10 @@ func _ready() -> void:
 	if HarnessHooks.ep2_remembered_unlock_requested():
 		_write_unlock()
 	if _is_unlocked():
-		_begin()
+		if gate_wants_keypad() and TouchUi.is_portrait() and not GameManager.ep2_story_unlocked:
+			_show_gate(true)
+		else:
+			_begin()
 	else:
 		_show_gate()
 
@@ -123,12 +134,14 @@ var _kp_shift := false
 var _kp_symbols := false
 var _kp_rows: VBoxContainer = null
 var _kp_key_size := Vector2(40, 44)
+var _kp_font_size := 20
 var _kp_show_text := true
 
 static func gate_wants_keypad() -> bool:
 	return TouchUi.is_touch()      # the one shared touch test (harness rule H6)
 
-func _show_gate() -> void:
+func _show_gate(accepted: bool = false) -> void:
+	_gate_accepted = accepted
 	var layer := CanvasLayer.new()
 	layer.layer = 20
 	add_child(layer)
@@ -137,72 +150,136 @@ func _show_gate() -> void:
 	_gate.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(_gate)
 	var touch := gate_wants_keypad()
-	var vp: Vector2 = get_viewport().get_visible_rect().size
-	var width: float = clampf(vp.x - 24.0, 280.0, 440.0 if not touch else 640.0)
-	# Scroll + center so a short landscape phone can still reach every control.
-	var scroll := ScrollContainer.new()
-	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_gate.add_child(scroll)
+	_gate_scroll = ScrollContainer.new()
+	_gate_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_gate_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_gate.add_child(_gate_scroll)
 	var center := CenterContainer.new()
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	center.custom_minimum_size = Vector2(vp.x, vp.y)
-	scroll.add_child(center)
-	var box := VBoxContainer.new()
-	box.custom_minimum_size = Vector2(width, 0)
-	box.add_theme_constant_override("separation", 8 if touch else 14)
-	center.add_child(box)
-	var title := Label.new()
-	title.text = "EPISODE 2 — GOLD MINE\nEnter the access code"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	title.add_theme_font_size_override("font_size", 20 if touch else 26)
-	title.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
-	box.add_child(title)
-	_gate_input = LineEdit.new()
-	_gate_input.placeholder_text = "access code"
-	_gate_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_gate_input.add_theme_font_size_override("font_size", 24)
-	_gate_input.custom_minimum_size = Vector2(0, 48 if touch else 0)
-	_gate_input.text_submitted.connect(_try_code)
-	if touch:
-		# Our keypad replaces the OS keyboard (which never opened reliably and hid the field).
-		_gate_input.virtual_keyboard_enabled = false
-		_gate_input.secret = not _kp_show_text
-	else:
-		_gate_input.secret = true
-	box.add_child(_gate_input)
+	_gate_scroll.add_child(center)
+	_gate_box = VBoxContainer.new()
+	center.add_child(_gate_box)
+
+	_gate_title = Label.new()
+	_gate_title.text = "EPISODE 2 — GOLD MINE\nEnter the access code"
+	_gate_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gate_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_gate_title.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
+	_gate_box.add_child(_gate_title)
+
+	if not accepted:
+		var field := HBoxContainer.new()
+		_gate_box.add_child(field)
+		_gate_input = LineEdit.new()
+		_gate_input.placeholder_text = "Access code"
+		_gate_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_gate_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_gate_input.text_submitted.connect(_try_code)
+		_gate_input.virtual_keyboard_enabled = not touch
+		_gate_input.secret = not touch
+		field.add_child(_gate_input)
+		if touch:
+			_gate_zoom = Button.new()
+			_gate_zoom.focus_mode = Control.FOCUS_NONE
+			_gate_zoom.pressed.connect(_toggle_gate_zoom)
+			field.add_child(_gate_zoom)
 	_gate_msg = Label.new()
 	_gate_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gate_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_gate_msg.add_theme_color_override("font_color", Color(1, 0.45, 0.35))
-	box.add_child(_gate_msg)
-	if touch:
-		_kp_key_size = Vector2(clampf((width - 9.0 * 4.0) / 10.0, 26.0, 60.0), clampf(vp.y / 13.0, 34.0, 54.0))
-		_kp_rows = VBoxContainer.new()
-		_kp_rows.add_theme_constant_override("separation", 4)
-		box.add_child(_kp_rows)
-		_build_keypad()
+	_gate_box.add_child(_gate_msg)
+
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 16)
-	box.add_child(row)
-	var go := Button.new()
-	go.text = "ENTER"
-	go.custom_minimum_size = Vector2(110, 48 if touch else 0)
-	go.pressed.connect(func() -> void: _try_code(_gate_input.text))
-	row.add_child(go)
-	var back := Button.new()
-	back.text = "BACK TO MENU"
-	back.custom_minimum_size = Vector2(150, 48 if touch else 0)
-	back.pressed.connect(func() -> void: SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND))
-	row.add_child(back)
-	_gate_input.grab_focus()
-	print("[EP2] code prompt")
+	row.add_theme_constant_override("separation", 8)
+	_gate_box.add_child(row)
+	if not accepted:
+		_gate_submit = Button.new()
+		_gate_submit.text = "ENTER"
+		_gate_submit.pressed.connect(func() -> void: _try_code(_gate_input.text))
+		row.add_child(_gate_submit)
+	_gate_back = Button.new()
+	_gate_back.text = "BACK TO MENU"
+	_gate_back.pressed.connect(_leave_gate)
+	row.add_child(_gate_back)
+
+	if accepted:
+		_show_gate_status("Episode 2 unlocked")
+	else:
+		if touch:
+			_kp_rows = VBoxContainer.new()
+			_kp_rows.add_theme_constant_override("separation", 4)
+			_gate_box.add_child(_kp_rows)
+		_gate_input.grab_focus()
+	_gate_scroll.resized.connect(_layout_gate.bind(touch))
+	_layout_gate(touch)
+	if not accepted:
+		print("[EP2] code prompt")
+
+func _layout_gate(touch: bool) -> void:
+	if _gate == null:
+		return
+	var dp: float = TouchMetrics.from_environment(get_viewport(), touch).dp if touch else 1.0
+	var width: float = minf(get_viewport().get_visible_rect().size.x - 28.0 * dp,
+		(540.0 if _gate_zoomed else 425.0) * dp if touch else 440.0)
+	var body_font: int = roundi((22.0 if _gate_zoomed else 16.0) * dp)
+	var button_height: float = 44.0 * dp if touch else 0.0
+	_gate_box.custom_minimum_size.x = width
+	_gate_box.add_theme_constant_override("separation", roundi(5.0 * dp) if touch else 14)
+	_gate_title.add_theme_font_size_override("font_size", roundi((26.0 if _gate_zoomed else 19.0) * dp) if touch else 26)
+	_gate_msg.add_theme_font_size_override("font_size", body_font)
+	_gate_back.custom_minimum_size = Vector2(0, button_height)
+	_gate_back.add_theme_font_size_override("font_size", body_font)
+	if _gate_accepted:
+		return
+	_gate_input.add_theme_font_size_override("font_size", roundi((29.0 if _gate_zoomed else 20.0) * dp) if touch else 24)
+	_gate_input.custom_minimum_size.y = button_height
+	_gate_submit.custom_minimum_size = Vector2(0, button_height)
+	_gate_submit.add_theme_font_size_override("font_size", body_font)
+	if touch:
+		_gate_zoom.text = "Zoom out" if _gate_zoomed else "Zoom in"
+		_gate_zoom.custom_minimum_size.y = button_height
+		_gate_zoom.add_theme_font_size_override("font_size", roundi(16.0 * dp))
+		# The widest symbol row is ten keys plus Delete.
+		_kp_key_size = Vector2((width - 40.0) / 11.5, (45.0 if _gate_zoomed else 34.0) * dp)
+		_kp_font_size = body_font
+		_build_keypad()
+
+func _toggle_gate_zoom() -> void:
+	_gate_zoomed = not _gate_zoomed
+	_layout_gate(true)
+
+func _leave_gate() -> void:
+	SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
+
+func _show_gate_status(title: String) -> void:
+	_gate_title.text = title
+	_gate_msg.add_theme_color_override("font_color", Color(1, 0.93, 0.80))
+
+func _close_gate() -> void:
+	_gate.hide()
+	_gate.get_parent().queue_free()
+	_gate = null
+
+## On touch, keep a visible handoff until the first playable frame can run.
+func _advance_gate() -> void:
+	if not _gate_accepted or not SceneRouter.is_revealed() or TransitionDirector.is_busy():
+		return
+	if TouchUi.is_portrait() and not TouchUi.is_keyboard_mode():
+		_gate_msg.text = "Turn your phone sideways to play."
+	elif Ep2HideoutWarm.wanted() and not Ep2HideoutWarm.done() \
+			and GameManager.pending_episode2_resume.is_empty() and Ep2Playtest.preset == "":
+		_gate_msg.text = "Loading Episode 2… %d%%" % mini(99, int(Ep2HideoutWarm.progress() * 100))
+	else:
+		_gate_accepted = false
+		_close_gate()
+		_begin()
 
 ## (Re)builds the keypad rows for the current page (letters / symbols) and Shift state.
 func _build_keypad() -> void:
 	for c in _kp_rows.get_children():
+		_kp_rows.remove_child(c)
 		c.queue_free()
 	_kp_rows.add_child(_kp_row("1234567890"))
 	var rows: Array[String] = KEY_ROWS_SYMBOL if _kp_symbols else KEY_ROWS_ALPHA
@@ -259,7 +336,7 @@ func _kp_button(label: String, w: float) -> Button:
 	b.text = label
 	b.focus_mode = Control.FOCUS_NONE        # tapping a key must not steal focus from the field
 	b.custom_minimum_size = Vector2(w, _kp_key_size.y)
-	b.add_theme_font_size_override("font_size", 20)
+	b.add_theme_font_size_override("font_size", _kp_font_size)
 	return b
 
 func _kp_toggle_shift() -> void:
@@ -281,15 +358,25 @@ func _kp_backspace() -> void:
 		_gate_input.caret_column = _gate_input.text.length()
 
 func _try_code(code: String) -> void:
+	if _gate == null or _gate_accepted:
+		return
 	if not code_ok(code):
 		_gate_msg.text = "Wrong code."
 		_gate_input.clear()
 		_gate_input.grab_focus()
 		return
 	_write_unlock()
-	_gate.get_parent().queue_free()
-	_gate = null
-	_begin()
+	if _kp_rows != null:
+		_gate_accepted = true
+		_gate_input.clear()
+		_gate_input.get_parent().hide()
+		_kp_rows.hide()
+		_gate_submit.hide()
+		_show_gate_status("Code accepted")
+		_gate_msg.text = "Loading Episode 2…"
+	else:
+		_close_gate()
+		_begin()
 
 func _begin() -> void:
 	if OS.has_feature("web"):
@@ -501,11 +588,12 @@ func _tick_hideout_warm() -> void:
 		Ep2HideoutWarm.step(WARM_WAIT_MS)
 		_banner.text = _bar(Ep2HideoutWarm.progress())      # a bar, no words (touch rule)
 	elif _gate != null and GameManager.pending_episode2_resume.is_empty() and Ep2Playtest.preset == "":
-		Ep2HideoutWarm.step(WARM_GATE_MS)
+		Ep2HideoutWarm.step(WARM_WAIT_MS if _gate_accepted else WARM_GATE_MS)
 
 
 func _process(delta: float) -> void:
 	_tick_hideout_warm()
+	_advance_gate()
 	_keys_t = maxf(0.0, _keys_t - delta)
 	_refresh_hud()
 	if GameManager.has_region_map: _hud.position.x = 158.0
@@ -532,7 +620,7 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _gate != null:
 		if event.is_action_pressed("ui_cancel"):
-			SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
+			_leave_gate()
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_K:
 		_keys_t = KEYS_SHOW_SECONDS          # shows the control list; changes no binding
