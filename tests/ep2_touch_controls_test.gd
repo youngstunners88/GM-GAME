@@ -11,7 +11,7 @@ extends Node
 ##   4. on foot: F5 (move_* InputEventAction must not walk/cover), F6 (ep2_touch_jump jumps, W does not), F8 (the emulated mouse
 ##      never fires/looks/captures; a real mouse still does), look pad -> yaw, ADS press/release, reload, the keyboard map
 ##   5. films: holding the SKIP button 0.9 s skips the real Ep2VideoFilm and the in-engine film; no button at non-skippable moments
-##   6. portrait pauses the sim behind a cue (+ a HOME icon so a locked phone is never trapped), landscape resumes
+##   6. portrait runs with the swipe pad, and orientation changes preserve the active run and manual pause
 ##   7. Ep2Entry: PLAYING on the menu route, the wordless pause card (PAUSED, PLAY resumes), the run-over profile + retry
 ##   8. WORDLESS: with the touch flag forced none of the audit-F9 strings is produced by ep2_entry / runner_view / fps_hud /
 ##      smelting_facility / the films, and the desktop strings are still there with the flag off
@@ -873,7 +873,7 @@ func _section_film() -> void:
 # --- 6. portrait ----------------------------------------------------------------
 
 func _section_portrait() -> void:
-	print(" -- portrait: the rotate cue and the pause")
+	print(" -- portrait: live runner controls through orientation changes")
 	_go_playing()
 	var r: Ep2SessionRoot = await _start_runner()
 	var g: RunnerGraybox = r.get_active() as RunnerGraybox
@@ -881,34 +881,42 @@ func _section_portrait() -> void:
 	await _set_screen(Vector2i(390, 844))
 	MobileLayoutManager.refresh()
 	await _frames(3)
-	_check("upright on a touch device -> ep2_rotate", r.touch_profile() == &"ep2_rotate", str(r.touch_profile()))
-	_check("...the sim is paused (tree paused, StateMachine still PLAYING)", get_tree().paused and r.is_rotate_paused() and StateMachine.is_playing())
-	_check("...the manager shows the cue layout", MobileLayoutManager.current_profile() == &"ep2_rotate"
-		and str(MobileLayoutManager.current_layout_key()).begins_with("ep2_rotate_") and MobileLayoutManager.controls_visible,
-		"%s %s" % [MobileLayoutManager.current_profile(), MobileLayoutManager.current_layout_key()])
+	_check("upright keeps the same runner and the tree playing", r.get_active() == g and not get_tree().paused)
+	_check("upright exposes the runner profile", r.touch_profile() == &"ep2_runner")
+	_check("upright uses the portrait runner layout", MobileLayoutManager.current_layout_key() == &"ep2_runner_phone_portrait"
+		and MobileLayoutManager.controls_visible)
 	var d0: float = g.get_distance()
-	await _frames(5)
-	_check("...and the runner does not advance", is_equal_approx(g.get_distance(), d0))
+	g.step(0.1)
+	_check("upright player can advance", g.get_distance() > d0)
+	var lane: int = g.get_lane()
+	var swipe: VirtualControl = _control("VirtualSwipePad")
+	_check("upright exposes a swipe pad", swipe != null)
+	if swipe != null:
+		await _swipe(swipe, Vector2(34, 0))
+	_check("upright swipe changes lanes", g.get_lane() != lane)
+	var distance: float = g.get_distance()
 	await _set_screen(Vector2i(1280, 720))
 	MobileLayoutManager.refresh()
-	await _frames(3)
-	_check("back to landscape: the sim resumes", not get_tree().paused and not r.is_rotate_paused())
-	_check("...and the runner profile returns", r.touch_profile() == &"ep2_runner" and MobileLayoutManager.current_profile() == &"ep2_runner")
-	# nobody else's pause is taken or released
+	_check("rotation preserves runner identity and distance", r.get_active() == g and g.get_distance() >= distance)
+	_check("landscape uses the runner layout", MobileLayoutManager.current_layout_key() == &"ep2_runner_phone_landscape"
+		or MobileLayoutManager.current_layout_key() == &"ep2_runner_tablet_landscape")
 	StateMachine.change_state(StateMachine.State.PAUSED)
 	await _set_screen(Vector2i(390, 844))
-	_check("a pause that is not ours is never taken over", not r.is_rotate_paused())
-	await _set_screen(Vector2i(1280, 720))
-	_check("...and left alone when the screen turns back", get_tree().paused and StateMachine.is_paused())
+	_check("rotation leaves a manual pause in place", get_tree().paused and StateMachine.is_paused())
 	StateMachine.change_state(StateMachine.State.PLAYING)
-	# a desktop (no touch) window taller than wide never pauses
-	MobileLayoutManager.is_touch_device = false
-	MobileLayoutManager.force_touch_ui = false
-	await _set_screen(Vector2i(390, 844))
-	_check("a desktop window taller than wide does NOT pause or show the cue", not get_tree().paused and r.touch_profile() == &"ep2_runner")
+	_check("resume plays upright", not get_tree().paused and r.touch_profile() == &"ep2_runner")
+	_free_roots()
+	await _frames(3)
+	var foot: Array = _stub_root()
+	var camera := Camera3D.new()
+	foot[1].add_child(camera)
+	camera.make_current()
+	MobileLayoutManager.refresh()
+	await _frames(3)
+	_check("portrait keeps on-foot controls and a wide horizontal camera",
+		MobileLayoutManager.current_layout_key() == &"ep2_foot_phone_portrait" and camera.keep_aspect == Camera3D.KEEP_WIDTH)
 	await _set_screen(Vector2i(1280, 720))
-	MobileLayoutManager.is_touch_device = true
-	MobileLayoutManager.force_touch_ui = true
+	_check("landscape restores the room camera projection", camera.keep_aspect == Camera3D.KEEP_HEIGHT)
 	_free_roots()
 	await _frames(3)
 

@@ -63,6 +63,8 @@ func _check_mobile_gate(code: String) -> void:
 		entry._gate_input.get_theme_font_size("font_size") > regular_size and entry._gate_input.text == "test")
 	entry._gate_zoom.pressed.emit()
 	_check("zoom out restores the original text size", entry._gate_input.get_theme_font_size("font_size") == regular_size)
+	if not StateMachine.is_playing():
+		StateMachine.change_state(StateMachine.State.TRANSITIONING)
 	if code.is_empty():
 		# Exercise re-entry from the same saved record without needing the production code.
 		entry._write_unlock()
@@ -73,17 +75,15 @@ func _check_mobile_gate(code: String) -> void:
 	else:
 		entry._gate_input.text = code
 		entry._gate_submit.pressed.emit()
-	await get_tree().process_frame
-	await get_tree().process_frame
-	_check("unlocked portrait shows a rotation instruction before booting the runner",
-		entry._gate != null and entry._root == null and "sideways" in entry._gate_msg.text)
-	if not StateMachine.is_playing():
-		StateMachine.change_state(StateMachine.State.TRANSITIONING)
+	for _i in 6:
+		await get_tree().process_frame
+	_check("unlocked portrait starts the runner upright",
+		entry._gate == null and entry._root != null and entry._root.get_mode() == Ep2SessionRoot.Mode.RUNNER)
+	var original_runner: Node = entry._root.get_active()
 	get_window().size = Vector2i(844, 390)
 	for _i in 6:
 		await get_tree().process_frame
-	_check("rotation starts the runner from the unlocked screen",
-		entry._gate == null and entry._root != null and entry._root.get_mode() == Ep2SessionRoot.Mode.RUNNER)
+	_check("rotation leaves the same runner active", entry._root.get_active() == original_runner and not get_tree().paused)
 	entry.queue_free()
 	await get_tree().process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(ENTRY.UNLOCK_FILE))

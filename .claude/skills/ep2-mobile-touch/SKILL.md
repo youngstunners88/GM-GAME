@@ -1,6 +1,6 @@
 ---
 name: ep2-mobile-touch
-description: "Episode 2 Part 1 on a phone or tablet: the mine-tunnel RUNNER (swipe pad, attack, pickaxe), the Smelting Facility hideout on foot (stick, look pad, fire/jump/aim/reload/interact/run), the film skip, the run-over retry/home, the wordless pause card, the portrait 'turn your phone' cue, and the Episode 2 input-router fixes that make touch possible. TRIGGER on Episode 2 on mobile, swipe to hop/jump/duck, look pad, 'cannot play Episode 2 on my phone', 'RUN FAILED black screen on phone', film cannot be skipped on touch, ep2_runner / ep2_foot / ep2_film / ep2_end / ep2_rotate, ep2_touch_* actions, Ep2TouchOverlay, any new Episode 2 room that must be playable by touch, any key name written in an Episode 2 HUD. Read BEFORE adding a verb, a room or a string to Episode 2."
+description: "Episode 2 Part 1 on a phone or tablet: the mine-tunnel RUNNER (swipe pad, attack, pickaxe), the Smelting Facility hideout on foot (stick, look pad, fire/jump/aim/reload/interact/run), the film skip, the run-over retry/home, the wordless pause card, portrait and landscape play, and the Episode 2 input-router fixes that make touch possible. TRIGGER on Episode 2 on mobile, swipe to hop/jump/duck, look pad, 'cannot play Episode 2 on my phone', 'RUN FAILED black screen on phone', film cannot be skipped on touch, ep2_runner / ep2_foot / ep2_film / ep2_end / ep2_rotate, ep2_touch_* actions, Ep2TouchOverlay, any new Episode 2 room that must be playable by touch, any key name written in an Episode 2 HUD. Read BEFORE adding a verb, a room or a string to Episode 2."
 ---
 
 # Episode 2 Part 1 on a phone
@@ -21,7 +21,6 @@ Rules come from `gm-game-mobile-touch-experience` (one path, wordless, no invisi
 | `ep2_runner` | RUNNER mode, `is_running()` | `Ep2SessionRoot.touch_profile()` |
 | `ep2_foot` | CHAMBER, free roam, `has_player_control()` (or armory open) | `Ep2SessionRoot` |
 | `ep2_film` | CHAMBER and the active room's `is_film_skippable()` (Smelting Facility: beat CINEMATIC and the Seedance film or the in-engine fallback `is_skippable()`, i.e. >= `SKIP_SHOW_AT` 1.0 s in and not finishing) | `Ep2SessionRoot` |
-| `ep2_rotate` | RUNNER / foot while the window is portrait on a touch device not in keyboard mode | `Ep2SessionRoot` |
 | `none` | TRANSITION, IDLE, scripted beats, shop-style modals | `Ep2SessionRoot` (manager hides + releases) |
 | `ep2_end` | run over (`_ended`), retry + home | **`Ep2Entry`** - it joins the group ONLY while ended |
 
@@ -98,8 +97,7 @@ was down during a suspension is ignored until it lifts (never adopted). `TouchAc
 - **Pause card** (`src/episode2/ep2_touch_overlay.gd`, `Ep2TouchOverlay`, canvas layer 70, wordless dim + PLAY + HOME). The Pause button presses the `pause` action; `Ep2Entry._unhandled_input` opens it **on touch devices only**
   (`TouchUi.is_touch()`), only for `ep2_runner` / `ep2_foot`, via `StateMachine -> PAUSED` (controls go dim and inert; deviation from DECISIONS: they stay `suspended`, not `none`, so a resting thumb survives).
   HOME = the same two lines as Escape (`_go_home`). `pause_menu.tscn` is NOT reused (its Restart/Quit call `reset_session()`). Desktop Esc is unchanged. Pads react to raw finger events with a one-activation-per-frame dedupe (touch trap 11).
-- **Portrait**: the 3D runner/hideout cannot be framed upright (`Camera3D` keeps height, ~1.0 m half-width at the rider's depth on 390x844), so `touch_profile()` returns `ep2_rotate` (drawn phone + curved arrow, STOP over the screen) and the session root **pauses the tree itself**
-  (`get_tree().paused`, `_rotate_paused`; StateMachine stays PLAYING so the manager still shows the cue) until landscape; a HOME icon sits on top so a portrait-locked phone is never trapped (`Ep2Entry._sync_portrait_exit`). `_exit_tree` never leaves the tree frozen.
+- **Portrait**: use the existing upright runner and foot layouts on the same session. Widen the runner framing and preserve a usable horizontal first-person view. Resize must not pause or rebuild the run. A manual pause remains held through resize.
 - **Run over**: wordless -> banner text cleared, last frame kept as a dim scrim (`_show_scrim`, layer 8; the headless renderer has no viewport texture so a dark plate is used) and profile `ep2_end`: RETRY (BC (-66,120) r46, action `jump` = the existing retry) and HOME (BC (74,112) r34, `ui_cancel` = the existing exit),
   both with `arm_delay_s 0.8` (the player is mashing fire at the moment of death) and placed away from the fire button. Keep emitting `session_failed` and the armory restore in `_on_run_failed` (`ep2_personal_armory_test`, `ep2_stress_soak_test` rely on them): change only what is torn down and when.
 - **Film skip**: profile `ep2_film` = one SKIP button (BR (66,66) r36, glyph double-chevron) that presses `jump` with a hold ring (`hold_seconds 0.9`). The film's own rule is unchanged (hold `jump` after one release, only from `SKIP_SHOW_AT`). Applies to `Ep2VideoFilm`, `CliffJumpCinematic` and
@@ -118,13 +116,12 @@ was down during a suspension is ignored until it lifts (never adopted). `TouchAc
 | runner telegraph `Label3D` `DUCK / HOP! / JUMP / SWIPE! X / right-click` | flat arrow / ring / cross cue glyphs (`CueGlyph`, `is_cue_wordless()`) |
 | ep2 heat / retry hint (`smelting_facility.gd:1084`) | `Token.HEAT` / `Token.RETRY` |
 
-`Episode2Mode.control_hint` is kept (a desktop test asserts it). Plain stat labels, dialogue and the access-code gate keep their words (the code gate is touch-reachable but a phone cannot type in it while
-`html/experimental_virtual_keyboard=false`; flipping that flag changes focus handling for the whole game and needs a device test - NOT done).
+`Episode2Mode.control_hint` is kept (a desktop test asserts it). Plain stat labels, dialogue and the access-code gate keep their words. The mobile access gate uses an in-game keypad and zoom. A correct code starts in the current orientation. An interrupted browser handoff can return to the episode once in the same tab, with normal access validation.
 
 ## Tests (fresh `XDG_DATA_HOME`, `timeout`)
 
 `ep2_touch_controls_test` (`EP2_TOUCH_CONTROLS`, ~18 s, `-- only=<section>` runs one of profile / runner / lifecycle / foot / film / portrait / entry / words): profile table; real-finger gestures (hop +-1 lane without spending ammo, jump, duck + min hold, pickaxe, attack -1 round, tap in free area fires once, steer + fire fingers);
-suspend drops a held duck and it is NOT restored; mode swap releases everything; chained foot->foot hand-over keeps held input and never flips to `none`; F5/F6/F8; look pad -> yaw; ADS; reload; keyboard map unchanged; film skip with the real `Ep2VideoFilm` and the in-engine film; portrait pause/resume + HOME; Entry PLAYING on the menu route, pause card, run-over;
+suspend drops a held duck and it is NOT restored; mode swap releases everything; chained foot->foot hand-over keeps held input and never flips to `none`; F5/F6/F8; look pad -> yaw; ADS; reload; keyboard map unchanged; film skip with the real `Ep2VideoFilm` and the in-engine film; live portrait swipe and rotation without restarting, including a manual pause; Entry PLAYING on the menu route, pause card, run-over;
 the wordless scan with a desktop control (the words return when the flag is off). Also: `touch_controls_profiles_test`, `ep2_session_root_test`, `touch_scene_swap_cleanup_test`, `ep2_smelting_facility_test`
 (section **13** is the real-keys routing check; the old `ep2-free-roam-controls` cite of section 12 was wrong - 12 is the Bull rig).
 Mutations: 42 were run, all killed in the end; 5 survived the first pass and 3 of those were real gate gaps that were then closed (the specific list lives in the build report, not in the repo - re-do the exercise for any new gate: break the guarded behaviour, watch the gate fail, restore).
@@ -147,7 +144,6 @@ Pre-existing failures NOT from this work: `ep2_smelting_facility_test` ("Bull PB
 - `ep2_armory_shop` is keyboard-driven with a key-naming hint line.
 - Strings still shown on touch: `interlude_base.gd` ("OUT OF ROUNDS - PRESS R"), `woods_quad.gd` ("Search %s [E]"), `gold_town.gd` ("[E]", "click to fire"), `logans_lake.gd` ("[E]"), `ep2_armory_intro.gd`, the shop hint.
 - Miner Shaft / `LEG_DEEPER` is unreachable on touch (cover / dash verbs have no touch route).
-- A hybrid in portrait that flips to keyboard mode stays paused until rotated.
 - Deferred by decision: FirePad / aim assist / `ep2_fire` / `press_at`; a runner reload button; a contextual hazard tutorial and ghost-finger demo; persisting the earned unlock; flipping `experimental_virtual_keyboard`.
 
 ## Untuned (paper numbers, need a real device)

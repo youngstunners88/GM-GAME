@@ -115,6 +115,10 @@ const LEAF_CART_LEN := 1.85
 ## the camera looks far down the track, so the vanishing point and the rails ahead stay clear.
 const CAM_HEIGHT := 2.7            # closer + lower (founder target: Lil Blunt big in frame)
 const CAM_BACK := 3.4
+# A narrower screen needs more room around the outer rails near the cart.
+const PORTRAIT_CAM_BACK := 2.6
+const PORTRAIT_CAM_HEIGHT := 0.45
+const PORTRAIT_CAM_FOV := 28.0
 const CAM_FOLLOW_X := 0.35
 const CAM_LOOK_X := 0.2
 const CAM_LOOK_Y := 1.1
@@ -314,6 +318,7 @@ var _hero_body: Node3D = null
 var hero_yaw_base: float = HERO_YAW_BASE   # vars (not consts) so the eyes rig can A/B them live
 var cam_height: float = CAM_HEIGHT
 var cam_back: float = CAM_BACK
+var _portrait_framing: float = 0.0
 var _rider_floor: float = RIDER_FLOOR
 var _cart_rim_y: float = 1.2         # world y of the leaf cart rim (measured at build)
 var _wreck_pieces: Array = []        # [{"node", "vel", "spin", "t"}]
@@ -3223,10 +3228,15 @@ func _update_lights(dist: float) -> void:
 
 func _update_camera(dist: float, delta: float) -> void:
 	var rx: float = float(_sim.get_cart_x())
-	var target := Vector3(rx * CAM_FOLLOW_X, cam_height, dist - cam_back)
-	if _sim.is_ziplining():
-		target.y = cam_height + 1.7
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var aspect: float = viewport_size.x / maxf(viewport_size.y, 1.0)
+	var portrait_target: float = clampf((1.0 - aspect) / 0.55, 0.0, 1.0)
 	var k: float = clampf(delta * 6.0, 0.0, 1.0)
+	_portrait_framing = lerpf(_portrait_framing, portrait_target, k)
+	var target := Vector3(rx * CAM_FOLLOW_X, cam_height + PORTRAIT_CAM_HEIGHT * _portrait_framing,
+		dist - cam_back - PORTRAIT_CAM_BACK * _portrait_framing)
+	if _sim.is_ziplining():
+		target.y += 1.7
 	var p: Vector3 = _camera.position
 	p.x = lerpf(p.x, target.x, k)
 	p.y = lerpf(p.y, target.y, k)
@@ -3245,7 +3255,7 @@ func _update_camera(dist: float, delta: float) -> void:
 		return
 	var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 	var fov_t: float = FOV_BASE + maxf(0.0, spd - 20.0) * FOV_PER_MS + (5.0 if _sim.is_ziplining() else 0.0)
-	fov_t += panic * 9.0
+	fov_t += panic * 9.0 + PORTRAIT_CAM_FOV * _portrait_framing
 	_camera.fov = lerpf(_camera.fov, fov_t, clampf(delta * 3.0, 0.0, 1.0))
 	if _streaks:
 		_streaks.emitting = _sim.is_running() and not debug_off.has("streaks")

@@ -60,7 +60,6 @@ const PROFILE_END := &"ep2_end"
 const PROFILE_NONE := &"none"
 const PROFILE_RUNNER := &"ep2_runner"
 const PROFILE_FOOT := &"ep2_foot"
-const PROFILE_ROTATE := &"ep2_rotate"
 ## The wordless pause card (touch). Built on first use; Escape / the card's HOME leave through the same path.
 var _overlay: Ep2TouchOverlay = null
 var _pause_open: bool = false
@@ -88,6 +87,7 @@ var _gate_submit: Button
 var _gate_back: Button
 var _gate_accepted := false
 var _gate_zoomed := false
+var _entry_recovery_armed := false
 
 func _ready() -> void:
 	_build_hud()
@@ -100,10 +100,7 @@ func _ready() -> void:
 	if HarnessHooks.ep2_remembered_unlock_requested():
 		_write_unlock()
 	if _is_unlocked():
-		if gate_wants_keypad() and TouchUi.is_portrait() and not GameManager.ep2_story_unlocked:
-			_show_gate(true)
-		else:
-			_begin()
+		_begin()
 	else:
 		_show_gate()
 
@@ -150,8 +147,7 @@ var _kp_show_text := true
 static func gate_wants_keypad() -> bool:
 	return TouchUi.is_touch()      # the one shared touch test (harness rule H6)
 
-func _show_gate(accepted: bool = false) -> void:
-	_gate_accepted = accepted
+func _show_gate() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 20
 	add_child(layer)
@@ -178,22 +174,21 @@ func _show_gate(accepted: bool = false) -> void:
 	_gate_title.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
 	_gate_box.add_child(_gate_title)
 
-	if not accepted:
-		var field := HBoxContainer.new()
-		_gate_box.add_child(field)
-		_gate_input = LineEdit.new()
-		_gate_input.placeholder_text = "Access code"
-		_gate_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_gate_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_gate_input.text_submitted.connect(_try_code)
-		_gate_input.virtual_keyboard_enabled = not touch
-		_gate_input.secret = not touch
-		field.add_child(_gate_input)
-		if touch:
-			_gate_zoom = Button.new()
-			_gate_zoom.focus_mode = Control.FOCUS_NONE
-			_gate_zoom.pressed.connect(_toggle_gate_zoom)
-			field.add_child(_gate_zoom)
+	var field := HBoxContainer.new()
+	_gate_box.add_child(field)
+	_gate_input = LineEdit.new()
+	_gate_input.placeholder_text = "Access code"
+	_gate_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gate_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_gate_input.text_submitted.connect(_try_code)
+	_gate_input.virtual_keyboard_enabled = not touch
+	_gate_input.secret = not touch
+	field.add_child(_gate_input)
+	if touch:
+		_gate_zoom = Button.new()
+		_gate_zoom.focus_mode = Control.FOCUS_NONE
+		_gate_zoom.pressed.connect(_toggle_gate_zoom)
+		field.add_child(_gate_zoom)
 	_gate_msg = Label.new()
 	_gate_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_gate_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -204,28 +199,23 @@ func _show_gate(accepted: bool = false) -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 8)
 	_gate_box.add_child(row)
-	if not accepted:
-		_gate_submit = Button.new()
-		_gate_submit.text = "ENTER"
-		_gate_submit.pressed.connect(func() -> void: _try_code(_gate_input.text))
-		row.add_child(_gate_submit)
+	_gate_submit = Button.new()
+	_gate_submit.text = "ENTER"
+	_gate_submit.pressed.connect(func() -> void: _try_code(_gate_input.text))
+	row.add_child(_gate_submit)
 	_gate_back = Button.new()
 	_gate_back.text = "BACK TO MENU"
-	_gate_back.pressed.connect(_leave_gate)
+	_gate_back.pressed.connect(_return_to_menu)
 	row.add_child(_gate_back)
 
-	if accepted:
-		_show_gate_status("Episode 2 unlocked")
-	else:
-		if touch:
-			_kp_rows = VBoxContainer.new()
-			_kp_rows.add_theme_constant_override("separation", 4)
-			_gate_box.add_child(_kp_rows)
-		_gate_input.grab_focus()
+	if touch:
+		_kp_rows = VBoxContainer.new()
+		_kp_rows.add_theme_constant_override("separation", 4)
+		_gate_box.add_child(_kp_rows)
+	_gate_input.grab_focus()
 	_gate_scroll.resized.connect(_layout_gate.bind(touch))
 	_layout_gate(touch)
-	if not accepted:
-		print("[EP2] code prompt")
+	print("[EP2] code prompt")
 
 func _layout_gate(touch: bool) -> void:
 	if _gate == null:
@@ -260,7 +250,8 @@ func _toggle_gate_zoom() -> void:
 	_gate_zoomed = not _gate_zoomed
 	_layout_gate(true)
 
-func _leave_gate() -> void:
+func _return_to_menu() -> void:
+	_clear_entry_recovery()
 	SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
 
 func _show_gate_status(title: String) -> void:
@@ -276,9 +267,7 @@ func _close_gate() -> void:
 func _advance_gate() -> void:
 	if not _gate_accepted or not SceneRouter.is_revealed() or TransitionDirector.is_busy():
 		return
-	if TouchUi.is_portrait() and not TouchUi.is_keyboard_mode():
-		_gate_msg.text = "Turn your phone sideways to play."
-	elif Ep2HideoutWarm.wanted() and not Ep2HideoutWarm.done() \
+	if Ep2HideoutWarm.wanted() and not Ep2HideoutWarm.done() \
 			and GameManager.pending_episode2_resume.is_empty() and Ep2Playtest.preset == "":
 		_gate_msg.text = "Loading Episode 2… %d%%" % mini(99, int(Ep2HideoutWarm.progress() * 100))
 	else:
@@ -377,6 +366,9 @@ func _try_code(code: String) -> void:
 		return
 	_write_unlock()
 	if _kp_rows != null:
+		if OS.has_feature("web"):
+			SceneRouter.remember_episode2_entry()
+			_entry_recovery_armed = true
 		_gate_accepted = true
 		_gate_input.clear()
 		_gate_input.get_parent().hide()
@@ -413,7 +405,6 @@ func _begin() -> void:
 	_root.chamber_committed.connect(_on_chamber_committed)
 	_root.session_complete.connect(_on_session_complete)
 	_root.session_failed.connect(_on_session_failed)
-	_root.touch_profile_changed.connect(_sync_portrait_exit)
 	_run_controls = RunControls.new()
 	_run_controls.save_action = _save_checkpoint
 	_run_controls.available = func() -> bool: return _can_pause() or _pause_open
@@ -604,6 +595,10 @@ func _tick_hideout_warm() -> void:
 func _process(delta: float) -> void:
 	_tick_hideout_warm()
 	_advance_gate()
+	if _entry_recovery_armed and _root != null and is_instance_valid(_root.get_active()):
+		# Leave the marker through the first rendered frames, when a mobile browser can recreate its canvas.
+		_entry_recovery_armed = false
+		get_tree().create_timer(2.0).timeout.connect(_clear_entry_recovery)
 	_keys_t = maxf(0.0, _keys_t - delta)
 	_refresh_hud()
 	if GameManager.has_region_map: _hud.position.x = 158.0
@@ -630,7 +625,7 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _gate != null:
 		if event.is_action_pressed("ui_cancel"):
-			_leave_gate()
+			_return_to_menu()
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_K:
 		_keys_t = KEYS_SHOW_SECONDS          # shows the control list; changes no binding
@@ -825,7 +820,7 @@ func _update_title_card() -> void:
 	tw.tween_interval(1.8)
 	tw.tween_property(_title, "modulate:a", 0.0, 1.2)
 
-# --- Touch: run-over buttons, the wordless pause card, the portrait exit ------------------------------------------------
+# --- Touch: run-over buttons, the wordless pause card ------------------------------------------------
 
 ## The profile the manager reads while this node is in the group (only while the run is over): retry + home.
 func touch_profile() -> StringName:
@@ -903,7 +898,7 @@ func is_pause_open() -> bool:
 ## The PAUSE button: freeze the sim (StateMachine PAUSED - the controls underneath go dim and inert) and raise the card.
 ## Allowed for the runner / on-foot controls, and (through `_can_pause_scripted`) for the overlay's mini
 ## pad during a scripted beat, when no touch layout is up. Films keep their own skip; the armory, a
-## transition or the portrait cue already own the pause.
+## transition already own the pause.
 func _open_pause() -> void:
 	if _pause_open or not (_can_pause() or _can_pause_scripted()): return
 	if not StateMachine.change_state(StateMachine.State.PAUSED):
@@ -922,30 +917,21 @@ func _close_pause() -> void:
 	if StateMachine.is_paused():
 		StateMachine.change_state(StateMachine.State.PLAYING)
 	if _root != null: _root._sync_mouse_mode()
-	_sync_portrait_exit()
 
 ## The card's HOME leaves the episode; nonpausable contexts retain their existing Escape exit.
 func _go_home() -> void:
 	_close_pause()
 	get_tree().paused = false
-	SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
+	_return_to_menu()
 
-## Portrait on a touch device: the session root pauses the sim and the layout manager shows a drawn "turn your phone" cue.
-## A phone locked to portrait must still have a way out, so the cue never stands alone: one HOME icon sits on top of it.
-func _sync_portrait_exit() -> void:
-	if _root == null or not is_instance_valid(_root):
-		return
-	var upright: bool = _root.touch_profile() == PROFILE_ROTATE
-	if upright and not _pause_open:
-		var overlay: Ep2TouchOverlay = _ensure_overlay()
-		if overlay.mode() != Ep2TouchOverlay.Mode.PORTRAIT:
-			overlay.show_portrait_exit()
-	elif _overlay != null and _overlay.mode() == Ep2TouchOverlay.Mode.PORTRAIT:
-		_overlay.close()
+func _clear_entry_recovery() -> void:
+	if OS.has_feature("web"):
+		SceneRouter.clear_episode2_entry()
+	_entry_recovery_armed = false
 
 ## Keep exactly one wordless PAUSE pad reachable while a scripted beat has hidden the touch
 ## layer (audit 2026-10-29 P1-2). The overlay is created lazily and never during the access
-## gate, the pause card, a transition, or the portrait cue.
+## gate, the pause card, or a transition.
 func _sync_mini_pause() -> void:
 	if _root == null or not is_instance_valid(_root):
 		if _overlay != null: _overlay.hide_mini_pause()
