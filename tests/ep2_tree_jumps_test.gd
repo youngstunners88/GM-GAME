@@ -58,8 +58,7 @@ func _ready() -> void:
 			check("landing remains on woods road", br.actor.position.y == 0.0 and br.actor.position.z < w.FOREST_END_Z)
 		else:
 			var kills: int = w.get_kills()
-			br.set_meta("killed_by", "player")
-			br.take_hit(eye)
+			br.take_hit(eye, "player")
 			for i in 180: br.step(1.0/60.0, br._tree_to)
 			var landed: Vector3 = br.actor.position
 			br.step(4.0, br._tree_to)

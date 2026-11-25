@@ -104,6 +104,9 @@ func _test_bandits_and_damage() -> void:
 	c.debug_invulnerable = true
 	c._place_at_distance(122.0)
 	c.set_aim(true)
+	var btc_before: float = GameManager.purse_btc_balance()
+	var hammer_reacted: bool = false
+	var reward_flew_to_tabs: bool = false
 	var previous_shots: Array = []
 	previous_shots.resize(c.get_bandit_count())
 	previous_shots.fill(0)
@@ -126,6 +129,14 @@ func _test_bandits_and_damage() -> void:
 					if c.shoot():
 						shot_a_telegraph = true
 						dropped = c.get_bandit_state(i) == "dead" and c.get_bandits_down() == 1
+						if dropped:
+							hammer_reacted = c._hud.toast_text == "LIL BLUNT — GOT HIM!"
+							c._drop_bandit(i, true)
+							var flight: Ep2BtcFlight = c._hud._btc_flight
+							reward_flew_to_tabs = flight.destination == c._hud._hold_button and flight._flights.size() == 1 \
+								and str(flight._flights[0]["amount"]) == "+0.25 BTC"
+							flight._process(Ep2BtcFlight.FLY_TIME + Ep2BtcFlight.SETTLE_TIME)
+							reward_flew_to_tabs = reward_flew_to_tabs and flight._flights.is_empty()
 			var shots: int = c.get_bandit_shots(i)
 			if shots > int(previous_shots[i]):
 				shot_seen = true
@@ -135,6 +146,9 @@ func _test_bandits_and_damage() -> void:
 	_check("bandits rise, Draw and show a visible gun glint before firing", tell_seen and visual_ok)
 	_check("every recorded shot has at least 0.6 s of visible tell (authored tells are 0.85-1.2 s)", shot_seen and timing_ok)
 	_check("shooting a telegraphing bandit drops him with fall_dead", shot_a_telegraph and dropped and c.get_bandits_down() == 1)
+	_check("a confirmed Hammer kill pays a quarter BTC once and Lil Blunt reacts",
+		GameManager.purse_btc_balance() == btc_before + 0.25 and hammer_reacted)
+	_check("one quarter-BTC flight heads to Tabs and expires", reward_flew_to_tabs)
 	_check("a full-health room never heals above three hearts", c.get_health() == 3 and not c._heal_full() and c.get_health() == 3)
 	c.debug_invulnerable = false
 	c._invuln = 0.0

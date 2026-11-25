@@ -1320,7 +1320,7 @@ func _hit_along(eye: Vector3, direction: Vector3) -> void:
 		_hit_creature(creature, eye, direction)
 		return
 	if best >= 0:
-		_drop_bandit(best)
+		_drop_bandit(best, true)
 		if _hud != null:
 			_hud.hit_marker(true)
 		var hit_folk: Ep2TownFolk = (_bandits[best] as Dictionary)["folk"]
@@ -1398,7 +1398,7 @@ func _hit_creature(hit: Dictionary, eye: Vector3, dir: Vector3) -> void:
 			killed = Ep2CreatureHealth.of(bandit_horse).take_hit(2 if buffalo_gun else 1, at)
 			_blood(at, dir, bandit_horse)
 			if killed:
-				_bandit_horse_down(bandit_horse)
+				_bandit_horse_down(bandit_horse, true)
 		"town_horse":
 			var horse: Node3D = hit["node"]
 			var point: Vector3 = eye + dir * float(hit["t"])
@@ -1409,7 +1409,7 @@ func _hit_creature(hit: Dictionary, eye: Vector3, dir: Vector3) -> void:
 
 
 ## The chasing rider's horse is shot down: it goes over on its side where it fell and stays there, and he is thrown with it.
-func _bandit_horse_down(horse: Node3D) -> void:
+func _bandit_horse_down(horse: Node3D, player_caused: bool = false) -> void:
 	for i in _bandits.size():
 		var b: Dictionary = _bandits[i]
 		if b.get("horse", null) != horse:
@@ -1418,7 +1418,7 @@ func _bandit_horse_down(horse: Node3D) -> void:
 		if anim != null:
 			anim.stop()
 		Ep2CreatureHealth.topple(horse, horse.rotation.x, LogansLakeChamber.DEAD_ROLL, horse.position.y + LogansLakeChamber.DEAD_LYING_Y)
-		_drop_bandit(i)
+		_drop_bandit(i, player_caused)
 		b["horse_down"] = true
 		return
 
@@ -1461,7 +1461,7 @@ func _bandit_ray_hit(b: Dictionary, eye: Vector3, direction: Vector3) -> float:
 	return along_ray if miss <= 0.46 * spread and along_ray <= 180.0 else -1.0
 
 
-func _drop_bandit(index: int) -> void:
+func _drop_bandit(index: int, player_caused: bool = false) -> void:
 	var b: Dictionary = _bandits[index]
 	if str(b["state"]) == "dead":
 		return
@@ -1480,6 +1480,8 @@ func _drop_bandit(index: int) -> void:
 	for accent in b["accents"]:
 		(accent as Node3D).visible = false
 	_bandits_down += 1
+	if player_caused:
+		_pay_combat_kill(false, body_at + Vector3.UP)
 	var anim: AnimationPlayer = b["horse_anim"] as AnimationPlayer
 	var mount: Node3D = b.get("horse", null)
 	var mount_alive: bool = mount == null or Ep2CreatureHealth.of(mount) == null or Ep2CreatureHealth.of(mount).is_alive()

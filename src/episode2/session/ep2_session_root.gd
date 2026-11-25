@@ -514,9 +514,13 @@ func _on_chamber_reached() -> void:
 
 func _on_runner_archer_down(_archer_id: String) -> void:
 	GameManager.tally_bear("archer")
+	GameManager.purse_add_btc(0.5)
+	AudioManager.play_sfx("coin")
 
 func _on_runner_shovel_bear_down(_obstacle_index: int) -> void:
 	GameManager.tally_bear("shovel")
+	GameManager.purse_add_btc(0.5)
+	AudioManager.play_sfx("coin")
 
 ## The second half of a ride-in hand-over (see `_enter_chamber_chained`): the room he left is kept as it was, one frame later.
 func _park_next_frame(old: Node) -> void:

@@ -518,6 +518,8 @@ func pay_half_btc() -> bool:
 		btc_half_change = false
 		changed.emit()
 		return true
+	if GameManager.purse_btc_balance() < 1.0:
+		return GameManager.purse_spend_btc(0.5)
 	if not GameManager.purse_spend("btc", 1):
 		return false
 	btc_half_change = true
@@ -526,7 +528,7 @@ func pay_half_btc() -> bool:
 
 
 func can_pay_half_btc() -> bool:
-	return btc_half_change or GameManager.purse_balance("btc") >= 1
+	return btc_half_change or GameManager.purse_btc_balance() >= 0.5
 
 
 func horse_is_sound() -> bool: return horse_wounds == 0

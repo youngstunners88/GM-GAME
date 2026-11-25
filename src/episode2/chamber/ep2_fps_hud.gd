@@ -69,6 +69,8 @@ var toast_token: int = Token.NONE
 ## Every string the LAST `_draw` wrote (tests read it: the wordless gate cannot look at pixels headless).
 var drawn_texts: Array[String] = []
 var _toast_t: float = 0.0
+var _toast_always_visible: bool = false
+var _btc_flight: Ep2BtcFlight
 var _hit_t: float = 0.0
 var _hit_kill: bool = false
 var _font: Font = null
@@ -198,6 +200,10 @@ func _build_armory() -> void:
 	_hold_button.add_theme_stylebox_override("normal", leather)
 	_hold_button.tooltip_text = "Hold to open your holsters. Time pauses while you choose."
 	_quick.add_child(_hold_button)
+	_btc_flight = Ep2BtcFlight.new()
+	_btc_flight.destination = _hold_button
+	_btc_flight.hidden_destination_label = "TABS"
+	add_child(_btc_flight)
 	# Above mobile controls; the rest of the ordinary HUD stays on its original layer.
 	_selector_layer = CanvasLayer.new()
 	_selector_layer.layer = 40
@@ -220,6 +226,7 @@ func _update_armory() -> void:
 	if _quick == null:
 		return
 	_quick.visible = armory != null and show_ammo and not armory_open and scope <= 0.0       # nothing is written or sits on the lens
+	_btc_flight.visible = not armory_open
 	if armory == null:
 		return
 	_hold_button.disabled = not armory_enabled
@@ -400,9 +407,13 @@ func fade_to(goal: float, seconds: float) -> void:
 	_fade_rate = absf(_fade_goal - fade) / maxf(seconds, 0.01)
 
 
-## A short message, centre lower. `token` is its icon: a touch device draws the icon INSTEAD of the words (no token = no toast
-## on a phone, e.g. the name of the weapon just selected).
-func toast(text: String, seconds: float = 1.6, token: int = Token.NONE) -> void:
+func show_btc_reward(camera: Camera3D, world_position: Vector3, amount: float) -> void:
+	_btc_flight.launch(camera, world_position, amount)
+
+
+## Touch usually draws a toast's icon. Combat captions also appear on touch and through the scope.
+func toast(text: String, seconds: float = 1.6, token: int = Token.NONE, always_visible: bool = false) -> void:
+	_toast_always_visible = always_visible
 	toast_text = text
 	toast_token = token
 	_toast_t = seconds
@@ -528,9 +539,9 @@ func _draw() -> void:
 		drawn_texts.append(objective)
 		draw_string(_font, pos, objective, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, WHITE)
 	# --- toast (centre, lower) ----------------------------------------------------------------------------
-	if scope >= 0.5:
+	if scope >= 0.5 and not _toast_always_visible:
 		pass
-	elif wordless and _toast_t > 0.0 and toast_text != "":
+	elif wordless and not _toast_always_visible and _toast_t > 0.0 and toast_text != "":
 		# icon or nothing: a toast's words are instructions / status text
 		if toast_token != Token.NONE:
 			var ta: float = clampf(_toast_t / 0.4, 0.0, 1.0)
