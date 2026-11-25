@@ -127,6 +127,19 @@ static func skeleton(f: Ep2TownFolk) -> Skeleton3D:
 	return sks[0] as Skeleton3D if not sks.is_empty() else null
 
 
+## His own across axis in WORLD space, flat: from his right shoulder joint to his left, as the clip has him now (2026-11-25 arm-fold fix:
+## IK targets built from a node's local rotation.y or a prop's L/R names crossed the arms; the shoulders cannot be wrong).
+static func across(f: Ep2TownFolk) -> Vector3:
+	var sk: Skeleton3D = skeleton(f)
+	var l: int = bone(f, "LeftArm")
+	var r: int = bone(f, "RightArm")
+	var v: Vector3 = f.global_transform.basis.x
+	if sk != null and l >= 0 and r >= 0:
+		v = sk.global_transform.basis * (sk.get_bone_global_pose(l).origin - sk.get_bone_global_pose(r).origin)
+	v.y = 0.0
+	return v.normalized() if v.length_squared() > 1e-8 else Vector3.RIGHT
+
+
 ## Two Ep2ArmIK solvers on a figure's arms (pushing a barrow's grips, clapping), off until a caller sets `reaching`.
 static func arm_iks(f: Ep2TownFolk) -> Dictionary:
 	var sk: Skeleton3D = skeleton(f)

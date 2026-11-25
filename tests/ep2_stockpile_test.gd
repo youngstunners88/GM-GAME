@@ -57,6 +57,7 @@ func _ready() -> void:
 	await _test_barrows(town, sp)
 	await _test_danger(sp)
 	_test_reserve(town, sp)
+	await _test_auction_clap()
 	_done(town)
 
 
@@ -192,14 +193,22 @@ func _test_barrows(town: GoldTownChamber, sp: Node) -> void:
 	var grip_gap: float = 0.0
 	var sk: Skeleton3D = w.skel
 	var gaps: Array = []
+	var fold := {}                                          # per pusher: min forearm gap, max midline cross, frames, wrong-side frames
 	var probe := func() -> void:
 		if w.hold <= 0.0 and w.alert_t <= 0.0 and (w.ik["Right"] as Ep2ArmIK).influence > 0.95:
 			var r: Vector3 = (sk.global_transform * sk.get_bone_global_pose(w.hand_r)).origin
-			gaps.append(r.distance_to((w.grips[1] as Node3D).global_position))
+			gaps.append(r.distance_to((sp._grips_by_side(w)["Right"] as Node3D).global_position))
 			if gaps.size() == 20:
 				var sh: Vector3 = (sk.global_transform * sk.get_bone_global_pose(FOLK_RA(w))).origin
 				print("    DBG feet %s hand %s shoulder %s grip %s axle %s skel_scale %s" % [w.folk.global_position, r, sh, (w.grips[1] as Node3D).global_position, w.barrow.global_position, sk.global_transform.basis.get_scale()])
 	(w.ik["Right"] as Ep2ArmIK).modification_processed.connect(probe)
+	var folds: Array = []                                   # [worker, Callable] for both pushers (arm-fold pin, 2026-11-25)
+	for o in sp.workers:
+		if o.barrow != null and o.ik.size() == 2:
+			fold[o.id] = {"ff": INF, "cross": 0.0, "frames": 0, "wrong": 0, "reaching": 0}
+			var cb := func() -> void: _arm_fold(o, sp, fold[o.id])
+			(o.ik["Right"] as Ep2ArmIK).modification_processed.connect(cb)
+			folds.append([o, cb])
 	for i in 1200:
 		sp._process(1.0 / 30.0)
 		await get_tree().process_frame
@@ -208,6 +217,16 @@ func _test_barrows(town: GoldTownChamber, sp: Node) -> void:
 		saw_loaded = saw_loaded or w.load_node.visible
 		saw_empty = saw_empty or not w.load_node.visible
 	(w.ik["Right"] as Ep2ArmIK).modification_processed.disconnect(probe)
+	for r in folds:
+		(r[0].ik["Right"] as Ep2ArmIK).modification_processed.disconnect(r[1])
+	# THE ARM FOLD (founder 2026-11-25): each hand took the grip named for the other side, the forearms crossed over his belly
+	# (before: hands 7 cm apart, a forearm 9 cm through the other, 393 of 451 frames). Every frame of the 40 s loop, both pushers:
+	for id in fold:
+		var f: Dictionary = fold[id]
+		check("%s: each hand reaches for the grip on its own side, every frame he holds the barrow (%d frames)" % [id, f["reaching"]],
+			f["reaching"] > 300 and f["wrong"] == 0, "%d wrong" % f["wrong"])
+		check("%s: no arm through arm - forearms (elbow to 70%% of the wrist) always > 4 cm apart (min %.3f m)" % [id, f["ff"]], f["ff"] > 0.04)
+		check("%s: no hand crosses his midline by more than 6 cm (max %.3f m)" % [id, f["cross"]], f["cross"] < 0.06)
 	gaps.sort()
 	grip_gap = gaps[gaps.size() / 2] if not gaps.is_empty() else 9.0
 	check("it rolls along its loop", rolled > 16.0, "%.1f m in 40 s" % rolled)
@@ -222,6 +241,31 @@ func _test_barrows(town: GoldTownChamber, sp: Node) -> void:
 		sp._process(1.0 / 30.0)
 	check("a barrow stops for Lil Blunt in its way", absf(w.s - s_before) < 0.05, "moved %.2f m" % absf(w.s - s_before))
 	town._player_pos = Vector3(0.0, 0.0, 1405.0)
+
+
+## One frame of a pusher's arms AFTER his arm IK ran (the Right solver is added last, so both have run).
+func _arm_fold(o, sp: Node, f: Dictionary) -> void:
+	var sk: Skeleton3D = o.skel
+	var folk_s = load("res://src/episode2/extras/folk_mpfb/mpfb_folk.gd")
+	var P := func(part: String) -> Vector3: return (sk.global_transform * sk.get_bone_global_pose(folk_s.bone(o.folk, part))).origin
+	var sl: Vector3 = P.call("LeftArm")
+	var sr: Vector3 = P.call("RightArm")
+	var el: Vector3 = P.call("LeftForeArm")
+	var er: Vector3 = P.call("RightForeArm")
+	var hl: Vector3 = P.call("LeftHand")
+	var hr: Vector3 = P.call("RightHand")
+	var c: PackedVector3Array = Geometry3D.get_closest_points_between_segments(el, el.lerp(hl, 0.7), er, er.lerp(hr, 0.7))
+	f["ff"] = minf(f["ff"], c[0].distance_to(c[1]) - 0.09)
+	var across: Vector3 = folk_s.across(o.folk)
+	var mid: Vector3 = (sl + sr) * 0.5
+	f["cross"] = maxf(f["cross"], maxf(-(hl - mid).dot(across), (hr - mid).dot(across)))
+	f["frames"] += 1
+	if (o.ik["Left"] as Ep2ArmIK).reaching:
+		f["reaching"] += 1
+		var tl: Vector3 = (o.ik["Left"] as Ep2ArmIK).target_world
+		var tr: Vector3 = (o.ik["Right"] as Ep2ArmIK).target_world
+		if (tl - tr).dot(across) <= 0.0:
+			f["wrong"] += 1
 
 
 func FOLK_RA(w) -> int:
@@ -272,3 +316,33 @@ func _test_reserve(town: GoldTownChamber, sp: Node) -> void:
 	town._player_pos = Vector3(0.0, 0.0, 1405.0)
 	sp._step_reserve()
 	check("the prompt goes when he walks away", town._hud == null or town._hud._search.text == "")
+
+
+## The auction hall's MPFB2 clappers (crowd_extras.gd, same arm IK as the pushers): in a hall turned like the road's (not along +z), each
+## hand's clap target is on ITS OWN side of him - before 2026-11-25 the targets came from his local rotation.y and crossed his arms.
+func _test_auction_clap() -> void:
+	var hall := Node3D.new()
+	hall.name = "HallStub"
+	hall.rotation.y = 2.2                                  # ~ the road's yaw: any turn that is not a multiple of 2 PI shows the bug
+	add_child(hall)
+	var crowd: Node = load("res://src/episode2/extras/auction/crowd_extras.gd").new()
+	hall.add_child(crowd)
+	await get_tree().process_frame
+	crowd.set_process(false)
+	var folk_s = load("res://src/episode2/extras/folk_mpfb/mpfb_folk.gd")
+	var clappers: int = 0
+	var wrong: int = 0
+	for e in crowd.extras:
+		if e.ik.is_empty():
+			continue
+		clappers += 1
+		e.clap = 1.0
+		for k in 12:
+			e.phase = k * 0.5
+			crowd._clap(e)
+			var d: Vector3 = (e.ik["Left"] as Ep2ArmIK).target_world - (e.ik["Right"] as Ep2ArmIK).target_world
+			if d.dot(folk_s.across(e.folk)) <= 0.0:
+				wrong += 1
+	check("the auction's clappers clap with each hand on its own side, in a hall turned to the road (%d clappers)" % clappers,
+		clappers >= 3 and wrong == 0, "%d wrong of %d" % [wrong, clappers * 12])
+	hall.free()

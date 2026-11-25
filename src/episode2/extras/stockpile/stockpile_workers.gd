@@ -245,9 +245,10 @@ func _step_barrow(w: Worker, delta: float) -> void:
 	w.folk.hold_clip("Walk" if moving else "Idle")
 	w.folk.step(delta)
 	_place_barrow(w, delta, holding)
+	var sides: Dictionary = _grips_by_side(w)
 	for side in w.ik:
 		var ik: Ep2ArmIK = w.ik[side]
-		var g: Node3D = w.grips[0 if side == "Left" else 1]
+		var g: Node3D = sides.get(side)
 		ik.reaching = holding and g != null
 		ik.influence = move_toward(ik.influence, 1.0 if holding else 0.0, delta * 3.0)
 		if g != null:
@@ -280,6 +281,21 @@ func _place_barrow(w: Worker, _delta: float, holding: bool = true) -> void:
 		w.wheel.rotation.x = w.spin
 	if w.load_node != null:
 		w.load_node.visible = w.loaded
+
+
+## Each hand takes the grip on ITS OWN side of him (founder 2026-11-25, "the wheelbarrow workers' arms are folded"): the kit's
+## Grip_L / Grip_R are named from the barrow's front, so taken by name the left hand reached for the right grip and the forearms crossed
+## in front of his belly (tools/ep2_shots/arm_fold_probe: hands 7 cm apart, a forearm 9 cm through the other, 393 of 451 frames).
+## Decided by geometry - which grip lies further toward his left shoulder - so a renamed or mirrored barrow cannot cross them again.
+func _grips_by_side(w: Worker) -> Dictionary:
+	if w.grips.size() != 2 or w.grips[0] == null or w.grips[1] == null:
+		return {}
+	var a: Node3D = w.grips[0]
+	var b: Node3D = w.grips[1]
+	var across: Vector3 = FOLK.across(w.folk)
+	if (a.global_position - b.global_position).dot(across) >= 0.0:
+		return {"Left": a, "Right": b}
+	return {"Left": b, "Right": a}
 
 
 ## Midway between his two shoulder joints, as the clip has them now (the walk carries the chest a little behind the feet).

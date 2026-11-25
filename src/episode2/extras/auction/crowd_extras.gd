@@ -85,11 +85,13 @@ func _process(delta: float) -> void:
 		e.folk.step(delta)
 
 
-## Both hands meet and part in front of his chest, a little over twice a second.
+## Both hands meet and part in front of his chest, a little over twice a second. His sides and front come from his own shoulders in
+## world space (2026-11-25: they came from his LOCAL rotation.y, but the hall is turned to the road, so each hand was sent to the other
+## side and the forearms crossed - tools/ep2_shots/arm_fold_probe: 3 clappers folded in ~45% of frames).
 func _clap(e: Extra) -> void:
 	var f: Ep2TownFolk = e.folk
-	var fwd := Vector3(sin(f.rotation.y), 0.0, cos(f.rotation.y))
-	var side := Vector3(fwd.z, 0.0, -fwd.x)
+	var side: Vector3 = FOLK.across(f)                    # toward his left
+	var fwd: Vector3 = side.cross(Vector3.UP)              # left x up = his front
 	var centre: Vector3 = f.global_position + Vector3.UP * f.height_m * 0.70 + fwd * 0.30
 	var gap: float = 0.025 + 0.09 * absf(sin(e.phase))
 	for s in e.ik:
