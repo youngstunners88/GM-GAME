@@ -37,6 +37,30 @@ var _node_count_before: int = 0
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     set_process(false)
+    if OS.has_feature("web"):
+        _recover_episode2_entry.call_deferred()
+
+## The browser may recreate the game during the mobile unlock handoff. Remember
+## the route for this tab only. Episode 2 still checks its own unlock on entry.
+func remember_episode2_entry() -> void:
+    JavaScriptBridge.eval(
+        "try { window.sessionStorage.setItem('smokerealm_ep2_entry', '1'); } catch (e) {}", true)
+
+func clear_episode2_entry() -> void:
+    JavaScriptBridge.eval(
+        "try { window.sessionStorage.removeItem('smokerealm_ep2_entry'); } catch (e) {}", true)
+
+func _recover_episode2_entry() -> void:
+    # On the web, the first frame can run before the boot scene is installed.
+    while get_tree().current_scene == null:
+        await get_tree().process_frame
+    var pending: Variant = JavaScriptBridge.eval(
+        "(function(){try{const pending=window.sessionStorage.getItem('smokerealm_ep2_entry')==='1';window.sessionStorage.removeItem('smokerealm_ep2_entry');return pending;}catch(e){return false;}})();", true)
+    var current := get_tree().current_scene
+    if bool(pending) and current.scene_file_path == GameManager.MENU_SCENE \
+            and StateMachine.is_state(StateMachine.State.MENU) and not TransitionDirector.is_busy():
+        print("[EP2] recovering password handoff")
+        load_scene(GameManager.EPISODE2_SCENE)
 
 ## Which wipe pattern matches a campaign realm's own palette. Shared by every
 ## Blaze Rush entry/exit so the dissolve never clashes with the scene it's

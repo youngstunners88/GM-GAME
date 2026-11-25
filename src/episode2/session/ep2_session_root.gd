@@ -42,7 +42,6 @@ const TOUCH_GROUP := &"touch_controls_wanted"
 const PROFILE_RUNNER := &"ep2_runner"
 const PROFILE_FOOT := &"ep2_foot"
 const PROFILE_FILM := &"ep2_film"
-const PROFILE_ROTATE := &"ep2_rotate"
 const PROFILE_NONE := &"none"
 ## Touch-only verbs (no key event, so they can never collide with W = jump + move_up). The layout buttons register them too;
 ## registering here as well keeps a test without a layout, or a router without a touch layer, working.
@@ -94,12 +93,9 @@ var _totals: Dictionary = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_bur
 ## The last profile / suspended flag announced through `touch_profile_changed`.
 var _touch_last_profile: StringName = &""
 var _touch_last_suspended: bool = false
-## True while THIS node holds the tree paused because a touch device is held upright (the 3D runner / hideout cannot be
-## framed in portrait: a drawn "turn your phone" cue is up instead). Only this node ever clears it.
-var _rotate_paused: bool = false
-## A held verb that began as an input EVENT and must end as one: a pause (the touch card, the armory, the rotate cue) freezes
-## this node, so the release event of a duck / an aim made DURING it never arrives. `_resync_held_verbs` ends them when polled
-## input says the finger or key is already up.
+var _portrait_foot_camera: Camera3D
+var _foot_camera_aspect: Camera3D.KeepAspect
+## A held verb that began as an input event must end as one. Resync after a pause or armory overlay.
 var _duck_by_event: bool = false
 var _aim_by_touch: bool = false
 
@@ -108,8 +104,6 @@ func _ready() -> void:
 		TouchActions.ensure_action(action)
 	add_to_group(TOUCH_GROUP)
 	mode_changed.connect(_on_mode_changed_touch)
-	# a window event, not a frame: it still arrives while the tree is paused (the rotate pause)
-	get_tree().root.size_changed.connect(_on_window_resized)
 
 func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_persist_town()
@@ -756,7 +750,6 @@ func get_total_distance() -> float:
 #   CHAMBER, free roam, player in control    -> ep2_foot     (stick + look pad + fire/jump/aim/reload/interact/run + pause)
 #   CHAMBER, armory open                     -> ep2_foot, SUSPENDED (the walking thumb is not orphaned)
 #   CHAMBER, a skippable film is up          -> ep2_film     (one SKIP button; the film's own hold timer decides)
-#   RUNNER / foot while the screen is upright on a touch device -> ep2_rotate (and the sim is paused until landscape)
 #   TRANSITION, IDLE, a scripted beat, anything else -> none (the manager hides the controls and releases everything)
 #
 # The run-over screen (retry + home) is Ep2Entry's profile (`ep2_end`): this node is IDLE then.
@@ -768,12 +761,12 @@ func touch_profile() -> StringName:
 	match _mode:
 		Mode.RUNNER:
 			if _runner_live():
-				return PROFILE_ROTATE if _rotate_wanted() else PROFILE_RUNNER
+				return PROFILE_RUNNER
 		Mode.CHAMBER:
 			if _active.has_method("is_film_skippable") and bool(_active.call("is_film_skippable")):
 				return PROFILE_FILM
 			if _foot_ok():
-				return PROFILE_ROTATE if _rotate_wanted() else PROFILE_FOOT
+				return PROFILE_FOOT
 	return PROFILE_NONE
 
 ## Keep the controls up but inert: the armory is open (the weapon selector reads raw fingers and the holster hold must not
@@ -799,30 +792,11 @@ func _foot_ok() -> bool:
 func is_scripted_beat() -> bool:
 	if _mode != Mode.CHAMBER or _active == null or not is_instance_valid(_active):
 		return false
-	if not StateMachine.is_playing() or _armory_is_open() or _rotate_wanted():
+	if not StateMachine.is_playing() or _armory_is_open():
 		return false
 	if _active.has_method("is_film_skippable") and bool(_active.call("is_film_skippable")):
 		return false
 	return _active.has_method("has_player_control") and not bool(_active.call("has_player_control"))
-
-## The window is taller than wide (TouchMetrics' own rule, so the cue and the layouts always agree).
-func _portrait_window() -> bool:
-	var win: Window = get_window()
-	var size_px: Vector2 = Vector2(win.size) if win != null else get_viewport().get_visible_rect().size
-	return TouchMetrics.orientation_of(size_px) == TouchMetrics.PORTRAIT
-
-## Upright on a touch device that is not being driven by a keyboard, in a mode the controls would be up for.
-func _rotate_wanted() -> bool:
-	if not TouchUi.is_touch() or TouchUi.is_keyboard_mode() or not _portrait_window():
-		return false
-	if _active == null or not is_instance_valid(_active):
-		return false
-	match _mode:
-		Mode.RUNNER:
-			return _runner_live()
-		Mode.CHAMBER:
-			return _foot_ok()
-	return false
 
 ## Ends a duck / an ADS whose release event was dropped while the tree was paused (the polled input is the truth).
 func _resync_held_verbs() -> void:
@@ -844,31 +818,7 @@ func _touch_changed() -> void:
 	_touch_last_suspended = suspended
 	touch_profile_changed.emit()
 
-## Portrait on a touch device: the sim waits (tree pause) until the screen is landscape again. The pause is taken only while
-## the game is PLAYING (that is when the manager can show the cue), never over somebody else's pause (the armory, a pause
-## overlay, the transition director's freeze), and only this node releases it.
-func _update_rotate_pause() -> void:
-	var want: bool = _rotate_wanted()
-	if want:
-		# also re-asserts the pause if a StateMachine change cleared it while the screen is still upright
-		if StateMachine.is_playing() and not get_tree().paused:
-			_rotate_paused = true
-			get_tree().paused = true
-	elif _rotate_paused:
-		_rotate_paused = false
-		if get_tree().paused and not StateMachine.is_paused():
-			get_tree().paused = false
-
-## True while this node is holding the tree paused for the rotate cue (tests, debug).
-func is_rotate_paused() -> bool:
-	return _rotate_paused
-
 func _on_mode_changed_touch(_mode_now: int) -> void:
-	_update_rotate_pause()
-	_touch_changed()
-
-func _on_window_resized() -> void:
-	_update_rotate_pause()
 	_touch_changed()
 
 # --- Mouse cursor ---------------------------------------------------------------
@@ -896,8 +846,8 @@ func _process(_delta: float) -> void:
 	_sync_mouse_mode()
 	_poll_free_roam()
 	_resync_held_verbs()
-	_update_rotate_pause()
 	_touch_changed()
+	_update_foot_framing()
 	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
 	if _pb_settle > 0.0 and not waiting:
 		_pb_settle -= _delta
@@ -909,6 +859,25 @@ func _process(_delta: float) -> void:
 		_active.preview_lake(_pb_node)
 	elif _active is LogansLakeChamber and _pb_id=="auction_road" and is_prebuilt("auction_road"):
 		_active.preview_road(_pb_node)                    # the road ahead, seen from the lake before he rides onto it
+
+## Keep the first-person horizontal view usable upright. Leave scripted cameras and
+## landscape projection to the room, including any FOV it chooses for aiming.
+func _update_foot_framing() -> void:
+	var camera: Camera3D
+	if TouchUi.is_touch() and TouchUi.is_portrait() and _mode == Mode.CHAMBER and _foot_ok():
+		camera = get_viewport().get_camera_3d()
+	if camera == _portrait_foot_camera:
+		return
+	_restore_foot_framing()
+	if camera != null:
+		_portrait_foot_camera = camera
+		_foot_camera_aspect = camera.keep_aspect
+		camera.keep_aspect = Camera3D.KEEP_WIDTH
+
+func _restore_foot_framing() -> void:
+	if is_instance_valid(_portrait_foot_camera):
+		_portrait_foot_camera.keep_aspect = _foot_camera_aspect
+	_portrait_foot_camera = null
 
 ## FULL AUTO (the Bergmann MP18 and the golden Thompson, founder 2026-11-01): while the trigger is HELD - the left mouse button with
 ## the pointer captured, or the touch FIRE button (`attack`) - the room is asked for a shot every frame and the gun's own cycle time
@@ -1082,19 +1051,12 @@ func _route_free_roam(event: InputEvent) -> bool:
 	return false
 
 func _exit_tree() -> void:
+	_restore_foot_framing()
 	Ep2DrawMusic.finish_lake(self)
 	Ep2DrawMusic.finish(self)
 	_persist_town()
 	farmer_trip.clear()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	# never leave the tree frozen behind us because the screen was upright when this node went away
-	var tree: SceneTree = get_tree()
-	if _rotate_paused:
-		_rotate_paused = false
-		if tree != null and tree.paused and StateMachine.is_playing():
-			tree.paused = false
-	if tree != null and tree.root.size_changed.is_connected(_on_window_resized):
-		tree.root.size_changed.disconnect(_on_window_resized)
 
 # --- Live player input (guard #2 still applies) --------------------------------
 #

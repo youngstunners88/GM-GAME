@@ -1,7 +1,6 @@
 class_name Ep2TouchOverlay
 extends CanvasLayer
-## Episode 2's WORDLESS touch overlay: the pause card (a dim, one big round PLAY triangle and a HOME
-## house) and the lone HOME icon that stays reachable under the portrait "turn your phone" cue.
+## Episode 2's WORDLESS touch overlay: the pause card with PLAY and HOME, and the scripted-beat pause pad.
 ## Nothing is written on it (founder 2026-10-13: a phone has no keys, no words).
 ##
 ## Why it exists. Escape is Episode 2's only exit and a phone has no Escape. The runner and on-foot
@@ -24,7 +23,7 @@ extends CanvasLayer
 signal resume_pressed
 signal home_pressed
 
-enum Mode { HIDDEN, PAUSE, PORTRAIT }
+enum Mode { HIDDEN, PAUSE }
 
 const LAYER_INDEX: int = 70
 const DIM_ALPHA: float = 0.58
@@ -38,8 +37,6 @@ const MINI_RADIUS_DP: float = 26.0
 const PAD_HIT_DP: float = 10.0
 ## Centre-to-centre distance of PLAY and HOME (dp) so a thumb aimed at PLAY cannot leave the run.
 const PAD_SPACING_DP: float = 150.0
-## HOME sits this far (dp) above the bottom of the safe area under the portrait cue.
-const PORTRAIT_HOME_LIFT_DP: float = 84.0
 const PAD_NONE := &""
 const PAD_PLAY := &"play"
 const PAD_HOME := &"home"
@@ -185,15 +182,6 @@ func show_pause() -> void:
 	_mode = Mode.PAUSE
 	_open()
 
-## Only the HOME icon, no dim, nothing else swallowing touches (the portrait rotate cue stays
-## visible underneath and a locked-portrait phone is never trapped on it).
-func show_portrait_exit() -> void:
-	_mini_visible = false
-	if _mini != null: _mini.visible = false
-	get_node("PanelClose").hide()
-	_mode = Mode.PORTRAIT
-	_open()
-
 ## One wordless PAUSE pad for a scripted beat, when the touch layer is hidden and the foot
 ## layout's PAUSE button is gone. It is only a shape: tapping it injects `pause` (audit P1-2).
 func show_mini_pause() -> void:
@@ -290,14 +278,10 @@ func _relayout() -> void:
 	_dim.visible = pause_mode
 	_field.mouse_filter = Control.MOUSE_FILTER_STOP if pause_mode else Control.MOUSE_FILTER_IGNORE
 	_play.visible = pause_mode
-	# Only the pause card or the portrait cue shows HOME; a scripted-beat mini pad must not
-	# inherit a visible HOME from a card that was open earlier.
-	_home.visible = _mode == Mode.PAUSE or _mode == Mode.PORTRAIT
+	_home.visible = pause_mode
 	var half: float = PAD_SPACING_DP * 0.5 * _dp
 	var play_c: Vector2 = centre - Vector2(half, 0.0)
 	var home_c: Vector2 = centre + Vector2(half, 0.0)
-	if _mode == Mode.PORTRAIT:
-		home_c = Vector2(centre.x, m.safe_rect.end.y - PORTRAIT_HOME_LIFT_DP * _dp)
 	_place(_play, play_c, PLAY_RADIUS_DP)
 	_place(_home, home_c, HOME_RADIUS_DP)
 	if _mini != null:
