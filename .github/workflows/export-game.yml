@@ -416,7 +416,7 @@ jobs:
           grep -q 'EP2_TOWN_FURNITURE: ALL PASS' ep2-town-furniture-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-town-furniture-tests.log | head -40; tail -25 ep2-town-furniture-tests.log; exit 1; }
           # The saloon's side ladder (founder 2026-11-21: the old regulars drink up on the balcony; a ladder on the outside, not a stair): placed clear of doors/rails/horses, stand-in -> streamed, climb up/down, balcony walk, batwings still open.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_saloon_ladder_test.tscn 2>&1 | tee ep2-saloon-ladder-tests.log
-          grep -q 'SALOON_LADDER: 40 checks, 0 failed' ep2-saloon-ladder-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-saloon-ladder-tests.log | head -40; tail -25 ep2-saloon-ladder-tests.log; exit 1; }
+          grep -q 'SALOON_LADDER: 47 checks, 0 failed' ep2-saloon-ladder-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-saloon-ladder-tests.log | head -40; tail -25 ep2-saloon-ladder-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-feedback-tests.log; then exit 1; fi
           # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
           # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).

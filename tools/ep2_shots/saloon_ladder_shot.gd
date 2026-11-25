@@ -26,6 +26,22 @@ func _ready() -> void:
 	chamber.step(1.0 / 60.0)
 	var lad = chamber.get_ladder()
 	var S := func(v: Vector3) -> Vector3: return Ep2GoldTown.local_to_world("Bldg_Saloon", v)
+	if "board" in OS.get_cmdline_user_args():           # -- board: the Gold Mine stats board beside the ladder (2026-11-25)
+		var sb = chamber.get_stats_board()
+		var c: Vector3 = sb.center_world()
+		_orbit(S.call(Vector3(-9.5, 1.6, 7.5)), c + Vector3(0, 1.4, 0))
+		await _shot("board_01_from_the_street")
+		_orbit(S.call(Vector3(-12.0, 1.7, 1.0)), S.call(Vector3(-7.0, 1.8, 1.2)))
+		await _shot("board_02_from_the_lane_with_ladder")
+		var front: Vector3 = sb.transform * Vector3(0.0, 0.0, 1.2)
+		chamber.get_hud().visible = true
+		_eye(front, c + Vector3(0, 1.55, 0))
+		chamber.step(1.0 / 60.0)
+		_face(c + Vector3(0, 1.55, 0), 0.0)
+		await _shot("board_03_first_person_prompt")
+		print("STATS_BOARD_SHOT prompt='%s' at %s" % [chamber._ladder_prompt_text(), str(c)])
+		get_tree().quit()
+		return
 	# 1. the ladder from the side lane (south of the saloon) and from the street
 	_orbit(S.call(Vector3(-11.5, 1.7, -3.5)), S.call(Vector3(-6.4, 2.4, 0.3)))
 	await _shot("01_side_lane")

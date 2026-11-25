@@ -54,6 +54,9 @@ var _yaw: float = 0.0
 var _wood: Material
 var _iron: Material
 var _poll: float = 0.0
+## The Gold Mine stats board beside the ladder's foot ("View live stats [E]" opens mine4gold.app): ep2_stats_board.gd.
+const STATS_BOARD := preload("res://src/episode2/chamber/ep2_stats_board.gd")
+var stats_board = null
 
 
 ## Put the ladder (and the balcony's end rails) on the saloon. `saloon` is the town's copy of the saloon (its Trim material dresses the
@@ -71,6 +74,7 @@ static func build(root: Node3D, saloon: Node3D, props: Array) -> Node3D:
 	n._place_ladder()
 	n._end_rails(saloon)
 	props.append([n.to_world2(LADDER_AT), 0.32])
+	n.stats_board = STATS_BOARD.build(n, n._xf, n._wood, props)     # the Gold Mine stats board at the ladder's street side (2026-11-25)
 	return n
 
 

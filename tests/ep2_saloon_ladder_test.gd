@@ -268,7 +268,43 @@ func _ready() -> void:
 	c._show_active = true
 	check("during a scripted show [E] at the foot does not climb", not c._ladder_allowed() and c._ladder_prompt_text() == "")
 	c._show_active = false
+	_stats_board(c, lad, L)
 	_done()
+
+
+## ---- (i) the Gold Mine stats board beside the ladder (founder 2026-11-25): within 4 m of the ladder, on its street side, no numbers
+## painted, "View live stats" in reach, [E] opens the live site (through the test seam, never a real browser), the ladder keeps [E].
+func _stats_board(c: GoldTownChamber, lad, L: Callable) -> void:
+	var sb = c.get_stats_board()
+	var urls: Array = []
+	check("the stats board stands by the ladder and links the live site root", sb != null and sb.URL == "https://mine4gold.app/")
+	if sb == null:
+		return
+	sb.opener = func(u: String) -> void: urls.append(u)
+	var at: Vector3 = sb.center_world()
+	var holder: Node3D = lad.get_node("Ladder")
+	var d: float = Vector2(at.x - holder.global_position.x, at.z - holder.global_position.z).length()
+	var lp: Vector3 = L.call(at)
+	check("within 4 m of the ladder, on its street side, outside the saloon (%.2f m)" % d, d < 4.0 and lp.z > 0.6 and lp.x < -6.6 and absf(at.y) < 0.01, str(lp))
+	var painted: String = ""
+	for tm in sb.find_children("SignText", "MeshInstance3D", true, false):
+		painted += ((tm as MeshInstance3D).mesh as TextMesh).text + "\n"
+	var digits := RegEx.create_from_string("[0-9%$]")
+	check("labels only: supply / locked / liquidity, 'see live', no figures, rates or fees", painted.contains("SUPPLY") and painted.contains("LOCKED")
+		and painted.contains("LIQUIDITY") and painted.contains("VIEW LIVE STATS") and digits.search(painted.replace("mine4gold.app", "")) == null, painted)
+	c._player_pos = lad.foot_world()
+	check("at the ladder's foot [E] still means Climb", c._ladder_prompt_text().begins_with("Climb") and not sb.can_view(c._player_pos))
+	var front: Vector3 = sb.transform * Vector3(0.0, 0.0, 1.1)
+	c._player_pos = Vector3(front.x, 0.0, front.z)
+	c.step(1.0 / 60.0)
+	check("in front of the board the prompt reads 'View live stats'", c._ladder_prompt_text().begins_with("View live stats"), c._ladder_prompt_text())
+	c._show_active = true
+	var during: bool = c.start_rig()
+	c._show_active = false
+	check("a scripted show keeps [E]: the board opens nothing then", urls.is_empty() and sb.opened == 0)
+	var ok: bool = c.start_rig()
+	check("[E] at the board opens https://mine4gold.app/ once (key handler path)", ok and urls == ["https://mine4gold.app/"] and sb.opened == 1 and not during and lad.state == "ground",
+		str(urls))
 
 
 func _done() -> void:

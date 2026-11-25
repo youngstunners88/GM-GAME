@@ -953,6 +953,8 @@ func start_rig(_payment: String = "") -> bool:
 		return true
 	if _ladder_try():
 		return true
+	if _stats_try():
+		return true
 	if _mounted:
 		_dismount()
 		return true
@@ -3413,9 +3415,24 @@ func _ladder_prompt_text() -> String:
 	if _ladder == null or not _ladder_allowed() or _ladder.busy():
 		return ""
 	var text: String = _ladder.prompt(_player_pos)
+	if text == "" and _ladder.stats_board != null:
+		text = _ladder.stats_board.prompt(_player_pos)   # the stats board beside the ladder's foot
 	if text != "" and TouchUi.keys_shown():
 		text += " [E]"
 	return text
+
+
+## [E] / INTERACT at the Gold Mine stats board beside the ladder: opens the live site (called from the key handler: the web build
+## only opens a tab from a key or click). Same gating as the ladder (not during a beat that owns [E]).
+func _stats_try() -> bool:
+	if not _ladder_allowed() or _ladder.stats_board == null or _ladder.busy() or _ladder.on_top():
+		return false
+	return _ladder.stats_board.view(_player_pos)
+
+
+## The stats board (evidence for tests and captures); null without the saloon.
+func get_stats_board():
+	return null if _ladder == null else _ladder.stats_board
 
 
 ## Evidence for tests and captures.
