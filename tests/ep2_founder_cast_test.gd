@@ -124,7 +124,45 @@ func _ready() -> void:
 					placed += 1
 	check("both shopkeepers stand behind their counters (General Store, Hotel desk), facing the customer's side",
 		not Ep2GoldTown.kit_v2 or placed == 2, "%d of %d placed (kit_v2 %s)" % [placed, keepers.size(), str(Ep2GoldTown.kit_v2)])
+	if Ep2GoldTown.kit_v2:
+		_jam_shop(c)
 	c.queue_free()
 	await get_tree().process_frame
 	print("EP2_FOUNDER_CAST: %s" % ["ALL PASS" if failures == 0 else "%d FAILURE(S)" % failures])
 	get_tree().quit(failures)
+
+
+## The storefront woman's jam (founder 2026-11-25): labelled jars on the General Store's counter top, her recorded walk-in line when Lil
+## Blunt steps inside (heard from her: a 3D player on her), the second at her counter, nothing while he is out in the street.
+func _jam_shop(c: GoldTownChamber) -> void:
+	print("-- the General Store's jam and the storekeeper's voice (2026-11-25)")
+	var js: Dictionary = c.get_jam_shop()
+	var disp: Node3D = js["display"]
+	check("jars of jam stand on the General Store's counter", disp != null and int(disp.jars) >= 8)
+	if disp == null:
+		return
+	var tops: Array = []
+	for j in disp.find_children("Jar_*", "Node3D", false, false):
+		tops.append((j as Node3D).global_position.y)
+	var counter: Vector3 = Ep2GoldTown.shop_spots("Bldg_A")["counter"]
+	var off: float = Vector2(disp.global_position.x - counter.x, disp.global_position.z - counter.z).length()
+	check("...resting on the counter top (jar centres 1.06-1.35 m), at the counter (%.2f m from its customer spot)" % off,
+		tops.size() >= 8 and tops.min() > 1.06 and tops.max() < 1.35 and off < 2.2, str(tops))
+	var labels: int = disp.find_children("Label", "MeshInstance3D", true, false).size()
+	check("each jar is labelled and the card reads HOMEMADE JAM (one good only)", labels == int(disp.jars)
+		and disp.find_child("Sign_HOMEMADE_JAM", true, false) != null)
+	for id in GoldTownChamber.JAM_LINES:
+		check("her line %s is recorded in the main pack" % id, Ep2TownVoiceBank.stream(id) != null
+			and str(Ep2TownVoiceBank.LINES[id]["path"]).begins_with("res://src/episode2/audio/town_main/"))
+	c._player_pos = Ep2GoldTown.shop_spots("Bldg_A")["out"]
+	for i in 30:
+		c.step(1.0 / 60.0)
+	check("out in the street she says nothing", (js["said"] as Array).is_empty())
+	c._player_pos = Ep2GoldTown.local_to_world("Bldg_A", Vector3(0.0, 0.0, -1.2))
+	c.step(1.0 / 60.0)
+	check("walking in: \"Afternoon, sugar! Fresh jam today...\" from her own mouth", (js["said"] as Array) == [GoldTownChamber.JAM_LINES[0]]
+		and (js["voice"] as AudioStreamPlayer3D).stream != null and (js["voice"] as AudioStreamPlayer3D).get_parent() == js["keeper"], str(js["said"]))
+	c._player_pos = Vector3(counter.x, 0.0, counter.z)
+	for i in 60 * 8:
+		c.step(1.0 / 60.0)
+	check("at her counter: the second line, once", (js["said"] as Array) == GoldTownChamber.JAM_LINES, str(js["said"]))

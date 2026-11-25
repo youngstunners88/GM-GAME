@@ -1521,6 +1521,22 @@ const LINES: Dictionary = {
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_17.ogg"
+	},
+	"town_store_jam_0": {
+		"speaker": "storekeeper",
+		"text": "Afternoon, sugar! Fresh jam today, blackberry and peach. Put up this very morning.",
+		"seconds": 5.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/town_main/town_store_jam_0.ogg"
+	},
+	"town_store_jam_1": {
+		"speaker": "storekeeper",
+		"text": "Every jar's sealed proper, wax and cloth. You take your pick.",
+		"seconds": 4.305,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/audio/town_main/town_store_jam_1.ogg"
 	}
 }
 const GREETINGS: Dictionary = {

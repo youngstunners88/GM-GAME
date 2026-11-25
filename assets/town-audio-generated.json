@@ -2751,5 +2751,29 @@
     "loop": false,
     "model_id": "eleven_text_to_sound_v2",
     "start_seconds": 0
+  },
+  "town_store_jam_0": {
+    "source_hash": "ca271ade646fe871319810f20a8b21c900d1b5fe343da8c8744fab9873c97fd3",
+    "processing_version": 2,
+    "sha256": "1dc02bf58ddeea666a66307c2da2b95371ddbbf7556ca3e9e5a662f3a49174b0",
+    "bytes": 32615,
+    "text": "Afternoon, sugar! Fresh jam today, blackberry and peach. Put up this very morning.",
+    "speaker": "storekeeper",
+    "voice_id": "EXAVITQu4vr4xnSDxMaL",
+    "model_id": "eleven_v4",
+    "seconds": 5.905,
+    "start_seconds": 0
+  },
+  "town_store_jam_1": {
+    "source_hash": "30850980129ffdef4de73623248ee37b69b2eb305044344aac910485ee947ee3",
+    "processing_version": 2,
+    "sha256": "1813f7dc324b820c77c8dacec23063defc6f365c26c851c4e7704dabb74e96ba",
+    "bytes": 25657,
+    "text": "Every jar's sealed proper, wax and cloth. You take your pick.",
+    "speaker": "storekeeper",
+    "voice_id": "EXAVITQu4vr4xnSDxMaL",
+    "model_id": "eleven_v4",
+    "seconds": 4.305,
+    "start_seconds": 0
   }
 }

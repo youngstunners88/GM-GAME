@@ -585,6 +585,67 @@ func _build_shopkeepers() -> void:
 		k.rotation.y = k.facing
 		k.hold_clip("Idle")
 		_shopkeepers.append([piece, k])
+		if piece == JAM_SHOP:
+			_build_jam_shop(k)
+
+
+## The storefront woman's one good (founder 2026-11-25): jars of jam on the General Store's counter, and her voice - a line when Lil
+## Blunt walks in (once per visit to town), a second when he steps up to the counter. Recorded takes (assets/town-audio.json speaker
+## "storekeeper", main pack) played from her mouth; Ep2Speech.play_3d ducks the music. No take: the line is silent (town rule 2026-11-22).
+const JAM_SHOP := "Bldg_A"
+const JAM_COUNTER := preload("res://src/episode2/chamber/ep2_jam_counter.gd")
+const JAM_LINES := ["town_store_jam_0", "town_store_jam_1"]
+const JAM_COUNTER_R := 1.7                            # how near the counter's customer spot he must be for her second line
+var _jam_display = null
+var _jam_voice: AudioStreamPlayer3D = null
+var _jam_keeper: Ep2TownFolk = null
+var _jam_said: Array = []                             # line ids she has said (evidence for tests)
+var _jam_wait: float = 0.0
+
+
+func _build_jam_shop(keeper: Ep2TownFolk) -> void:
+	_jam_keeper = keeper
+	_jam_said.clear()
+	_jam_wait = 0.0
+	if _jam_display != null and is_instance_valid(_jam_display):
+		_jam_display.queue_free()
+	_jam_display = JAM_COUNTER.build(_visuals)
+	_jam_voice = AudioStreamPlayer3D.new()
+	_jam_voice.name = "Voice"
+	_jam_voice.bus = "SFX"
+	_jam_voice.unit_size = 6.0
+	_jam_voice.max_distance = 30.0
+	_jam_voice.position = Vector3(0.0, 1.5, 0.0)
+	keeper.add_child(_jam_voice)
+
+
+func _tick_jam_shop(delta: float) -> void:
+	if _jam_keeper == null or not is_instance_valid(_jam_keeper):
+		return
+	_jam_wait = maxf(0.0, _jam_wait - delta)
+	if _jam_wait > 0.0 or not _in_room(JAM_SHOP, -0.4) or _show_active:
+		return
+	var id: String = ""
+	if not _jam_said.has(JAM_LINES[0]):
+		id = JAM_LINES[0]                              # walk-in
+	elif not _jam_said.has(JAM_LINES[1]):
+		var at: Vector3 = Ep2GoldTown.shop_spots(JAM_SHOP).get("counter", Vector3.INF)
+		if Vector2(_player_pos.x - at.x, _player_pos.z - at.z).length() < JAM_COUNTER_R:
+			id = JAM_LINES[1]                          # at her counter, looking at the jars
+	if id == "":
+		return
+	_jam_said.append(id)
+	var take: AudioStream = Ep2TownVoiceBank.stream(id)
+	_jam_wait = Ep2Speech.pace(id, str(Ep2TownVoiceBank.LINES.get(id, {}).get("text", "")))
+	if take != null:
+		Ep2Speech.play_3d(_jam_voice, take, _jam_keeper.position.distance_to(_player_pos))
+	if _hud != null:
+		var text: String = str(Ep2TownVoiceBank.LINES.get(id, {}).get("text", ""))
+		_hud.speech("Storekeeper: %s" % text, _jam_wait, Ep2Speech.hide_caption(id))
+
+
+func get_jam_shop() -> Dictionary:
+	return {"display": _jam_display, "keeper": _jam_keeper, "said": _jam_said, "voice": _jam_voice}
 
 
 ## Behind the counter: she turns to Lil Blunt while he is in her shop, else back to the counter (a customer's place).
@@ -594,6 +655,7 @@ func _tick_shopkeepers(delta: float) -> void:
 		var k: Ep2TownFolk = row[1]
 		k.face_point(_player_pos if _in_room(piece, -0.4) else Ep2GoldTown.shop_spots(piece).get("counter", k.position))
 		k.step(delta)
+	_tick_jam_shop(delta)
 
 
 func get_shopkeepers() -> Array:

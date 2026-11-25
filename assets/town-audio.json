@@ -123,6 +123,12 @@
       "voice_id": "X0KF3ROqwE8cLCsWuhs6",
       "name": "Renegade, the Gold Rush auctioneer (founder-locked voice, 2026-11-15)",
       "source": "Founder-specified ElevenLabs voice id for the auctioneer; Jack Hammer, the doorman and the crowd keep their own voices"
+    },
+    "storekeeper": {
+      "voice_id": "EXAVITQu4vr4xnSDxMaL",
+      "name": "Sarah (ElevenLabs premade) - the General Store's keeper, who sells jam",
+      "source": "Premade voice, unused elsewhere in the bank (2026-11-25); custom slots are full",
+      "out_dir": "src/episode2/audio/town_main"
     }
   },
   "lines_pending_second_account": [],
@@ -1166,6 +1172,18 @@
       "id": "dude_ranch_17",
       "speaker": "dude",
       "text": "Well, that's rude, partner, walking off mid-sentence. Goodbye, then."
+    },
+    {
+      "id": "town_store_jam_0",
+      "speaker": "storekeeper",
+      "text": "Afternoon, sugar! Fresh jam today, blackberry and peach. Put up this very morning.",
+      "out_dir": "src/episode2/audio/town_main"
+    },
+    {
+      "id": "town_store_jam_1",
+      "speaker": "storekeeper",
+      "text": "Every jar's sealed proper, wax and cloth. You take your pick.",
+      "out_dir": "src/episode2/audio/town_main"
     }
   ],
   "greetings": {

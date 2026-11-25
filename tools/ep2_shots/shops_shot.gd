@@ -23,6 +23,15 @@ func _ready() -> void:
 	chamber.set_physics_process(false)
 	await get_tree().process_frame
 	print("KIT_V2 ", Ep2GoldTown.kit_v2)
+	if "jam" in OS.get_cmdline_user_args():             # -- jam: the storefront woman's jars on the General Store counter (2026-11-25)
+		var J := func(p: Vector3) -> Vector3: return Ep2GoldTown.local_to_world("Bldg_A", p)
+		_look(J.call(Vector3(0.2, 0.0, -2.2)), J.call(Vector3(0.2, 1.2, -4.0)))
+		await _shot("jam_1_at_the_counter")
+		_look(J.call(Vector3(-0.3, 0.0, -2.9)), J.call(Vector3(0.18, 1.15, -4.0)))
+		await _shot("jam_2_close")
+		print("SHOPS_SHOT_DONE")
+		get_tree().quit()
+		return
 	for piece in ["Bldg_A", "Bldg_B", "Bldg_C"]:
 		var L := func(p: Vector3) -> Vector3: return Ep2GoldTown.local_to_world(piece, p)
 		_look(L.call(Vector3(0.0, 0.0, 6.5)), L.call(Vector3(0.0, 1.8, 0.0)))
