@@ -329,6 +329,23 @@ jobs:
       - name: Portal room gameplay and rendered visibility
         run: |
           set -euo pipefail
+          # Most headless gates redirect their output to files. Keep the
+          # last log visible even when an assertion exits without a message.
+          report_gate_failure() {
+            local rc=$? log latest=""
+            if (( rc == 0 )); then return; fi
+            for log in *.log; do
+              if [[ -f "$log" && ( -z "$latest" || "$log" -nt "$latest" ) ]]; then
+                latest="$log"
+              fi
+            done
+            if [[ -n "$latest" ]]; then
+              echo "::error::Gameplay step exited $rc. Last log: $latest"
+              tail -40 -- "$latest"
+            fi
+            return "$rc"
+          }
+          trap report_gate_failure EXIT
           # A second completed pass resolves newly extracted model textures/classes.
           # Never hide an importer crash and continue with missing test assets.
           timeout 600 "$GODOT_BIN" --headless --import > import-second-pass.log 2>&1 || {
