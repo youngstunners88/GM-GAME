@@ -548,6 +548,8 @@ func _on_beat_entered(b: int) -> void:
 func start_rig(_payment: String = "") -> bool:
 	if not has_player_control():
 		return false
+	if _can_reach_xaut():
+		return _house.open_xaut()
 	if _beat == Beat.CLAIM and _claim_line < 0 and _can_talk():
 		_next_claim_line()
 		return true
@@ -556,6 +558,10 @@ func start_rig(_payment: String = "") -> bool:
 
 func _can_talk() -> bool:
 	return not _claim_done and _player_pos.distance_to(at(CLAIM_S - 3.0)) < CLAIM_TALK_R and not _down.has("clerk")
+
+
+func _can_reach_xaut() -> bool:
+	return _house != null and _house.can_reach_xaut(to_house(_player_pos))
 
 
 func _next_claim_line() -> void:
@@ -647,7 +653,9 @@ func _tick(delta: float) -> void:
 		if _house.phase == "left":
 			return
 	var prompt := ""
-	if _beat == Beat.CLAIM and _claim_line < 0 and _can_talk():
+	if has_player_control() and _can_reach_xaut():
+		prompt = "XAUT — Gold Mine protocol [E]"
+	elif _beat == Beat.CLAIM and _claim_line < 0 and _can_talk():
 		prompt = "Show your papers [E]"
 	if prompt != "" and not TouchUi.keys_shown():
 		prompt = prompt.replace(" [E]", "")
@@ -717,10 +725,17 @@ func _collide(p: Vector3) -> Vector3:
 	if not _claim_done and s > CLAIM_S - 4.0 and road_s(_player_pos) <= CLAIM_S - 4.0:
 		s = CLAIM_S - 4.0                         # the wagon, the clerk and the claimant across the way: he has to stop and talk
 	if _house != null and _house.built and s > PORCH_S - 45.0:
-		var l: Vector3 = _house.collide(Vector3(d, 0, s - PORCH_S))   # walls, stage, rail, seating, benches, posts, the hitched horses
+		var grounded: bool = _vel_y <= 0.0 and p.y <= _ground_y + 0.001
+		var l: Vector3 = _house.collide(Vector3(d, p.y, s - PORCH_S), grounded)
 		s = PORCH_S + l.z
 		d = l.x
 	return at(s, d) + Vector3(0, p.y, 0)
+
+
+func _update_vertical(delta: float) -> void:
+	# Let gravity handle ledge exits. _set_ground is for moving floors that carry the player down.
+	_ground_y = _house.stage_floor(to_house(_player_pos)) if _house != null and _house.built else 0.0
+	super._update_vertical(delta)
 
 
 ## A caption on the road ducks the song for as long as it is up (recorded takes duck it themselves; unrecorded lines would not).

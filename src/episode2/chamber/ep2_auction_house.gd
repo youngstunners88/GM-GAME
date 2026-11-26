@@ -27,6 +27,11 @@ const STAGE_Z0 := 24.0
 const STAGE_Z1 := 31.6
 const STAGE_X := 6.5
 const STAGE_H := 1.1
+const STAGE_RISER := STAGE_H / 4.0
+const XAUT_PROTOCOL_URL := "https://mine4gold.app"
+const XAUT_CRATE_POS := Vector3(3.2, STAGE_H, 27.2)
+const XAUT_INTERACT_RANGE := 1.75
+const XAUT_OPEN_COOLDOWN_MS := 1500
 const RAIL_Z := 12.0
 const RAIL_GAP := 1.6
 const BLEACH := Rect2(8.2, 6.0, 2.6, 12.0)          # x from 8.2 to the wall, z 6..18 (mirrored on the left)
@@ -111,6 +116,9 @@ var say: Callable = Callable()                      # (text, seconds): the room'
 var _step: int = 0
 var _kit: Node3D
 var _rects: Array = []                              # Rect2 solids in (x, z), un-expanded
+var _stage_surfaces: Dictionary = {}                # solid footprint -> top height
+var _xaut_crate: Node3D
+var _xaut_next_open_ms: int = 0
 var _folk: Array = []                               # every shootable person but Jack
 var _crowd: Array = []                              # bidders + watchers (react to the calls)
 var _servers: Array = []                            # [folk, route, index, wait, pause clip]
@@ -252,6 +260,10 @@ func _shell() -> void:
 	_kit = (load(KIT) as PackedScene).instantiate() as Node3D
 	_kit_piece("Auc_Building", Vector3.ZERO)
 	_kit_piece("Auc_Stage", Vector3.ZERO)
+	_xaut_crate = _kit_piece("Auc_Strongbox", XAUT_CRATE_POS, 0.3)
+	if _xaut_crate != null:
+		_solid(XAUT_CRATE_POS.x, XAUT_CRATE_POS.z, 0.56, 0.45)
+	_label("XAUT", XAUT_CRATE_POS + Vector3(0, 0.32, -0.34), PI + 0.3, 28)
 	_label("AUCTION HOUSE", Vector3(0, 10.55, Z0 - 0.2), PI, 150)
 	var banner: MeshInstance3D = MeshInstance3D.new()
 	var quad := BoxMesh.new()
@@ -303,7 +315,14 @@ func _shell() -> void:
 	_solid(-hw + 0.1, (Z0 + lo) * 0.5, 0.1, (lo - Z0) * 0.5)
 	_solid(-hw + 0.1, (hi + Z1) * 0.5, 0.1, (Z1 - hi) * 0.5)
 	_solid(0, Z1 - 0.1, hw, 0.1)
-	_solid(0, (STAGE_Z0 + STAGE_Z1) * 0.5, STAGE_X + 1.6, (STAGE_Z1 - STAGE_Z0) * 0.5)
+	var deck := Rect2(-STAGE_X, STAGE_Z0, STAGE_X * 2.0, STAGE_Z1 - STAGE_Z0)
+	_stage_surfaces[deck] = STAGE_H
+	# The CAD treads overlap so there is no gap between the three risers and the deck.
+	for side in [-1.0, 1.0]:
+		for k in 3:
+			var cx: float = side * (STAGE_X + 0.45 + (2 - k) * 0.35)
+			_stage_surfaces[Rect2(cx - 0.45, STAGE_Z0 + 0.4, 0.9, 1.6)] = STAGE_RISER * (k + 1)
+	_rects.append_array(_stage_surfaces.keys())
 	for i in 6:
 		var x: float = -hw + 0.4 + i * (W - 0.8) / 5.0
 		_solid(x, 0.25, 0.16, 0.16)
@@ -314,11 +333,9 @@ func _shell() -> void:
 	_murmur = _sound("town_people_loop.ogg", Vector3(0, 1.4, 16.0), true, 5.0, MURMUR_OFF)
 
 
-## Block, strongbox, claim board and Jack's poster, the rail and side seating, the floor's benches, chandeliers, bunting, the grounds.
+## Block, claim board and Jack's poster, the rail and side seating, the floor's benches, chandeliers, bunting, the grounds.
 func _furnish() -> void:
 	_kit_piece("Auc_Lectern", Vector3(-0.85, STAGE_H, 25.5))
-	_kit_piece("Auc_Strongbox", Vector3(3.2, STAGE_H, 27.2), 0.3)
-	_label("XAUT", Vector3(3.2, STAGE_H + 0.32, 26.86), PI + 0.3, 28)
 	_kit_piece("Auc_ClaimBoard", Vector3(-W * 0.5 + 0.22, 0.9, 19.4), -PI * 0.5)
 	_label("THIS WEEK'S CLAIM\nSEVEN DAYS · ONE POOL\nGOLD IN · XAUT OUT, PRO-RATA\nNUMBERS TAKEN AT THE DOOR", Vector3(-W * 0.5 + 0.36, 3.05, 19.4), PI * 0.5, 30)
 	if ResourceLoader.exists(POSTER):
@@ -590,11 +607,39 @@ func inside(p: Vector3) -> bool:
 	return p.z > Z0 + 0.3 and p.z < Z1 and absf(p.x) < W * 0.5
 
 
-## Push a point (local) out of every solid (walls, stage, rail, seating, benches, posts, horses). Twice: corners settle.
-func collide(p: Vector3) -> Vector3:
+## Episode 2 uses a floor height under the player's feet, as at the town and lake porches.
+func stage_floor(p: Vector3) -> float:
+	var height := 0.0
+	var feet := Vector2(p.x, p.z)
+	for footprint: Rect2 in _stage_surfaces:
+		if footprint.has_point(feet):
+			height = maxf(height, _stage_surfaces[footprint])
+	return height
+
+
+func can_reach_xaut(p: Vector3) -> bool:
+	return _xaut_crate != null and stage_floor(p) == STAGE_H \
+		and absf(p.y - STAGE_H) <= 0.35 and p.distance_to(XAUT_CRATE_POS) <= XAUT_INTERACT_RANGE
+
+
+func open_xaut() -> bool:
+	if Time.get_ticks_msec() < _xaut_next_open_ms:
+		return false
+	var result: Error = OS.shell_open(XAUT_PROTOCOL_URL)
+	_xaut_next_open_ms = Time.get_ticks_msec() + XAUT_OPEN_COOLDOWN_MS
+	return result == OK
+
+
+## Grounded feet can clear one riser. Airborne feet must already be above a surface to move over it.
+func collide(p: Vector3, can_step: bool = false) -> Vector3:
+	var clearance: float = p.y + (STAGE_RISER if can_step else 0.0) + 0.001
 	for _pass in 2:
-		for r in _rects:
-			var rr: Rect2 = (r as Rect2).grow(RADIUS)
+		for r: Rect2 in _rects:
+			var height: float = _stage_surfaces.get(r, 0.0)
+			if height > 0.0 and clearance >= height:
+				continue
+			# Keep stair collision close to each tread so it cannot block the adjacent tread.
+			var rr: Rect2 = r.grow(0.001 if height > 0.0 and height < STAGE_H else RADIUS)
 			if not rr.has_point(Vector2(p.x, p.z)):
 				continue
 			var dl: float = p.x - rr.position.x
