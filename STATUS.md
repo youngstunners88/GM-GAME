@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+- 2026-11-26: CI portal-room release gate fixed by updating the Episode 2 residuals count to 208. Production export and butler upload passed. Itch serves BUILD `2026-11-26-9e6624d` from `9e6624d0`, including `7e2cd738` (auction stage climb and jump, XAUT external link). [Production CI run](https://github.com/youngstunners88/GM-GAME/actions/runs/45747369753)
+
 - 2026-11-26: Auction stage climb+jump solid; XAUT crate interact opens https://mine4gold.app externally (game stays live). URL constant for later auction route. **Desktop playtest (Godot 4.3):** walked both stairways, double-jumped from the floor, single-jumped from the lowest tread, and landed on the hall floor from the front and side. Nine quick E presses opened one Chromium tab, and game physics kept running.
 
 **2026-11-25 — Episode 2 town: stats board, storefront jam, arm-fold fix, Stockpile polish.** On master, deploying (BUILD tag to follow). Not founder-verified.
