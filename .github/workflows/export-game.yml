@@ -329,23 +329,6 @@ jobs:
       - name: Portal room gameplay and rendered visibility
         run: |
           set -euo pipefail
-          # Most headless gates redirect their output to files. Keep the
-          # last log visible even when an assertion exits without a message.
-          report_gate_failure() {
-            local rc=$? log latest=""
-            if (( rc == 0 )); then return; fi
-            for log in *.log; do
-              if [[ -f "$log" && ( -z "$latest" || "$log" -nt "$latest" ) ]]; then
-                latest="$log"
-              fi
-            done
-            if [[ -n "$latest" ]]; then
-              echo "::error::Gameplay step exited $rc. Last log: $latest"
-              tail -40 -- "$latest"
-            fi
-            return "$rc"
-          }
-          trap report_gate_failure EXIT
           # A second completed pass resolves newly extracted model textures/classes.
           # Never hide an importer crash and continue with missing test assets.
           timeout 600 "$GODOT_BIN" --headless --import > import-second-pass.log 2>&1 || {
@@ -622,7 +605,7 @@ jobs:
           grep -qF 'EP2_REACHABILITY: ALL PASS' ep2-reachability-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-reachability-tests.log | head -40; tail -25 ep2-reachability-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-reachability-tests.log; then exit 1; fi
           timeout 500 "$GODOT_BIN" --headless res://tests/ep2_residuals_1028_test.tscn > ep2-residuals-1028-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ep2-residuals-1028-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ep2-residuals-1028-tests.log | head -40; tail -12 ep2-residuals-1028-tests.log; exit 1; }
-          grep -qF 'EP2_RESIDUALS_1028: 206 checks, 0 failed' ep2-residuals-1028-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-residuals-1028-tests.log | head -40; tail -25 ep2-residuals-1028-tests.log; exit 1; }
+          grep -qxF 'EP2_RESIDUALS_1028: 208 checks, 0 failed' ep2-residuals-1028-tests.log || { echo "GATE_MISSING ep2-residuals-1028-tests.log: expected 208 checks, 0 failed"; grep -E '^EP2_RESIDUALS_1028:|\[FAIL\]|SCRIPT ERROR|Parse Error' ep2-residuals-1028-tests.log | sed -n '1,40p'; tail -25 ep2-residuals-1028-tests.log; exit 1; }
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-residuals-1028-tests.log; then exit 1; fi
           timeout 500 "$GODOT_BIN" --headless res://tests/ep2_runner_audio_test.tscn > ep2-runner-audio-tests.log 2>&1 || { rc=$?; echo "GODOT_EXIT $rc ep2-runner-audio-tests.log"; grep -E '\[FAIL\]|SCRIPT ERROR|Parse Error|ALL PASS|checks,' ep2-runner-audio-tests.log | head -40; tail -12 ep2-runner-audio-tests.log; exit 1; }
           grep -qF 'ALL PASS' ep2-runner-audio-tests.log || { grep -E 'FAIL|SCRIPT ERROR|Parse Error' ep2-runner-audio-tests.log | head -40; tail -25 ep2-runner-audio-tests.log; exit 1; }
