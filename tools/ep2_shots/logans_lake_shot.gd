@@ -2,17 +2,22 @@ extends Node
 var c: LogansLakeChamber
 var out := "/workspace/scratch/logan-task/captures"
 var motion := false
+var cargo := false
 var view_frames: int = 30
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("out="): out = arg.substr(4)
 		if arg == "motion": motion = true
+		if arg == "cargo": cargo = true
 		if arg.begins_with("frames="): view_frames = int(arg.substr(7))
 	DirAccess.make_dir_recursive_absolute(out)
 	c = load("res://src/episode2/chamber/logans_lake.tscn").instantiate()
 	add_child(c)
 	c.setup()
 	c.set_physics_process(false)
+	if cargo:
+		await cargo_shots()
+		return
 	if motion:
 		await motion_shots()
 		get_tree().quit()
@@ -27,6 +32,23 @@ func _ready() -> void:
 	await shot("05-handoff", Vector3(-5.8, 0, 15.5), Vector3(24, 0, 51))
 	await shot("06-overlook", c.OVERLOOK, Vector3(24, 0, 70))
 	get_tree().quit()
+
+## Sample the runtime camera across the whole shot. Run with a tall window to inspect upright framing.
+func cargo_shots() -> void:
+	c.armory.purchase_river_gear("btc")
+	c._player_pos = c.STAGING_MARK + Vector3(-1.0, 0.0, 0.0)
+	c._advance_to(c.Beat.STAGE)
+	if not c.start_rig():
+		push_error("Cargo capture could not start the staging interaction.")
+		get_tree().quit(1)
+		return
+	var frames := {15: "01-moored", 65: "02-released", 182: "03-crossing", 208: "04-current", 317: "05-follow", 437: "06-outflow"}
+	for frame in 450:
+		c.step(1.0 / 60.0)
+		if frames.has(frame):
+			await capture(frames[frame])
+	get_tree().quit()
+
 
 ## Diagnostic engine views: same skin/materials, unobstructed whole-body gestures.
 func motion_shots() -> void:
@@ -60,6 +82,10 @@ func shot(label: String, feet: Vector3, target: Vector3, frames: int = -1) -> vo
 			c.get_viewmodel().set_shown(false)
 			c._hud_layer.hide()
 		await get_tree().process_frame
+	await capture(label)
+
+
+func capture(label: String) -> void:
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out.path_join(label + ".png"))
 	print("LAKE_CAPTURE ", label)

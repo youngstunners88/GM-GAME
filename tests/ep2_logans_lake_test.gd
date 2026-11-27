@@ -82,10 +82,23 @@ func _ready() -> void:
 	check("touch interaction frames the owned crate, then locks out repeat interactions", c._cargo != null and not c.start_rig() and c.staging_count() == 1)
 	var shipment: Node3D = c._cargo
 	var start: Vector3 = shipment.position
-	advance(c, 3.0)
-	check("the framed crate moves in the water with a wake before the ridge is armed",
-		shipment.position.z > start.z + 2.0 and c._cargo_wake != null and c._cam_goal_active and not c.armory.day88_outflow_started)
-	advance(c, LogansLakeChamber.CARGO_SHOT_SECONDS - 3.0 + 0.1)
+	advance(c, 0.25)
+	var camera: Camera3D = c.get_camera()
+	var eye: Vector3 = camera.position
+	var moored_x: float = camera.unproject_position(shipment.position).x
+	var rope: MeshInstance3D = c._cargo_tether
+	var tethered_length: float = rope.basis.y.length()
+	check("the shot opens with the crate tied at rest", is_equal_approx(shipment.position.z, start.z) and tethered_length > 1.0)
+	advance(c, 2.75)
+	var crossing_x: float = camera.unproject_position(shipment.position).x
+	check("the crate crosses the fixed frame, leaving the mooring line and drawing a wake",
+		shipment.position.z > start.z + 2.0 and c._cargo_wake != null and rope.basis.y.length() < 1.0
+		and eye.is_equal_approx(camera.position) and absf(crossing_x - moored_x) > get_viewport().get_visible_rect().size.x * 0.15)
+	advance(c, 0.45)
+	check("water splashes at the current before staging is recorded", c._cargo_splash != null and not c.armory.day88_outflow_started)
+	advance(c, 2.0)
+	check("the camera then follows downstream and the splash clears", camera.position.z > eye.z + 4.0 and c._cargo_splash == null)
+	advance(c, LogansLakeChamber.CARGO_SHOT_SECONDS - 5.45 + 0.1)
 	check("the crate reaches the outflow and player control returns", c.staging_complete() and c.has_player_control()
 		and is_equal_approx(shipment.position.z, LogansLakeChamber.CARGO_END_Z))
 	initial["day88_outflow_started"] = true

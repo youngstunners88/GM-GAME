@@ -12,7 +12,14 @@ const LOGAN_MARK := Vector3(-3.4, 0, 8)
 const ARRIVAL_SIGN := Vector3(-12, 0, -4) # opposite the water; leave the rider-to-Logan sightline open
 const STAGING_MARK := Vector3(-4.5, 0, 17)
 const CARGO_START_Z := 53.0
+const CARGO_CURRENT_Z := 58.5
 const CARGO_END_Z := 76.0
+const CARGO_RELEASE_TIME := 0.75
+const CARGO_TETHER_FALL_TIME := 0.30
+const CARGO_MOORING := Vector3(22.1, 0.28, 51.4)
+const CARGO_TIE := Vector3(23.55, 0.19, 52.47)
+const CARGO_OPEN_EYE := Vector3(33.8, 4.4, 49.5)
+const CARGO_OPEN_TARGET := Vector3(24.0, 0.32, 56.3)
 const CARGO_SHOT_SECONDS := 7.5
 const CARGO_HANDOFF_LINE := "LOGAN: The depth holds. Follow the outflow to the high ground."
 const OVERLOOK := Vector3(-8, 6, 61)
@@ -27,7 +34,9 @@ const LINES := [
 const GREET_R := 6.5
 var _logan: Ep2TownFolk
 var _cargo: Node3D
+var _cargo_tether: MeshInstance3D
 var _cargo_wake: MeshInstance3D
+var _cargo_splash: CPUParticles3D
 var _cargo_shot_t: float = -1.0
 var _line: int = 0
 var _talk_t: float = 0.0
@@ -157,6 +166,13 @@ func _shore() -> void:
 	_sign("RIVER OVERLOOK  >", Vector3(-4, path_height(34), 34), 3.3)
 	_marker_label = _sign("STAGED CARGO", STAGING_MARK + Vector3(1.1, 0, 0.5), 3.4)
 	_sign("DAY-88 RIVER", Vector3(-4.5, path_height(56), 56), 2.9)
+	var timber: Material = _tex(TIMBER_TEX, Color(0.61, 0.44, 0.28), 0.6)
+	var foot: float = Ep2LakeLandform.drawn_height(CARGO_MOORING.x, CARGO_MOORING.z)
+	var top: float = 0.67
+	var post := _box(Vector3(0.34, top - foot, 0.34),
+		Vector3(CARGO_MOORING.x, (top + foot) * 0.5, CARGO_MOORING.z), timber)
+	post.name = "ShipmentMooring"
+	_box(Vector3(0.62, 0.13, 0.23), Vector3(0, top - post.position.y - 0.14, 0), timber, post)
 	_build_logan_camp()
 
 
@@ -258,9 +274,15 @@ func _on_setup() -> void:
 	if _cargo != null:
 		_cargo.queue_free()
 		_cargo = null
+	if _cargo_tether != null:
+		_cargo_tether.queue_free()
+		_cargo_tether = null
 	if _cargo_wake != null:
 		_cargo_wake.queue_free()
 		_cargo_wake = null
+	if _cargo_splash != null:
+		_cargo_splash.queue_free()
+		_cargo_splash = null
 	_gesture_t = 0
 	Ep2Signpost.retext(_marker_label, "STAGED CARGO")
 	if _logan != null: _logan.hold_clip("Idle")
@@ -439,6 +461,25 @@ func _build_staged_shipment() -> void:
 	_cargo = Ep2ShipmentCrate.model(1.5)
 	_cargo.position = _cargo_at(CARGO_START_Z)
 	_visuals.add_child(_cargo)
+	if not _staged:
+		var cord := CylinderMesh.new()
+		cord.height = 1.0
+		cord.top_radius = 0.034
+		cord.bottom_radius = 0.034
+		cord.radial_segments = 8
+		_cargo_tether = MeshInstance3D.new()
+		_cargo_tether.name = "ShipmentMooringLine"
+		_cargo_tether.mesh = cord
+		_cargo_tether.material_override = _plain(Color(0.58, 0.43, 0.26))
+		_visuals.add_child(_cargo_tether)
+		_set_cargo_tether_tip(CARGO_TIE)
+
+
+func _set_cargo_tether_tip(tip: Vector3) -> void:
+	var line: Vector3 = tip - CARGO_MOORING
+	var basis := Basis(Quaternion(Vector3.UP, line.normalized()))
+	basis.y *= line.length()
+	_cargo_tether.transform = Transform3D(basis, CARGO_MOORING + line * 0.5)
 
 
 func _cargo_at(z: float) -> Vector3:
@@ -447,17 +488,55 @@ func _cargo_at(z: float) -> Vector3:
 
 func _frame_cargo(snap: bool) -> void:
 	var at: Vector3 = _cargo.position
-	set_camera_shot(at + Vector3(5.7, 4.8, -8.2), at + Vector3(0, 0.3, 2.2), 48.0, snap)
+	# Hold on the mooring through release. The crate crosses the shot before the camera follows downstream.
+	var follow: float = smoothstep(CARGO_CURRENT_Z, 68.0, at.z)
+	var eye: Vector3 = CARGO_OPEN_EYE.lerp(at + Vector3(6.7, 4.6, -8.3), follow)
+	var target: Vector3 = CARGO_OPEN_TARGET.lerp(at + Vector3(0, 0.3, 2.5), follow)
+	# Keep the post and crossing in frame when the director shot uses a tall viewport.
+	var view_size: Vector2 = get_viewport().get_visible_rect().size
+	var aspect: float = view_size.x / maxf(1.0, view_size.y)
+	var fov: float = maxf(50.0, rad_to_deg(2.0 * atan(tan(PI / 6.0) / maxf(0.4, aspect))))
+	set_camera_shot(eye, target, fov, snap)
+
+
+func _splash_at_current() -> void:
+	var wash := _particles(26, 0.55, Color(0.90, 0.98, 1.0, 0.94), 0.17)
+	wash.name = "ShipmentCurrentSplash"
+	wash.emitting = false
+	wash.one_shot = true
+	wash.explosiveness = 0.96
+	wash.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	wash.emission_box_extents = Vector3(0.20, 0.02, 0.36)
+	wash.direction = Vector3(0.65, 1, -0.2)
+	wash.spread = 40.0
+	wash.initial_velocity_min = 1.4
+	wash.initial_velocity_max = 3.4
+	wash.position = Vector3(_cargo.position.x + 0.62, -0.12, _cargo.position.z + 0.38)
+	_cargo_splash = wash
+	_visuals.add_child(wash)
+	wash.emitting = true
 
 
 func _advance_cargo_shot(delta: float) -> void:
 	var previous: float = _cargo_shot_t
 	_cargo_shot_t += delta
-	# Give the crate a moment at rest, then accelerate as the channel takes it.
-	var pull: float = clampf((_cargo_shot_t - 0.8) / (CARGO_SHOT_SECONDS - 0.8), 0.0, 1.0)
+	var old_z: float = _cargo.position.z
+	var pull: float = clampf((_cargo_shot_t - CARGO_RELEASE_TIME) / (CARGO_SHOT_SECONDS - CARGO_RELEASE_TIME), 0.0, 1.0)
 	_cargo.position = _cargo_at(lerpf(CARGO_START_Z, CARGO_END_Z, pow(pull, 1.45)))
+	var rock: float = 0.055 + 0.10 * (1.0 - smoothstep(0.0, 1.8, absf(_cargo.position.z - CARGO_CURRENT_Z)))
 	_cargo.position.y += 0.055 * sin(_cargo_shot_t * 5.0)
-	_cargo.rotation.z = sin(_cargo_shot_t * 5.0) * 0.055
+	_cargo.rotation.z = sin(_cargo_shot_t * 5.0) * rock
+	if previous < CARGO_RELEASE_TIME + CARGO_TETHER_FALL_TIME:
+		if _cargo_shot_t <= CARGO_RELEASE_TIME:
+			_set_cargo_tether_tip(CARGO_TIE + Vector3(0, _cargo.position.y + 0.23, 0))
+		else:
+			var loose: float = smoothstep(CARGO_RELEASE_TIME, CARGO_RELEASE_TIME + CARGO_TETHER_FALL_TIME, _cargo_shot_t)
+			_set_cargo_tether_tip(CARGO_TIE.lerp(CARGO_MOORING + Vector3(0.16, -0.75, 0.16), loose))
+	if old_z < CARGO_CURRENT_Z and _cargo.position.z >= CARGO_CURRENT_Z:
+		_splash_at_current()
+	if _cargo_splash != null and _cargo.position.z > CARGO_CURRENT_Z + 2.0:
+		_cargo_splash.queue_free()
+		_cargo_splash = null
 	_frame_cargo(is_zero_approx(previous))
 	if pull > 0.06:
 		if _cargo_wake == null:
@@ -465,6 +544,7 @@ func _advance_cargo_shot(delta: float) -> void:
 			plane.size = Vector2(2.2, 4.6)
 			var foam := ShaderMaterial.new()
 			foam.shader = preload("res://src/episode2/art/lake_wake.gdshader")
+			foam.set_shader_parameter("foam_strength", 0.44)
 			_cargo_wake = MeshInstance3D.new()
 			_cargo_wake.mesh = plane
 			_cargo_wake.material_override = foam
@@ -477,6 +557,8 @@ func _advance_cargo_shot(delta: float) -> void:
 		return
 	_cargo_wake.queue_free()
 	_cargo_wake = null
+	_cargo_tether.queue_free()
+	_cargo_tether = null
 	_cargo_shot_t = -1.0
 	_show_blocks_control = false
 	release_camera()
