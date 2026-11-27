@@ -1444,7 +1444,7 @@ func _on_setup() -> void:
 		_blocked_reason = "staging"
 	elif not armory.sniper_owned:
 		_blocked_reason = "sniper"
-	elif not handoff.has("ridge_from"):
+	elif not handoff.has("ridge_from") and Ep2Extras.state() != "loading":
 		_build_crate()
 	_build_cover_touch()
 	_spawn_watchers()
@@ -1491,6 +1491,9 @@ func _heal_full() -> bool:
 # --- the run -------------------------------------------------------------------------------------------------------------------
 
 func _tick(delta: float) -> void:
+	# A restored ridge may open while the hero crate is still streaming.
+	if _blocked_reason.is_empty() and _crate == null and Ep2Extras.state() != "loading":
+		_build_crate()
 	_invuln = maxf(0.0, _invuln - delta)
 	eye_height = move_toward(eye_height, FPS_EYE_HEIGHT, delta * 0.8)
 	var near: Array = ridge_nearest(_player_pos)
@@ -1524,6 +1527,8 @@ func _tick(delta: float) -> void:
 
 ## Option A: on the first overlook, looking squarely at the launch pool for half a second, the current takes the crate.
 func _tick_activation(delta: float) -> void:
+	if _crate == null:
+		return
 	var o: Vector3 = OVERLOOKS[0]
 	var pool: Vector3 = river_point(river_s_of(LAUNCH_POINT))
 	var eye: Vector3 = _player_pos + Vector3(0, eye_height, 0)

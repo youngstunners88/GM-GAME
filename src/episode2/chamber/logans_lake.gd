@@ -320,8 +320,6 @@ func _on_setup() -> void:
 		_advance_to(Beat.ROAD)
 	elif armory.river_gear and armory.day88_outflow_started:
 		_staged = true
-		_build_staged_shipment()
-		_cargo.position = _cargo_at(CARGO_END_Z)
 		Ep2Signpost.retext(_marker_label, "SHIPMENT AWAY")
 		_advance_to(Beat.HANDOFF)
 	else:
@@ -396,8 +394,7 @@ func _on_beat_entered(b: int) -> void:
 			prebuild_requested.emit("river_cover")          # the ridge builds off screen while he walks the shore trail
 			_hud.objective = "Follow the shore trail to the river overlook."
 		Beat.OVERLOOK:
-			_hud.objective = ("Day-88 river · at the overlook, [E] climb to the ridge." if TouchUi.keys_shown()
-				else "Day-88 river · at the overlook, climb to the ridge.")
+			_hud.objective = "Day-88 river · climb to the ridge."
 			_say("The shipment is downstream. Climb to the ridge to cover it.", 4.0)
 		Beat.ROAD:
 			_road_objective()
@@ -516,8 +513,12 @@ func _tick(delta: float) -> void:
 		if _beat == Beat.ROAD:
 			_road_objective()
 		else:
-			_hud.objective = "Logan's Lake · Meet Logan at the shore."
+			_on_beat_entered(_beat)
 	_build_skiff()
+	# A Continue can arrive before the extras pack. Recreate the staged model once Logan's assets are ready.
+	if _staged and not after_day88 and _cargo == null:
+		_build_staged_shipment()
+		_cargo.position = _cargo_at(CARGO_END_Z)
 	_logan.step(delta)
 	if _player_pos.distance_to(LOGAN_MARK) < 7:
 		_logan.face_point(_player_pos)
