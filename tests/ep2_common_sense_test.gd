@@ -371,6 +371,7 @@ func test_town_saloon_doors_swing_and_settle() -> void:
 func _river() -> RiverCoverChamber:
 	var st := Ep2ArmoryState.post_hideout()
 	st.purchase_river_gear("btc")
+	st.mark_day88_outflow_started()
 	st.purchase_sniper("btc")
 	st.purchase_sniper_ammo(10, "btc")
 	var c: RiverCoverChamber = RIVER.instantiate() as RiverCoverChamber

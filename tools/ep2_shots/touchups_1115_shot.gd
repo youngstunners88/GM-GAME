@@ -52,6 +52,7 @@ func _look_town(c: GoldTownChamber, ground: Vector3, focus: Vector3) -> void:
 func _crate() -> void:
 	var st := Ep2ArmoryState.post_hideout()
 	st.purchase_river_gear("btc")
+	st.mark_day88_outflow_started()
 	st.purchase_sniper("btc")
 	st.purchase_sniper_ammo(10, "btc")
 	var c: RiverCoverChamber = load("res://src/episode2/chamber/river_cover.tscn").instantiate() as RiverCoverChamber

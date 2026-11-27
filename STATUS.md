@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+- 2026-11-26: Tabs identifies the owned Day-88 Shipment as Rich & Utah’s river package, and Utah’s counter confirmation assigns ridge cover. Logan’s cargo check shows the same crate entering the outflow. The ridge requires lake staging and takes that crate on the continuous handoff. Godot playtest and captures checked. Browser hard-refresh and release verification pending.
+
 - 2026-11-26: CI portal-room release gate fixed by updating the Episode 2 residuals count to 208. Production export and butler upload passed. Itch serves BUILD `2026-11-26-9e6624d` from `9e6624d0`, including `7e2cd738` (auction stage climb and jump, XAUT external link). [Production CI run](https://github.com/youngstunners88/GM-GAME/actions/runs/45747369753)
 
 - 2026-11-26: Auction stage climb+jump solid; XAUT crate interact opens https://mine4gold.app externally (game stays live). URL constant for later auction route. **Desktop playtest (Godot 4.3):** walked both stairways, double-jumped from the floor, single-jumped from the lowest tread, and landed on the hall floor from the front and side. Nine quick E presses opened one Chromium tab, and game physics kept running.

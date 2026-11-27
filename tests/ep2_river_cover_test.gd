@@ -14,10 +14,12 @@ func check(label: String, ok: bool, detail: String = "") -> void:
 		failures += 1
 
 
-func _armory(shipment: bool, sniper: bool) -> Ep2ArmoryState:
+func _armory(shipment: bool, sniper: bool, staged: bool = true) -> Ep2ArmoryState:
 	var st := Ep2ArmoryState.post_hideout()
 	if shipment:
 		st.purchase_river_gear("btc")
+		if staged:
+			st.mark_day88_outflow_started()
 	if sniper:
 		st.purchase_sniper("btc")
 		st.purchase_sniper_ammo(10, "btc")
@@ -105,14 +107,19 @@ func _test_prerequisites() -> void:
 	check("without the Shipment no crate is spawned on the ridge or the river", c.get_crate() == null and c._visuals.find_child("Shipment", true, false) == null)
 	_arm_and_launch(c)
 	check("...the marker blocks the run and names the Armory", c.get_beat_name() == "BLOCKED" and not c.is_launched()
-		and "SHIPMENT" in str(c.get_hud().objective) and "Rich & Utah" in str(c.get_hud().objective), str(c.get_hud().objective))
+		and "Day-88 Shipment" in str(c.get_hud().objective) and "Rich & Utah" in str(c.get_hud().objective), str(c.get_hud().objective))
 	var res: Array = []
 	c.chamber_cleared.connect(func(r: Dictionary) -> void: res.append(r))
 	_stand(c, RiverCoverChamber.MARKER)
 	check("...E at the marker ends the slice with the reason, no free crate", c.start_rig() and res.size() == 1
 		and str(res[0].get("river_blocked", "")) == "shipment" and not bool(res[0].get("river_complete", false)), str(res))
 	c.free()
-	# the Shipment but no Sharps: the crate he bought stays in the pool, unlaunched
+	c = _room(_armory(true, true, false))
+	_arm_and_launch(c)
+	check("owning the Shipment without staging at Logan’s Lake cannot activate the ridge", c.blocked_reason() == "staging"
+		and c.get_crate() == null and not c.is_launched() and "Logan" in c.get_hud().objective)
+	c.free()
+	# the staged Shipment still needs the Sharps
 	c = _room(_armory(true, false))
 	_arm_and_launch(c)
 	check("without the Sharps the shipment does not launch (the run needs the Armory's long rifle)", c.get_beat_name() == "BLOCKED"

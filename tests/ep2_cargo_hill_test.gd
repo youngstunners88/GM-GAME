@@ -1,6 +1,6 @@
 extends Node
 ## CARGO CHECK -> HILL -> RIDGE IN ONE MOTION (founder 2026-11-07: "no pause climbing the hill from the cargo check"). The real session
-## plays Logan's Lake: he meets Logan, hears him out, checks the staged cargo with [E], then only HOLDS FORWARD (steering like a player,
+## plays Logan's Lake: he meets Logan, hears him out, checks the staged cargo with [E], watches the launch, then only HOLDS FORWARD (steering like a player,
 ## never faster than a thumb turns). Every frame of the walk logs its cost, whether he is in control, whether he moved, and how far the
 ## camera jumped (lake frames are put in the ridge's axes with LAKE_OFFSET, so the swap to the ridge is measured as one world). A line
 ## every 2 m. Fails on any frame he is held while pushing forward, any camera jump or turn he did not make, or a frame that builds the
@@ -72,7 +72,10 @@ func _ready() -> void:
 	check("the ridge is built behind the lake before the cargo is checked", root.is_prebuilt("river_cover"))
 	lake._player_pos = LogansLakeChamber.STAGING_MARK + Vector3(-1.5, 0, 0)
 	_frame(root, lake)
-	check("[E] at the staged cargo checks it", lake.start_rig() and lake.staging_complete())
+	check("[E] at the staged cargo starts the shot", lake.start_rig() and not lake.has_player_control())
+	for i in int(ceil(LogansLakeChamber.CARGO_SHOT_SECONDS / DT)) + 1:
+		_frame(root, lake)
+	check("the shot finishes before the continuous walk begins", lake.staging_complete() and lake.has_player_control())
 	var ridge: RiverCoverChamber = null
 	var last_cam := Transform3D()
 	var have_cam := false

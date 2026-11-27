@@ -40,7 +40,6 @@ func _ready() -> void:
 	c.chamber_cleared.connect(func(result: Dictionary) -> void: results.append(result))
 	check("live asset probe verifies supplied 65-bone skin and four clips", LogansLakeChamber.probe_assets())
 	c.set_physics_process(false)
-	var initial: Dictionary = c.armory.snapshot().duplicate(true)
 	check("registered on the Episode 2 surface chain", Ep2SessionRoot.CHAMBER_SCENES.has("logans_lake"))
 	check("first person, firearm and 3-heart contract", c.is_fps() and c.get_viewmodel() != null and c.get_health() == 3)
 	check("founder's supplied Logan has a real skin and clips", c._logan.has_clips() and c._logan.model.find_children("*", "Skeleton3D", true, false).size() == 1)
@@ -71,10 +70,27 @@ func _ready() -> void:
 	check("short dialogue leads to one staging action", c.get_beat() == LogansLakeChamber.Beat.STAGE and talked <= talk_budget + 1.0)
 	check("staging cannot be activated beside Logan", not c.start_rig())
 	check("walk to the staging crate", walk(c, Vector3(-6, 0, 17)))
+	check("without the Armory purchase, cargo interaction can’t launch a crate", not c.start_rig() and c._cargo == null)
+	GameManager.purse_add("btc", 2)
+	check("purchase records the shipment in the same Armory used at the lake", town.buy("river_gear", 2, "btc") and c.armory.river_gear)
+	var initial: Dictionary = c.armory.snapshot()
+	var balance: int = GameManager.purse_balance("btc")
 	c._hud.search_requested.emit()
-	check("touch interaction confirms cargo once", c.staging_complete() and c.staging_count() == 1)
-	check("repeat input never rewards or stages twice", not c.start_rig() and c.staging_count() == 1)
-	check("all weapons, finite ammunition and currency unaffected", c.armory.snapshot() == initial)
+	check("touch interaction frames the owned crate, then locks out repeat interactions", c._cargo != null and not c.start_rig() and c.staging_count() == 1)
+	var shipment: Node3D = c._cargo
+	var start: Vector3 = shipment.position
+	advance(c, 3.0)
+	check("the framed crate moves in the water with a wake before the ridge is armed",
+		shipment.position.z > start.z + 2.0 and c._cargo_wake != null and c._cam_goal_active and not c.armory.day88_outflow_started)
+	advance(c, LogansLakeChamber.CARGO_SHOT_SECONDS - 3.0 + 0.1)
+	check("the crate reaches the outflow and player control returns", c.staging_complete() and c.has_player_control()
+		and is_equal_approx(shipment.position.z, LogansLakeChamber.CARGO_END_Z))
+	initial["day88_outflow_started"] = true
+	check("staging is saved once without spending or modifying any inventory", c.armory.snapshot() == initial
+		and GameManager.purse_balance("btc") == balance and session.section_checkpoint.state.personal_armory == initial)
+	var saved_state := Ep2ArmoryState.new()
+	saved_state.restore(session.section_checkpoint.state.personal_armory)
+	check("the outflow checkpoint retains the owned and staged shipment", saved_state.river_gear and saved_state.day88_outflow_started)
 	check("walk up the shore to the river overlook", walk(c, LogansLakeChamber.OVERLOOK))
 	advance(c, 0.2)
 	check("lake hands off to visible day-88 outflow", c.river_ready() and c._visuals.get_node_or_null("Day88Outflow") != null)
@@ -96,7 +112,9 @@ func _ready() -> void:
 	check("finish touch action resolves the lake exactly once (the session carries on to the ridge)", completions.is_empty() and results.size() == 1)
 	# founder lock 2026-11-04: the lake hands on to the day-88 ridge (never a vault, never the runner)
 	check("lake result hands on to the day-88 ridge, no vault", results.size() == 1 and not results[0].get("end_session", false) and results[0].get("lake_complete", false) and str(results[0].get("next_chamber", "")) == "river_cover")
-	check("session enters the river cover room, not the runner or a vault", session.get_active() is RiverCoverChamber)
+	var ridge := session.get_active() as RiverCoverChamber
+	check("the ridge adopts the same shipment node launched at the lake", ridge != null and ridge.get_crate() == shipment
+		and ridge.armory.river_gear and ridge.armory.day88_outflow_started and ridge.blocked_reason() == "")
 	check("finish input cannot duplicate the hand-off", not c.start_rig() and results.size() == 1)
 	print("LOGANS_LAKE: %s" % ("ALL PASS" if failures == 0 else "%d FAIL" % failures))
 	get_tree().quit(1 if failures else 0)

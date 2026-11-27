@@ -144,7 +144,7 @@ func pick_icon() -> Texture2D:
 
 func shipment_rect() -> Rect2:
 	var side: float = 64.0 if size.x < 650.0 else 120.0
-	return Rect2(Vector2(10.0, 6.0), Vector2(side, side))
+	return Rect2(Vector2(54.0, 12.0), Vector2(side, side))
 
 func _supply_button(label: String, action: Callable) -> Button:
 	var b := Button.new()
@@ -381,11 +381,14 @@ func _draw() -> void:
 	draw_line(Vector2(mid + 14,line_y),Vector2(mid+minf(270,size.x*.38),line_y),BRASS,1)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid,line_y-5),Vector2(mid+5,line_y),Vector2(mid,line_y+5),Vector2(mid-5,line_y)]),BRASS)
 	_draw_purse(_purse_band(), compact)
-	if state.river_gear and keys and not bud_selected:                       # wordless on touch: the turning crate is the label there
+	if state.river_gear and not bud_selected:
 		var sr: Rect2 = shipment_rect()
-		_text("THE SHIPMENT", Vector2(sr.get_center().x, sr.end.y + (10 if compact else 14)), 9 if compact else 12, BRASS, true)
-		if not compact:
-			_text("DAY-88 LIVE" if shipment_live else "DAY-88 CARGO", Vector2(sr.get_center().x, sr.end.y + 29), 10, PAPER, true)
+		var x: float = 12.0 if compact else 24.0
+		var y: float = sr.end.y + (10.0 if compact else 12.0)
+		_text("DAY-88 SHIPMENT", Vector2(x, y), 11 if compact else 16, BRASS)
+		_text("Rich & Utah’s river run", Vector2(x, y + 15.0), 10 if compact else 13, PAPER)
+		_text("Live · Cover from the ridge" if shipment_live else "Owned · Cover from the ridge",
+			Vector2(x, y + 30.0), 10 if compact else 13, PAPER)
 	if bud_selected:
 		# The exact founder-supplied bud, rendered from the mesh; the health transaction stays in the host.
 		var br: Rect2 = shipment_rect()

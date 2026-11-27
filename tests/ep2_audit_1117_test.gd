@@ -136,6 +136,7 @@ func _ready() -> void:
 	var cleared: Array = []
 	lake.chamber_cleared.connect(func(r: Dictionary) -> void: cleared.append(r))
 	lake.armory.river_gear = true
+	lake.armory.mark_day88_outflow_started()
 	lake.armory.sniper_owned = false
 	lake._show_active = false; lake._show_blocks_control = false; lake._hold = 0.0; lake._talk_t = 0.0
 	lake._beat = lake.Beat.OVERLOOK

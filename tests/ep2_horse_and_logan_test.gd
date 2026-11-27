@@ -201,6 +201,8 @@ func _test_session_respawn() -> void:
 		check("...the view is back up, off the ground", lake.has_player_control() and lake.eye_height >= lake.FPS_EYE_HEIGHT, "%s %.2f" % [lake.has_player_control(), lake.eye_height])
 		lake._beat = LogansLakeChamber.Beat.OVERLOOK
 		lake._staged = true
+		lake.armory.river_gear = true
+		lake.armory.mark_day88_outflow_started()
 		lake._talk_t = 0.0
 		lake.armory.sniper_owned = true                  # the ridge is only climbed with the Sharps (audit 2026-11-17)
 		lake._player_pos = Vector3(-8.0, 6.0, 60.0)

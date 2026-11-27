@@ -561,14 +561,14 @@ func _buy() -> void:
 func purchase_result(item_id: String, ok: bool) -> void:
 	var item: Dictionary = _item(item_id)
 	if ok:
-		flash = "SOLD"
+		flash = "UTAH: Our day-88 run. Cover it from the ridge." if item_id == Ep2ArmoryState.GATE_ITEM else "SOLD"
 	elif not item.is_empty() and _lock_note(item_id) != "":
 		flash = "BUY " + _lock_note(item_id).replace(" FIRST", "") + " FIRST"
 	elif not item.is_empty() and purse < int(item["price"]):
 		flash = "NOT ENOUGH CRYPTO"
 	else:
 		flash = "NOT FOR SALE"
-	_flash_t = 1.4
+	_flash_t = 5.0 if ok and item_id == Ep2ArmoryState.GATE_ITEM else 1.4
 	queue_redraw()
 
 
@@ -860,14 +860,14 @@ func _draw() -> void:
 	if _short():
 		# a short screen keeps only what matters under the list: the sale's answer (the hint line stays at the bottom)
 		if flash != "":
-			_text(flash, Vector2(mid, footer), 14, BRASS, true)
+			_text(flash, Vector2(mid, footer), 11 if compact else 14, BRASS, true)
 	else:
 		# a short list ends beside the case: its lines sit under the list, not behind the case
 		var foot_x: float = row_rect(0).get_center().x if size.x >= SIDE_CASE_MIN_W and footer + 40.0 < showcase_rect().end.y else mid
 		_text(footer_a, Vector2(foot_x, footer), 11, BRASS, true)
 		_text(footer_b, Vector2(foot_x, footer + 19), 11, PAPER, true)
 		if flash != "":
-			_text(flash, Vector2(foot_x, footer + 44), 14, BRASS, true)
+			_text(flash, Vector2(foot_x, footer + 44), 11 if compact else 14, BRASS, true)
 	_text("Up / Down choose  ·  E or Enter buy  ·  Esc leave" if TouchUi.keys_shown() else "Tap an item to buy",
 		Vector2(mid, size.y - 24), 10 if compact else 12, BRASS, true)
 

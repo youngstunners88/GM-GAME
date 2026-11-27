@@ -2,6 +2,8 @@ class_name LogansLakeChamber
 extends Ep2Interlude
 ## Founder lock 2026-10-18: investigate / stage depth, player investigates; Logan may fish as background lake life.
 ## The surface route continues here after Rich & Utah's gear. No currency writes or rewards.
+signal shipment_staged
+
 enum Beat { ARRIVE, INVESTIGATE, STAGE, HANDOFF, OVERLOOK, ROAD }
 const LOGAN := "res://src/episode2/extras/lake/logan.glb"
 const DOCK := "res://src/episode2/assets/lake/staging_dock.glb"
@@ -9,6 +11,10 @@ const SPAWN := Vector3(-8, 0, -13)
 const LOGAN_MARK := Vector3(-3.4, 0, 8)
 const ARRIVAL_SIGN := Vector3(-12, 0, -4) # opposite the water; leave the rider-to-Logan sightline open
 const STAGING_MARK := Vector3(-4.5, 0, 17)
+const CARGO_START_Z := 53.0
+const CARGO_END_Z := 76.0
+const CARGO_SHOT_SECONDS := 7.5
+const CARGO_HANDOFF_LINE := "LOGAN: The depth holds. Follow the outflow to the high ground."
 const OVERLOOK := Vector3(-8, 6, 61)
 ## Logan's lesson, three plain sentences for someone who has never heard of liquidity (founder 2026-11-15: "more to say about Liquidity Providing to
 ## help newbies understand in 3 sentences"): what a liquidity provider is, what still deep water buys you, and what the providers get and must not do.
@@ -20,8 +26,9 @@ const LINES := [
 ## Logan starts talking when he sees Lil Blunt come down to the shore - [E] is no longer how you meet him (founder 2026-11-15).
 const GREET_R := 6.5
 var _logan: Ep2TownFolk
-var _marker: Node3D
 var _cargo: Node3D
+var _cargo_wake: MeshInstance3D
+var _cargo_shot_t: float = -1.0
 var _line: int = 0
 var _talk_t: float = 0.0
 var _gesture_t: float = 0.0
@@ -148,25 +155,7 @@ func _shore() -> void:
 	_landscape.register_dock(dock)
 	_sign("LOGAN'S LAKE", ARRIVAL_SIGN, 3.2)
 	_sign("RIVER OVERLOOK  >", Vector3(-4, path_height(34), 34), 3.3)
-	_marker = Node3D.new()
-	_marker.name = "StagingMarker"
-	_marker.position = STAGING_MARK
-	_visuals.add_child(_marker)
-	var wood: Material = _tex(TIMBER_TEX, Color(0.65, 0.46, 0.27), 0.7)
-	_box(Vector3(1.4, 0.95, 1.0), Vector3(0, 0.48, 0), wood, _marker)
-	for x in [-0.53, 0.53]:
-		_box(Vector3(0.09, 1.0, 1.06), Vector3(x, 0.49, 0), _plain(Color(0.19, 0.17, 0.12)), _marker)
 	_marker_label = _sign("STAGED CARGO", STAGING_MARK + Vector3(1.1, 0, 0.5), 3.4)
-	# Cargo waiting at the narrow water, below the player's later overlook.
-	_cargo = Node3D.new()
-	_cargo.name = "StagedShipment"
-	_cargo.position = Vector3(24, -0.08, 49)
-	_visuals.add_child(_cargo)
-	_box(Vector3(3.0, 0.25, 5.5), Vector3.ZERO, wood, _cargo)
-	for x in [-1.35, 1.35]:
-		_box(Vector3(0.18, 0.65, 5.3), Vector3(x, 0.26, 0), wood, _cargo)
-	for z in [-1.4, 0, 1.4]:
-		_box(Vector3(1.6, 0.9, 1.1), Vector3(0, 0.55, z), wood, _cargo)
 	_sign("DAY-88 RIVER", Vector3(-4.5, path_height(56), 56), 2.9)
 	_build_logan_camp()
 
@@ -264,9 +253,16 @@ func _on_setup() -> void:
 	_talk_t = 0
 	_staged = false
 	_stage_calls = 0
+	_cargo_shot_t = -1.0
+	release_camera()
+	if _cargo != null:
+		_cargo.queue_free()
+		_cargo = null
+	if _cargo_wake != null:
+		_cargo_wake.queue_free()
+		_cargo_wake = null
 	_gesture_t = 0
 	Ep2Signpost.retext(_marker_label, "STAGED CARGO")
-	_cargo.position = Vector3(24, -0.08, 49)
 	if _logan != null: _logan.hold_clip("Idle")
 	if _skiff != null: _skiff.reset_routine()
 	Ep2Extras.start(self)
@@ -301,7 +297,6 @@ func _on_setup() -> void:
 			_set_horse_clip("horse_stand", 0.6)
 		_staged = true
 		Ep2Signpost.retext(_marker_label, "CARGO CHECKED")
-		_cargo.position = Vector3(24, -0.08, 72)
 	elif armory.horse_is_down():
 		_horse_state = "gone"                       # shot out from under him on the trail: there is no horse at the lake to water or ride
 		_horse.visible = false
@@ -323,6 +318,12 @@ func _on_setup() -> void:
 	_clear_water()
 	if after_day88:
 		_advance_to(Beat.ROAD)
+	elif armory.river_gear and armory.day88_outflow_started:
+		_staged = true
+		_build_staged_shipment()
+		_cargo.position = _cargo_at(CARGO_END_Z)
+		Ep2Signpost.retext(_marker_label, "SHIPMENT AWAY")
+		_advance_to(Beat.HANDOFF)
 	else:
 		_advance_to(Beat.ARRIVE)
 
@@ -383,19 +384,21 @@ func _on_beat_entered(b: int) -> void:
 			_say(LINES[0], 6.5)
 			_gesture("Greet", 2.5)
 		Beat.STAGE:
-			_hud.objective = "Check the staged cargo beside Logan [E]." if TouchUi.keys_shown() else "Check the staged cargo beside Logan."
+			if armory.river_gear:
+				_build_staged_shipment()
+				_hud.objective = "Check the Day-88 Shipment at Logan’s staging marker."
+			else:
+				_hud.objective = "Buy the Day-88 Shipment at Rich & Utah’s counter, then return here."
 			if not armory.horse_is_sound() and not _horse_line_said:
 				_horse_line_said = true                    # Logan can see what came up that trail: he says so, and nobody offers it water
 				_say(HORSE_GONE_LINE if armory.horse_is_down() else HORSE_SHOT_LINE, 5.0)
 		Beat.HANDOFF:
 			prebuild_requested.emit("river_cover")          # the ridge builds off screen while he walks the shore trail
 			_hud.objective = "Follow the shore trail to the river overlook."
-			_say("LOGAN: Cargo checked. The depth holds. Follow the outflow to the high ground—the day-88 shipment leaves from here.", 8.5)
-			_gesture("Point", 3.0)
 		Beat.OVERLOOK:
 			_hud.objective = ("Day-88 river · at the overlook, [E] climb to the ridge." if TouchUi.keys_shown()
 				else "Day-88 river · at the overlook, climb to the ridge.")
-			_say("The still-water narrows into the river. Rich and Utah's gear is ready for the run downstream.", 8.0)
+			_say("The shipment is downstream. Climb to the ridge to cover it.", 4.0)
 		Beat.ROAD:
 			_road_objective()
 			prebuild_requested.emit("auction_road")          # the road (and the auction grounds) build behind the lake: one-frame hand-over at the sign
@@ -420,17 +423,79 @@ func start_rig(_payment: String = "") -> bool:
 	if _beat == Beat.ARRIVE and _player_pos.distance_to(LOGAN_MARK) < 3.2:
 		_advance_to(Beat.INVESTIGATE)
 		return true
-	if _beat == Beat.STAGE and _player_pos.distance_to(STAGING_MARK) < 2.8 and not _staged:
-		_staged = true
+	if _beat == Beat.STAGE and armory.river_gear and _player_pos.distance_to(STAGING_MARK) < 2.8:
+		_build_staged_shipment()
 		_stage_calls += 1
-		Ep2Signpost.retext(_marker_label, "CARGO CHECKED")
-		_hud.toast("STAGING CONFIRMED · DEPTH PROTECTED", 3)
-		_advance_to(Beat.HANDOFF)
+		_show_blocks_control = true
+		_hud.set_search_prompt("")
+		_gesture("Point", 3.0)
+		_cargo_shot_t = 0.0
 		return true
 	if can_mount_horse():
 		_mount()
 		return true
 	return false
+
+func _build_staged_shipment() -> void:
+	if _cargo != null:
+		return
+	_cargo = Ep2ShipmentCrate.model(1.5)
+	_cargo.position = _cargo_at(CARGO_START_Z)
+	_visuals.add_child(_cargo)
+
+
+func _cargo_at(z: float) -> Vector3:
+	return Vector3(Ep2LakeLandform.flow_center(z), -0.23, z)
+
+
+func _frame_cargo(snap: bool) -> void:
+	var at: Vector3 = _cargo.position
+	set_camera_shot(at + Vector3(5.7, 4.8, -8.2), at + Vector3(0, 0.3, 2.2), 48.0, snap)
+
+
+func _advance_cargo_shot(delta: float) -> void:
+	var previous: float = _cargo_shot_t
+	_cargo_shot_t += delta
+	# Give the crate a moment at rest, then accelerate as the channel takes it.
+	var pull: float = clampf((_cargo_shot_t - 0.8) / (CARGO_SHOT_SECONDS - 0.8), 0.0, 1.0)
+	_cargo.position = _cargo_at(lerpf(CARGO_START_Z, CARGO_END_Z, pow(pull, 1.45)))
+	_cargo.position.y += 0.055 * sin(_cargo_shot_t * 5.0)
+	_cargo.rotation.z = sin(_cargo_shot_t * 5.0) * 0.055
+	_frame_cargo(is_zero_approx(previous))
+	if pull > 0.06:
+		if _cargo_wake == null:
+			var plane := PlaneMesh.new()
+			plane.size = Vector2(2.2, 4.6)
+			var foam := ShaderMaterial.new()
+			foam.shader = preload("res://src/episode2/art/lake_wake.gdshader")
+			_cargo_wake = MeshInstance3D.new()
+			_cargo_wake.mesh = plane
+			_cargo_wake.material_override = foam
+			_cargo_wake.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			_visuals.add_child(_cargo_wake)
+		_cargo_wake.position = Vector3(_cargo.position.x, -0.13, _cargo.position.z - 2.2)
+	if previous < 4.0 and _cargo_shot_t >= 4.0:
+		_say(CARGO_HANDOFF_LINE, 3.2)
+	if _cargo_shot_t < CARGO_SHOT_SECONDS:
+		return
+	_cargo_wake.queue_free()
+	_cargo_wake = null
+	_cargo_shot_t = -1.0
+	_show_blocks_control = false
+	release_camera()
+	armory.mark_day88_outflow_started()
+	_staged = true
+	Ep2Signpost.retext(_marker_label, "SHIPMENT AWAY")
+	_advance_to(Beat.HANDOFF)
+	shipment_staged.emit()
+
+
+## The ridge takes the launched crate when it adopts this shoreline.
+func take_staged_shipment() -> Node3D:
+	var shipment: Node3D = _cargo
+	_cargo = null
+	return shipment
+
 
 func _tick(delta: float) -> void:
 	if _logan_draw_t >= 0.0:
@@ -472,11 +537,14 @@ func _tick(delta: float) -> void:
 					_dialogue_panel.hide()
 					_advance_to(Beat.STAGE)
 			else: _dialogue_panel.hide()
+	if _cargo_shot_t >= 0.0:
+		_advance_cargo_shot(delta)
+		return
 	var prompt := ""
 	if _beat == Beat.ARRIVE and _player_pos.distance_to(LOGAN_MARK) < 3.2:
 		prompt = ""
-	elif _beat == Beat.STAGE and _player_pos.distance_to(STAGING_MARK) < 2.8:
-		prompt = "Check staged cargo [E]"
+	elif _beat == Beat.STAGE and armory.river_gear and _player_pos.distance_to(STAGING_MARK) < 2.8:
+		prompt = "Check Day-88 Shipment [E]"
 	elif _beat == Beat.ROAD and _near_auction_sign() and not _can_leave_for_auction():
 		prompt = "Patch the horse first: Logan's salve or Dude" if _horse_state == "hurt" else "Mount your horse first"
 	elif _can_offer_salve():
@@ -490,17 +558,13 @@ func _tick(delta: float) -> void:
 	if prompt != "" and not TouchUi.keys_shown():
 		prompt = prompt.replace(" [E]", "")
 	_hud.set_search_prompt(prompt)
-	if _staged:
-		_cargo.position.z = minf(72, _cargo.position.z + delta * 0.35)
-		_cargo.position.x = Ep2LakeLandform.flow_center(_cargo.position.z)
-		_cargo.rotation.z = sin(_elapsed * 0.8) * 0.012
 	if _skiff != null:
 		_skiff.advance(delta, _staged and _talk_t <= 0.0)
 	if _beat == Beat.HANDOFF and _player_pos.z > 59:
 		_advance_to(Beat.OVERLOOK)
 	# walking on up the path is enough: the ridge continues from here, [E] only says so sooner. Never waits on a line (founder
 	# 2026-11-07 "no pause climbing the hill from the cargo check"): the ridge carries the caption on (RiverCoverChamber.adopt_lake)
-	if _beat == Beat.OVERLOOK and _staged and _player_pos.z >= WALK_ON_Z and not _resolved and has_player_control() and _handoff_ok():
+	if _beat == Beat.OVERLOOK and _staged and armory.river_gear and armory.day88_outflow_started and _player_pos.z >= WALK_ON_Z and not _resolved and has_player_control() and _handoff_ok():
 		if armory.sniper_owned:
 			_resolve({"next_chamber": "river_cover", "lake_complete": true, "river_ready": true, "companion": ""})
 		elif not _sharps_told:
@@ -643,7 +707,7 @@ func get_handoff() -> Dictionary:
 	return result
 
 ## At the top of the shore path with the ridge not yet built: the root spends more of each frame on it (never seen when built early).
-func _wants_handoff() -> bool: return (_beat == Beat.OVERLOOK and _staged and _player_pos.z > 59 and armory.sniper_owned) or (_beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction())
+func _wants_handoff() -> bool: return (_beat == Beat.OVERLOOK and _staged and _player_pos.z > 59 and armory.river_gear and armory.day88_outflow_started and armory.sniper_owned) or (_beat == Beat.ROAD and _near_auction_sign() and _can_leave_for_auction())
 
 func staging_complete() -> bool: return _staged
 func staging_count() -> int: return _stage_calls

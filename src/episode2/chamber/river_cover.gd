@@ -226,7 +226,7 @@ func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() 
 ## Each step stays short (ep2-no-blackouts: a step over ~100 ms is a visible hitch in the room he is walking through), so the ridge's
 ## overlooks and dressing are steps of their own.
 func _build_steps() -> Array: return [_light, _build_land, _build_river, _build_ridge, _build_overlooks, _dress_ridge, _build_marker, _build_dock,
-	_build_crate, _build_utah, _build_rich]
+	_build_utah, _build_rich]
 
 
 # --- the set ------------------------------------------------------------------------------------------------------------------
@@ -1102,13 +1102,16 @@ func _build_dock_plain() -> void:
 	_wall_sign(root, "DAY-88 DOCK", DOCK_DECK + Vector3(-6.46, 2.6, 0), Vector2(2.6, 0.6), wood)
 
 
-## THE SHIPMENT: only when he owns it (no free crate). It waits in the launch pool until the run is live.
-func _build_crate() -> void:
-	if not armory.river_gear:
+## The lake's crate is reused on a continuous handoff. A section restore uses the same mesh.
+func _build_crate(staged: Node3D = null) -> void:
+	if _crate != null or not armory.river_gear or not armory.day88_outflow_started:
 		return
-	_crate = Ep2ShipmentCrate.model(1.5)
+	_crate = staged if staged != null else Ep2ShipmentCrate.model(1.5)
 	_crate.name = "Shipment"
-	_visuals.add_child(_crate)
+	if staged != null:
+		_crate.reparent(_visuals, false)
+	else:
+		_visuals.add_child(_crate)
 	# a pennant on a pole lashed to it: his package reads from the ridge at a glance, not only through the scope
 	var pole := _box(Vector3(0.06, 2.4, 0.06), Vector3(0, 1.9, 0), _mat(Color(0.35, 0.24, 0.14)), _crate)
 	pole.name = "PennantPole"
@@ -1254,7 +1257,7 @@ func return_lake() -> void:
 	_lent_horse = null
 
 
-func adopt_lake(lake: Node3D) -> void:
+func adopt_lake(lake: LogansLakeChamber) -> void:
 	var visuals: Node3D = lake.get("_visuals")
 	if visuals == null or _lake_root != null:
 		return
@@ -1262,6 +1265,8 @@ func adopt_lake(lake: Node3D) -> void:
 	_lake_root.name = "LakeBehind"
 	_lake_root.position = LAKE_OFFSET
 	_visuals.add_child(_lake_root)
+	if _crate == null and armory.river_gear and armory.day88_outflow_started:
+		_build_crate(lake.take_staged_shipment())
 	visuals.reparent(_lake_root, false)
 	visuals.position = Vector3.ZERO
 	_lake_visuals = visuals
@@ -1435,8 +1440,12 @@ func _on_setup() -> void:
 	_blocked_reason = ""
 	if not armory.river_gear:
 		_blocked_reason = "shipment"
+	elif not armory.day88_outflow_started:
+		_blocked_reason = "staging"
 	elif not armory.sniper_owned:
 		_blocked_reason = "sniper"
+	elif not handoff.has("ridge_from"):
+		_build_crate()
 	_build_cover_touch()
 	_spawn_watchers()
 	_advance_to(Beat.APPROACH)
@@ -1455,7 +1464,9 @@ func _on_beat_entered(b: int) -> void:
 			_hud.objective = "Hold the overlook and look down at the launch pool."
 		Beat.BLOCKED:
 			if _blocked_reason == "shipment":
-				_hud.objective = "No shipment to cover: THE SHIPMENT is bought at Rich & Utah's counter."
+				_hud.objective = "Buy the Day-88 Shipment at Rich & Utah’s counter."
+			elif _blocked_reason == "staging":
+				_hud.objective = "Stage the Day-88 Shipment at Logan’s Lake first."
 			else:
 				_hud.objective = "The day-88 run needs the Sharps buffalo gun from Rich & Utah's counter."
 		Beat.DOCK:
@@ -1531,6 +1542,8 @@ func _look_dir() -> Vector3:
 
 
 func _launch() -> void:
+	if _launched or _crate == null or not armory.river_gear or not armory.day88_outflow_started:
+		return
 	_launched = true
 	_set_tabs_live(true)                                # the Tabs shipment tile pulses while the run is on
 	if _hud != null:
@@ -2953,7 +2966,7 @@ func _set_tabs_live(on: bool) -> void:
 
 ## E at the marker when the run cannot start: the slice ends here and says what to bring (no free crate is ever spawned).
 func start_rig(_payment: String = "") -> bool:
-	if _beat == Beat.BLOCKED and _flat(_player_pos).distance_to(_flat(MARKER)) < 8.0:
+	if _beat == Beat.BLOCKED and _blocked_reason != "staging" and _flat(_player_pos).distance_to(_flat(MARKER)) < 8.0:
 		_resolve({"end_session": true, "river_blocked": _blocked_reason, "companion": ""})
 		return true
 	return false

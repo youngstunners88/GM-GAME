@@ -1216,7 +1216,8 @@ func _note(item_id: String, ok: bool) -> void:
 	if _shop_open and _town_audio != null:
 		if ok:
 			_shop_bought = true
-			_town_audio.queue_line("town_trade_07" if item_id == "river_gear" else ("town_trade_04" if item_id == "sniper" or Ep2ArmoryState.SHOP_GUNS.has(item_id) else "town_trade_06"))
+			if item_id != Ep2ArmoryState.GATE_ITEM:
+				_town_audio.queue_line("town_trade_04" if item_id == "sniper" or Ep2ArmoryState.SHOP_GUNS.has(item_id) else "town_trade_06")
 		else:
 			_town_audio.queue_line("town_trade_09")
 

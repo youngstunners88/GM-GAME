@@ -18,6 +18,7 @@ func _ready() -> void:
 	add_child(vp)
 	var st := Ep2ArmoryState.post_hideout()
 	st.purchase_river_gear("btc")
+	st.mark_day88_outflow_started()
 	st.purchase_sniper("btc")
 	st.purchase_sniper_ammo(10, "btc")
 	c = load("res://src/episode2/chamber/river_cover.tscn").instantiate() as RiverCoverChamber

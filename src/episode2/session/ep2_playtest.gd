@@ -66,6 +66,7 @@ static func grant(armory: Ep2ArmoryState, name: String = PRESET) -> void:
 			"reload_locked": false, "training_complete": true}
 	data.merge({"arrows": ARROWS, "sniper": true, "sniper_rounds": Ep2ArmoryState.RESERVE_CAP, "river_gear": true,
 		"horse_wounds": 0, "confiscated": false, "held": [], "equipped": Ep2ArmoryState.WIN}, true)
+	data["day88_outflow_started"] = name in [RIDGE, AUCTION]
 	armory.restore(data)
 	GameManager.purse_add("btc", BTC_FLOOR - GameManager.purse_balance("btc"))
 	GameManager.has_region_map = true

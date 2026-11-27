@@ -1092,11 +1092,11 @@ const LINES: Dictionary = {
 	},
 	"logan_handoff": {
 		"speaker": "logan",
-		"text": "Cargo checked. The depth holds. Follow the outflow to the high ground—the day-88 shipment leaves from here.",
-		"seconds": 6.905,
+		"text": "The depth holds. Follow the outflow to the high ground.",
+		"seconds": 3.13,
 		"start_seconds": 0,
 		"ready": true,
-		"path": "res://src/episode2/audio/logan/logan_handoff.ogg"
+		"path": "res://src/episode2/audio/logan/logan_outflow.ogg"
 	},
 	"logan_lp_1": {
 		"speaker": "logan",

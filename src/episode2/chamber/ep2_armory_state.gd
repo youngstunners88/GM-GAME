@@ -136,6 +136,7 @@ var corpses: Dictionary = {}
 var sniper_owned: bool = false
 var sniper_rounds: int = 0
 var river_gear: bool = false
+var day88_outflow_started: bool = false
 ## DUDE'S HORSE CARRIES ITS WOUNDS (founder 2026-11-04: "If the horse gets shot that must carry through so that Lil Blunt is unable to water it").
 ## 0 = sound, 1-2 = wounded (it walks but will not drink and cannot be ridden on), HORSE_WOUNDS_MAX = down. Held here because this state goes into
 ## every room hand-over and every save. Dude's care (treat_horse) is the one thing that clears it.
@@ -336,6 +337,13 @@ func purchase_river_gear(tender: String) -> bool:
 	river_gear = true
 	changed.emit()
 	return true
+
+
+## Record the lake handoff once the owned crate reaches the outflow.
+func mark_day88_outflow_started() -> void:
+	if river_gear and not day88_outflow_started:
+		day88_outflow_started = true
+		changed.emit()
 
 
 ## Standalone post-hideout scenes declare their story entry, separate from rendering.
@@ -545,6 +553,7 @@ func snapshot() -> Dictionary:
 	return {"version": VERSION, "weapons": weapons, "equipped": equipped, "previous": previous,
 		"arrows": arrows, "corpses": corpses.duplicate(true), "switch_t": _switch_t,
 		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear, "horse_wounds": horse_wounds, "btc_half_change": btc_half_change,
+		"day88_outflow_started": river_gear and day88_outflow_started,
 		"confiscated": firearms_confiscated, "held": held.keys()}
 
 
@@ -613,6 +622,7 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 		sharps.locked = false
 		sharps.reload_locked = false
 	river_gear = valid and bool(data.get("river_gear", false))
+	day88_outflow_started = river_gear and bool(data.get("day88_outflow_started", false))
 	horse_wounds = clampi(SaveSafe.to_int(data.get("horse_wounds", 0)), 0, HORSE_WOUNDS_MAX) if valid else 0
 	btc_half_change = bool(data.get("btc_half_change", false)) if valid else false
 	_switch_t = clampf(SaveSafe.to_float(data.get("switch_t", 0)), 0.0, SWITCH_TIME) if valid else 0.0

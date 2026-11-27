@@ -20,6 +20,7 @@ func _ready() -> void:
 	session.set_process(false)
 	var st := Ep2ArmoryState.post_hideout()
 	st.river_gear = true
+	st.mark_day88_outflow_started()
 	st.sniper_owned = true
 	st.sniper_rounds = 40
 	session.armory = st

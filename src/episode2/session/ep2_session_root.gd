@@ -174,6 +174,9 @@ func restore_section(record: Dictionary) -> bool:
 		_resume_handoff = {"after_day88": true} if bool(section.get("after_day88", false)) else {}
 		if section.get("playtest") == Ep2Playtest.PRESET and _chain_id == "gold_town":
 			_resume_handoff = Ep2Playtest.town_handoff()      # a save in the warped town resumes at Dude's
+		# Legacy saves already at the ridge had passed Logan's staging beat.
+		if _chain_id == "river_cover" and not SaveSafe.to_dict(record.state.get("personal_armory", {})).has("day88_outflow_started"):
+			armory.mark_day88_outflow_started()
 		_enter_chamber()
 		_resume_handoff = {}
 	return true
@@ -456,6 +459,8 @@ func _wire_chamber(c: Node) -> void:
 		c.weapon_granted.connect(func(id: String) -> void: armory.acquire(id, c.get_gun()))
 	if c.has_signal("prebuild_requested") and not c.prebuild_requested.is_connected(_on_prebuild_requested):
 		c.prebuild_requested.connect(_on_prebuild_requested)
+	if c is LogansLakeChamber and not c.shipment_staged.is_connected(capture_section_checkpoint):
+		c.shipment_staged.connect(capture_section_checkpoint)
 	if "handoff_ready" in c:
 		c.set("handoff_ready", func() -> bool: return _pb_node == null or not is_instance_valid(_pb_node) or bool(_pb_node.call("is_prebuilt")))
 
