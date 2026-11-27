@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-- 2026-11-27: Logan’s Day-88 launch opens on a tied shipment at a timber mooring. The crate crosses the fixed frame, splashes at the current and leaves a brighter wake as the camera follows it into the outflow. Compatibility captures checked at 1120×630 and 540×900. Production release verification pending.
+- 2026-11-27: Logan’s Day-88 launch opens on a tied shipment at a timber mooring. The crate crosses the fixed frame, splashes at the current and leaves a brighter wake as the camera follows it into the outflow. Compatibility captures checked at 1120×630 and 540×900. Chromium verified the shot, same-crate ridge handoff and hard-refresh checkpoint. Itch serves BUILD `2026-11-27-b9e0f24` with the Episode 2 extras and Logan assets loading. [Production CI](https://github.com/youngstunners88/GM-GAME/actions/runs/46010280351)
 
 - 2026-11-26: Tabs identifies the owned Day-88 Shipment as Rich & Utah’s river package, and Utah’s counter confirmation assigns ridge cover. Logan’s cargo check shows the same crate entering the outflow. The ridge requires lake staging and takes that crate on the continuous handoff. Godot and an isolated Chromium playtest verified the purchase-to-ridge flow and hard-refresh checkpoint. Itch serves BUILD `2026-11-27-e0057bf` with the Episode 2 extras and Logan assets loading. [Production CI](https://github.com/youngstunners88/GM-GAME/actions/runs/45927720672)
 
