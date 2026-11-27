@@ -384,9 +384,9 @@ func _on_beat_entered(b: int) -> void:
 		Beat.STAGE:
 			if armory.river_gear:
 				_build_staged_shipment()
-				_hud.objective = "Check the Day-88 Shipment at Logan’s staging marker."
+				_hud.objective = "Check the Day-88 Shipment at Logan's staging marker."
 			else:
-				_hud.objective = "Buy the Day-88 Shipment at Rich & Utah’s counter, then return here."
+				_hud.objective = "Buy the Day-88 Shipment at Rich & Utah's counter, then return here."
 			if not armory.horse_is_sound() and not _horse_line_said:
 				_horse_line_said = true                    # Logan can see what came up that trail: he says so, and nobody offers it water
 				_say(HORSE_GONE_LINE if armory.horse_is_down() else HORSE_SHOT_LINE, 5.0)

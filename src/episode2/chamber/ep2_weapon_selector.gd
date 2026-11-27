@@ -386,7 +386,7 @@ func _draw() -> void:
 		var x: float = 12.0 if compact else 24.0
 		var y: float = sr.end.y + (10.0 if compact else 12.0)
 		_text("DAY-88 SHIPMENT", Vector2(x, y), 11 if compact else 16, BRASS)
-		_text("Rich & Utah’s river run", Vector2(x, y + 15.0), 10 if compact else 13, PAPER)
+		_text("Rich & Utah's river run", Vector2(x, y + 15.0), 10 if compact else 13, PAPER)
 		_text("Live · Cover from the ridge" if shipment_live else "Owned · Cover from the ridge",
 			Vector2(x, y + 30.0), 10 if compact else 13, PAPER)
 	if bud_selected:

@@ -1464,9 +1464,9 @@ func _on_beat_entered(b: int) -> void:
 			_hud.objective = "Hold the overlook and look down at the launch pool."
 		Beat.BLOCKED:
 			if _blocked_reason == "shipment":
-				_hud.objective = "Buy the Day-88 Shipment at Rich & Utah’s counter."
+				_hud.objective = "Buy the Day-88 Shipment at Rich & Utah's counter."
 			elif _blocked_reason == "staging":
-				_hud.objective = "Stage the Day-88 Shipment at Logan’s Lake first."
+				_hud.objective = "Stage the Day-88 Shipment at Logan's Lake first."
 			else:
 				_hud.objective = "The day-88 run needs the Sharps buffalo gun from Rich & Utah's counter."
 		Beat.DOCK:
