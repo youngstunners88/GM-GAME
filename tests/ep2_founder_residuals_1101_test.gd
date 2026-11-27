@@ -579,6 +579,8 @@ func _test_lake_horse() -> void:
 	var session: Ep2SessionRoot = load("res://src/episode2/session/ep2_session_root.tscn").instantiate()
 	add_child(session)
 	session.configure([{"chamber": "lake_trail"}, {"chamber": "miner_shaft"}], false)
+	# CI shares a save directory. This fixture exercises the first meeting, before any shipment launch.
+	session.armory.day88_outflow_started = false
 	session._enter_chamber()
 	var trail: LakeTrailChamber = session.get_active() as LakeTrailChamber
 	if trail == null:

@@ -16,6 +16,9 @@ func walk(c: LogansLakeChamber, target: Vector3) -> bool:
 		c.step(1.0 / 60.0)
 	return false
 func _ready() -> void:
+	# Chamber handoffs save the armory. Keep this fixture's completed shipment out of later CI tests.
+	var prior_session: Dictionary = GameManager.session_data().duplicate(true)
+	GameManager.personal_armory = {}
 	var session: Ep2SessionRoot = load("res://src/episode2/session/ep2_session_root.tscn").instantiate()
 	add_child(session)
 	session.configure([{"chamber": "gold_town"}, {"chamber": "miner_shaft"}], false)
@@ -116,5 +119,8 @@ func _ready() -> void:
 	check("the ridge adopts the same shipment node launched at the lake", ridge != null and ridge.get_crate() == shipment
 		and ridge.armory.river_gear and ridge.armory.day88_outflow_started and ridge.blocked_reason() == "")
 	check("finish input cannot duplicate the hand-off", not c.start_rig() and results.size() == 1)
+	session.free()
+	GameManager.restore_session_data(prior_session)
+	check("fixture restores the prior save for later gameplay tests", GameManager.save_session())
 	print("LOGANS_LAKE: %s" % ("ALL PASS" if failures == 0 else "%d FAIL" % failures))
 	get_tree().quit(1 if failures else 0)
