@@ -3,7 +3,26 @@ extends Node3D
 ## Lake-only skiff routine. The founder's Logan skin/clips stay unchanged.
 ## A rest-aware two-bone solve keeps palms on independent rigid oar grips and
 ## boots on the actual footrest. No bone scaling or foreign clip retargeting.
-enum State { MOORED, WALK_TO_BOAT, BOARD, ROW, FISH }
+##
+## FISHING PROCESS (founder 2026-11-28 "oars teleport away, instant goldfish mode"): nothing pops. Rowing ends in SETTLE, one readable chain:
+## the blades lift clear, the oars swing in and lie along the gunwales (they stay in the boat, in view), his hands leave the grips for the
+## rod that has lain on the floor beside him the whole row, the rod comes up, and the line is cast out and lands as a bobber. UNSETTLE is
+## the same chain played backwards (reel in, rod down, oars out) before he rows again. On the return from the ridge (after day-88) he is
+## already fishing: `start_fishing_now()` holds the settled pose and never resets him to rowing.
+## enum order is load-bearing (tests and saves compare ints): new states go on the end.
+enum State { MOORED, WALK_TO_BOAT, BOARD, ROW, FISH, SETTLE, UNSETTLE }
+## Settle timeline (seconds from the last stroke). Each step has its own window so a viewer can read it.
+const SETTLE_LIFT_END := 0.7        # blades come up out of the water, hands still on the grips
+const SETTLE_SHIP_END := 1.9        # oars swing in and lie along the gunwales
+const SETTLE_HANDS_END := 2.9       # hands leave the oar grips for the rod lying on the floor
+const SETTLE_RAISE_END := 4.1       # the rod comes up into the fishing angle
+const SETTLE_SECONDS := 6.0         # the cast: the line pays out in an arc and the bobber lands
+const SHIP_YAW := 1.32              # shipped oar swing (rad): blade alongside the hull, out of the water
+const DRIFT_SECONDS := 1.5          # the boat coasts to a stop after the last stroke
+const FISH_HOLD_SECONDS := 28.0     # how long he fishes before rowing on (never, once `hold_fishing`)
+## Where he sits fishing on the return from the ridge: open water, in view of the shore path down from the overlook, rod out over the lake.
+const FISH_SPOT := Vector3(6.5, -0.15, 26.0)
+const FISH_YAW := -1.28             # boat -Z (his rod) points east over the lake, slightly south: a three-quarter view from the path
 const MODEL := "res://src/episode2/extras/lake/rowing_skiff.glb"
 const WATER_Y := -0.18
 const MOOR := Vector3(2.2, -0.15, 13.0)
@@ -50,6 +69,17 @@ var _line_mesh: MeshInstance3D
 var _bobber: MeshInstance3D
 var _fish_grips: Array[Node3D] = []
 var _wake: MeshInstance3D
+var _settle_t: float = 0.0
+var _oar_from: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _hand_blend: float = 0.0        # 0 = palms on the oar grips, 1 = palms on the rod grips
+var _rod_raise: float = 0.0         # 0 = rod lying on the floor, 1 = fishing angle
+var _cast: float = 0.0              # 0 = line reeled in, 1 = bobber on the water
+var _rod_stow: Transform3D = Transform3D.IDENTITY
+var _rod_base: Vector3 = Vector3.ZERO
+var _rod_tip: Vector3 = Vector3.ZERO
+var _flinch_t: float = -1.0
+## Set by start_fishing_now(): he keeps fishing for the whole visit instead of rowing on.
+var hold_fishing: bool = false
 
 func build(parent: Node3D, logan: Ep2TownFolk, water: ShaderMaterial = null) -> bool:
 	_water_material = water
@@ -122,9 +152,16 @@ func reset_routine() -> void:
 	if not ready_art: return
 	_sk.clear_bones_global_pose_override()
 	state = State.MOORED
+	hold_fishing = false
 	_fish_t = 0.0
 	_rowing_t = 0.0
-	_rod.hide()
+	_settle_t = 0.0
+	_flinch_t = -1.0
+	_hand_blend = 0.0
+	_rod_raise = 0.0
+	_cast = 0.0
+	_rod.transform = _rod_stow
+	_rod.show()                          # the rod lies in the boat from the start: it is picked up, never conjured
 	_line_mesh.hide()
 	_bobber.hide()
 	_lean = 0.0
@@ -153,6 +190,7 @@ func reset_routine() -> void:
 func advance(delta: float, may_depart: bool) -> void:
 	if not ready_art: return
 	_time += delta
+	_advance_flinch(delta)
 	if state == State.MOORED:
 		boat.position.y = MOOR.y + sin(_time * .72) * .006
 		boat.rotation.z = sin(_time * .62) * .006
@@ -179,22 +217,115 @@ func advance(delta: float, may_depart: bool) -> void:
 		_row(delta)
 		_rowing_t += delta
 		if _rowing_t > 22.0:
+			state = State.SETTLE
+			_settle_t = 0.0
+			for i in 2: _oar_from[i] = oars[i].rotation      # from wherever the last stroke left them
+	elif state == State.SETTLE:
+		_settle_t = minf(SETTLE_SECONDS, _settle_t + delta)
+		if _settle_t < DRIFT_SECONDS:                        # coast to a stop on the heading he rowed
+			boat.position += boat.global_basis.z * delta * .32 * (1.0 - _settle_t / DRIFT_SECONDS)
+		else:
+			_wake.hide()
+		_hold_station()
+		if _settle_t >= SETTLE_SECONDS:
 			state = State.FISH
 			_fish_t = 0.0
-			_rod.show(); _line_mesh.show(); _bobber.show(); _wake.hide()
-			for oar in oars: oar.hide()
 	elif state == State.FISH:
 		_fish_t += delta
-		_lean = .035 * sin(_fish_t*.7)
-		boat.position.y = MOOR.y + sin(_time*.72)*.007
-		_seat_actor(1.0)
-		_pose_seated(1.0)
-		_update_fishing_line()
-		if _fish_t > 28.0:
-			state = State.ROW; _rowing_t = 0.0
-			_rod.hide(); _line_mesh.hide(); _bobber.hide(); _wake.show()
-			for oar in oars: oar.show()
+		_hold_station()
+		if not hold_fishing and _fish_t > FISH_HOLD_SECONDS:
+			state = State.UNSETTLE                           # the same chain backwards: reel in, rod down, oars out
+			for i in 2:
+				var sign_side: float = -1.0 if i == 0 else 1.0
+				_oar_from[i] = Vector3(0.0, sign_side * -.32, -sign_side * .24)   # stroke phase 0: the catch he rows on from
+	elif state == State.UNSETTLE:
+		_settle_t = maxf(0.0, _settle_t - delta)
+		_hold_station()
+		if _settle_t <= 0.0:
+			state = State.ROW
+			_rowing_t = 0.0
+			_time = 0.0                                      # the first stroke starts at the catch the oars were set to
+			_wake.show()
 	_update_water_cut()
+
+## Seated and still on the water (settling, fishing or unsettling): bob, lean, tackle and the settle chain at `_settle_t`.
+func _hold_station() -> void:
+	_apply_settle(_settle_t)
+	var flinch: float = 0.0
+	if _flinch_t >= 0.0:
+		flinch = sin(PI * clampf(_flinch_t / 1.1, 0.0, 1.0))
+	_lean = .035 * sin(_fish_t * .7) * _cast - .30 * flinch
+	boat.position.y = MOOR.y + sin(_time * .72) * .007
+	boat.rotation.z = sin(_time * .62) * .006 + .02 * flinch
+	_seat_actor(1.0)
+	_pose_seated(1.0)
+	_update_fishing_line()
+
+## Oars, hands, rod and line at time `t` of the settle chain (0 = rowing, SETTLE_SECONDS = fishing). Played forwards and backwards.
+func _apply_settle(t: float) -> void:
+	var lift: float = smoothstep(0.0, SETTLE_LIFT_END, t)
+	var ship: float = smoothstep(SETTLE_LIFT_END, SETTLE_SHIP_END, t)
+	_hand_blend = smoothstep(SETTLE_SHIP_END, SETTLE_HANDS_END, t)
+	_rod_raise = smoothstep(SETTLE_HANDS_END, SETTLE_RAISE_END, t)
+	_cast = smoothstep(SETTLE_RAISE_END, SETTLE_SECONDS, t)
+	for i in 2:
+		var sign_side: float = -1.0 if i == 0 else 1.0
+		var lifted := Vector3(0.0, _oar_from[i].y, -sign_side * .05)
+		var shipped := Vector3(0.0, sign_side * SHIP_YAW, -sign_side * .02)
+		oars[i].rotation = _oar_from[i].lerp(lifted, lift).lerp(shipped, ship)
+		oars[i].show()
+	# a small back-and-forward flick of the rod as the cast goes out
+	var flick: float = -.32 * sin(PI * clampf(_cast / .35, 0.0, 1.0))
+	var raised: Transform3D = _rod_stow.interpolate_with(Transform3D.IDENTITY, _rod_raise)
+	_rod.transform = _pivot(raised, _rod_base, Basis(Vector3.RIGHT, flick))
+
+static func _pivot(t: Transform3D, at: Vector3, b: Basis) -> Transform3D:
+	var p: Vector3 = t * at
+	return Transform3D(b, p - b * p) * t
+
+## Already fishing when Lil Blunt rides back from the ridge: seated at FISH_SPOT, oars shipped, rod out, line in the water. No reset to rowing.
+func start_fishing_now() -> void:
+	if not ready_art: return
+	reset_routine()
+	hold_fishing = true
+	state = State.FISH
+	_fish_t = 0.0
+	boat.position = FISH_SPOT
+	boat.rotation = Vector3(0.0, FISH_YAW, 0.0)
+	_rope.hide()
+	_wake.hide()
+	for i in 2:
+		var sign_side: float = -1.0 if i == 0 else 1.0
+		_oar_from[i] = Vector3(0.0, sign_side * SHIP_YAW, -sign_side * .02)
+	_settle_t = SETTLE_SECONDS
+	_board_from = actor.global_transform
+	_hold_station()
+	_update_water_cut()
+
+## Settled into the looping fishing idle (rod up, bobber on the water).
+func is_fishing_settled() -> bool:
+	return ready_art and state == State.FISH and _cast >= 1.0
+
+## He leans back from something big going over his hat, then settles back to his line (still fishing).
+func flinch() -> void:
+	_flinch_t = 0.0
+
+func _advance_flinch(delta: float) -> void:
+	if _flinch_t >= 0.0:
+		_flinch_t += delta
+		if _flinch_t > 1.1: _flinch_t = -1.0
+
+## Logan's head in boat space (the fish gag aims its arc over it).
+func head_local() -> Vector3:
+	var key: String = "Head" if _ids.has("Head") else "Neck"
+	return boat.to_local(_pose_world(key).origin)
+
+## Rod tip in world space (where the line leaves the rod).
+func rod_tip_world() -> Vector3:
+	return boat.to_global(_rod.transform * _rod_tip)
+
+func line_visible() -> bool: return _line_mesh.visible
+func bobber_world() -> Vector3: return _bobber.global_position
 
 func _walk(delta: float) -> void:
 	var target: Vector3 = _walk_route[_walk_i]
@@ -331,7 +462,7 @@ func _pose_seated(blend: float) -> void:
 		var twist: float = atan2(finger_dir.dot(mapped.cross(wanted)), mapped.dot(wanted))
 		q = Quaternion(finger_dir, twist) * q
 		var hand_basis: Basis = Basis(q) * hand_rest.basis
-		var grip: Vector3 = (_fish_grips[grip_i] if state == State.FISH else grips[grip_i]).global_position
+		var grip: Vector3 = grips[grip_i].global_position.lerp(_fish_grips[grip_i].global_position, _hand_blend)
 		var current_palm: Vector3 = _pose_world(side + "Hand") * local_palm
 		var palm: Vector3 = current_palm.lerp(grip, k)
 		var wrist: Vector3 = palm - hand_basis * local_palm
@@ -392,6 +523,13 @@ func _build_fishing_tackle() -> void:
 	var wood := StandardMaterial3D.new(); wood.albedo_color = Color(.3,.17,.065)
 	stick.material_override = wood
 	_rod.add_child(stick)
+	_rod_base = base
+	_rod_tip = base + (tip - base) * (1.0 + .17 / base.distance_to(tip))   # the line leaves just past the drawn tip (as before)
+	# Stowed: lying on the boat floor beside his right boot along the hull, butt by the seat - in view the whole row.
+	var stow_base: Vector3 = Vector3(.33, _floor.position.y + .07, _seat.position.z + .22)
+	var stow_dir: Vector3 = Vector3(.05, .035, -1.0).normalized()
+	var turn := Basis(Quaternion((tip - base).normalized(), stow_dir))
+	_rod_stow = Transform3D(turn, stow_base - turn * base)
 	stick.position = (base+tip)*.5
 	stick.quaternion = Quaternion(Vector3.UP,(tip-base).normalized())
 	for i in 2:
@@ -404,15 +542,24 @@ func _build_fishing_tackle() -> void:
 	_bobber.mesh=ball
 	var red := StandardMaterial3D.new(); red.albedo_color=Color(.65,.15,.08); _bobber.material_override=red
 	boat.add_child(_bobber)
-	_rod.hide();_line_mesh.hide();_bobber.hide()
+	_rod.transform = _rod_stow
+	_line_mesh.hide();_bobber.hide()
 
+## The line pays out with `_cast`: the bobber flies a short arc from the tip to the water (1.9 s), never a one-frame snap.
 func _update_fishing_line() -> void:
-	var tip: Vector3 = _seat.position + Vector3(.25,1.60,-2.33)
-	var float_at: Vector3 = tip + Vector3(.1,-tip.y + WATER_Y-boat.position.y,-.6)
-	float_at.y += sin(_fish_t*2.1)*.009
-	_bobber.position=float_at
+	if _cast <= 0.001:
+		_line_mesh.hide(); _bobber.hide()
+		return
+	_line_mesh.show(); _bobber.show()
+	var tip: Vector3 = _rod.transform * _rod_tip
+	var rest_tip: Vector3 = _rod_tip
+	var float_at: Vector3 = rest_tip + Vector3(.1, -rest_tip.y + WATER_Y - boat.position.y, -.6)
+	float_at.y += sin(_fish_t*2.1)*.009 * _cast
+	var bob: Vector3 = tip.lerp(float_at, _cast) + Vector3(0, .9 * sin(PI * _cast), -.5 * sin(PI * _cast))
+	_bobber.position = bob
+	var sag: float = .07 * _cast
 	var mesh := ImmediateMesh.new(); mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
 	for i in 13:
 		var k: float = i/12.0
-		mesh.surface_add_vertex(tip.lerp(float_at,k)+Vector3(.03*sin(PI*k+_fish_t),-.07*sin(PI*k),0))
+		mesh.surface_add_vertex(tip.lerp(bob,k)+Vector3(.03*sin(PI*k+_fish_t)*_cast,-sag*sin(PI*k),0))
 	mesh.surface_end();_line_mesh.mesh=mesh

@@ -111,7 +111,9 @@ func _ready() -> void:
  check("fishing palms actually hold the rod without drifting",fish_contact<.04)
  check("fishing boat holds station on the lake",Vector2(b.boat.position.x-fish_start.x,b.boat.position.z-fish_start.z).length()<.01)
  advance(c,29)
- check("Logan resumes rowing after fishing",b.state==b.State.ROW and not b._rod.visible)
+ # since 2026-11-28 he reels in, lowers the rod and puts the oars out (UNSETTLE, ~6 s) before rowing: the rod stays in the boat, stowed
+ advance(c,7)
+ check("Logan resumes rowing after fishing",b.state==b.State.ROW and b._rod_raise==0.0 and not b._line_mesh.visible and b.oars[0].visible)
  c.set_physics_process(true);c.toggle_armory()
  var frozen_distance: float=b.circuit_distance
  var frozen_time: float=b._time

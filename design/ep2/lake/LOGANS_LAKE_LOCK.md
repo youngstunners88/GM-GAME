@@ -60,6 +60,7 @@ Forbidden:
 * Long LP tutorial, menus of APR, or invented soft-currency fishing economy.
 * Open-world fish grind between armory and Fort Knox.
 If a fish appears at all, it is pure flavor on the bank for a second — not the activity.
+* Amendment (founder 2026-11-28): Logan visibly rows -> ships oars -> raises rod -> casts (no teleports), is already fishing when Lil Blunt returns from the ridge, and one huge comedy fish jumps over his head with a splash once per visit. Still flavour: the player never fishes. Skills `ep2-logan-fishing-process`, `ep2-lake-fish-gag`.
 ________________
 
 

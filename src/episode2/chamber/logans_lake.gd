@@ -49,6 +49,14 @@ var _marker_label: TextMesh
 var _stage_calls: int = 0
 var _landscape := Ep2LakeLandscape.new()
 var _skiff: Ep2LoganSkiff
+## THE HUGE FISH (founder 2026-11-28): once per visit, when Lil Blunt has Logan fishing in clear view, an absurd fish jumps his skiff.
+## Flavour only - the player never fishes, catches or carries a fish.
+const FISH_GAG_RANGE := 42.0                       # metres from the eye to the boat: close enough to read the gag
+const FISH_GAG_CONE := 0.86                        # cos of the half-angle (about 30 deg) the boat must sit inside the view
+const FISH_GAG_LOOK := 0.6                         # seconds of steady view before it jumps (the camera has settled, not a wiggle)
+var _fish_gag: Ep2LakeFishGag
+var _fish_gag_seen: float = 0.0
+var fish_gag_fired: bool = false                   # one-shot per visit; _on_setup re-arms it
 var _cabin := Ep2LoganCabin.new()
 ## DUDE'S HORSE AT THE LAKE (founder 2026-11-01: "the horse needs to go to the lake and drink this whole time while Lil Blunt speaks
 ## with Logan ... Lil Blunt would be able to actually mount back on the horse ... as the horse just disappears at this point").
@@ -245,7 +253,16 @@ func _build_skiff() -> void:
 	if _skiff == null and _logan != null and Ep2Extras.has(Ep2LoganSkiff.MODEL):
 		_skiff = Ep2LoganSkiff.new()
 		_skiff.build(_visuals, _logan, _landscape.water_material)
-		_skiff.reset_routine()
+		_reset_skiff()
+	if _fish_gag == null and _skiff != null and _skiff.ready_art:
+		_fish_gag = Ep2LakeFishGag.new()
+		_skiff.boat.add_child(_fish_gag)
+
+## Moored at the dock for the first visit; already out fishing when he comes back from the ridge after day-88 (never reset to rowing).
+func _reset_skiff() -> void:
+	if _skiff == null: return
+	if after_day88: _skiff.start_fishing_now()
+	else: _skiff.reset_routine()
 
 func _build_cabin() -> void:
 	_cabin.build(_visuals)
@@ -286,7 +303,6 @@ func _on_setup() -> void:
 	_gesture_t = 0
 	Ep2Signpost.retext(_marker_label, "STAGED CARGO")
 	if _logan != null: _logan.hold_clip("Idle")
-	if _skiff != null: _skiff.reset_routine()
 	Ep2Extras.start(self)
 	_vm.set_world_shadows(false)
 	# the same key on the held gun as on the trail he rides in from (and the town and woods): the gun does not darken at the shore
@@ -304,6 +320,9 @@ func _on_setup() -> void:
 	var horse_yaw: float = float(handoff.get("lake_horse_yaw", _look_yaw))   # it keeps the heading it walked in on
 	_logan_draw_t = -1.0
 	after_day88 = bool(handoff.get("after_day88", false))
+	_reset_skiff()
+	fish_gag_fired = false
+	_fish_gag_seen = 0.0
 	_salve_t = -1.0
 	if _auction_sign != null:
 		_auction_sign.visible = after_day88
@@ -643,6 +662,7 @@ func _tick(delta: float) -> void:
 	_hud.set_search_prompt(prompt)
 	if _skiff != null:
 		_skiff.advance(delta, _staged and _talk_t <= 0.0)
+		_tick_fish_gag(delta)
 	if _beat == Beat.HANDOFF and _player_pos.z > 59:
 		_advance_to(Beat.OVERLOOK)
 	# walking on up the path is enough: the ridge continues from here, [E] only says so sooner. Never waits on a line (founder
@@ -661,6 +681,39 @@ func _tick(delta: float) -> void:
 	# the road to the auction is the same: riding (or walking, when the horse is gone) past the signpost IS leaving - no key
 	if _beat == Beat.ROAD and _on_road_start() and _can_leave_for_auction() and not _resolved and has_player_control() and _handoff_ok():
 		_leave_for_auction()
+
+## The gag waits for Logan settled on his line and the boat held in view for a moment, then plays once: out of the water on one side,
+## over his hat, belly-flop on the other. He flinches and stays fishing.
+func _tick_fish_gag(delta: float) -> void:
+	if _fish_gag == null: return
+	_fish_gag.advance(delta)
+	if fish_gag_fired or not _skiff.is_fishing_settled() or not has_player_control():
+		return
+	if fish_gag_in_view():
+		_fish_gag_seen += delta
+		if _fish_gag_seen >= FISH_GAG_LOOK:
+			_fire_fish_gag()
+	else:
+		_fish_gag_seen = 0.0
+
+## Is Logan's skiff in clear view of Lil Blunt's eye (in range, inside the view cone)?
+func fish_gag_in_view() -> bool:
+	var eye: Vector3 = _player_pos + Vector3(0, eye_height, 0)
+	var to_boat: Vector3 = _skiff.boat.global_position + Vector3(0, 1.0, 0) - eye
+	if to_boat.length() > FISH_GAG_RANGE or to_boat.length() < 1.0: return false
+	var cp: float = cos(_look_pitch)
+	var look := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
+	return look.dot(to_boat.normalized()) >= FISH_GAG_CONE
+
+func _fire_fish_gag() -> void:
+	fish_gag_fired = true
+	var head: Vector3 = _skiff.head_local()
+	var water: float = Ep2LoganSkiff.WATER_Y - _skiff.boat.position.y
+	# across the boat (its X), centred on his head: it clears his hat by a hand or two - "almost takes his head off"
+	var from: Vector3 = Vector3(head.x - 2.7, water - 1.0, head.z + .55)
+	var to: Vector3 = Vector3(head.x + 2.7, water - 1.0, head.z - .55)
+	_fish_gag.play(from, to, head.y + 0.95, water)
+	_skiff.flinch()
 
 func _collide(p: Vector3) -> Vector3:
 	if Ep2LoganCabin.YARD.has_point(Vector2(p.x, p.z)) or (_player_pos.x < -11.5 and p.x < -11.5):
